@@ -76,9 +76,7 @@ class ICommands(BashCommands):
 
         Possible schemes: 'credentials', 'GSI', 'PAM'
         """
-        authscheme = os.environ.get('IRODS_AUTHSCHEME', None)
-        if authscheme is None:
-            authscheme = 'credentials'
+        authscheme = os.environ.get('IRODS_AUTHSCHEME', 'credentials')
 
         user = os.environ.get('IRODS_USER', None)
         if user is None:
@@ -99,7 +97,7 @@ class ICommands(BashCommands):
             })
 
             # Set external auth scheme if requested
-            if authscheme is not None:
+            if authscheme is not 'credentials':
                 self._init_data["irods_authentication_scheme"] = authscheme
 
             with open(self.irodsenv, 'w') as fw:
