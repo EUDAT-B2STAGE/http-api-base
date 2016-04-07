@@ -5,6 +5,7 @@ Test  dataobjects endpoints
 """
 
 import io
+import os
 from restapi.server import create_app
 from nose.tools import assert_equals
 
@@ -28,14 +29,27 @@ class TestDataObjects(object):
     def test_get_verify(self):
         """ Test that the flask server is running and reachable"""
         r = self.app.get('http://localhost:8080/api/verify')
-        print(r.status_code)
+#        print(r.status_code)
         assert_equals(r.status_code, 200)
 
-    def test_post_dataobjects(self):
-        """ Test file upload """
+    def test_post_dataobjects_light(self):
+        """ Test light file upload """
         # I need to understand who to reapeat the upload test, since
         # overwrite is not allowed
         r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
-                           file=(io.BytesIO(b"this is a test"), 'test.pdf')))
-        print(r.status_code)
+                         file=(io.BytesIO(b"this is a test"),
+                          'test_light.pdf')))
+#        print(r.status_code)
+        assert_equals(r.status_code, 200)
+
+    def test_post_dataobjects_heavy(self):
+        """ Test heavy file upload """
+        # I need to understand who to reapeat the upload test, since
+        # overwrite is not allowed
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                            'img.JPG')
+        r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
+                         file=(open(path, 'rb'), 'img.JPG'')))
+
+#        print(r.status_code)
         assert_equals(r.status_code, 200)
