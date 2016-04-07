@@ -230,6 +230,25 @@ class ICommands(BashCommands):
         com = "ipwd"
         return self.basic_icom(com).strip()
 
+    def create_empty(self, path, directory=False, ignore_existing=False):
+        args = [path]
+        if directory:
+            com = "imkdir"
+            if ignore_existing:
+                args.append("-p")
+        else:
+            # // TODO:
+            # super call of create_tempy with file (touch)
+            # icp / iput of that file
+            # super call of remove for the original temporary file
+            logger.debug("NOT IMPLEMENTED for a file '%s'" %
+                         inspect.currentframe().f_code.co_name)
+            return
+
+        # Debug
+        self.basic_icom(com, args)
+        logger.debug("Created %s" % path)
+
     def list(self, path=None, detailed=False):
         """ List the files inside an iRODS path/collection """
 
@@ -273,27 +292,6 @@ class ICommands(BashCommands):
             # 2nd position is the resource in irods ils -l
             resources.append(element[2])
         return resources
-
-    def create_empty(self, path, directory=False, ignore_existing=False):
-        args = [path]
-        if directory:
-            com = "imkdir"
-            if ignore_existing:
-                args.append("-p")
-        else:
-            # // TODO:
-            # super call of create_tempy with file (touch)
-            # icp / iput of that file
-            # super call of remove for the original temporary file
-            logger.debug("NOT IMPLEMENTED for a file '%s'" %
-                         inspect.currentframe().f_code.co_name)
-            return
-
-        # Debug
-        self.execute_command(com, args)
-        logger.debug("Created %s" % path)
-        # com = ""
-        # self.execute_command(com, [path])
 
     def current_location(self, ifile):
         """
