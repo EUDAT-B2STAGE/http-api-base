@@ -228,7 +228,9 @@ class ICommands(BashCommands):
     # ICOMs !!!
     def get_base_dir(self):
         com = "ipwd"
-        return self.basic_icom(com).strip()
+        iout = self.basic_icom(com).strip()
+        logger.debug("Base dir is %s" % iout)
+        return iout
 
     def create_empty(self, path, directory=False, ignore_existing=False):
         args = [path]
@@ -268,6 +270,19 @@ class ICommands(BashCommands):
             replicas.append(re.split("\s+", line.strip()))
         return replicas
 
+    def remove(self, path, recursive=False, force=False):
+        com = 'irm'
+        args = []
+        if force:
+            args.append('-f')
+        if recursive:
+            args.append('-r')
+        args.append(path)
+        # Execute
+        self.basic_icom(com, args)
+        # Debug
+        logger.debug("Removed irods object: %s" % path)
+
     def save(self, path, destination=None):
         com = 'iput'
         args = [path]
@@ -303,19 +318,6 @@ class ICommands(BashCommands):
             self._init_data['irodsPort'] + \
             os.path.join(self._base_dir, ifile)
         return URL
-
-    def remove(self, path, recursive=False, force=False):
-        com = 'irm'
-        args = []
-        if force:
-            args.append('-f')
-        if recursive:
-            args.append('-r')
-        args.append(path)
-        # Execute
-        self.execute_command(com, args)
-        # Debug
-        logger.debug("Removed irods object: %s" % path)
 
     def check(self, path, retcodes=(0, 4)):
         """
