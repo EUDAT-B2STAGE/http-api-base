@@ -270,6 +270,32 @@ class ICommands(BashCommands):
             replicas.append(re.split("\s+", line.strip()))
         return replicas
 
+    def copy(self, sourcepath, destpath,
+             recursive=False, force=False,
+             compute_checksum=False, compute_and_verify_checksum=False):
+        com = 'icp'
+        args = []
+
+        if force:
+            args.append('-f')
+        if recursive:
+            args.append('-r')
+
+        # Checksum
+        if compute_and_verify_checksum:
+            args.append('-K')
+        elif compute_checksum:
+            args.append('-k')
+
+        # Normal parameters
+        args.append(sourcepath)
+        args.append(destpath)
+
+        # Execute
+        self.basic_icom(com, args)
+        # Debug
+        logger.debug("Copyied file: %s -> %s" % (sourcepath, destpath))
+
     def remove(self, path, recursive=False, force=False):
         com = 'irm'
         args = []
