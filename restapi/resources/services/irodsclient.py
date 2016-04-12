@@ -251,7 +251,7 @@ class ICommands(BashCommands):
         self.basic_icom(com, args)
         logger.debug("Created %s" % path)
 
-    def list(self, path=None, detailed=False):
+    def list(self, path=None, detailed=False, acl=False):
         """ List the files inside an iRODS path/collection """
 
         # Prepare the command
@@ -261,6 +261,8 @@ class ICommands(BashCommands):
         args = [path]
         if detailed:
             args.append("-l")
+        if acl:
+            args.append("-A")
         # Do it
         stdout = self.basic_icom(com, args)
         # Parse output
