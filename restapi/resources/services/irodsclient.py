@@ -319,6 +319,39 @@ class ICommands(BashCommands):
         # Execute
         return self.basic_icom(com, args)
 
+    def set_inheritance(self, path, inheritance=True, recursive=False):
+        com = 'ichmod'
+        args = []
+
+        if recursive:
+            args.append('-r')
+
+        if inheritance:
+            args.append("inherit")
+        else:
+            args.append("noinherit")
+
+        args.append(path)
+        # Execute
+        self.basic_icom(com, args)
+        # Debug
+        logger.debug("Set inheritance %r to %s" % (inheritance, path))
+
+    def set_permissions(self, path, permission, userOrGroup, recursive=False):
+        com = 'ichmod'
+        args = []
+        if recursive:
+            args.append('-r')
+
+        # To be verified, 'permission' should be null/read/write/own
+        args.append(permission)
+        args.append(userOrGroup)
+        args.append(path)
+        # Execute
+        self.basic_icom(com, args)
+        # Debug
+        logger.debug("Set %s permission to %s for %s" % (permission, path, userOrGroup))
+
 ################################################
 ################################################
 
