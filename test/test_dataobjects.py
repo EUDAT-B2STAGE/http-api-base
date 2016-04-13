@@ -26,20 +26,18 @@ class TestDataObjects(object):
     def teardown_class(self):
         "tear down test fixtures"
 
-    def test_get_verify(self):
+    def test_01_get_verify(self):
         """ Test that the flask server is running and reachable"""
         r = self.app.get('http://localhost:8080/api/verify')
-#        print(r.status_code)
         assert_equals(r.status_code, 200)
 
-    def test_post_dataobjects(self):
+    def test_02_post_dataobjects(self):
         """ Test file upload """
         # I need to understand who to reapeat the upload test, since
         # overwrite is not allowed
         r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
                          file=(io.BytesIO(b"this is a test"),
                           'test.pdf')))
-#        print(r.status_code)
         assert_equals(r.status_code, 200)
 
     '''def test_post_dataobjects_file(self):
@@ -54,11 +52,20 @@ class TestDataObjects(object):
 #        print(r.status_code)
         assert_equals(r.status_code, 200)'''
 
-    def test_delete_dataobjects(self):
+    def test_03_get_dataobjects(self):
+        """ Test file delete """
+        deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
+                                 'test.pdf')
+        r = self.app.get(deleteURI,
+                         data=dict(collection=('/home/guest')))
+#        print(r.data)
+        assert_equals(r.status_code, 200)
+        assert_equals(r.data, b'this is a test')
+
+    def test_04_delete_dataobjects(self):
         """ Test file delete """
         deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
                                  'test.pdf')
         r = self.app.delete(deleteURI,
-                            data=dict(colletion=('/tempZone/home/rods')))
-#        print(r.status_code)
+                            data=dict(collection=('/home/guest')))
         assert_equals(r.status_code, 200)
