@@ -32,7 +32,7 @@ class TestDataObjects(object):
         assert_equals(r.status_code, 200)
 
     def test_02_post_dataobjects(self):
-        """ Test file upload """
+        """ Test file upload: POST"""
         # I need to understand who to reapeat the upload test, since
         # overwrite is not allowed
         r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
@@ -40,32 +40,36 @@ class TestDataObjects(object):
                           'test.pdf')))
         assert_equals(r.status_code, 200)
 
-    '''def test_post_dataobjects_file(self):
-        """ Test real file upload """
-        # I need to understand who to reapeat the upload test, since
-        # overwrite is not allowed
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                            'img.JPG')
+    def test_03_post_large_dataobjects(self):
+        """ Test large file upload """
+        path = os.path.join('/home/irods', 'img.JPG')
+        with open(path, "wb") as f:
+            f.seek(100000000)  # 100MB file
+            f.write(b"\0")
         r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
-                         file=(open(path, 'rb'), 'img.JPG'')))
+                         file=(open(path, 'rb'), 'img.JPG')))
 
 #        print(r.status_code)
-        assert_equals(r.status_code, 200)'''
+        os.remove(path)
+        assert_equals(r.status_code, 200)
 
-    def test_03_get_dataobjects(self):
-        """ Test file delete """
+    def test_04_get_dataobjects(self):
+        """ Test file download: GET """
         deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
                                  'test.pdf')
-        r = self.app.get(deleteURI,
-                         data=dict(collection=('/home/guest')))
+        r = self.app.get(deleteURI, data=dict(collection=('/home/guest')))
 #        print(r.data)
         assert_equals(r.status_code, 200)
         assert_equals(r.data, b'this is a test')
 
-    def test_04_delete_dataobjects(self):
-        """ Test file delete """
+    def test_05_delete_dataobjects(self):
+        """ Test file delete: DELETE """
         deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
                                  'test.pdf')
-        r = self.app.delete(deleteURI,
-                            data=dict(collection=('/home/guest')))
+        r = self.app.delete(deleteURI, data=dict(collection=('/home/guest')))
+        assert_equals(r.status_code, 200)
+
+        deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
+                                 'img.JPG')
+        r = self.app.delete(deleteURI, data=dict(collection=('/home/guest')))
         assert_equals(r.status_code, 200)
