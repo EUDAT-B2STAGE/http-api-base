@@ -49,8 +49,6 @@ class TestDataObjects(object):
             f.write(b"\0")
         r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
                          file=(open(path, 'rb'), 'img.JPG')))
-
-#        print(r.status_code)
         os.remove(path)
         assert_equals(r.status_code, 200)
 
@@ -59,11 +57,17 @@ class TestDataObjects(object):
         deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
                                  'test.pdf')
         r = self.app.get(deleteURI, data=dict(collection=('/home/guest')))
-#        print(r.data)
         assert_equals(r.status_code, 200)
         assert_equals(r.data, b'this is a test')
 
-    def test_05_delete_dataobjects(self):
+    def test_05_get_large_dataobjects(self):
+        """ Test file download: GET """
+        deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
+                                 'img.JPG')
+        r = self.app.get(deleteURI, data=dict(collection=('/home/guest')))
+        assert_equals(r.status_code, 200)
+
+    def test_06_delete_dataobjects(self):
         """ Test file delete: DELETE """
 
         # Obatin the list of objects end delete
@@ -82,15 +86,3 @@ class TestDataObjects(object):
                                      obj[0])
             r = self.app.delete(deleteURI, data=dict(collection=(collection)))
             assert_equals(r.status_code, 200)
-
-        '''
-        deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
-                                 'test.pdf')
-        r = self.app.delete(deleteURI, data=dict(collection=('/home/guest')))
-        assert_equals(r.status_code, 200)
-
-        deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
-                                 'img.JPG')
-        r = self.app.delete(deleteURI, data=dict(collection=('/home/guest')))
-        assert_equals(r.status_code, 200)
-        '''
