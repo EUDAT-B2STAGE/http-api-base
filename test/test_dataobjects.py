@@ -6,6 +6,7 @@ Test  dataobjects endpoints
 
 import io
 import os
+import json
 from restapi.server import create_app
 from nose.tools import assert_equals
 
@@ -32,7 +33,7 @@ class TestDataObjects(object):
         assert_equals(r.status_code, 200)
 
     def test_02_post_dataobjects(self):
-        """ Test file upload: POST"""
+        """ Test file upload: POST """
         # I need to understand who to reapeat the upload test, since
         # overwrite is not allowed
         r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
@@ -41,7 +42,7 @@ class TestDataObjects(object):
         assert_equals(r.status_code, 200)
 
     def test_03_post_large_dataobjects(self):
-        """ Test large file upload """
+        """ Test large file upload: POST """
         path = os.path.join('/home/irods', 'img.JPG')
         with open(path, "wb") as f:
             f.seek(100000000)  # 100MB file
@@ -64,6 +65,25 @@ class TestDataObjects(object):
 
     def test_05_delete_dataobjects(self):
         """ Test file delete: DELETE """
+
+        # Obatin the list of objects end delete
+        r = self.app.get('http://localhost:8080/api/collections')
+        assert_equals(r.status_code, 200)
+        # is the following correct?
+        content = json.loads(r.data.decode('utf-8'))
+        # why each element inside data is a list with only 1 element?
+        collection = content['data'][0][0][:-1]
+        # I have to remove the zone part.. this should probably be discussed
+        collection = '/' + collection.split('/', 2)[2]
+        for idx, obj in enumerate(content['data']):
+            if idx == 0:
+                continue
+            deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
+                                     obj[0])
+            r = self.app.delete(deleteURI, data=dict(collection=(collection)))
+            assert_equals(r.status_code, 200)
+
+        '''
         deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
                                  'test.pdf')
         r = self.app.delete(deleteURI, data=dict(collection=('/home/guest')))
@@ -73,3 +93,4 @@ class TestDataObjects(object):
                                  'img.JPG')
         r = self.app.delete(deleteURI, data=dict(collection=('/home/guest')))
         assert_equals(r.status_code, 200)
+        '''
