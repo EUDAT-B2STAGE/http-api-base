@@ -10,6 +10,8 @@ Install docker and docker-compose. For example:
 curl -sSL https://get.docker.com/ | sh
 # Install docker-compose
 pip install -U docker-compose
+# Install nose (only for unit tests)
+pip install nose
 ```
 
 ### How to run
