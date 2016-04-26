@@ -6,6 +6,7 @@ User configuration
 
 import os
 import re
+import sys
 import argparse
 
 #################################
@@ -34,8 +35,9 @@ def my_cli_arguments():
 args = None
 default_debug = False
 is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
+is_nose = "nose" in sys.modules.keys()
 
-if not is_gunicorn:
+if not is_gunicorn and not is_nose:
     args = my_cli_arguments()
     default_debug = args.debug
 
