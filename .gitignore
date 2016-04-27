@@ -1,3 +1,6 @@
+# Tests coverage
+cover/
+
 # sqllite dbs
 *.db
 backup*
