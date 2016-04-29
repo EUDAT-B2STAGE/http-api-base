@@ -19,11 +19,17 @@ __license__ = lic
 logger = get_logger(__name__)
 
 
-class Verify(ExtendedApiResource):
+class Test(ExtendedApiResource):
     """ API online test """
 
     def get(self):
-        return "Hello World!"
+        return self.response("Hello World!")
+
+class Verify(Test):
+    """ API online test """
+
+    def get(self):
+        return self.response(super().get())
 
 
 class VerifyLogged(ExtendedApiResource):
@@ -32,7 +38,7 @@ class VerifyLogged(ExtendedApiResource):
     @decorate.apimethod
     @auth_token_required
     def get(self):
-        return "Valid user"
+        return self.response("Valid user")
 
 
 class VerifyAdmin(ExtendedApiResource):
@@ -42,4 +48,4 @@ class VerifyAdmin(ExtendedApiResource):
     @auth_token_required
     @roles_required(config.ROLE_ADMIN)
     def get(self):
-        return "I am admin!"
+        return self.response("I am admin!")

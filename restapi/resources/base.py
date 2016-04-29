@@ -15,6 +15,9 @@ DEFAULT_CURRENTPAGE = 1
 PERPAGE_KEY = 'perpage'
 DEFAULT_PERPAGE = 10
 
+RESPONSE_CONTENT = "Response"
+RESPONSE_META = "Meta"
+
 
 # Extending the concept of rest generic resource
 class ExtendedApiResource(Resource):
@@ -137,44 +140,74 @@ class ExtendedApiResource(Resource):
         current_page = self._args.get(CURRENTPAGE_KEY, DEFAULT_CURRENTPAGE)
         return (current_page, limit)
 
-    def response(self, obj=None,
-                 elements=0, data_type='dict',
-                 fail=False, code=hcodes.HTTP_OK_BASIC):
-        """ Handle a standard response following some criteria """
-        # Do not apply if the object has already been used
-        # as a 'standard response' from a parent call
-        if 'data_type' in obj and 'status' in obj:
-            response = obj
+    def response(self,
+                 data=None, elements=None,
+                 fail=False, errors=None,
+                 code=hcodes.HTTP_OK_BASIC):
+
+# // TO FIX
+# Note: 'fail' needs to be removed in the near future
+        """
+        Handle a standard response following
+        criteria described in
+        https://github.com/EUDAT-B2STAGE/http-api-base/issues/7
+        """
+
+        print("Received", data)
+        # # Do not apply if the object has already been used
+        # # as a 'standard response' from a parent call
+        # if RESPONSE_CONTENT in data and RESPONSE_META in data:
+        #     return data
+
+        # check if 0 < code < 600
+
+        #########################
         # Compute the elements
-        else:
 
-            #######################
-            # Case of failure
-            if code > hcodes.HTTP_OK_NORESPONSE:
-                fail = True
+        # Case of failure
+        if fail and code < http.HTTP_BAD_REQUEST:
+            code = http.HTTP_BAD_REQUEST
 
-            if fail:
-                if not isinstance(obj, list):
-                    if not isinstance(obj, dict):
-                        obj = {'Generic error': obj}
-                    obj = [obj]
-                obj = {'errors': obj}
-                if code < hcodes.HTTP_BAD_REQUEST:
-                    code = hcodes.HTTP_BAD_REQUEST
+        # Convert errors in a dictionary, always
+        if errors is not None:
+            if not isinstance(errors, list):
+                if not isinstance(errors, dict):
+                    errors = {'Generic error': errors}
+                errors = [errors]
+            errors = {'errors': errors}
 
-            data_type = str(type(obj))
-            if elements < 1:
-                if isinstance(obj, str):
-                    elements = 1
-                else:
-                    elements = len(obj)
+        # Decide code range
+        if errors is None and data is None:
+            logger.warning("RESPONSE: Warning, no data and no errors")
+            code = hcodes.HTTP_OK_NORESPONSE
+        elif errors is None:
+            if code not in range(0, hcodes.HTTP_MULTIPLE_CHOICES):
+                code = hcodes.HTTP_OK_BASIC
+        elif data is None:
+            if code < hcodes.HTTP_BAD_REQUEST:
+                code = hcodes.HTTP_BAD_REQUEST
+        # else:
+        #     #warnings
+        #     range 300 < 400
 
-            response = {
-                'data': obj,
+        data_type = str(type(data))
+        if elements is None:
+            if isinstance(data, str):
+                elements = 1
+            else:
+                elements = len(data)
+
+        response = {
+            RESPONSE_CONTENT: {
+                'data': data,
+                'errors': errors,
+            },
+            RESPONSE_META: {
                 'elements': elements,
                 'data_type': data_type,
-                'status': code
+                'status': int(code)
             }
+        }
 
         # ## In case we want to handle the failure at this level
         # # I want to use the same marshal also if i say "fail"
