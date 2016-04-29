@@ -193,7 +193,9 @@ class ExtendedApiResource(Resource):
 
         data_type = str(type(data))
         if elements is None:
-            if isinstance(data, str):
+            if data is None:
+                elements = 0
+            elif isinstance(data, str):
                 elements = 1
             else:
                 elements = len(data)
