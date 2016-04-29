@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+
 import os
 import pkg_resources
 try:
@@ -13,6 +14,24 @@ from confs.config import DEBUG, \
 
 myself = "Paolo D'Onorio De Meo <p.donoriodemeo@gmail.com>"
 lic = "MIT"
+
+################
+# modify logging labels colors
+logging.addLevelName(
+    logging.CRITICAL,
+    "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.CRITICAL))
+logging.addLevelName(
+    logging.ERROR,
+    "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
+logging.addLevelName(
+    logging.WARNING,
+    "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
+logging.addLevelName(
+    logging.INFO,
+    "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.INFO))
+logging.addLevelName(
+    logging.DEBUG,
+    "\033[1;35m%s\033[1;0m" % logging.getLevelName(logging.DEBUG))
 
 ################
 # From the directory where the app is launched
@@ -44,7 +63,8 @@ fileConfig(LOG_CONFIG)
 
 def get_logger(name):
     """ Recover the right logger + set a proper specific level """
-    logger = logging.getLogger(name)
+    colored_name = "\033[1;90m%s\033[1;0m" % name
+    logger = logging.getLogger(colored_name)
     logger.setLevel(LOG_LEVEL)
     return logger
 
