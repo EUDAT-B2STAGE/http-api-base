@@ -169,13 +169,13 @@ class ExtendedApiResource(Resource):
         if fail and code < hcodes.HTTP_BAD_REQUEST:
             code = hcodes.HTTP_BAD_REQUEST
 
-        # Convert errors in a dictionary, always
+        # Convert errors in a list, always
         if errors is not None:
             if not isinstance(errors, list):
                 if not isinstance(errors, dict):
                     errors = {'Generic error': errors}
                 errors = [errors]
-            errors = {'errors': errors}
+            #errors = {'errors': errors}
 
         # Decide code range
         if errors is None and data is None:
