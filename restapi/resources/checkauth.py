@@ -19,17 +19,11 @@ __license__ = lic
 logger = get_logger(__name__)
 
 
-class Test(ExtendedApiResource):
+class Verify(ExtendedApiResource):
     """ API online test """
 
     def get(self):
         return self.response("Hello World!")
-
-class Verify(Test):
-    """ API online test """
-
-    def get(self):
-        return self.response(super().get())
 
 
 class VerifyLogged(ExtendedApiResource):

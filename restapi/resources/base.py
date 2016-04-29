@@ -153,13 +153,14 @@ class ExtendedApiResource(Resource):
         https://github.com/EUDAT-B2STAGE/http-api-base/issues/7
         """
 
-        print("Received", data)
-        # # Do not apply if the object has already been used
-        # # as a 'standard response' from a parent call
-        # if RESPONSE_CONTENT in data and RESPONSE_META in data:
-        #     return data
-
-        # check if 0 < code < 600
+        # Do not apply if the object has already been used
+        # as a 'standard response' from a parent call
+        if isinstance(data, tuple) and len(data) == 2:
+            content, code = data
+            print("Received", content, code)
+            if RESPONSE_CONTENT in content and RESPONSE_META in content:
+                if code > 0 and code < 600:
+                    return content, code
 
         #########################
         # Compute the elements
