@@ -166,8 +166,8 @@ class ExtendedApiResource(Resource):
         # Compute the elements
 
         # Case of failure
-        if fail and code < http.HTTP_BAD_REQUEST:
-            code = http.HTTP_BAD_REQUEST
+        if fail and code < hcodes.HTTP_BAD_REQUEST:
+            code = hcodes.HTTP_BAD_REQUEST
 
         # Convert errors in a dictionary, always
         if errors is not None:
