@@ -39,7 +39,7 @@ class TestDataObjects(object):
         r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
                          file=(io.BytesIO(b"this is a test"),
                           'test.pdf')))
-        assert_equals(r.status_code, 200)
+        assert_equals(r.status_code, 200)  # maybe 201 is more appropriate
 
     def test_03_post_large_dataobjects(self):
         """ Test large file upload: POST """
@@ -50,7 +50,7 @@ class TestDataObjects(object):
         r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
                          file=(open(path, 'rb'), 'img.JPG')))
         os.remove(path)
-        assert_equals(r.status_code, 200)
+        assert_equals(r.status_code, 200)  # maybe 201 is more appropriate
 
     def test_04_get_dataobjects(self):
         """ Test file download: GET """
@@ -67,7 +67,7 @@ class TestDataObjects(object):
         r = self.app.get(deleteURI, data=dict(collection=('/home/guest')))
         assert_equals(r.status_code, 200)
 
-    def test_06_delete_dataobjects(self):
+    def test_07_delete_dataobjects(self):
         """ Test file delete: DELETE """
 
         # Obatin the list of objects end delete
@@ -86,3 +86,47 @@ class TestDataObjects(object):
                                      obj[0])
             r = self.app.delete(deleteURI, data=dict(collection=(collection)))
             assert_equals(r.status_code, 200)
+
+    def test_06_post_already_existing_dataobjects(self):
+        """ Test file upload with already existsing object: POST """
+        r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
+                         file=(io.BytesIO(b"this is a test"),
+                          'test.pdf')))
+        assert_equals(r.status_code, 500)  # or 409?
+        content = json.loads(r.data.decode('utf-8'))
+        error_message = content['Response']['errors']
+        print(error_message)
+#       assert('already exists' in error_message)
+
+    def test_08_post_dataobjects_in_non_existing_collection(self):
+        """ Test file upload in a non existing collection: POST """
+        r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
+                         collection=('/home/wrong/guest'),
+                         file=(io.BytesIO(b"this is a test"), 'test.pdf')))
+        assert_equals(r.status_code, 500)  # or 409?
+        content = json.loads(r.data.decode('utf-8'))
+        error_message = content['Response']['errors']
+        print(error_message)
+#       assert('CAT_UNKNOWN_COLLECTION' in error_message)
+
+    def test_09_get_non_exising_dataobjects(self):
+        """ Test file download of a non existing object: GET """
+        deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
+                                 'test.pdf')
+        r = self.app.get(deleteURI, data=dict(collection=('/home/guest')))
+        assert_equals(r.status_code, 500)  # or 404?
+        content = json.loads(r.data.decode('utf-8'))
+        error_message = content['Response']['errors']
+        print(error_message)
+#       assert('USER_INPUT_PATH_ERR' in error_message)
+
+    def test_10_get_dataobjects_in_non_exising_collection(self):
+        """ Test file download in a non existing collection: GET """
+        delURI = os.path.join('http://localhost:8080/api/dataobjects',
+                              'test.pdf')
+        r = self.app.get(delURI, data=dict(collection=('/home/wrong/guest')))
+        assert_equals(r.status_code, 500)  # or 404?
+        content = json.loads(r.data.decode('utf-8'))
+        error_message = content['Response']['errors']
+        print(error_message)
+#       assert('USER_INPUT_PATH_ERR' in error_message)
