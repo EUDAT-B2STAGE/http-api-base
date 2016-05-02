@@ -10,6 +10,7 @@ http://plumbum.readthedocs.org/en/latest/index.html#
 """
 
 from .. import get_logger
+from plumbum.commands.processes import ProcessExecutionError
 logger = get_logger(__name__)
 
 
@@ -28,23 +29,48 @@ class BashCommands(object):
         super(BashCommands, self).__init__()
         logger.debug("Internal shell initialized")
 
-    def execute_command(self, command, parameters=[], env=None):
-        """ Pattern in plumbum library for executing a shell command """
-        command = self._shell[command]
-        # Specify different environment variables
-        if env is not None:
-            command = command.with_env(**env)
-        return command(parameters)
+    def execute_command(self, command, parameters=[], env=None, parseException=False, raisedException=BaseException):
+        try:
 
-    def execute_command_advanced(self, command, parameters=[], retcodes=()):
-        """ Pattern in plumbum library for executing a shell command """
-        # e.g. ICOM["list"][irods_dir].run(retcode = (0,4))
-# TO FIX: does not work if parameters is bigger than one element
-        comout = \
-            self._shell[command][parameters].run(retcode=retcodes)
-        # # NOTE: comout is equal to (status, stdin, stdout)
-        return comout
+            """ Pattern in plumbum library for executing a shell command """
+            command = self._shell[command]
+            # Specify different environment variables
+            if env is not None:
+                command = command.with_env(**env)
+            return command(parameters)
+            
+        except ProcessExecutionError as e:
+            if not parseException:
+                raise(e)
+            else:
+                #argv = e.argv
+                #retcode = e.retcode
+                #stdout = e.stdout
+                stderr = e.stderr
 
+                raise raisedException(stderr)
+
+    def execute_command_advanced(self, command, parameters=[], retcodes=(), parseException=False, raisedException=BaseException):
+        try:
+
+            """ Pattern in plumbum library for executing a shell command """
+            # e.g. ICOM["list"][irods_dir].run(retcode = (0,4))
+    # TO FIX: does not work if parameters is bigger than one element
+            comout = \
+                self._shell[command][parameters].run(retcode=retcodes)
+            # # NOTE: comout is equal to (status, stdin, stdout)
+            return comout
+
+        except ProcessExecutionError as e:
+            if not parseException:
+                raise(e)
+            else:
+                #argv = e.argv
+                #retcode = e.retcode
+                #stdout = e.stdout
+                stderr = e.stderr
+
+                raise raisedException(stderr)
     ###################
     # BASE COMMANDS
     def create_empty(self, path, directory=False, ignore_existing=False):
