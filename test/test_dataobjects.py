@@ -76,10 +76,10 @@ class TestDataObjects(object):
         # is the following correct?
         content = json.loads(r.data.decode('utf-8'))
         # why each element inside data is a list with only 1 element?
-        collection = content['data'][0][0][:-1]
+        collection = content['Response']['data'][0][0][:-1]
         # I have to remove the zone part.. this should probably be discussed
         collection = '/' + collection.split('/', 2)[2]
-        for idx, obj in enumerate(content['data']):
+        for idx, obj in enumerate(content['Response']['data']):
             if idx == 0:
                 continue
             deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
