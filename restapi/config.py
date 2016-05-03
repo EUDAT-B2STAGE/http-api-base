@@ -70,7 +70,7 @@ class MyConfigs(object):
         try:
             sections = self.read_config(ini_file)
         except configparser.MissingSectionHeaderError:
-            logger.warning("'%s' file is not in base format" % ini_file)
+            logger.info("'%s' file is not in base format" % ini_file)
             # print(e)  # DEBUG?
             # JSON CASE
             try:
@@ -86,7 +86,7 @@ class MyConfigs(object):
         # Use sections found
         for section, items in iteritems(sections):
 
-            logger.info("Configuration read: {Section: " + section + "}")
+            logger.debug("Configuration read: {Section: " + section + "}")
 
             module = meta.get_module_from_string(
                 __package__ + '.resources.' + section)
