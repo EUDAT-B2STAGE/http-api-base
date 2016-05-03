@@ -91,6 +91,6 @@ class FooThree(ExtendedApiResource):
     @decorate.apimethod
     def post(self):
         logger.debug("Received args %s" % self._args)
-        return self.response(self._args, fail=True)
+        return self.response(errors={'something': 'went wrong'})
     # Works with requests to:
     # POST /api/another/path?arg2=3&arg3=test

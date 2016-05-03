@@ -32,22 +32,22 @@ class InitProfile(ExtendedApiResource):
         key = 'userid'
         if key not in j:
             return self.response(
-                "No user identifier specified to init the profile",
-                fail=True, code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
+                errors={'Init fail': "Please give a user to init the profile"},
+                code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
 
         key1 = 'name'
         key2 = 'surname'
         if key1 not in j or key2 not in j:
             return self.response(
-                "No profile info: name and/or surname",
-                fail=True, code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
+                errors={'Init fail': "No profile info: name and/or surname"},
+                code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
 
         ######################
         user = User.query.get(int(j[key]))
         if user is None:
             return self.response(
-                "Invalid account",
-                fail=True, code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
+                errors={'Init fail': "Invalid account"},
+                code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
 
         user.first_name = j[key1]
         user.last_name = j[key2]
@@ -73,7 +73,7 @@ class InitProfile(ExtendedApiResource):
         db.session.add(user)
         db.session.commit()
 
-        return self.response({'message': 'Profiling activated'})
+        return self.response(data={'message': 'Profiling activated'})
 
 
 class Account(ExtendedApiResource):

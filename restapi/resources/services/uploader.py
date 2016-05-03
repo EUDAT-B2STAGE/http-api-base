@@ -96,11 +96,12 @@ class Uploader(ZoomEnabling):
 
         if not get:
             return self.response(
-                "No flow chunks for now", code=hcodes.HTTP_OK_ACCEPTED)
+                errors={'Not implemented yet': "No flow chunks available"},
+                code=hcodes.HTTP_OK_ACCEPTED)
 
         if filename is None:
             return self.response(
-                "No filename specified to download", fail=True)
+                errors={'Download skipped': "No filename specified"})
 
         path = self.absolute_upload_file(
             filename, subfolder=subfolder, onlydir=True)
@@ -111,7 +112,8 @@ class Uploader(ZoomEnabling):
     def upload(self, subfolder=None):
 
         if 'file' not in request.files:
-            return self.response("No files specified", fail=True)
+            return self.response(
+                errors={'Upload skipped': "No files specified"})
 
         myfile = request.files['file']
 
@@ -128,7 +130,7 @@ class Uploader(ZoomEnabling):
         # Check file extension?
         if not self.allowed_file(myfile.filename):
             return self.response(
-                "File extension not allowed", fail=True)
+                errors={'Upload skipped': "File extension not allowed"})
 
         # Check file name
         filename = secure_filename(myfile.filename)
@@ -145,9 +147,10 @@ class Uploader(ZoomEnabling):
             # os.remove(abs_file)  # an option to force removal?
             logger.warn("Already exists")
             return self.response(
-                "File '" + filename + "' already exists. Please " +
-                "change its name and retry.",
-                fail=True, code=hcodes.HTTP_BAD_REQUEST)
+                errors={'Upload skipped': "File '" + filename +
+                        "' already exists. Please " +
+                        "change its name and retry."},
+                code=hcodes.HTTP_BAD_REQUEST)
 
         # Save the file
         try:
@@ -155,14 +158,15 @@ class Uploader(ZoomEnabling):
             logger.debug("Absolute file path should be '%s'" % abs_file)
         except Exception:
             return self.response(
-                "Failed to write uploaded file",
-                fail=True, code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
+                errors={'Upload failed': "Write of uploaded file has failed"},
+                code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
 
         # Check exists
         if not os.path.exists(abs_file):
             return self.response(
-                {"Server file system": "Unable to recover the uploaded file"},
-                fail=True, code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
+                errors={"Upload failed":
+                        "Unable to recover the uploaded file"},
+                code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
 
         ########################
         # Let the user decide about zoomify inside the JSON configuration
@@ -174,8 +178,8 @@ class Uploader(ZoomEnabling):
             else:
                 os.unlink(abs_file)     # Remove the file!
                 return self.response(
-                    {"Image operation": "Image pre-scaling for zoom failed"},
-                    fail=True, code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
+                    errors={"Image": "Pre-scaling for zoom has failed"},
+                    code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
 
         # Extra info
         ftype = None
@@ -197,10 +201,8 @@ class Uploader(ZoomEnabling):
         # think that response was unauthorized....
         # see http://dotnet.dzone.com/articles/getting-know-cross-origin
 
-        return self.response({
-                'filename': filename,
-                'meta': {'type': ftype, 'charset': fcharset}
-            }, code=hcodes.HTTP_OK_BASIC)
+        return self.response({'filename': filename,
+                'meta': {'type': ftype, 'charset': fcharset}})
 
     def remove(self, filename, subfolder=None):
         """ Remove the file if requested """
@@ -211,8 +213,8 @@ class Uploader(ZoomEnabling):
         if not os.path.exists(abs_file):
             logger.critical("File '%s' not found" % abs_file)
             return self.response(
-                "File requested does not exists",
-                fail=True, code=hcodes.HTTP_BAD_NOTFOUND)
+                errors={'Failed removal': "File requested does not exists"},
+                code=hcodes.HTTP_BAD_NOTFOUND)
 
         # Remove zoomified directory
         filebase, fileext = os.path.splitext(abs_file)
@@ -230,9 +232,8 @@ class Uploader(ZoomEnabling):
         except Exception:
             logger.critical("Cannot remove local file %s" % abs_file)
             return self.response(
-                "Failed to remove file",
+                errors={'Failed removal': "Wrong permissions"},
                 code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
         logger.warn("Removed '%s' " % abs_file)
 
-        return self.response(
-            "Deleted", code=hcodes.HTTP_OK_BASIC)
+        return self.response(code=hcodes.HTTP_OK_NORESPONSE)

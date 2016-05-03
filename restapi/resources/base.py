@@ -48,6 +48,11 @@ class ExtendedApiResource(Resource):
             # Be sure of handling JSON
             'application/json': output_json,
         }
+        # Init for latest response
+        self._latest_response = {
+            RESPONSE_CONTENT: None,
+            RESPONSE_META: None,
+        }
         # Apply decision about the url of endpoint
         self.set_endpoint()
         # Make sure you can parse arguments at every call
@@ -140,42 +145,68 @@ class ExtendedApiResource(Resource):
         current_page = self._args.get(CURRENTPAGE_KEY, DEFAULT_CURRENTPAGE)
         return (current_page, limit)
 
-    def response(self,
-                 data=None, elements=None,
-                 fail=False, errors=None,
-                 code=hcodes.HTTP_OK_BASIC):
+    def get_content_from_response(
+            self, http_out=None,
+            get_error=False, get_status=False, get_meta=False):
 
-# // TO FIX
-# Note: 'fail' needs to be removed in the near future
+        if http_out is None:
+            http_out = self._latest_response
+
+        if not isinstance(http_out, tuple) or len(http_out) != 2:
+            raise ValueError(
+                "Trying to recover informations" +
+                " from a malformed response:\n%s" % http_out)
+
+        response, status = http_out
+
+        if get_error:
+            return response[RESPONSE_CONTENT]['errors']
+        elif get_meta:
+            return response[RESPONSE_META]
+        elif get_status:
+            return response[RESPONSE_META]['status']
+
+        return response[RESPONSE_CONTENT]['data']
+
+    def response(self, data=None, elements=None,
+                 errors=None, code=hcodes.HTTP_OK_BASIC):
         """
-        Handle a standard response following
-        criteria described in
+        Handle a standard response following criteria described in
         https://github.com/EUDAT-B2STAGE/http-api-base/issues/7
         """
 
         # Do not apply if the object has already been used
         # as a 'standard response' from a parent call
+        existing_content = {}
+        existing_code = hcodes.HTTP_OK_BASIC
+
+        # print("Tuple?", data, isinstance(data, tuple), len(data))
+
+        # Normal response
         if isinstance(data, tuple) and len(data) == 2:
-            content, code = data
-            print("Received", content, code)
-            if RESPONSE_CONTENT in content and RESPONSE_META in content:
-                if code > 0 and code < 600:
-                    return content, code
+            existing_content, existing_code = data
+            # print("Received", existing_content, existing_code)
+
+        # Missing code in response
+        if isinstance(data, dict) and len(data) == 2:
+            existing_content = data
+            if RESPONSE_META in existing_content:
+                existing_code = existing_content[RESPONSE_META]['status']
+
+        if RESPONSE_CONTENT in existing_content \
+           and RESPONSE_META in existing_content:
+            if existing_code > 0 and existing_code < 600:
+                return existing_content, existing_code
 
         #########################
         # Compute the elements
 
-        # Case of failure
-        if fail and code < hcodes.HTTP_BAD_REQUEST:
-            code = hcodes.HTTP_BAD_REQUEST
-
-        # Convert errors in a list, always
+        # Convert errors in a list, always
         if errors is not None:
             if not isinstance(errors, list):
                 if not isinstance(errors, dict):
                     errors = {'Generic error': errors}
                 errors = [errors]
-            #errors = {'errors': errors}
 
         # Decide code range
         if errors is None and data is None:
@@ -200,28 +231,22 @@ class ExtendedApiResource(Resource):
             else:
                 elements = len(data)
 
-        response = {
+        if errors is None:
+            total_errors = 0
+        else:
+            total_errors = len(errors)
+
+        self._latest_response = {
             RESPONSE_CONTENT: {
                 'data': data,
                 'errors': errors,
             },
             RESPONSE_META: {
-                'elements': elements,
                 'data_type': data_type,
+                'elements': elements,
+                'errors': total_errors,
                 'status': int(code)
             }
         }
 
-        # ## In case we want to handle the failure at this level
-        # # I want to use the same marshal also if i say "fail"
-        # if fail:
-        #     code = hcodes.HTTP_BAD_REQUEST
-        #     if STACKTRACE:
-        #         # I could raise my exception if i need again stacktrace
-        #         raise RESTError(obj, status_code=code)
-        #     else:
-        #         # Normal abort
-        #         abort(code, **response)
-        # ## But it's probably a better idea to do it inside the decorators
-
-        return response, code
+        return self._latest_response, code
