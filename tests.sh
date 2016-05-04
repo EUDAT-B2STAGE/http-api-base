@@ -9,4 +9,4 @@ sleep 2
 #     --cover-erase --cover-package=restapi \
 #     --cover-html --cover-html-dir=/tmp/coverage
 
-nose2 --with-coverage --stop
+nose2 --with-coverage -F
