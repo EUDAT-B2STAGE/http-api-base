@@ -111,11 +111,12 @@ class Uploader(ZoomEnabling):
 
     def upload(self, subfolder=None):
 
-        if 'file' not in request.files:
-            return self.response(
-                errors={'Upload skipped': "No files specified"})
+        key = 'file'
+        if key not in request.files:
+            return self.response(errors={
+                'Upload skipped': "No files specified in field '%s'" % key})
 
-        myfile = request.files['file']
+        myfile = request.files[key]
 
         # ## IN CASE WE WANT TO CHUNK
         # ##parser = reqparse.RequestParser()

@@ -38,7 +38,7 @@ class BashCommands(object):
             if env is not None:
                 command = command.with_env(**env)
             return command(parameters)
-            
+
         except ProcessExecutionError as e:
             if not parseException:
                 raise(e)

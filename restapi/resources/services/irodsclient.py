@@ -32,7 +32,6 @@ class IrodsException(Exception):
 
     def __init__(self, exception):
         super(IrodsException).__init__()
-        self.defineParsingFunctions()
         self.parsedError = self.parseIrodsError(exception)
 
     def __str__(self):
@@ -44,18 +43,13 @@ class IrodsException(Exception):
     def parse_CAT_NO_ACCESS_PERMISSION(self, utility, error_string, error_code, error_label, role='user'):
         return "Permission denied"
 
-    def defineParsingFunctions(self):
-        self.parsingFunctions = {}
-        self.parsingFunctions[irods.CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME] = self.parse_CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME 
-        self.parsingFunctions[irods.CAT_NO_ACCESS_PERMISSION] = self.parse_CAT_NO_ACCESS_PERMISSION 
+    def parse_OVERWRITE_WITHOUT_FORCE_FLAG(self, utility, error_string, error_code, error_label, role='user'):
+        print(error_string, error_code, utility)
+        return "Trying to overwrite the object. Please add the force option"
 
     def parseIrodsError(self, error):
-
-        import re
-
-        logger.debug(error)
-
         error = str(error)
+        logger.debug(error)
 
         #Error example:
         #ERROR: mkdirUtil: mkColl of /abs/path/to/resource error. status = -809000 CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
@@ -68,8 +62,11 @@ class IrodsException(Exception):
             error_code = int(m.group(3))    #es: -809000
             error_label = m.group(4)        #es: CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
 
-            if error_code in self.parsingFunctions:
-                return self.parsingFunctions[error_code](utility, error_string, error_code, error_label)
+            method_name = 'parse_%s' % error_label
+            method = getattr(self, method_name, None)
+            if method is not None:
+                print("TEST")
+                return method(utility, error_string, error_code, error_label)
 
             return error_label
 

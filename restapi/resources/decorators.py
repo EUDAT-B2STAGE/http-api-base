@@ -20,7 +20,7 @@ different solutions.
 from __future__ import division, absolute_import
 from .. import myself, lic, get_logger
 
-from flask.ext.restful import marshal
+# from flask.ext.restful import marshal
 from flask.wrappers import Response
 from .. import htmlcodes as hcodes
 from ..meta import Meta
@@ -187,3 +187,40 @@ def all_rest_methods(decorator):
                 setattr(cls, attr, decorator(getattr(cls, attr)))
         return cls
     return decorate
+
+#####################################################################
+#####################################################################
+
+
+def exceptionError(self, label, e):
+    error = str(e)
+    logger.error(error)
+    return self.response(errors={label: error})
+
+
+def error_handler(func, self, exception, label, args, kwargs):
+
+    out = None
+    print(func, self, exception, label, args, kwargs)
+
+    try:
+        out = func(self, *args, **kwargs)
+    except exception as e:
+        return exceptionError(self, label, e)
+    except Exception as e:
+        print("Obtained another exception", e)
+
+    return out
+
+
+def catch_error(exception=None, exception_label='Unknown error'):
+    """
+    A decorator to preprocess an API class method,
+    and catch a specific error.
+    """
+    def decorator(func):
+        def wrapper(self, *args, **kwargs):
+            return error_handler(
+                func, self, exception, exception_label, args, kwargs)
+        return wrapper
+    return decorator
