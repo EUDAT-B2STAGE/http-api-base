@@ -52,21 +52,21 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
                          template_folder=template_dir,
                          **kwargs)
 
-    ##############################
-    # ERROR HANDLING
+    # ##############################
+    # # ERROR HANDLING
 
-    # Handling exceptions with json
-    for code in default_exceptions.keys():
-        microservice.error_handler_spec[None][code] = make_json_error
-    # Custom error handling: save to log
-    got_request_exception.connect(log_exception, microservice)
+    # # Handling exceptions with json
+    # for code in default_exceptions.keys():
+    #     microservice.error_handler_spec[None][code] = make_json_error
+    # # Custom error handling: save to log
+    # got_request_exception.connect(log_exception, microservice)
 
-    # Custom exceptions
-    @microservice.errorhandler(RESTError)
-    def handle_invalid_usage(error):
-        response = jsonify(error.to_dict())
-        response.status_code = error.status_code
-        return response
+    # # Custom exceptions
+    # @microservice.errorhandler(RESTError)
+    # def handle_invalid_usage(error):
+    #     response = jsonify(error.to_dict())
+    #     response.status_code = error.status_code
+    #     return response
 
     ##############################
     # Flask configuration from config file
