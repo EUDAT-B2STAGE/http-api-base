@@ -103,7 +103,7 @@ class TestDataObjects(object):
         r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
                          collection=('/home/wrong/guest'),
                          file=(io.BytesIO(b"this is a test"), 'test.pdf')))
-        assert_equals(r.status_code, 500)  # or 409?
+        assert_equals(r.status_code, 400)  # or 409?
         content = json.loads(r.data.decode('utf-8'))
         error_message = content['Response']['errors']
         print(error_message)
@@ -114,7 +114,7 @@ class TestDataObjects(object):
         deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
                                  'test.pdf')
         r = self.app.get(deleteURI, data=dict(collection=('/home/guest')))
-        assert_equals(r.status_code, 500)  # or 404?
+        assert_equals(r.status_code, 400)  # or 404?
         content = json.loads(r.data.decode('utf-8'))
         error_message = content['Response']['errors']
         print(error_message)
@@ -125,7 +125,7 @@ class TestDataObjects(object):
         delURI = os.path.join('http://localhost:8080/api/dataobjects',
                               'test.pdf')
         r = self.app.get(delURI, data=dict(collection=('/home/wrong/guest')))
-        assert_equals(r.status_code, 500)  # or 404?
+        assert_equals(r.status_code, 400)  # or 404?
         content = json.loads(r.data.decode('utf-8'))
         error_message = content['Response']['errors']
         print(error_message)
