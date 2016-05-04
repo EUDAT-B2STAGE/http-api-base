@@ -67,6 +67,17 @@ class TestDataObjects(object):
         r = self.app.get(deleteURI, data=dict(collection=('/home/guest')))
         assert_equals(r.status_code, 200)
 
+    def test_06_post_already_existing_dataobjects(self):
+        """ Test file upload with already existsing object: POST """
+        r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
+                         file=(io.BytesIO(b"this is a test"),
+                          'test.pdf')))
+        assert_equals(r.status_code, 400)  # or 409?
+        content = json.loads(r.data.decode('utf-8'))
+        error_message = content['Response']['errors']
+        print(error_message)
+#       assert('already exists' in error_message)
+
     def test_07_delete_dataobjects(self):
         """ Test file delete: DELETE """
 
@@ -86,17 +97,6 @@ class TestDataObjects(object):
                                      obj[0])
             r = self.app.delete(deleteURI, data=dict(collection=(collection)))
             assert_equals(r.status_code, 200)
-
-    def test_06_post_already_existing_dataobjects(self):
-        """ Test file upload with already existsing object: POST """
-        r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
-                         file=(io.BytesIO(b"this is a test"),
-                          'test.pdf')))
-        assert_equals(r.status_code, 500)  # or 409?
-        content = json.loads(r.data.decode('utf-8'))
-        error_message = content['Response']['errors']
-        print(error_message)
-#       assert('already exists' in error_message)
 
     def test_08_post_dataobjects_in_non_existing_collection(self):
         """ Test file upload in a non existing collection: POST """

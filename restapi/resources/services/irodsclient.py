@@ -16,6 +16,7 @@ import inspect
 import re
 from collections import OrderedDict
 from ..basher import BashCommands
+from ..exceptions import RestApiException
 from confs.config import IRODS_ENV
 from . import irods
 
@@ -28,7 +29,8 @@ logger = get_logger(__name__)
 IRODS_USER_ALIAS = 'clientUserName'
 CERTIFICATES_DIR = '/opt/certificates'
 
-class IrodsException(Exception):
+
+class IrodsException(RestApiException):
 
     def __init__(self, exception):
         super(IrodsException).__init__()
