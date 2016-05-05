@@ -198,22 +198,31 @@ def exceptionError(self, label, e):
     return self.response(errors={label: error})
 
 
-def error_handler(func, self, exception, label, args, kwargs):
+def error_handler(func, self, exception, label, catch_generic, args, kwargs):
 
     out = None
-    print(func, self, exception, label, args, kwargs)
-
+    # print(func, self, exception, label, args, kwargs)
+    default_label = 'Server error'
+    if label is None:
+        label = default_label
     try:
         out = func(self, *args, **kwargs)
     except exception as e:
         return exceptionError(self, label, e)
     except Exception as e:
-        print("Obtained another exception", e)
+        logger.warning(
+            "Unexpected exception inside error handler:\n%s" % str(e))
+        if not catch_generic:
+            raise e
+        else:
+            return exceptionError(
+                self, default_label, 'Please contact webadministrators')
 
     return out
 
 
-def catch_error(exception=None, exception_label='Unknown error'):
+def catch_error(
+        exception=None, exception_label=None, catch_generic=True):
     """
     A decorator to preprocess an API class method,
     and catch a specific error.
@@ -221,6 +230,7 @@ def catch_error(exception=None, exception_label='Unknown error'):
     def decorator(func):
         def wrapper(self, *args, **kwargs):
             return error_handler(
-                func, self, exception, exception_label, args, kwargs)
+                func, self,
+                exception, exception_label, catch_generic, args, kwargs)
         return wrapper
     return decorator

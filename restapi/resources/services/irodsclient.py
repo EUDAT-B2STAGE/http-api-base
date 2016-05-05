@@ -46,28 +46,33 @@ class IrodsException(RestApiException):
         return "Permission denied"
 
     def parse_OVERWRITE_WITHOUT_FORCE_FLAG(self, utility, error_string, error_code, error_label, role='user'):
-        print(error_string, error_code, utility)
         return "Trying to overwrite the object. Please add the force option"
+
+    def parse_USER_INPUT_PATH_ERR(self, utility, error_string, error_code, error_label, role='user'):
+        return "The requested object does not exist on the specified path"
+
+    def parse_CAT_UNKNOWN_COLLECTION(self, utility, error_string, error_code, error_label, role='user'):
+        return "The requested collection does not exist"
 
     def parseIrodsError(self, error):
         error = str(error)
-        logger.debug(error)
+        logger.debug("*%s*" % error)
 
-        #Error example:
-        #ERROR: mkdirUtil: mkColl of /abs/path/to/resource error. status = -809000 CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
-        regExpr = "^ERROR: (.*): (.*) status = (-[0-9]+) (.*)$"
+        # Error example:
+        # ERROR: mkdirUtil: mkColl of /abs/path/to/resource error.
+        # status = -809000 CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
+        regExpr = "ERROR: (.+): (.+) status = (-[0-9]+) ([A-Z0-9_]+)"
         m = re.search(regExpr, error)
         if m:
 
-            utility = m.group(1)            #es: mkdirUtil
-            error_string = m.group(2)       #es: mkColl of /abs/path/to/resource error
-            error_code = int(m.group(3))    #es: -809000
-            error_label = m.group(4)        #es: CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
+            utility = m.group(1)            # es: mkdirUtil
+            error_string = m.group(2)       # es: mkColl of /abs/path/to/resource error
+            error_code = int(m.group(3))    # es: -809000
+            error_label = m.group(4)        # es: CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
 
             method_name = 'parse_%s' % error_label
             method = getattr(self, method_name, None)
             if method is not None:
-                print("TEST")
                 return method(utility, error_string, error_code, error_label)
 
             return error_label
