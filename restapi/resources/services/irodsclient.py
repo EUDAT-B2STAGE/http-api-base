@@ -430,6 +430,41 @@ class ICommands(BashCommands):
         # Debug
         logger.debug("Set %s permission to %s for %s" % (permission, path, userOrGroup))
 
+    def get_permissions(self, path):
+        """
+            Output example:
+            {
+                'path': '/your_zone/your_path/',
+                'ACL': [
+                            ['your_user', 'your_zone', 'own'], 
+                            ['other_user', 'your_zone', 'read']
+                        ], 
+                'inheritance': 'Disabled'
+            }
+        """
+        iout = self.list(path=path, acl=True)
+        logger.debug(iout)
+
+        data = {}
+        for d in iout:
+            if d[0] == "C-":
+                data["path"] = d[1]
+            elif d[0] == "ACL":
+                data["ACL"] = d[2:]
+            elif d[0] == "Inheritance":
+                data["inheritance"] = d[2]
+            else:
+                data["path"] = d[0]
+
+
+        for index, element in enumerate(data["ACL"]):
+            if element == 'object':
+                data["ACL"].pop(index)
+            else:
+                data["ACL"][index] = re.split('#|:', data["ACL"][index])
+
+        return data
+
     def check_user_exists(self, username, checkGroup=None):
         com = 'iuserinfo'
         args = []
@@ -449,6 +484,7 @@ class ICommands(BashCommands):
                 return False, "User %s is not in group %s" % (username, checkGroup)
 
         return True, "OK"
+
 
 ################################################
 ################################################
