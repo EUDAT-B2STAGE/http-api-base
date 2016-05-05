@@ -465,6 +465,76 @@ class ICommands(BashCommands):
 
         return data
 
+    def list_as_json(self, root, level=0, recursive=True, firstRoot=None):
+
+        data = {}
+
+        if firstRoot is None:
+          firstRoot = root
+      
+        iout = self.list(path=root,detailed=True)
+        path = None
+        pathLen = 0;
+        rootLen = len(firstRoot)
+        acl = None
+        inheritance = None
+        for d in iout:
+
+          if len(d) <= 1:
+            if path is None:
+              path = d[0]
+              if path.endswith(":"):
+                path = path[:-1]
+              if not path.endswith("/"):
+                path+="/"
+
+              pathLen = len(path)
+            continue
+
+          row = {}
+
+          if d[0] == "ACL":
+            acl = d
+            continue
+          if d[0] == "Inheritance":
+            inheritance = d
+            continue
+
+          if d[0] == "C-":
+
+            absname = d[1]
+            if recursive:
+              objects = self.list_as_json(absname, level+1, True, firstRoot)
+
+            name = absname[pathLen:]
+            #print(path, "vs", name)
+
+            row["name"] = name
+            row["owner"] = "-"
+            row["acl"] = acl
+            row["acl_inheritance"] = inheritance
+            row["object_type"] = "collection"
+            row["content_length"] = 0 
+            row["last_modified"] = 0 
+            if recursive:
+              row["objects"] = objects
+            row["path"] = path[1+rootLen:]
+
+          else:
+
+            row["name"] = d[6]
+            row["owner"] = d[0]
+            row["acl"] = acl
+            row["acl_inheritance"] = inheritance
+            row["object_type"] = "dataobject"
+            row["content_length"] = d[3] 
+            row["last_modified"] = d[4] 
+            row["path"] = path[1+rootLen:]
+
+          data[row["name"]] = row
+
+        return data    
+
     def check_user_exists(self, username, checkGroup=None):
         com = 'iuserinfo'
         args = []
