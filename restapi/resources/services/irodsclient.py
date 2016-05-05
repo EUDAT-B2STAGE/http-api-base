@@ -430,6 +430,26 @@ class ICommands(BashCommands):
         # Debug
         logger.debug("Set %s permission to %s for %s" % (permission, path, userOrGroup))
 
+    def check_user_exists(self, username, checkGroup=None):
+        com = 'iuserinfo'
+        args = []
+        args.append(username)
+        output = self.basic_icom(com, args)
+
+        regExpr = "User %s does not exist\." % username
+        m = re.search(regExpr, output)
+        if m:
+            return False, "User %s does not exist" % username
+
+        if checkGroup is not None:
+            regExpr = "member of group: %s\n" % checkGroup
+            m = re.search(regExpr, output)
+
+            if not m:
+                return False, "User %s is not in group %s" % (username, checkGroup)
+
+        return True, "OK"
+
 ################################################
 ################################################
 
