@@ -456,12 +456,16 @@ class ICommands(BashCommands):
             else:
                 data["path"] = d[0]
 
-
+        popMe = None 
         for index, element in enumerate(data["ACL"]):
+
             if element == 'object':
-                data["ACL"].pop(index)
+                popMe = index
             else:
                 data["ACL"][index] = re.split('#|:', data["ACL"][index])
+
+        if popMe is not None:
+            data["ACL"].pop(popMe)
 
         return data
 
