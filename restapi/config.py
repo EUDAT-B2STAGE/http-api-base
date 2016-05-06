@@ -54,33 +54,26 @@ class MyConfigs(object):
             content = json.load(fp)
         return content
 
-    def single_rest(self, ini_file):
+    def single_rest(self, config_file):
 
         meta = Meta()
         resources = []
         sections = {}
 
-        if not os.path.exists(ini_file):
-            logger.warning("File '%s' does not exist! Skipping." % ini_file)
+        if not os.path.exists(config_file):
+            logger.warning("File '%s' does not exist! Skipping." % config_file)
             return resources
 
         #########################
         # Read the configuration inside this init file
-        # INI CASE
+
+        # JSON CASE
         try:
-            sections = self.read_config(ini_file)
-        except configparser.MissingSectionHeaderError:
-            logger.info("'%s' file is not in base format" % ini_file)
-            # print(e)  # DEBUG?
-            # JSON CASE
-            try:
-                sections = self.read_complex_config(ini_file)
-            except json.commentjson.JSONLibraryException:
-                logger.critical(
-                    "Failed to read also complex format too." +
-                    "\nPlease verify that your file is in " +
-                    "'ini' or 'json' format!")
-                exit(1)
+            sections = self.read_complex_config(config_file)
+        except:  # json.commentjson.JSONLibraryException:
+            logger.critical("Format error!\n" +
+                            "'%s' file is not in JSON format" % config_file)
+            exit(1)
 
         #########################
         # Use sections found
@@ -138,9 +131,9 @@ class MyConfigs(object):
         logger.debug("Resources files: '%s'" % files)
 
         resources = []
-        for ini_file in files:
-            logger.info("REST configuration file '%s'" % ini_file)
+        for config_file in files:
+            logger.info("REST configuration file '%s'" % config_file)
             # Add all resources from this single ini file
-            resources.extend(self.single_rest(ini_file))
+            resources.extend(self.single_rest(config_file))
 
         return resources
