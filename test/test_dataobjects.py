@@ -108,7 +108,7 @@ class TestDataObjects(unittest.TestCase):
         self.assertEqual(r.status_code, 400)  # or 409?
         content = json.loads(r.data.decode('utf-8'))
         error_message = content['Response']['errors'][0]['iRODS']
-        self.assertIn('CAT_UNKNOWN_COLLECTION', error_message)
+        self.assertIn('collection does not exist', error_message)
 
     def test_09_get_non_exising_dataobjects(self):
         """ Test file download of a non existing object: GET """
@@ -118,7 +118,7 @@ class TestDataObjects(unittest.TestCase):
         self.assertEqual(r.status_code, 400)  # or 404?
         content = json.loads(r.data.decode('utf-8'))
         error_message = content['Response']['errors'][0]['iRODS']
-        self.assertIn('USER_INPUT_PATH_ERR', error_message)
+        self.assertIn('does not exist on the specified path', error_message)
 
     def test_10_get_dataobjects_in_non_exising_collection(self):
         """ Test file download in a non existing collection: GET """
@@ -128,4 +128,4 @@ class TestDataObjects(unittest.TestCase):
         self.assertEqual(r.status_code, 400)  # or 404?
         content = json.loads(r.data.decode('utf-8'))
         error_message = content['Response']['errors'][0]['iRODS']
-        self.assertIn('USER_INPUT_PATH_ERR', error_message)
+        self.assertIn('does not exist on the specified path', error_message)
