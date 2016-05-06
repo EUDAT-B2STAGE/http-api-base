@@ -4,7 +4,8 @@
 
 import os
 import time
-from restapi import get_logger
+from ....meta import Meta
+from .... import get_logger
 
 logger = get_logger(__name__)
 
@@ -78,9 +79,12 @@ class MyGraph(object):
     def other(self):
         return self
 
-print("TEST")
+########################################
 
-""" Wait for neo4j connection at startup? """
+"""
+Wait for neo4j connection at startup
+"""
+
 counter = 0
 sleep_time = 1
 testdb = True
@@ -88,7 +92,7 @@ testdb = True
 while testdb:
     try:
         # CREATE INSTANCE
-        migraph = MyGraph()
+        graph = MyGraph()
 
         logger.info("Neo4j: available")
         testdb = False
@@ -101,7 +105,9 @@ while testdb:
         logger.debug("Awaiting Neo4j: sleep %s" % sleep_time)
         time.sleep(sleep_time)
 
-del migraph
+del graph
+
+########################################
 
 
 class GraphFarm(object):
@@ -109,10 +115,13 @@ class GraphFarm(object):
     """ Making some Graphs """
 
     def get_graph_instance(
-            self, skip_models=[],
+            self, models2skip=[],
             pymodule_with_models='restapi.resources.services.neo4j.models'):
 
-        self._instance = MyGraph()
-        # models = set(metalisting(pymodule_with_models)) - set(skip_models)
-        # self._instance.load_models(models)
-        return self._instance
+        self._graph = MyGraph()
+        meta = Meta()
+        models_found = meta.get_new_classes_from_module(
+            meta.get_module_from_string(pymodule_with_models))
+        models = set(models_found) - set(models2skip)
+        self._graph.load_models(models)
+        return self._graph
