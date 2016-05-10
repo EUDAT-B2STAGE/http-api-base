@@ -50,7 +50,7 @@ class TestDataObjects(unittest.TestCase):
         # overwrite is not allowed
         r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
                          file=(io.BytesIO(b"this is a test"),
-                          'test.pdf'),collection='/tempZone/home/guest'))
+                          'test1.pdf'), collection='/home/guest'))
         self.assertEqual(r.status_code, 200)  # maybe 201 is more appropriate
 
 
