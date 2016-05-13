@@ -51,7 +51,6 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
                          # the default look of flask-admin
                          template_folder=template_dir,
                          **kwargs)
-
     # ##############################
     # # ERROR HANDLING
 
@@ -116,6 +115,51 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
         ############################################
 
         logger.info("FLASKING! Injected security")
+
+
+
+
+
+
+        print("\n STARTING MY FLASK LOGIN TEST!\n")
+
+        @microservice.login_manager.user_loader
+        def load_user(username):
+            print("\n\n\n", "LOAD USER? ", username, "\n\n\n")
+
+            #TO BE CHANGED TO USE THE GRAPH 
+            """
+            u = app.config['USERS_COLLECTION'].find_one({"_id": username})
+            if not u:
+                return None
+            return User(u['_id'])
+            """
+            return None
+
+            # USING THE GRAPH: 
+            """
+            user = graph.User.nodes.filter(email=username)
+            for u in user.all():
+                return User(u._id)
+            """
+
+        @microservice.login_manager.token_loader
+        def load_token(token):
+
+            print("\n\n\n ", token, "\n\n\n")
+
+            # real version here:
+            # http://thecircuitnerd.com/flask-login-tokens/
+
+            return User(5)
+            #if not => return None
+
+        @microservice.login_manager.unauthorized_handler
+        def unauthorized():
+            # do stuff
+            print("\n\n\n ", "Unauthorized!", "\n\n\n")
+            return "Unauthorized!"
+
 
     ##############################
     # Restful plugin
