@@ -40,6 +40,10 @@ class IrodsException(RestApiException):
         return self.parsedError
 
     def parse_CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME(self, utility, error_string, error_code, error_label, role='user'):
+        #imeta add -d obj key value
+        #imeta add -d obj key value
+        #ERROR: rcModAVUMetadata failed with error -809000 CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
+
         return "A resource already exists with this name"
 
     def parse_CAT_NO_ACCESS_PERMISSION(self, utility, error_string, error_code, error_label, role='user'):
