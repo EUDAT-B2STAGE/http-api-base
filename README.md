@@ -32,6 +32,7 @@ Here is the index for browsing it internally on GitHub:
 * [Run the server](docs/run.md)
 * [Manage APIs](docs/manage.md)
 * [Security](docs/security.md)
+* [Testing](docs/test.md)
 
 ---
 
