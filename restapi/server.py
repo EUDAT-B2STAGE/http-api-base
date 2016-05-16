@@ -9,29 +9,16 @@ from __future__ import division, absolute_import
 from . import myself, lic, get_logger
 
 import os
-from flask import Flask, request, got_request_exception, jsonify
-from .jsonify import make_json_error
-from werkzeug.exceptions import default_exceptions
-from .jsonify import log_exception, RESTError
+from flask import Flask, request  # , jsonify, got_request_exception
+# from .jsonify import make_json_error
+# from werkzeug.exceptions import default_exceptions
+# from .jsonify import log_exception, RESTError
 
 __author__ = myself
 __copyright__ = myself
 __license__ = lic
 
 logger = get_logger(__name__)
-
-###############################
-# RETHINKDB
-RDB_AVAILABLE = False
-MODELS = []
-if 'RDB_NAME' in os.environ:
-    from .resources.services.rethink import load_models, wait_for_connection
-    # Look for models
-    MODELS = load_models()
-    if len(MODELS) > 0:
-        RDB_AVAILABLE = True
-        wait_for_connection()
-        logger.info("Found RethinkDB container")
 
 
 ###############################
@@ -116,50 +103,19 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
         logger.info("FLASKING! Injected security")
 
+# ####################
+# # GRAPHDB
 
+        from .resources.services.detect import GRAPHDB_AVAILABLE
+        if GRAPHDB_AVAILABLE:
+            logger.warning("Using Graphdb for storing users")
+            from .resources.services.accounting.graphbased \
+                import load_graph_user, load_graph_token, unauthorized_on_graph
 
-
-
-
-        print("\n STARTING MY FLASK LOGIN TEST!\n")
-
-        @microservice.login_manager.user_loader
-        def load_user(username):
-            print("\n\n\n", "LOAD USER? ", username, "\n\n\n")
-
-            #TO BE CHANGED TO USE THE GRAPH 
-            """
-            u = app.config['USERS_COLLECTION'].find_one({"_id": username})
-            if not u:
-                return None
-            return User(u['_id'])
-            """
-            return None
-
-            # USING THE GRAPH: 
-            """
-            user = graph.User.nodes.filter(email=username)
-            for u in user.all():
-                return User(u._id)
-            """
-
-        @microservice.login_manager.token_loader
-        def load_token(token):
-
-            print("\n\n\n ", token, "\n\n\n")
-
-            # real version here:
-            # http://thecircuitnerd.com/flask-login-tokens/
-
-            return User(5)
-            #if not => return None
-
-        @microservice.login_manager.unauthorized_handler
-        def unauthorized():
-            # do stuff
-            print("\n\n\n ", "Unauthorized!", "\n\n\n")
-            return "Unauthorized!"
-
+            lm = microservice.login_manager
+            lm.user_loader(load_graph_user)
+            lm.token_loader(load_graph_token)
+            lm.unauthorized_handler(unauthorized_on_graph)
 
     ##############################
     # Restful plugin
@@ -207,21 +163,21 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
         logger.info("FLASKING! Injected admin endpoints")
 
-    ##############################
-    # RETHINKDB
-# // TO FIX, not for every endpoint
-    if RDB_AVAILABLE:
-        @microservice.before_request
-        def before_request():
-            logger.debug("Hello request RDB")
-# === Connection ===
-# The RethinkDB server doesn’t use a thread-per-connnection approach,
-# so opening connections per request will not slow down your database.
+#     ##############################
+#     # RETHINKDB
+# # // TO FIX, not for every endpoint
+#     if RDB_AVAILABLE:
+#         @microservice.before_request
+#         def before_request():
+#             logger.debug("Hello request RDB")
+# # === Connection ===
+# # The RethinkDB server doesn’t use a thread-per-connnection approach,
+# # so opening connections per request will not slow down your database.
 
-# Database should be already connected in "before_first_request"
-# But the post method fails to find the object!
-            from .resources.services.rethink import try_to_connect
-            try_to_connect()
+# # Database should be already connected in "before_first_request"
+# # But the post method fails to find the object!
+#             from .resources.services.rethink import try_to_connect
+#             try_to_connect()
 
     ##############################
     # Logging responses
