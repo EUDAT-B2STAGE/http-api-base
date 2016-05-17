@@ -5,13 +5,17 @@ Implement flask login with other services than sqlalchemy
 """
 
 from __future__ import absolute_import
+
+from datetime import datetime
+from flask.ext.security.utils import encrypt_password, verify_password
+from flask.ext.login import make_secure_token
 from ..neo4j.graph import GraphFarm
 
 from .... import get_logger
 logger = get_logger(__name__)
 
 
-# TO FIX
+# TO FIX withing the Graph
 class MyRole(object):
     def __init__(self):
         self.name = 'Admin'
@@ -21,11 +25,12 @@ class MyRole(object):
 # Graph Based
 class GraphUser(object):
 
-    def __init__(self, id, email, roles):
+    def __init__(self, id, email, password, roles):
 
         self.id = id
         self.roles = roles
         self.email = email
+        self.hashed_password = password
 
     def is_authenticated(self):
         return True
@@ -40,14 +45,23 @@ class GraphUser(object):
         return self.email
 
     def get_auth_token(self):
-        """
-        Encode a secure token for cookie
-        """
-        return "TOKEN-123"
+        return make_secure_token(
+            # Use the encrypted password
+            self.hashed_password,
+            # Use the time to make the token change
+            str(datetime.now()),
+            # Key will be the id of the user
+            key=str(self.id))
+
+    @staticmethod
+    def password_hash(password):
+        return encrypt_password(password)
 
     @staticmethod
     def validate_login(password_hash, password):
-        return password == "123"
+        return verify_password(password, password_hash)
+        # This does not work, because of the Mac Hash in Flask Security
+        # return cls.password_hash(password) == password_hash
 
     @staticmethod
     def get_user(email=None, token=None):
@@ -88,29 +102,15 @@ class GraphUser(object):
         if user is None:
             return None
 
-        return GraphUser(user._id, user.email, [MyRole()])
+        return GraphUser(
+            user._id, user.email, user.password,
+            [MyRole()])
 
 
 def load_graph_user(username):
     print("\n\n\n", "LOAD USER? ", username, "\n\n\n")
-
-    g = GraphFarm.get_graph_instance()
-
-    #TO BE CHANGED TO USE THE GRAPH
-    """
-    u = app.config['USERS_COLLECTION'].find_one({"_id": username})
-    if not u:
-        return None
-    return User(u['_id'])
-    """
-    return None
-
-    # USING THE GRAPH:
-    """
-    user = graph.User.nodes.filter(email=username)
-    for u in user.all():
-        return User(u._id)
-    """
+    logger.critical("Reloading session user with Graphdb and Flask Login!!!")
+    return GraphUser.get_graph_user(email=username)
 
 
 def load_graph_token(token):
@@ -118,6 +118,8 @@ def load_graph_token(token):
     # http://thecircuitnerd.com/flask-login-tokens/
     return GraphUser.get_graph_user(token=token)
 
+
+# THE FUNCTION BELOW DOES NOT WORK YET
 
 # def unauthorized_on_graph():
 #     # do stuff
