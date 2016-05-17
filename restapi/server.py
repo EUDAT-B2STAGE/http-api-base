@@ -103,19 +103,19 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
         logger.info("FLASKING! Injected security")
 
-# ####################
-# # GRAPHDB
-
+        ####################
+        # GRAPHDB login?
         from .resources.services.detect import GRAPHDB_AVAILABLE
         if GRAPHDB_AVAILABLE:
             logger.warning("Using Graphdb for storing users")
             from .resources.services.accounting.graphbased \
-                import load_graph_user, load_graph_token, unauthorized_on_graph
+                import load_graph_user, \
+                load_graph_token   # , unauthorized_on_graph
 
             lm = microservice.login_manager
             lm.user_loader(load_graph_user)
             lm.token_loader(load_graph_token)
-            lm.unauthorized_handler(unauthorized_on_graph)
+            # lm.unauthorized_handler(unauthorized_on_graph)
 
     ##############################
     # Restful plugin

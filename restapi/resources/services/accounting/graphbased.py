@@ -11,13 +11,21 @@ from .... import get_logger
 logger = get_logger(__name__)
 
 
+# TO FIX
+class MyRole(object):
+    def __init__(self):
+        self.name = 'Admin'
+
+
 #######################################
 # Graph Based
-class GraphUser():
+class GraphUser(object):
 
-    def __init__(self, username):
-        self.username = username
-        self.token = "TOKEN-123"
+    def __init__(self, id, email, roles):
+
+        self.id = id
+        self.roles = roles
+        self.email = email
 
     def is_authenticated(self):
         return True
@@ -29,7 +37,7 @@ class GraphUser():
         return False
 
     def get_id(self):
-        return self.username
+        return self.email
 
     def get_auth_token(self):
         """
@@ -39,11 +47,54 @@ class GraphUser():
 
     @staticmethod
     def validate_login(password_hash, password):
-        return password =="123"
+        return password == "123"
+
+    @staticmethod
+    def get_user(email=None, token=None):
+
+        if email is None and token is None:
+            return None
+
+        g = GraphFarm().get_graph_instance()
+
+        user = None
+        try:
+            if email is not None:
+                user = g.User.nodes.get(email=email)
+            if token is not None:
+                user = g.User.nodes.get(token=token)
+        except g.User.DoesNotExist:
+            logger.warning(
+                "Could not find user from: (%s, %s)" % (email, token))
+            return None
+
+        return user
+
+    @classmethod
+    def set_graph_user_token(cls, email, token):
+        if token is None:
+            return False
+
+        user = cls.get_user(email=email)
+        if user is None:
+            return False
+
+        user.token = token
+        user.save()
+
+    @classmethod
+    def get_graph_user(cls, email=None, token=None):
+        user = cls.get_user(email, token)
+        if user is None:
+            return None
+
+        return GraphUser(user._id, user.email, [MyRole()])
 
 
 def load_graph_user(username):
     print("\n\n\n", "LOAD USER? ", username, "\n\n\n")
+
+    g = GraphFarm.get_graph_instance()
 
     #TO BE CHANGED TO USE THE GRAPH
     """
@@ -63,17 +114,12 @@ def load_graph_user(username):
 
 
 def load_graph_token(token):
-
-    print("\n\n\n ", token, "\n\n\n")
-
     # real version here:
     # http://thecircuitnerd.com/flask-login-tokens/
-
-    return User(5)
-    #if not => return None
+    return GraphUser.get_graph_user(token=token)
 
 
-def unauthorized_on_graph():
-    # do stuff
-    print("\n\n\n ", "Unauthorized!", "\n\n\n")
-    return "Unauthorized!"
+# def unauthorized_on_graph():
+#     # do stuff
+#     print("\n\n\n ", "Unauthorized!", "\n\n\n")
+#     return "Unauthorized!"
