@@ -16,15 +16,10 @@ from datetime import datetime
 from flask.ext.security.utils import encrypt_password, verify_password
 from flask.ext.login import make_secure_token
 from ..neo4j.graph import GraphFarm
+from confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
 
 from .... import get_logger
 logger = get_logger(__name__)
-
-
-# TO FIX withing the Graph
-class MyRole(object):
-    def __init__(self):
-        self.name = 'Admin'
 
 
 #######################################
@@ -51,6 +46,9 @@ class GraphUser(object):
         return self.email
 
     def get_auth_token(self):
+
+# Use JWT
+
         return make_secure_token(
             # Use the encrypted password
             self.hashed_password,
@@ -74,13 +72,13 @@ class GraphUser(object):
 
         if email is None and token is None:
             return None
-
         g = GraphFarm().get_graph_instance()
 
         user = None
         try:
             if email is not None:
                 user = g.User.nodes.get(email=email)
+# USE JWT
             if token is not None:
                 user = g.User.nodes.get(token=token)
         except g.User.DoesNotExist:
@@ -120,6 +118,9 @@ def load_graph_user(username):
 
 
 def load_graph_token(token):
+
+# CHECK TTL?
+
     # real version here:
     # http://thecircuitnerd.com/flask-login-tokens/
     return GraphUser.get_graph_user(token=token)
@@ -131,3 +132,39 @@ def load_graph_token(token):
 #     # do stuff
 #     print("\n\n\n ", "Unauthorized!", "\n\n\n")
 #     return "Unauthorized!"
+
+
+#######################################
+# INIT
+def _create_default_graph_roles(graph):
+
+    roles = []
+    main_role = graph.Role(name=ROLE_USER)
+    main_role.save()
+    roles.append(main_role)
+    admin_role = graph.Role(name=ROLE_ADMIN)
+    admin_role.save()
+    roles.append(admin_role)
+    return roles
+
+
+def _create_default_graph_user(graph, roles):
+    user = graph.User(
+        name='Default', surname='User', email=USER,
+        password=GraphUser.password_hash(PWD))
+    user.save()
+    for role in roles:
+        user.roles.connect(role)
+
+
+def init_graph_accounts():
+    g = GraphFarm().get_graph_instance()
+    if len(g.Role.nodes) < 1:
+        logger.warning("No roles inside graphdb. Injected defaults.")
+        roles = _create_default_graph_roles(g)
+
+        if len(g.User.nodes) < 1:
+            logger.warning("No users inside graphdb. Injected default.")
+            _create_default_graph_user(g, roles)
+
+    exit(1)

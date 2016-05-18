@@ -142,9 +142,15 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
             exit(1)
 
         if enable_security:
-            from .security import db_auth
-            # Prepare user/roles
-            db_auth()
+            if GRAPHDB_AVAILABLE:
+                from .resources.services.accounting.graphbased \
+                    import init_graph_accounts
+                init_graph_accounts()
+            else:
+                # SQLALCHEMY
+                from .security import db_auth
+                # Prepare user/roles
+                db_auth()
 
     ##############################
     # Flask admin
