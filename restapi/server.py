@@ -117,6 +117,9 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
             lm.token_loader(load_graph_token)
             # lm.unauthorized_handler(unauthorized_on_graph)
 
+# UHM
+            microservice.config['SECURITY_LOGIN_URL'] = '/logintest'
+
     ##############################
     # Restful plugin
     from .rest import epo, create_endpoints
@@ -145,7 +148,7 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
     ##############################
     # Flask admin
-    if enable_security:
+    if enable_security and not GRAPHDB_AVAILABLE:
         from .admin import admin, UserView, RoleView
         from .models import User, Role
         from flask.ext.admin import helpers as admin_helpers

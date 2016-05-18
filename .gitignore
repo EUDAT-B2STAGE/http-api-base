@@ -1,5 +1,6 @@
 # Tests coverage
 cover/
+htmlcov/
 
 # sqllite dbs
 *.db

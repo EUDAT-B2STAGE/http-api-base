@@ -2,6 +2,12 @@
 
 """
 Implement flask login with other services than sqlalchemy
+
+http://blog.miguelgrinberg.com/post/restful-authentication-with-flask
+https://github.com/maxcountryman/flask-login/blob/master/flask_login/utils.py#L109
+https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py#L143
+
+
 """
 
 from __future__ import absolute_import
