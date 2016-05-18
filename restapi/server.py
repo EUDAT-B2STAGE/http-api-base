@@ -186,7 +186,7 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
     # Logging responses
     @microservice.after_request
     def log_response(response):
-        logger.info("{} {} {}\n{}".format(
+        logger.info("{} {} {} {}".format(
                     request.method, request.url, request.data, response))
         return response
     # OR

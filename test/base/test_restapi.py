@@ -6,39 +6,36 @@ Test  dataobjects endpoints
 
 from __future__ import absolute_import
 
-import io
-import os
-import json
 import unittest
+import logging
+import restapi.htmlcodes as hcodes
 from restapi.server import create_app
+from restapi import get_logger, myself
+from confs.config import TEST_HOST, SERVER_PORT, ALL_API_URL
 
-from restapi import get_logger
+__author__ = myself
+logger = get_logger(__name__)
+logger.setLevel(logging.DEBUG)
 
-# LOGGER?
-
-# COSTANTS?
-
-
-__author__ = 'Roberto Mucci (r.mucci@cineca.it)'
+API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, ALL_API_URL)
 
 
 class TestDataObjects(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        "set up test fixtures"
-        print('### Setting up flask server ###')
+        logger.debug('### Setting up the Flask server ###')
         app = create_app()
         app.config['TESTING'] = True
         self.app = app.test_client()
 
     @classmethod
     def tearDownClass(self):
-        "tear down test fixtures"
-        print('### Tearing down the flask server ###')
+        logger.debug('### Tearing down the Flask server ###')
 
     def test_00_something(self):
         """ Test that the flask server is running and reachable"""
 
-        r = self.app.get('http://localhost:8081/api/verify')
-        self.assertEqual(r.status_code, 200)
+        logger.info("Verify if API is online")
+        r = self.app.get(API_URI + '/verify')
+        self.assertEqual(r.status_code, hcodes.HTTP_OK_BASIC)

@@ -48,6 +48,7 @@ DEBUG = os.environ.get('API_DEBUG', default_debug)
 ###################################################
 ###################################################
 SERVER_HOSTS = '0.0.0.0'
+TEST_HOST = 'localhost'
 SERVER_PORT = int(os.environ.get('PORT', 5000))
 
 # Other configuration files you may use/need inside the 'confs' directory
