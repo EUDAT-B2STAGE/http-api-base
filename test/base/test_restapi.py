@@ -33,8 +33,10 @@ class TestDataObjects(unittest.TestCase):
     def tearDownClass(self):
         logger.debug('### Tearing down the Flask server ###')
 
-    def test_00_something(self):
-        """ Test that the flask server is running and reachable"""
+    def test_01_get_verify(self):
+        """
+        Test that the flask server is running and reachable
+        """
 
         logger.info("Verify if API is online")
         r = self.app.get(API_URI + '/verify')
