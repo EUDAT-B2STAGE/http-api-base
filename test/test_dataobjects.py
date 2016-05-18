@@ -44,7 +44,17 @@ class TestDataObjects(unittest.TestCase):
                           'test.pdf')))
         self.assertEqual(r.status_code, 200)  # maybe 201 is more appropriate
 
-    def test_03_post_large_dataobjects(self):
+    def test_03_post_dataobjects_in_specific_collection(self):
+        """ Test file upload: POST """
+        # I need to understand who to reapeat the upload test, since
+        # overwrite is not allowed
+        r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
+                         file=(io.BytesIO(b"this is a test"),
+                          'test1.pdf'), collection='/home/guest'))
+        self.assertEqual(r.status_code, 200)  # maybe 201 is more appropriate
+
+
+    def test_04_post_large_dataobjects(self):
         """ Test large file upload: POST """
         path = os.path.join('/home/irods', 'img.JPG')
         with open(path, "wb") as f:
@@ -55,7 +65,7 @@ class TestDataObjects(unittest.TestCase):
         os.remove(path)
         self.assertEqual(r.status_code, 200)  # maybe 201 is more appropriate
 
-    def test_04_get_dataobjects(self):
+    def test_05_get_dataobjects(self):
         """ Test file download: GET """
         deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
                                  'test.pdf')
@@ -63,14 +73,14 @@ class TestDataObjects(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.data, b'this is a test')
 
-    def test_05_get_large_dataobjects(self):
+    def test_06_get_large_dataobjects(self):
         """ Test file download: GET """
         deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
                                  'img.JPG')
         r = self.app.get(deleteURI, data=dict(collection=('/home/guest')))
         self.assertEqual(r.status_code, 200)
 
-    def test_06_post_already_existing_dataobjects(self):
+    def test_07_post_already_existing_dataobjects(self):
         """ Test file upload with already existsing object: POST """
         r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
                          file=(io.BytesIO(b"this is a test"),
@@ -80,7 +90,7 @@ class TestDataObjects(unittest.TestCase):
         error_message = content['Response']['errors']
         print(error_message)
 
-    def test_07_delete_dataobjects(self):
+    def test_08_delete_dataobjects(self):
         """ Test file delete: DELETE """
 
         # Obatin the list of objects end delete
@@ -100,7 +110,7 @@ class TestDataObjects(unittest.TestCase):
             r = self.app.delete(deleteURI, data=dict(collection=(collection)))
             self.assertEqual(r.status_code, 200)
 
-    def test_08_post_dataobjects_in_non_existing_collection(self):
+    def test_09_post_dataobjects_in_non_existing_collection(self):
         """ Test file upload in a non existing collection: POST """
         r = self.app.post('http://localhost:8080/api/dataobjects', data=dict(
                          collection=('/home/wrong/guest'),
@@ -110,7 +120,7 @@ class TestDataObjects(unittest.TestCase):
         error_message = content['Response']['errors'][0]['iRODS']
         self.assertIn('collection does not exist', error_message)
 
-    def test_09_get_non_exising_dataobjects(self):
+    def test_10_get_non_exising_dataobjects(self):
         """ Test file download of a non existing object: GET """
         deleteURI = os.path.join('http://localhost:8080/api/dataobjects',
                                  'test.pdf')
@@ -120,7 +130,7 @@ class TestDataObjects(unittest.TestCase):
         error_message = content['Response']['errors'][0]['iRODS']
         self.assertIn('does not exist on the specified path', error_message)
 
-    def test_10_get_dataobjects_in_non_exising_collection(self):
+    def test_11_get_dataobjects_in_non_exising_collection(self):
         """ Test file download in a non existing collection: GET """
         delURI = os.path.join('http://localhost:8080/api/dataobjects',
                               'test.pdf')
