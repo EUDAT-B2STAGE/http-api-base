@@ -40,6 +40,10 @@ class IrodsException(RestApiException):
         return self.parsedError
 
     def parse_CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME(self, utility, error_string, error_code, error_label, role='user'):
+        #imeta add -d obj key value
+        #imeta add -d obj key value
+        #ERROR: rcModAVUMetadata failed with error -809000 CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
+
         return "A resource already exists with this name"
 
     def parse_CAT_NO_ACCESS_PERMISSION(self, utility, error_string, error_code, error_label, role='user'):
@@ -434,6 +438,136 @@ class ICommands(BashCommands):
         self.basic_icom(com, args)
         # Debug
         logger.debug("Set %s permission to %s for %s" % (permission, path, userOrGroup))
+
+    def get_permissions(self, path):
+        """
+            Output example:
+            {
+                'path': '/your_zone/your_path/',
+                'ACL': [
+                            ['your_user', 'your_zone', 'own'], 
+                            ['other_user', 'your_zone', 'read']
+                        ], 
+                'inheritance': 'Disabled'
+            }
+        """
+        iout = self.list(path=path, acl=True)
+        logger.debug(iout)
+
+        data = {}
+        for d in iout:
+            if d[0] == "C-":
+                data["path"] = d[1]
+            elif d[0] == "ACL":
+                data["ACL"] = d[2:]
+            elif d[0] == "Inheritance":
+                data["inheritance"] = d[2]
+            else:
+                data["path"] = d[0]
+
+        popMe = None 
+        for index, element in enumerate(data["ACL"]):
+
+            if element == 'object':
+                popMe = index
+            else:
+                data["ACL"][index] = re.split('#|:', data["ACL"][index])
+
+        if popMe is not None:
+            data["ACL"].pop(popMe)
+
+        return data
+
+    def list_as_json(self, root, level=0, recursive=True, firstRoot=None):
+
+        data = {}
+
+        if firstRoot is None:
+          firstRoot = root
+      
+        iout = self.list(path=root,detailed=True)
+        path = None
+        pathLen = 0;
+        rootLen = len(firstRoot)
+        acl = None
+        inheritance = None
+        for d in iout:
+
+          if len(d) <= 1:
+            if path is None:
+              path = d[0]
+              if path.endswith(":"):
+                path = path[:-1]
+              if not path.endswith("/"):
+                path+="/"
+
+              pathLen = len(path)
+            continue
+
+          row = {}
+
+          if d[0] == "ACL":
+            acl = d
+            continue
+          if d[0] == "Inheritance":
+            inheritance = d
+            continue
+
+          if d[0] == "C-":
+
+            absname = d[1]
+            if recursive:
+              objects = self.list_as_json(absname, level+1, True, firstRoot)
+
+            name = absname[pathLen:]
+            #print(path, "vs", name)
+
+            row["name"] = name
+            row["owner"] = "-"
+            row["acl"] = acl
+            row["acl_inheritance"] = inheritance
+            row["object_type"] = "collection"
+            row["content_length"] = 0 
+            row["last_modified"] = 0 
+            if recursive:
+              row["objects"] = objects
+            row["path"] = path[1+rootLen:]
+
+          else:
+
+            row["name"] = d[6]
+            row["owner"] = d[0]
+            row["acl"] = acl
+            row["acl_inheritance"] = inheritance
+            row["object_type"] = "dataobject"
+            row["content_length"] = d[3] 
+            row["last_modified"] = d[4] 
+            row["path"] = path[1+rootLen:]
+
+          data[row["name"]] = row
+
+        return data    
+
+    def check_user_exists(self, username, checkGroup=None):
+        com = 'iuserinfo'
+        args = []
+        args.append(username)
+        output = self.basic_icom(com, args)
+
+        regExpr = "User %s does not exist\." % username
+        m = re.search(regExpr, output)
+        if m:
+            return False, "User %s does not exist" % username
+
+        if checkGroup is not None:
+            regExpr = "member of group: %s\n" % checkGroup
+            m = re.search(regExpr, output)
+
+            if not m:
+                return False, "User %s is not in group %s" % (username, checkGroup)
+
+        return True, "OK"
+
 
 ################################################
 ################################################

@@ -9,29 +9,16 @@ from __future__ import division, absolute_import
 from . import myself, lic, get_logger
 
 import os
-from flask import Flask, request, got_request_exception, jsonify
-from .jsonify import make_json_error
-from werkzeug.exceptions import default_exceptions
-from .jsonify import log_exception, RESTError
+from flask import Flask, request  # , jsonify, got_request_exception
+# from .jsonify import make_json_error
+# from werkzeug.exceptions import default_exceptions
+# from .jsonify import log_exception, RESTError
 
 __author__ = myself
 __copyright__ = myself
 __license__ = lic
 
 logger = get_logger(__name__)
-
-###############################
-# RETHINKDB
-RDB_AVAILABLE = False
-MODELS = []
-if 'RDB_NAME' in os.environ:
-    from .resources.services.rethink import load_models, wait_for_connection
-    # Look for models
-    MODELS = load_models()
-    if len(MODELS) > 0:
-        RDB_AVAILABLE = True
-        wait_for_connection()
-        logger.info("Found RethinkDB container")
 
 
 ###############################
@@ -51,7 +38,6 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
                          # the default look of flask-admin
                          template_folder=template_dir,
                          **kwargs)
-
     # ##############################
     # # ERROR HANDLING
 
@@ -117,6 +103,23 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
         logger.info("FLASKING! Injected security")
 
+        ####################
+        # GRAPHDB login?
+        from .resources.services.detect import GRAPHDB_AVAILABLE
+        if GRAPHDB_AVAILABLE:
+            logger.warning("Using Graphdb for storing users")
+            from .resources.services.accounting.graphbased \
+                import load_graph_user, \
+                load_graph_token   # , unauthorized_on_graph
+
+            lm = microservice.login_manager
+            lm.user_loader(load_graph_user)
+            lm.token_loader(load_graph_token)
+            # lm.unauthorized_handler(unauthorized_on_graph)
+
+# UHM
+            microservice.config['SECURITY_LOGIN_URL'] = '/logintest'
+
     ##############################
     # Restful plugin
     from .rest import epo, create_endpoints
@@ -145,7 +148,7 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
     ##############################
     # Flask admin
-    if enable_security:
+    if enable_security and not GRAPHDB_AVAILABLE:
         from .admin import admin, UserView, RoleView
         from .models import User, Role
         from flask.ext.admin import helpers as admin_helpers
@@ -163,27 +166,27 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
         logger.info("FLASKING! Injected admin endpoints")
 
-    ##############################
-    # RETHINKDB
-# // TO FIX, not for every endpoint
-    if RDB_AVAILABLE:
-        @microservice.before_request
-        def before_request():
-            logger.debug("Hello request RDB")
-# === Connection ===
-# The RethinkDB server doesn’t use a thread-per-connnection approach,
-# so opening connections per request will not slow down your database.
+#     ##############################
+#     # RETHINKDB
+# # // TO FIX, not for every endpoint
+#     if RDB_AVAILABLE:
+#         @microservice.before_request
+#         def before_request():
+#             logger.debug("Hello request RDB")
+# # === Connection ===
+# # The RethinkDB server doesn’t use a thread-per-connnection approach,
+# # so opening connections per request will not slow down your database.
 
-# Database should be already connected in "before_first_request"
-# But the post method fails to find the object!
-            from .resources.services.rethink import try_to_connect
-            try_to_connect()
+# # Database should be already connected in "before_first_request"
+# # But the post method fails to find the object!
+#             from .resources.services.rethink import try_to_connect
+#             try_to_connect()
 
     ##############################
     # Logging responses
     @microservice.after_request
     def log_response(response):
-        logger.info("{} {} {}\n{}".format(
+        logger.info("{} {} {} {}".format(
                     request.method, request.url, request.data, response))
         return response
     # OR
