@@ -12,6 +12,7 @@ https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.
 
 from __future__ import absolute_import
 
+import jwt
 from datetime import datetime
 from flask.ext.security.utils import encrypt_password, verify_password
 from flask.ext.login import make_secure_token
@@ -20,6 +21,11 @@ from confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
 
 from .... import get_logger
 logger = get_logger(__name__)
+
+
+# JWT STUFF
+JWT_SECRET = 'secret'
+JWT_ALGO = 'HS256'
 
 
 #######################################
@@ -54,8 +60,7 @@ class GraphUser(object):
         }
 
         # JWT token
-        import jwt
-        byte_token = jwt.encode(payload, 'secret', algorithm='HS256')
+        byte_token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGO)
         return byte_token.decode()
 
         # Normal token
@@ -90,6 +95,11 @@ class GraphUser(object):
                 user = g.User.nodes.get(email=email)
 # USE JWT
             if token is not None:
+                print("TOKEN IS", token)
+                import jwt
+                payload = jwt.decode(
+                    token, JWT_SECRET, algorithms=[JWT_ALGO])
+                print("TEST", payload)
                 user = g.User.nodes.get(token=token)
         except g.User.DoesNotExist:
             logger.warning(
