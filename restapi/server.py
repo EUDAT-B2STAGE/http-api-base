@@ -112,10 +112,16 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
                 import load_graph_user, \
                 load_graph_token   # , unauthorized_on_graph
 
-            lm = microservice.login_manager
-            lm.user_loader(load_graph_user)
-            lm.token_loader(load_graph_token)
-            # lm.unauthorized_handler(unauthorized_on_graph)
+            login_manager = microservice.login_manager
+            # login_manager.user_loader(load_graph_user)
+            login_manager.token_loader(load_graph_token)
+            # login_manager.unauthorized_handler(unauthorized_on_graph)
+
+# flask-login.readthedocs.io/en/latest/#custom-login-using-request-loader
+        @login_manager.request_loader
+        def load_user_from_request(request):
+            print("TEST", request)
+            # print(request.headers, request.args)
 
 # UHM
             microservice.config['SECURITY_LOGIN_URL'] = '/logintest'
