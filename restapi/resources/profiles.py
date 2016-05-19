@@ -93,6 +93,8 @@ class Account(ExtendedApiResource):
         DBSession = sessionmaker(bind=engine)
         session = DBSession()
 
+# // TO FIX:
+# USE JWT
         # User from token
         token = request.headers.get('Authentication-Token')
         tokenizer = session.query(Tokenizer).filter_by(token=token).first()
