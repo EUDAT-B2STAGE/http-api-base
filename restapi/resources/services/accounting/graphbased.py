@@ -47,8 +47,18 @@ class GraphUser(object):
 
     def get_auth_token(self):
 
-# Use JWT
+        payload = {
+            'user_id': self.id,
+            'hpwd': self.hashed_password,
+            'emitted': str(datetime.now())
+        }
 
+        # JWT token
+        import jwt
+        byte_token = jwt.encode(payload, 'secret', algorithm='HS256')
+        return byte_token.decode()
+
+        # Normal token
         return make_secure_token(
             # Use the encrypted password
             self.hashed_password,
@@ -106,9 +116,12 @@ class GraphUser(object):
         if user is None:
             return None
 
-        return GraphUser(
-            user._id, user.email, user.password,
-            [MyRole()])
+        # Get connected roles
+        roles = []
+        for role in user.roles.all():
+            roles.append(role)
+            # roles.append({'name': role.name})
+        return GraphUser(user._id, user.email, user.password, roles)
 
 
 def load_graph_user(username):
@@ -167,4 +180,4 @@ def init_graph_accounts():
             logger.warning("No users inside graphdb. Injected default.")
             _create_default_graph_user(g, roles)
 
-    exit(1)
+    # exit(1)
