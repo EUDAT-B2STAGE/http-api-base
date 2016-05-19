@@ -30,7 +30,7 @@ JWT_ALGO = 'HS256'
 
 #######################################
 # Graph Based
-class GraphUser(object):
+class UserModel(object):
 
     def __init__(self, id, email, password, roles):
 
@@ -131,13 +131,31 @@ class GraphUser(object):
         for role in user.roles.all():
             roles.append(role)
             # roles.append({'name': role.name})
-        return GraphUser(user._id, user.email, user.password, roles)
+        return UserModel(user._id, user.email, user.password, roles)
+
+    def emit_token_from_credentials(auth_user, auth_pwd):
+        user = UserModel.get_graph_user(email=auth_user)
+        token = None
+
+        # Check password and create token if fine
+        if user is not None:
+            # Validate password
+            if UserModel.validate_login(
+               user.hashed_password, auth_pwd):
+
+                logger.info("Validated credentials")
+
+                # Create a new token and save it
+                token = user.get_auth_token()
+# USE JWT and DO NOT SAVE INSIDE THE DATABASE
+                UserModel.set_graph_user_token(auth_user, token)
+        return (user, token)
 
 
 def load_graph_user(username):
     print("\n\n\n", "LOAD USER? ", username, "\n\n\n")
     logger.critical("Reloading session user with Graphdb and Flask Login!!!")
-    return GraphUser.get_graph_user(email=username)
+    return UserModel.get_graph_user(email=username)
 
 
 def load_graph_token(token):
@@ -146,7 +164,7 @@ def load_graph_token(token):
 
     # real version here:
     # http://thecircuitnerd.com/flask-login-tokens/
-    return GraphUser.get_graph_user(token=token)
+    return UserModel.get_graph_user(token=token)
 
 
 # THE FUNCTION BELOW DOES NOT WORK YET
@@ -174,7 +192,7 @@ def _create_default_graph_roles(graph):
 def _create_default_graph_user(graph, roles):
     user = graph.User(
         name='Default', surname='User', email=USER,
-        password=GraphUser.password_hash(PWD))
+        password=UserModel.password_hash(PWD))
     user.save()
     for role in roles:
         user.roles.connect(role)
