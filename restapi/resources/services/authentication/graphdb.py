@@ -28,6 +28,42 @@ JWT_SECRET = 'secret'
 JWT_ALGO = 'HS256'
 
 
+"""
+
+# MAKE THIS WORK WITH JWT
+class MyGraphLogin(ExtendedApiResource, GraphFarm):
+
+    def get(self):
+        return "Hello World! I need user and pwd via POST :-)"
+
+    # @decorate.apimethod
+    def post(self):
+
+        from flask.ext.restful import request
+        from flask.ext.login import login_user
+        from ..services.accounting.graphbased import UserModel
+
+        j = request.get_json(force=True)
+        if 'username' not in j or 'password' not in j:
+            return self.response(
+                errors={'Missing credentials':
+                        'you need to specify username and password'})
+
+        user, token = \
+            UserModel.emit_token_from_credentials(j['username'], j['password'])
+
+        # In case something is wrong
+        if user is None or token is None:
+            return self.response(errors={
+                'Invalid credentials': 'wrong username or password'},
+                code=hcodes.HTTP_BAD_UNAUTHORIZED)
+
+        # Save the user for flask login sessions
+        login_user(user)
+
+        return self.response({'Authentication-token': token})
+
+
 #######################################
 # Graph Based
 class UserModel(object):
@@ -209,3 +245,5 @@ def init_graph_accounts():
             _create_default_graph_user(g, roles)
 
     # exit(1)
+
+"""

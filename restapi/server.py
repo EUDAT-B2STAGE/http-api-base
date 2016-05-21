@@ -89,30 +89,14 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
     if enable_security:
 
         logger.info("FLASKING! Injecting security")
-# SHOULD LOAD MY AUTH CLASS
 
-        ####################
-        # GRAPHDB login?
-        if GRAPHDB_AVAILABLE:
-            logger.info("Should use graph for security")
-#             logger.warning("Using Graphdb for storing users")
-#             from .resources.services.accounting.graphbased \
-#                 import load_graph_user, \
-#                 load_graph_token   # , unauthorized_on_graph
-
-#             login_manager = microservice.login_manager
-#             login_manager.user_loader(load_graph_user)
-#             login_manager.token_loader(load_graph_token)
-#             # login_manager.unauthorized_handler(unauthorized_on_graph)
-
-# # flask-login.readthedocs.io/en/latest/#custom-login-using-request-loader
-#             def load_user_from_request(request):
-#                 print("TEST REQUEST", request)
-#                 # print(request.headers, request.args)
-
-#             login_manager.request_loader(load_user_from_request)
-#     # UHM
-#             # microservice.config['SECURITY_LOGIN_URL'] = '/logintest'
+    """
+    ## WORK IN PROGRESS!!
+    # SHOULD LOAD MY AUTH CLASS
+        # Dinamically load from a string chosen by the user the right module
+        # or set a default by using containers environment variable
+        # (need to set some priority too)
+    """
 
     ##############################
     # Restful plugin
@@ -141,10 +125,13 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
         # INIT USERS/ROLES FOR SECURITY
         if enable_security:
-            if GRAPHDB_AVAILABLE:
-                from .resources.services.accounting.graphbased \
-                    import init_graph_accounts
-                init_graph_accounts()
+
+            logger.critical("SHOULD INIT USERS and ROLES HERE!")
+
+            # if GRAPHDB_AVAILABLE:
+            #     from .resources.services.accounting.graphbased \
+            #         import init_graph_accounts
+            #     init_graph_accounts()
             # else:
             #     # SQLALCHEMY
             #     from .security import db_auth
