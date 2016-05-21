@@ -8,12 +8,13 @@ We create all the components here!
 from __future__ import division, absolute_import
 
 import os
-from flask import Flask, request  # , jsonify, got_request_exception
+from flask import Flask, request, g  # , jsonify, got_request_exception
 # from .jsonify import make_json_error
 # from werkzeug.exceptions import default_exceptions
 # from .jsonify import log_exception, RESTError
 
 from .resources.services.detect import GRAPHDB_AVAILABLE
+from .meta import Meta
 from . import myself, lic, get_logger
 
 __author__ = myself
@@ -23,7 +24,40 @@ __license__ = lic
 logger = get_logger(__name__)
 
 
-###############################
+########################
+# Configure Secret Key #
+########################
+def install_secret_key(app, filename='secret_key'):
+    """
+
+Found at
+https://github.com/pallets/flask/wiki/Large-app-how-to
+
+    Configure the SECRET_KEY from a file
+    in the instance directory.
+
+    If the file does not exist, print instructions
+    to create it from a shell with a random key,
+    then exit.
+    """
+    import os
+    filename = os.path.join(app.instance_path, filename)
+
+    try:
+        app.config['SECRET_KEY'] = open(filename, 'rb').read()
+    except IOError:
+        print('Error: No secret key. Create it with:')
+        full_path = os.path.dirname(filename)
+        if not os.path.isdir(full_path):
+            print('mkdir -p {filename}'.format(filename=full_path))
+        print('head -c 24 /dev/urandom > {filename}'.format(filename=filename))
+        import sys
+        sys.exit(1)
+
+
+########################
+# Flask App factory    #
+########################
 def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
     """ Create the server istance for Flask application """
 
@@ -40,6 +74,8 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
                          # the default look of flask-admin
                          template_folder=template_dir,
                          **kwargs)
+
+    install_secret_key(microservice)
 
     # ##############################
     # # ERROR HANDLING
@@ -88,19 +124,27 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
     # Flask security
     if enable_security:
 
+        meta = Meta()
+        module_base = __package__ + ".resources.services.authentication"
+    # //TO FIX: 
+    # import from a selected parameter (os environment docker?)
+        module_name = module_base + '.' + 'graphdb'
+        module = meta.get_module_from_string(module_name)
         logger.info("FLASKING! Injecting security")
+
+        # To be stored
+        custom_auth = module.Authentication()
+
+        @microservice.before_request
+        def justatest():
+            g._custom_auth = custom_auth
 
     """
     ## WORK IN PROGRESS!!
-
-    # SHOULD LOAD MY AUTH CLASS
         # Dinamically load from a string chosen by the user the right module
         # or set a default by using containers environment variable
         # (need to set some priority too)
     """
-
-    from .resources.services.authentication.graphdb import Authentication
-    Authentication()
 
     ##############################
     # Restful plugin

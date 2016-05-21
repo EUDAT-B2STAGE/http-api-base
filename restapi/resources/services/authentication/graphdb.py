@@ -6,21 +6,36 @@ Implement authentication with graphdb as user database
 
 from __future__ import absolute_import
 
-# import jwt
-# from datetime import datetime
+from datetime import datetime
 # from flask.ext.security.utils import encrypt_password, verify_password
 # from flask.ext.login import make_secure_token
-# from ..neo4j.graph import GraphFarm
 # from confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
 
 from .generic import BaseAuthentication
+from ..neo4j.graph import GraphFarm
 
 from .... import get_logger
 logger = get_logger(__name__)
 
 
 class Authentication(BaseAuthentication):
-    pass
+
+    def get_user_object(self, username):
+
+        user = None
+        g = GraphFarm().get_graph_instance()
+        try:
+            user = g.User.nodes.get(email=username)
+        except g.User.DoesNotExist:
+            logger.warning("Could not find user for '%s'" % username)
+        return user
+
+    def fill_payload(self, userobj):
+        return {
+            'user_id': userobj._id,
+            'hpwd': userobj.hash_password,
+            'emitted': str(datetime.now())
+        }
 
 
 """

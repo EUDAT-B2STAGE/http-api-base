@@ -24,29 +24,10 @@ SERVICES:
 --- ✄ -----------------------
 Token:
 
-######################################################
-# Chosen library
-http://flask-httpauth.readthedocs.io/en/latest/
 # Example on JWT
 https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/examples/token_auth.py
-
-# Example on JWT from satellizer (angularjs):
-https://github.com/sahat/satellizer/blob/master/examples/server/python/app.py
 # More on authentication with flask:
 http://blog.miguelgrinberg.com/post/restful-authentication-with-flask
-
-
-######################################################
-def create_token(user):
-    payload = {
-
-def parse_token(req):
-
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-https://github.com/sahat/satellizer/blob/master/examples/server/python/app.py#L90
-
 
 ######################################################
 # API URLs for AUTH
@@ -68,6 +49,11 @@ https://github.com/sahat/satellizer/blob/master/examples/server/python/app.py#L9
 
 
 ######################################################
+✔ A generic/abstract class for auth @done (16-05-22 01:00)
+ ✔ With graphdb first real implementation @done (16-05-22 01:00)
+ ✔ Store the auth instance globally with flask g @done (16-05-22 01:00)
+ ☐ Recover the global auth obj with a decorator?
+☐ Role required decorator?
 ☐ JWT refactor
   ☐ content
   ☐ TTL

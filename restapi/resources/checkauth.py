@@ -26,6 +26,7 @@ from flask.ext.security import roles_required, auth_token_required
 class Verify(ExtendedApiResource):
     """ API online test """
 
+    @decorate.apimethod
     def get(self):
         return self.response("Hello World!")
 
@@ -33,15 +34,25 @@ class Verify(ExtendedApiResource):
 class Login(ExtendedApiResource):
     """ Let a user login with the developer chosen method """
 
+    @decorate.apimethod
     def get(self):
         return self.response(
             errors={"Wrong method":
                     "Please login with the POST method"},
             code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
+    @decorate.apimethod
     def post(self):
+        """ Using a service-dependent callback """
+        from flask import g
+        print(g.__dict__)
+        auth = g.get('_custom_auth', None)
+        if auth is None:
+            return self.response(
+                errors={"Authentication": "No auth object found!"},
+                code=hcodes.HTTP_BAD_CONFLICT)
 
-## SHOULD USE A USER-SPECIFIED CALLBACK HERE
+        auth.make_login("test", "test2")
 
         return self.response(
             errors={"Todo": "work in progress"},
@@ -51,6 +62,7 @@ class Login(ExtendedApiResource):
 class Logout(ExtendedApiResource):
     """ Let the logged user escape from here """
 
+    @decorate.apimethod
     @auth_token_required
     def get(self):
         return self.response("Hello World!")

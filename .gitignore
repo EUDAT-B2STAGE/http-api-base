@@ -1,3 +1,6 @@
+# Instance dependent files
+instance/
+
 # Tests coverage
 cover/
 htmlcov/
