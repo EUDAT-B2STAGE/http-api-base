@@ -8,6 +8,7 @@ Add auth checks called /checklogged and /testadmin
 from __future__ import division, absolute_import
 from .. import myself, lic, get_logger
 from .base import ExtendedApiResource
+from .. import htmlcodes as hcodes
 from . import decorators as decorate
 from flask.ext.security import roles_required, auth_token_required
 from confs import config
@@ -21,6 +22,31 @@ logger = get_logger(__name__)
 
 class Verify(ExtendedApiResource):
     """ API online test """
+
+    def get(self):
+        return self.response("Hello World!")
+
+
+class Login(ExtendedApiResource):
+    """ Let a user login with the developer chosen method """
+
+    def get(self):
+        return self.response(
+            errors={"Wrong method":
+                    "Please login with the POST method"},
+            code=hcodes.HTTP_BAD_UNAUTHORIZED)
+
+    def post(self):
+
+## SHOULD USE A USER-SPECIFIED CALLBACK HERE
+
+        return self.response(
+            errors={"Todo": "work in progress"},
+            code=hcodes.HTTP_BAD_UNAUTHORIZED)
+
+
+class Logout(ExtendedApiResource):
+    """ Let the logged user escape from here """
 
     def get(self):
         return self.response("Hello World!")

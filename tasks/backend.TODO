@@ -23,8 +23,7 @@ SERVICES:
 
 --- ✄ -----------------------
 BUGS:
- ☐ open issue flask-admin @REMEMBER
-   ☐ server.py:87
+  ☐ too many
 
 --- ✄ -----------------------
 Token:

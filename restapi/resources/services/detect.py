@@ -14,6 +14,10 @@ import os
 from ... import get_logger
 logger = get_logger(__name__)
 
+#######################################################
+# RELATIONAL DATABASE
+### Detect SQL database?
+### like sqllite, postgres, mysql
 
 #######################################################
 # GRAPH DATABASE

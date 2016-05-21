@@ -18,6 +18,11 @@ __license__ = lic
 
 logger = get_logger(__name__)
 
+
+##
+# ADD DETECT/USER FORCE HERE?
+##
+
 ####################################
 # Security
 udstore = SQLAlchemyUserDatastore(db, User, Role)
