@@ -52,7 +52,7 @@ http://blog.miguelgrinberg.com/post/restful-authentication-with-flask
 ✔ A generic/abstract class for auth @done (16-05-22 01:00)
  ✔ With graphdb first real implementation @done (16-05-22 01:00)
  ✔ Store the auth instance globally with flask g @done (16-05-22 01:00)
- ☐ Recover the global auth obj with a decorator?
+ ✔ Recover the global auth obj with a decorator? @done (16-05-22 01:14)
 ☐ Role required decorator?
 ☐ JWT refactor
   ☐ content

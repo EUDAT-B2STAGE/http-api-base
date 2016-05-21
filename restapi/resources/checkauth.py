@@ -42,17 +42,12 @@ class Login(ExtendedApiResource):
             code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
     @decorate.apimethod
+    @decorate.load_auth_obj
     def post(self):
         """ Using a service-dependent callback """
-        from flask import g
-        print(g.__dict__)
-        auth = g.get('_custom_auth', None)
-        if auth is None:
-            return self.response(
-                errors={"Authentication": "No auth object found!"},
-                code=hcodes.HTTP_BAD_CONFLICT)
 
-        auth.make_login("test", "test2")
+        # This instance is obtained throught the decorator
+        self._auth.make_login("test", "test2")
 
         return self.response(
             errors={"Todo": "work in progress"},

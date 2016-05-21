@@ -59,6 +59,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return
 
     def make_login(self, username, password):
+        print("\n\n\nMAKE THIS WORK\n\n\n", username, password, "\n\n")
         user = self.get_user_object(username)
         if not user or not self.check_password(user.hash_password, password):
             return None
