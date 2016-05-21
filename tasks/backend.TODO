@@ -22,13 +22,15 @@ SERVICES:
  - Irods virtual resources
 
 --- ✄ -----------------------
+Token:
+☐ JWT refactor
+  ☐ content
+  ☐ TTL
+  ☐ use it instead of graphdb calls
+☐ oauth2 user
+   ☐ profile endpoint
+
 BUGS:
   ☐ too many
 
 --- ✄ -----------------------
-Token:
- ☐ PyJWT
-   ☐ working snippet
-   https://github.com/sahat/satellizer/blob/master/examples/server/python/app.py
-   ☐ full integrated example
-   https://github.com/graup/flask-restless-security
