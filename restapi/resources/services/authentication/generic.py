@@ -7,11 +7,10 @@ Add auth checks called /checklogged and /testadmin
 
 from __future__ import division, absolute_import
 from .... import myself, lic, get_logger
+from ....auth import auth
 
 import abc
 import jwt
-from flask_httpauth import HTTPTokenAuth
-
 
 __author__ = myself
 __copyright__ = myself
@@ -20,6 +19,7 @@ __license__ = lic
 logger = get_logger(__name__)
 
 SECRET = 'top secret!'
+print("MUST USE AUTH", auth)
 
 
 class BaseAuthentication(metaclass=abc.ABCMeta):
@@ -31,11 +31,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     """
 
     JWT_ALGO = 'HS256'
-
-    def __init__(self, auth_type='Bearer'):
-        self.auth = HTTPTokenAuth(auth_type)
-        logger.warning(
-            "Initizialized a valid authentication class: [%s]" % auth_type)
 
     def create_token(self, payload):
         byte_token = jwt.encode(

@@ -12,6 +12,7 @@ from .base import ExtendedApiResource
 from .. import htmlcodes as hcodes
 from . import decorators as decorate
 from confs import config
+from ..auth import auth
 
 __author__ = myself
 __copyright__ = myself
@@ -19,7 +20,7 @@ __license__ = lic
 
 logger = get_logger(__name__)
 
-# TO FIX
+# TO FIX AND REMOVE
 from flask.ext.security import roles_required, auth_token_required
 
 
@@ -67,7 +68,8 @@ class VerifyLogged(ExtendedApiResource):
     """ Token authentication test """
 
     @decorate.apimethod
-    @auth_token_required
+    # @auth_token_required
+    @auth.login_required
     def get(self):
         return self.response("Valid user")
 

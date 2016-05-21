@@ -191,7 +191,7 @@ def all_rest_methods(decorator):
 
 
 ##############################
-# Allowing the user to recover from the global object of Flask
+# Allowing the developer to recover from the global object of Flask
 # the authentication instance
 def load_auth_obj(func):
     def wrapper(self, *args, **kwargs):
