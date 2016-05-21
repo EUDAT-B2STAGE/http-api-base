@@ -92,6 +92,17 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
     """
     ## WORK IN PROGRESS!!
+
+# Chosen library
+http://flask-httpauth.readthedocs.io/en/latest/
+# Example on JWT
+https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/examples/token_auth.py
+
+# Example on JWT from satellizer (angularjs):
+https://github.com/sahat/satellizer/blob/master/examples/server/python/app.py
+# More on authentication with flask:
+http://blog.miguelgrinberg.com/post/restful-authentication-with-flask
+
     # SHOULD LOAD MY AUTH CLASS
         # Dinamically load from a string chosen by the user the right module
         # or set a default by using containers environment variable
