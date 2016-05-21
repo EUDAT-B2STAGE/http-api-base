@@ -23,6 +23,51 @@ SERVICES:
 
 --- ✄ -----------------------
 Token:
+
+######################################################
+# Chosen library
+http://flask-httpauth.readthedocs.io/en/latest/
+# Example on JWT
+https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/examples/token_auth.py
+
+# Example on JWT from satellizer (angularjs):
+https://github.com/sahat/satellizer/blob/master/examples/server/python/app.py
+# More on authentication with flask:
+http://blog.miguelgrinberg.com/post/restful-authentication-with-flask
+
+
+######################################################
+def create_token(user):
+    payload = {
+
+def parse_token(req):
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+https://github.com/sahat/satellizer/blob/master/examples/server/python/app.py#L90
+
+
+######################################################
+# API URLs for AUTH
+
+@app.route('/auth/login', methods=['POST'])
+    return jsonify(token=token)
+
+@app.route('/auth/signup', methods=['POST'])
+    user = User(email=request.json['email'], password=request.json['password'])
+    return jsonify(token=token)
+
+@app.route('/auth/b2access')
+
+@app.route('/auth/logout')
+@login_required
+
+@app.route('/api/me')
+@login_required
+
+
+######################################################
 ☐ JWT refactor
   ☐ content
   ☐ TTL
@@ -30,6 +75,7 @@ Token:
 ☐ oauth2 user
    ☐ profile endpoint
 
+######################################################
 BUGS:
   ☐ too many
 

@@ -1,31 +1,26 @@
 # -*- coding: utf-8 -*-
 
 """
-Implement flask login with other services than sqlalchemy
-
-http://blog.miguelgrinberg.com/post/restful-authentication-with-flask
-https://github.com/maxcountryman/flask-login/blob/master/flask_login/utils.py#L109
-https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py#L143
-
-
+Implement authentication with graphdb as user database
 """
 
 from __future__ import absolute_import
 
-import jwt
-from datetime import datetime
-from flask.ext.security.utils import encrypt_password, verify_password
-from flask.ext.login import make_secure_token
-from ..neo4j.graph import GraphFarm
-from confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
+# import jwt
+# from datetime import datetime
+# from flask.ext.security.utils import encrypt_password, verify_password
+# from flask.ext.login import make_secure_token
+# from ..neo4j.graph import GraphFarm
+# from confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
+
+from .generic import BaseAuthentication
 
 from .... import get_logger
 logger = get_logger(__name__)
 
 
-# JWT STUFF
-JWT_SECRET = 'secret'
-JWT_ALGO = 'HS256'
+class Authentication(BaseAuthentication):
+    pass
 
 
 """

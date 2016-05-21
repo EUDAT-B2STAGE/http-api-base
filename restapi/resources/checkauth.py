@@ -7,10 +7,10 @@ Add auth checks called /checklogged and /testadmin
 
 from __future__ import division, absolute_import
 from .. import myself, lic, get_logger
+
 from .base import ExtendedApiResource
 from .. import htmlcodes as hcodes
 from . import decorators as decorate
-from flask.ext.security import roles_required, auth_token_required
 from confs import config
 
 __author__ = myself
@@ -18,6 +18,9 @@ __copyright__ = myself
 __license__ = lic
 
 logger = get_logger(__name__)
+
+# TO FIX
+from flask.ext.security import roles_required, auth_token_required
 
 
 class Verify(ExtendedApiResource):
@@ -48,6 +51,7 @@ class Login(ExtendedApiResource):
 class Logout(ExtendedApiResource):
     """ Let the logged user escape from here """
 
+    @auth_token_required
     def get(self):
         return self.response("Hello World!")
 
