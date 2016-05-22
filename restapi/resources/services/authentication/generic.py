@@ -33,17 +33,18 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     JWT_ALGO = 'HS256'
 
     def create_token(self, payload):
-        byte_token = jwt.encode(
-            payload, SECRET, algorithm=self.JWT_ALGO)
-        return byte_token
+        """ Generate a byte token with JWT library to encrypt the payload """
+        return jwt.encode(payload, SECRET, algorithm=self.JWT_ALGO)
 
     def parse_token(self, token):
+        payload = {}
         print("TOKEN IS", token)
         if token is not None:
             import jwt
             payload = jwt.decode(token, SECRET, algorithms=[self.JWT_ALGO])
             print("PAYLOAD", payload)
             # user = g.User.nodes.get(token=token)
+        return payload
 
     @abc.abstractmethod
     def get_user_object(self, username):
@@ -54,8 +55,9 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return
 
     def make_login(self, username, password):
+        token = None
         print("\n\n\nMAKE THIS WORK\n\n\n", username, password, "\n\n")
         user = self.get_user_object(username)
-        if not user or not self.check_password(user.hash_password, password):
-            return None
-        return self.create_token(self.fill_payload(user))
+        if user and self.check_password(user.hash_password, password):
+            token = self.create_token(self.fill_payload(user))
+        return token

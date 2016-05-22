@@ -47,12 +47,33 @@ class Login(ExtendedApiResource):
     def post(self):
         """ Using a service-dependent callback """
 
-        # This instance is obtained throught the decorator
-        self._auth.make_login("test", "test2")
+        username = None
+        password = None
+        bad_code = hcodes.HTTP_BAD_UNAUTHORIZED
 
-        return self.response(
-            errors={"Todo": "work in progress"},
-            code=hcodes.HTTP_BAD_UNAUTHORIZED)
+        jargs = self.get_input()
+        if 'username' in jargs:
+            username = jargs['username']
+        elif 'email' in jargs:
+            username = jargs['email']
+        if 'password' in jargs:
+            password = jargs['password']
+        elif 'pwd' in jargs:
+            password = jargs['pwd']
+
+        if username is None or password is None:
+            return self.response(
+                errors={"Credentials": "Missing 'username' and/or 'password'"},
+                code=bad_code)
+
+        # _auth instance is obtained throught the 'load_auth_obj' decorator
+        token = self._auth.make_login(username, password)
+        if token is None:
+            return self.response(
+                errors={"Credentials": "Invalid username and/or password"},
+                code=bad_code)
+
+        return self.response({'token': token})
 
 
 class Logout(ExtendedApiResource):
