@@ -160,6 +160,7 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
     with microservice.app_context():
 
         # INIT DATABASE?
+        custom_auth.init_users_and_roles()
 
         # SQLALCHEMY
         # try:

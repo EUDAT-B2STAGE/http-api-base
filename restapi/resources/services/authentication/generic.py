@@ -8,6 +8,7 @@ Add auth checks called /checklogged and /testadmin
 from __future__ import division, absolute_import
 from .... import myself, lic, get_logger
 from ....auth import auth
+from confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
 
 import abc
 import jwt
@@ -31,6 +32,9 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     """
 
     JWT_ALGO = 'HS256'
+    DEFAULT_USER = USER
+    DEFAULT_PASSWORD = PWD
+    DEFAULT_ROLES = [ROLE_USER, ROLE_ADMIN]
 
     def create_token(self, payload):
         """ Generate a byte token with JWT library to encrypt the payload """
@@ -45,6 +49,23 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             print("PAYLOAD", payload)
             # user = g.User.nodes.get(token=token)
         return payload
+
+    @abc.abstractmethod
+    def init_users_and_roles(self):
+        """
+        Here is a possible good pattern:
+
+        if not exist_one_role:
+            for role in self.DEFAULT_ROLES:
+                create_role(role)
+        if not exist_one_user:
+            create_user(
+                email=self.DEFAULT_USER,
+                name="Whatever", surname="YouLike",
+                password=self.DEFAULT_PASSWORD,
+                roles=DEFAULT_ROLES)
+        """
+        return
 
     @abc.abstractmethod
     def get_user_object(self, username):
