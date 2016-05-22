@@ -18,8 +18,8 @@ https://www.youtube.com/watch?v=8kTlzR4HhWo
 SERVICES:
  - Neo4j graphdb
  - Elasticsearch
- - Rethinkdb: nosql json + joins + changefeed
  - Irods virtual resources
+ - Rethinkdb: nosql json + joins + changefeed
 
 --- ✄ -----------------------
 Token:

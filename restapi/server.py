@@ -126,30 +126,29 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
         meta = Meta()
         module_base = __package__ + ".resources.services.authentication"
-    # //TO FIX: 
-    # import from a selected parameter (os environment docker?)
+# //TO FIX: 
+# import from a selected parameter (os environment docker?)
         module_name = module_base + '.' + 'graphdb'
         module = meta.get_module_from_string(module_name)
-        logger.info("FLASKING! Injecting security")
 
-        # To be stored
+        # To be stored inside the flask global context
         custom_auth = module.Authentication()
 
+        # Instead of using the decorator
+        # Applying Flask_httpauth lib to the current instance
+        from .auth import auth
+        auth.verify_token(custom_auth.verify_token)
+
         @microservice.before_request
-        def justatest():
+        def enable_global_authentication():
             g._custom_auth = custom_auth
 
-    """
-    ## WORK IN PROGRESS!!
-        # Dinamically load from a string chosen by the user the right module
-        # or set a default by using containers environment variable
-        # (need to set some priority too)
-    """
+        logger.info("FLASKING! Injected security internal module")
 
     ##############################
     # Restful plugin
     from .rest import epo, create_endpoints
-    logger.info("FLASKING! Injected rest endpoints")
+    logger.info("FLASKING! Injected requested REST endpoints")
     epo = create_endpoints(epo, enable_security, debug)
 
     # Restful init of the app
@@ -159,33 +158,14 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
     # Prepare database and tables
     with microservice.app_context():
 
+# //TO FIX: 
 # INIT (ANY) DATABASE?
-# I COULD USE A DECORATOR TO RECOVER FROM Flask.g ANY CONNECTION 
-# INSIDE ANY ENDPOINT
+# I could use a decorator to recover from flask.g any connection 
+# inside any endpoint
 
         # INIT USERS/ROLES FOR SECURITY
         if enable_security:
             custom_auth.init_users_and_roles()
-
-    # ##############################
-    # # Flask admin
-    # if enable_security and not GRAPHDB_AVAILABLE:
-    #     from .admin import admin, UserView, RoleView
-    #     from .models import User, Role
-    #     from flask.ext.admin import helpers as admin_helpers
-
-    #     admin.init_app(microservice)
-    #     admin.add_view(UserView(User, db.session))
-    #     admin.add_view(RoleView(Role, db.session))
-
-    #     # Context processor for merging flask-admin's template context
-    #     # into the flask-security views
-    #     @security.context_processor
-    #     def security_context_processor():
-    #         return dict(admin_base_template=admin.base_template,
-    #                     admin_view=admin.index_view, h=admin_helpers)
-
-    #     logger.info("FLASKING! Injected admin endpoints")
 
     ##############################
     # Logging responses

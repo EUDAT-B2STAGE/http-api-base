@@ -26,13 +26,20 @@ class Authentication(BaseAuthentication):
     def __init__(self):
         self._graph = GraphFarm().get_graph_instance()
 
-    def get_user_object(self, username):
+    def get_user_object(self, username=None, payload=None):
 
         user = None
-        g = GraphFarm().get_graph_instance()
+        self._graph = GraphFarm().get_graph_instance()
         try:
-            user = g.User.nodes.get(email=username)
-        except g.User.DoesNotExist:
+            if username is not None:
+                user = self._graph.User.nodes.get(email=username)
+            if payload is not None and 'user_id' in payload:
+                # Get a neomodel node from id?
+                # Workaround from:
+                # https://github.com/robinedwards/neomodel/issues/199
+                user = self._graph.User(_id=payload['user_id'])
+                user.refresh()
+        except self._graph.User.DoesNotExist:
             logger.warning("Could not find user for '%s'" % username)
         return user
 

@@ -70,13 +70,22 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     def parse_token(self, token):
         payload = {}
-        print("TOKEN IS", token)
         if token is not None:
-            import jwt
-            payload = jwt.decode(token, SECRET, algorithms=[self.JWT_ALGO])
-            print("PAYLOAD", payload)
-            # user = g.User.nodes.get(token=token)
+            try:
+                payload = jwt.decode(token, SECRET, algorithms=[self.JWT_ALGO])
+            except:
+                logger.warning("Unable to decode JWT token")
         return payload
+
+    def verify_token(self, token):
+        payload = self.parse_token(token)
+        user = self.get_user_object(payload=payload)
+        if user is not None:
+# // TO FIX:
+# Store this object (user) somewhere now?
+            print("Obtained user")
+            return True
+        return False
 
     @abc.abstractmethod
     def init_users_and_roles(self):
@@ -96,16 +105,23 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return
 
     @abc.abstractmethod
-    def get_user_object(self, username):
+    def get_user_object(self, username=None, payload=None):
+        """
+        How to retrieve the user from the current service,
+        based on the unique username given, or from the content of the token
+        """
         return
 
     @abc.abstractmethod
     def fill_payload(self, userobj):
+        """ Informations to store inside the JWT token,
+        starting from the user obtained from the current service """
         return
 
     def make_login(self, username, password):
+        """ The method which will check if credentials are good to go """
         token = None
-        user = self.get_user_object(username)
+        user = self.get_user_object(username=username)
         if user and self.check_passwords(
            user.password, password):
             token = self.create_token(self.fill_payload(user))
