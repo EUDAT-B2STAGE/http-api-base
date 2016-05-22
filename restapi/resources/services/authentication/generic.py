@@ -20,7 +20,6 @@ __license__ = lic
 logger = get_logger(__name__)
 
 SECRET = 'top secret!'
-print("MUST USE AUTH", auth)
 
 
 class BaseAuthentication(metaclass=abc.ABCMeta):
@@ -36,9 +35,38 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     DEFAULT_PASSWORD = PWD
     DEFAULT_ROLES = [ROLE_USER, ROLE_ADMIN]
 
+    @staticmethod
+    def encode_string(string):
+        """ Encodes a string to bytes, if it isn't already. """
+        if isinstance(string, str):
+            string = string.encode('utf-8')
+        return string
+
+    @staticmethod
+    def hash_password(password):
+        import hmac
+        import hashlib
+        import base64
+
+        salt = "Unknown"
+
+# https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py#L110
+        h = hmac.new(
+            BaseAuthentication.encode_string(salt),
+            BaseAuthentication.encode_string(password),
+            hashlib.sha512)
+        return base64.b64encode(h.digest()).decode('ascii')
+
+    @staticmethod
+    def check_passwords(hashed_password, password):
+        proposed_password = BaseAuthentication.hash_password(password)
+        return hashed_password == proposed_password
+
     def create_token(self, payload):
         """ Generate a byte token with JWT library to encrypt the payload """
-        return jwt.encode(payload, SECRET, algorithm=self.JWT_ALGO)
+        return \
+            jwt.encode(payload, SECRET, algorithm=self.JWT_ALGO) \
+            .decode('ascii')
 
     def parse_token(self, token):
         payload = {}
@@ -53,12 +81,12 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def init_users_and_roles(self):
         """
-        Here is a possible good pattern:
+        Here i write a possible good pattern:
 
-        if not exist_one_role:
+        if not exist_one_role():
             for role in self.DEFAULT_ROLES:
                 create_role(role)
-        if not exist_one_user:
+        if not exist_one_user():
             create_user(
                 email=self.DEFAULT_USER,
                 name="Whatever", surname="YouLike",
@@ -77,8 +105,8 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     def make_login(self, username, password):
         token = None
-        print("\n\n\nMAKE THIS WORK\n\n\n", username, password, "\n\n")
         user = self.get_user_object(username)
-        if user and self.check_password(user.hash_password, password):
+        if user and self.check_passwords(
+           user.password, password):
             token = self.create_token(self.fill_payload(user))
         return token

@@ -159,33 +159,13 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
     # Prepare database and tables
     with microservice.app_context():
 
-        # INIT DATABASE?
-        custom_auth.init_users_and_roles()
-
-        # SQLALCHEMY
-        # try:
-        #     if config.REMOVE_DATA_AT_INIT_TIME:
-        #         db.drop_all()
-        #     db.create_all()
-        #     logger.info("DB: Connected and ready")
-        # except Exception as e:
-        #     logger.critical("Database connection failure: %s" % str(e))
-        #     exit(1)
+# INIT (ANY) DATABASE?
+# I COULD USE A DECORATOR TO RECOVER FROM Flask.g ANY CONNECTION 
+# INSIDE ANY ENDPOINT
 
         # INIT USERS/ROLES FOR SECURITY
         if enable_security:
-
-            logger.critical("SHOULD INIT USERS and ROLES HERE!")
-
-            # if GRAPHDB_AVAILABLE:
-            #     from .resources.services.accounting.graphbased \
-            #         import init_graph_accounts
-            #     init_graph_accounts()
-            # else:
-            #     # SQLALCHEMY
-            #     from .security import db_auth
-            #     # Prepare user/roles
-            #     db_auth()
+            custom_auth.init_users_and_roles()
 
     # ##############################
     # # Flask admin
