@@ -48,6 +48,7 @@ http://j.mp/why_auth_bearer
 Note:
   every new login, a new token, which is valid
 
+☐ Prepare basic tests
 ☐ loading models at every request?
 ☐ write tests for authentication
 ☐ JWT refactor content
