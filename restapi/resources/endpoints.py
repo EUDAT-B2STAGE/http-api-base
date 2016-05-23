@@ -4,7 +4,7 @@
 
 from .. import get_logger
 from ..meta import Meta
-from confs.config import ALL_API_URL
+from confs.config import API_URL, AUTH_URL
 
 logger = get_logger(__name__)
 
@@ -24,9 +24,10 @@ class Endpoints(object):
         urls = []
 
         for endpoint in endpoints:
-            address = ALL_API_URL + '/' + endpoint
-            logger.debug("Mapping '%s' res to '%s'",
-                        resource.__name__, address)
+            print(endpoint, resource)
+            address = API_URL + '/' + endpoint
+            logger.debug(
+                "Mapping '%s' res to '%s'", resource.__name__, address)
             # Normal endpoint, e.g. /api/foo
             urls.append(address)
             # Special endpoint, e.g. /api/foo/:endkey
@@ -50,32 +51,3 @@ class Endpoints(object):
         # Init restful plugin
         if len(resources) > 0:
             self.create_many(resources)
-
-    def services_startup(self, models, secured=False):
-        """
-        DEPRECATED
-
-        BUT MAY STILL BE USEFULL
-
-        A special case for RethinkDB and other main services?
-
-        This is where you tell the app what to do with requests.
-        Note: For this resources make sure you create the table!
-        """
-        from .services.rethink import create_rdbjson_resources
-
-        for name, content in create_rdbjson_resources(models, secured).items():
-            (rclass, rname) = content
-            # print rname, rclass.__dict__
-
-            # Add resource from ORM class
-            address = ALL_API_URL + '/' + rname
-            self.rest_api.add_resource(
-                rclass,
-                address,
-                address + '/<string:data_key>')
-            # Warning: due to restful plugin system,
-            # methods get and get(value) require 2 different resources.
-            # This is why we provide two times the same resource
-
-            logger.info("Resource '" + rname + "' [" + name + "]: loaded")

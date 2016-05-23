@@ -21,12 +21,12 @@ __license__ = lic
 logger = get_logger(__name__)
 
 
-class Verify(ExtendedApiResource):
+class Status(ExtendedApiResource):
     """ API online test """
 
     @decorate.apimethod
     def get(self):
-        return self.response("Hello World!")
+        return self.response("Server is alive!")
 
 
 class Login(ExtendedApiResource):
@@ -96,6 +96,24 @@ class VerifyLogged(ExtendedApiResource):
     def get(self):
         print("DEBUG", self._auth._user, self._auth._payload)
         return self.response("Valid user")
+
+
+class Profile(ExtendedApiResource):
+    """ Current user informations """
+
+    """
+    user = User.query.get(int(tokenizer.user_id))
+    roles = ""
+    for role in user.roles:
+        roles += role.name + '; '
+    response = {
+        'Name': user.first_name,
+        'Surname': user.last_name,
+        'Email': user.email,
+        'Roles': roles
+    }
+    """
+    pass
 
 
 class VerifyAdmin(ExtendedApiResource):
