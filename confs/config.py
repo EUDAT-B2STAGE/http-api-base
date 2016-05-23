@@ -114,7 +114,6 @@ SECURITY_SEND_REGISTER_EMAIL = False
 #################################
 # ENDPOINTS
 ALL_API_URL = '/api'
-SECURITY_URL_PREFIX = ALL_API_URL
 
 # IRODS 4
 IRODS_HOME = os.path.join(USER_HOME, ".irods")
