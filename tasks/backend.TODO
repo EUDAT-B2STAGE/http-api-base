@@ -38,6 +38,11 @@ Token:
 
 ######################################################
 ✔ Load auth service from a docker variable @done (16-05-23 08:19)
+✔ my lib @done (16-05-23 12:44)
+  ✔ verify_token decorator @done (16-05-23 12:44)
+  ✔ login_required decorator @done (16-05-23 12:44)
+✔ bearer @done (16-05-23 12:44)
+http://j.mp/why_auth_bearer
 ☐ install flask-httpauth inside the docker image...
 ☐ JWT refactor content
 ☐ Set and check TTL
