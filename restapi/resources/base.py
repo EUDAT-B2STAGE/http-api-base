@@ -169,7 +169,7 @@ class ExtendedApiResource(Resource):
         return response[RESPONSE_CONTENT]['data']
 
     def response(self, data=None, elements=None,
-                 errors=None, code=hcodes.HTTP_OK_BASIC):
+                 errors=None, code=hcodes.HTTP_OK_BASIC, headers={}):
         """
         Handle a standard response following criteria described in
         https://github.com/EUDAT-B2STAGE/http-api-base/issues/7
@@ -249,4 +249,15 @@ class ExtendedApiResource(Resource):
             }
         }
 
-        return self._latest_response, code
+        ########################################
+# http://blog.miguelgrinberg.com/post/customizing-the-flask-response-class
+        from flask import make_response, jsonify
+        response = make_response(
+            (jsonify(self._latest_response), code))
+        response_headers = response.headers.keys()
+
+        for header, header_content in headers.items():
+            if header not in response_headers:
+                response.headers[header] = header_content
+
+        return response
