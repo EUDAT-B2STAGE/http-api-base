@@ -79,6 +79,7 @@ class Logout(ExtendedApiResource):
     @decorate.apimethod
     @auth.login_required
     def get(self):
+# TO FIX
         return self.response("Hello World!")
 
 
@@ -91,7 +92,9 @@ class VerifyLogged(ExtendedApiResource):
 
     @decorate.apimethod
     @auth.login_required
+    @decorate.load_auth_obj
     def get(self):
+        print("DEBUG", self._auth._user, self._auth._payload)
         return self.response("Valid user")
 
 

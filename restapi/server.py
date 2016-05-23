@@ -125,10 +125,12 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
     # Flask security
     if enable_security:
 
+        # Dynamically load the authentication service
         meta = Meta()
         module_base = __package__ + ".resources.services.authentication"
         auth_service = os.environ.get('BACKEND_AUTH_SERVICE', '')
         module_name = module_base + '.' + auth_service
+        logger.debug("Trying to load the module %s" % module_name)
         module = meta.get_module_from_string(module_name)
 
         # To be stored inside the flask global context

@@ -78,13 +78,12 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return payload
 
     def verify_token(self, token):
-        print("TOKEN", token)
-        payload = self.parse_token(token)
-        user = self.get_user_object(payload=payload)
+        # print("TOKEN", token)
+        self._payload = payload = self.parse_token(token)
+        # print("TOKEN CONTENT", payload)
+        self._user = user = self.get_user_object(payload=payload)
         if user is not None:
-# // TO FIX:
-# Store this object (user) somewhere now?
-            print("Obtained user")
+            logger.info("User authorized")
 # CHECK TTL?
             return True
 
@@ -142,7 +141,7 @@ jti: JWT ID claim provides a unique identifier for the JWT
         """ The method which will check if credentials are good to go """
         token = None
         user = self.get_user_object(username=username)
-        if user and self.check_passwords(
-           user.password, password):
+        if user is not None \
+           and self.check_passwords(user.password, password):
             token = self.create_token(self.fill_payload(user))
         return token
