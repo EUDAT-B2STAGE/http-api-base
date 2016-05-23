@@ -12,7 +12,8 @@ sleep 1
 # Coverage + stop on first failure
 com="nose2 -F"
 option="-s test"
-cov_options="--quiet -C --coverage-report term --coverage-report html"
+cov_reports=" --coverage-report term --coverage-report html"
+cov_options="--quiet -C --coverage restapi $cov_reports"
 
 # Basic tests, written for the http-api-base sake
 $com $option/base --log-capture

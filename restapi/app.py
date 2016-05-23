@@ -26,14 +26,13 @@ if args is not None:
 
     if not args.security:
         enable_security = False
-        logger.warning("No security enabled! Are you sure??")
+        logger.warning("No security enabled! Are you really sure?")
         time.sleep(1)
 
 #############################
 # BE FLASK
-app = create_app(name='API',
-                 enable_security=enable_security, debug=enable_debug)
-# Some code may take this app from here
-
-# We are now ready
-logger.info("*** REST API server is online ***")
+if __name__ == "__main__":
+    app = create_app(name='API',
+                     enable_security=enable_security, debug=enable_debug)
+    # We are now ready
+    logger.info("*** REST API server is online ***")

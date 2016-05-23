@@ -43,13 +43,14 @@ Token:
   ✔ login_required decorator @done (16-05-23 12:44)
 ✔ bearer @done (16-05-23 12:44)
 http://j.mp/why_auth_bearer
-☐ install flask-httpauth inside the docker image...
+✘ install flask-httpauth inside the docker image... @cancelled (16-05-23 15:02)
 ☐ JWT refactor content
 ☐ Set and check TTL
 ☐ The secret at startup: fix tests
 ☐ Role required decorator?
-☐ endpoints
-☐ oauth2 user
+✔ endpoints list @done (16-05-23 15:31)
 ☐ profile endpoint
+☐ oauth2 user
 ☐ avoid printing the password parameter inside the logs...
+
 

@@ -4,7 +4,6 @@
 
 from .. import get_logger
 from ..meta import Meta
-from confs.config import API_URL, AUTH_URL
 
 logger = get_logger(__name__)
 
@@ -24,8 +23,8 @@ class Endpoints(object):
         urls = []
 
         for endpoint in endpoints:
-            print(endpoint, resource)
-            address = API_URL + '/' + endpoint
+            print(endpoint, resource.base_url)
+            address = resource.base_url + '/' + endpoint
             logger.debug(
                 "Mapping '%s' res to '%s'", resource.__name__, address)
             # Normal endpoint, e.g. /api/foo

@@ -10,7 +10,7 @@ from .. import get_logger
 from .base import ExtendedApiResource
 from . import decorators as decorate
 from confs import config
-from flask.ext.security import roles_required, auth_token_required
+from ..auth import auth
 
 logger = get_logger(__name__)
 
@@ -54,8 +54,8 @@ class FooTwo(ExtendedApiResource):
 
 # NOTE: this endpoint will crash if you DISABLE SECURITY on this app
     @decorate.apimethod
-    @auth_token_required
-    @roles_required(config.ROLE_ADMIN)
+    @auth.login_required
+    # @auth.roles_required(config.ROLE_ADMIN)
 # NOTE: this endpoint will crash if you DISABLE SECURITY on this app
     def post(self, identifier=None):
         """ I do nothing """

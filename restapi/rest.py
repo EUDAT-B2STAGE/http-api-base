@@ -31,14 +31,15 @@ logger.debug("Flask: creating REST")
 def create_endpoints(custom_epo, security=False, debug=False):
     """ A single method to add all endpoints """
 
-    ####################################
-    # HELLO WORLD endpoint...
-    @rest.resource('/', '/hello')
-    class Hello(Resource):
-        """ Example with no authentication """
-        def get(self):
-            return "Hello world", 200
-    logger.debug("Base endpoint: Hello world!")
+    # ####################################
+    # # HELLO WORLD endpoint...
+    # @rest.resource('/')
+    # # @rest.resource('/', '/hello')
+    # class Hello(Resource):
+    #     """ Example with no authentication """
+    #     def get(self):
+    #         return "Hello world", 200
+    # logger.debug("Base endpoint: Hello world!")
 
     ####################################
     # Verify configuration
@@ -68,9 +69,11 @@ def create_endpoints(custom_epo, security=False, debug=False):
         custom_epo.create_many([Verify])
 
     ####################################
-    # Profile endpoint
-    from .resources import profiles
-    custom_epo.many_from_module(profiles)
+    # Extra endpoints?
+
+    # #EXAMPLE:
+    # from .resources import profiles
+    # custom_epo.many_from_module(profiles)
 
     ####################################
     # The end

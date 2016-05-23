@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
-""" Basic Resource """
+""" The most standard Basic Resource i could """
 
 from .. import htmlcodes as hcodes
 # from confs.config import STACKTRACE
+from confs.config import API_URL
 from ..jsonify import output_json  # , RESTError
-from flask.ext.restful import request, Resource, reqparse, fields  # , abort
+from flask import make_response, jsonify
+from flask.ext.restful import request, Resource, reqparse
 from .. import get_logger
 
 logger = get_logger(__name__)
@@ -29,17 +31,7 @@ class ExtendedApiResource(Resource):
     endtype = None
     endpoint = None
     hcode = hcodes.HTTP_OK_BASIC
-    # How to have a standard response
-    resource_fields = {
-        # html code embedded for semplicity
-        'status': fields.Integer,
-        # Hashtype, Vector, String, Int/Float, and so on
-        'data_type': fields.String,
-        # Count
-        'elements': fields.Integer,
-        # The real data
-        'data': fields.Raw,
-    }
+    base_url = API_URL
 
     def __init__(self):
         super(ExtendedApiResource, self).__init__()
@@ -250,12 +242,13 @@ class ExtendedApiResource(Resource):
         }
 
         ########################################
-# http://blog.miguelgrinberg.com/post/customizing-the-flask-response-class
-        from flask import make_response, jsonify
+        # Make a Flask Response
+        # http://blog.miguelgrinberg.com/
+        # # post/customizing-the-flask-response-class
         response = make_response(
             (jsonify(self._latest_response), code))
-        response_headers = response.headers.keys()
 
+        response_headers = response.headers.keys()
         for header, header_content in headers.items():
             if header not in response_headers:
                 response.headers[header] = header_content

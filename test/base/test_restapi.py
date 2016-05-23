@@ -9,15 +9,16 @@ from __future__ import absolute_import
 import unittest
 import logging
 import restapi.htmlcodes as hcodes
-from restapi.server import create_app
+from restapi.app import create_app
 from restapi import get_logger, myself
-from confs.config import TEST_HOST, SERVER_PORT, ALL_API_URL
+from confs.config import TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
 
 __author__ = myself
 logger = get_logger(__name__)
 logger.setLevel(logging.DEBUG)
 
-API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, ALL_API_URL)
+API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
+AUTH_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
 
 
 class TestDataObjects(unittest.TestCase):
@@ -39,5 +40,5 @@ class TestDataObjects(unittest.TestCase):
         """
 
         logger.info("Verify if API is online")
-        r = self.app.get(API_URI + '/verify')
+        r = self.app.get(API_URI + '/status')
         self.assertEqual(r.status_code, hcodes.HTTP_OK_BASIC)

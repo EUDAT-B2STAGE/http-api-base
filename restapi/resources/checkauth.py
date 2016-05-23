@@ -8,6 +8,7 @@ Add auth checks called /checklogged and /testadmin
 from __future__ import division, absolute_import
 from .. import myself, lic, get_logger
 
+from confs.config import AUTH_URL
 from .base import ExtendedApiResource
 from .. import htmlcodes as hcodes
 from . import decorators as decorate
@@ -32,6 +33,8 @@ class Status(ExtendedApiResource):
 class Login(ExtendedApiResource):
     """ Let a user login with the developer chosen method """
 
+    base_url = AUTH_URL
+
     @decorate.apimethod
     def get(self):
         return self.response(
@@ -39,8 +42,8 @@ class Login(ExtendedApiResource):
                     "Please login with the POST method"},
             code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
-    @decorate.apimethod
     @decorate.load_auth_obj
+    @decorate.apimethod
     def post(self):
         """ Using a service-dependent callback """
 
@@ -76,30 +79,31 @@ class Login(ExtendedApiResource):
 class Logout(ExtendedApiResource):
     """ Let the logged user escape from here """
 
-    @decorate.apimethod
+    base_url = AUTH_URL
+
     @auth.login_required
+    @decorate.apimethod
     def get(self):
 # TO FIX
         return self.response("Hello World!")
 
 
-class VerifyLogged(ExtendedApiResource):
-    """
-    Token authentication test
-    Example of working call is: 
-    http localhost:8081/api/verifylogged Authorization:"Bearer RECEIVED_TOKEN"
-    """
-
-    @decorate.apimethod
-    @auth.login_required
-    @decorate.load_auth_obj
-    def get(self):
-        print("DEBUG", self._auth._user, self._auth._payload)
-        return self.response("Valid user")
-
-
 class Profile(ExtendedApiResource):
     """ Current user informations """
+
+    base_url = AUTH_URL
+
+    @auth.login_required
+    @decorate.load_auth_obj
+    @decorate.apimethod
+    def get(self):
+        """
+        Token authentication tester. Example of working call is: 
+        http localhost:8081/api/verifylogged
+            Authorization:"Bearer RECEIVED_TOKEN"
+        """
+        print("DEBUG", self._auth._user, self._auth._payload)
+        return self.response("Valid user")
 
     """
     user = User.query.get(int(tokenizer.user_id))
@@ -113,15 +117,16 @@ class Profile(ExtendedApiResource):
         'Roles': roles
     }
     """
-    pass
 
 
-class VerifyAdmin(ExtendedApiResource):
-    """ Token and Role authentication test """
+# class Admin(ExtendedApiResource):
+#     """ Token and Role authentication test """
 
-    @decorate.apimethod
-    @auth.login_required
-# // TO FIX:
-    # @roles_required(config.ROLE_ADMIN)
-    def get(self):
-        return self.response("I am admin!")
+#     base_url = AUTH_URL
+
+#     @auth.login_required
+#     @decorate.apimethod
+# # // TO FIX:
+#     # @roles_required(config.ROLE_ADMIN)
+#     def get(self):
+#         return self.response("I am admin!")
