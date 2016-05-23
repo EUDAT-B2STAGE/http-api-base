@@ -78,13 +78,16 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return payload
 
     def verify_token(self, token):
+        print("TOKEN", token)
         payload = self.parse_token(token)
         user = self.get_user_object(payload=payload)
         if user is not None:
 # // TO FIX:
 # Store this object (user) somewhere now?
             print("Obtained user")
+# CHECK TTL?
             return True
+
         return False
 
     @abc.abstractmethod
@@ -115,7 +118,24 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def fill_payload(self, userobj):
         """ Informations to store inside the JWT token,
-        starting from the user obtained from the current service """
+        starting from the user obtained from the current service
+
+from:
+http://blog.apcelent.com/json-web-token-tutorial-example-python.html
+
+Following are the claim attributes :
+
+iss: The issuer of the token
+sub: The subject of the token
+aud: The audience of the token
+qsh: query string hash
+exp: Token expiration time defined in Unix time
+nbf: 'Not before time':
+   identifies the time before which the JWT must not be accepted for processing
+iat: 'Issued at time', in Unix time, at which the token was issued
+jti: JWT ID claim provides a unique identifier for the JWT
+
+        """
         return
 
     def make_login(self, username, password):

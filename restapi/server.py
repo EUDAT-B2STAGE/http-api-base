@@ -126,7 +126,7 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
         meta = Meta()
         module_base = __package__ + ".resources.services.authentication"
-# //TO FIX: 
+# //TO FIX:
 # import from a selected parameter (os environment docker?)
         module_name = module_base + '.' + 'graphdb'
         module = meta.get_module_from_string(module_name)
@@ -158,9 +158,9 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
     # Prepare database and tables
     with microservice.app_context():
 
-# //TO FIX: 
+# //TO FIX:
 # INIT (ANY) DATABASE?
-# I could use a decorator to recover from flask.g any connection 
+# I could use a decorator to recover from flask.g any connection
 # inside any endpoint
 
         # INIT USERS/ROLES FOR SECURITY

@@ -11,7 +11,7 @@ from .. import myself, lic, get_logger
 from .base import ExtendedApiResource
 from .. import htmlcodes as hcodes
 from . import decorators as decorate
-from confs import config
+# from confs import config
 from ..auth import auth
 
 __author__ = myself
@@ -19,9 +19,6 @@ __copyright__ = myself
 __license__ = lic
 
 logger = get_logger(__name__)
-
-# TO FIX AND REMOVE
-from flask.ext.security import roles_required, auth_token_required
 
 
 class Verify(ExtendedApiResource):
@@ -80,16 +77,19 @@ class Logout(ExtendedApiResource):
     """ Let the logged user escape from here """
 
     @decorate.apimethod
-    @auth_token_required
+    @auth.login_required
     def get(self):
         return self.response("Hello World!")
 
 
 class VerifyLogged(ExtendedApiResource):
-    """ Token authentication test """
+    """
+    Token authentication test
+    Example of working call is: 
+    http localhost:8081/api/verifylogged Authorization:"Bearer RECEIVED_TOKEN"
+    """
 
     @decorate.apimethod
-    # @auth_token_required
     @auth.login_required
     def get(self):
         return self.response("Valid user")
@@ -99,7 +99,8 @@ class VerifyAdmin(ExtendedApiResource):
     """ Token and Role authentication test """
 
     @decorate.apimethod
-    @auth_token_required
-    @roles_required(config.ROLE_ADMIN)
+    @auth.login_required
+# // TO FIX:
+    # @roles_required(config.ROLE_ADMIN)
     def get(self):
         return self.response("I am admin!")

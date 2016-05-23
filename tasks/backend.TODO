@@ -1,35 +1,23 @@
 
---- ✄ -----------------------
 GUIDELINES:
-- python 3.5
-- configuration via JSON file
-- extended a small list of initial services
+- Based on Docker
+-  Python 3.5
+-  Configuration via JSON file
+-  Extending a list of initial services:
+   - Neo4j graphdb
+   - Elasticsearch
+   - Irods virtual resources
+   - Rethinkdb: nosql json + joins + changefeed
 
 ### protocol specifications?
 https://github.com/ga4gh/mme-apis/blob/v1.0a/search-api.md
-
- ### python debugger
-http://nbviewer.ipython.org/github/donnemartin/data-science-ipython-notebooks/blob/master/python-data/pdb.ipynb
-
 ### error handling?
 https://www.youtube.com/watch?v=8kTlzR4HhWo
 
---- ✄ -----------------------
-SERVICES:
- - Neo4j graphdb
- - Elasticsearch
- - Irods virtual resources
- - Rethinkdb: nosql json + joins + changefeed
 
 --- ✄ -----------------------
 Token:
 
-# Example on JWT
-https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/examples/token_auth.py
-# More on authentication with flask:
-http://blog.miguelgrinberg.com/post/restful-authentication-with-flask
-
-######################################################
 # API URLs for AUTH
 
 @app.route('/auth/login', methods=['POST'])
@@ -53,16 +41,13 @@ http://blog.miguelgrinberg.com/post/restful-authentication-with-flask
  ✔ With graphdb first real implementation @done (16-05-22 01:00)
  ✔ Store the auth instance globally with flask g @done (16-05-22 01:00)
  ✔ Recover the global auth obj with a decorator? @done (16-05-22 01:14)
+
+☐ The secret at startup: fix tests
 ☐ Role required decorator?
-☐ JWT refactor
-  ☐ content
-  ☐ TTL
-  ☐ use it instead of graphdb calls
+☐ JWT refactor content
+☐ Set and check TTL
+☐ endpoints
 ☐ oauth2 user
-   ☐ profile endpoint
+☐ profile endpoint
+☐ avoid printing the password parameter inside the logs...
 
-######################################################
-BUGS:
-  ☐ too many
-
---- ✄ -----------------------
