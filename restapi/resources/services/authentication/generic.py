@@ -7,19 +7,21 @@ Add auth checks called /checklogged and /testadmin
 
 from __future__ import division, absolute_import
 from .... import myself, lic, get_logger
+
 from ....auth import auth
 from confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
 
 import abc
 import jwt
+import hmac
+import hashlib
+import base64
 
 __author__ = myself
 __copyright__ = myself
 __license__ = lic
 
 logger = get_logger(__name__)
-
-SECRET = 'top secret!'
 
 
 class BaseAuthentication(metaclass=abc.ABCMeta):
@@ -30,10 +32,14 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     that aims to store credentials of users and roles.
     """
 
+    SECRET = 'top secret!'
     JWT_ALGO = 'HS256'
     DEFAULT_USER = USER
     DEFAULT_PASSWORD = PWD
     DEFAULT_ROLES = [ROLE_USER, ROLE_ADMIN]
+
+    def setup_secret(self, secret):
+        self.SECRET = secret
 
     @staticmethod
     def encode_string(string):
@@ -44,13 +50,13 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     @staticmethod
     def hash_password(password):
-        import hmac
-        import hashlib
-        import base64
+        """ Original source:
+        # https://github.com/mattupstate/flask-security
+        #    /blob/develop/flask_security/utils.py#L110
+        """
 
         salt = "Unknown"
 
-# https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py#L110
         h = hmac.new(
             BaseAuthentication.encode_string(salt),
             BaseAuthentication.encode_string(password),
@@ -64,15 +70,15 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     def create_token(self, payload):
         """ Generate a byte token with JWT library to encrypt the payload """
-        return \
-            jwt.encode(payload, SECRET, algorithm=self.JWT_ALGO) \
-            .decode('ascii')
+        return jwt.encode(
+            payload, self.SECRET, algorithm=self.JWT_ALGO).decode('ascii')
 
     def parse_token(self, token):
         payload = {}
         if token is not None:
             try:
-                payload = jwt.decode(token, SECRET, algorithms=[self.JWT_ALGO])
+                payload = jwt.decode(
+                    token, self.SECRET, algorithms=[self.JWT_ALGO])
             except:
                 logger.warning("Unable to decode JWT token")
         return payload

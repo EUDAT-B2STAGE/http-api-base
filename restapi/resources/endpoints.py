@@ -23,7 +23,6 @@ class Endpoints(object):
         urls = []
 
         for endpoint in endpoints:
-            print(endpoint, resource.base_url)
             address = resource.base_url + '/' + endpoint
             logger.debug(
                 "Mapping '%s' res to '%s'", resource.__name__, address)

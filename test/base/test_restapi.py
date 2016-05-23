@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import unittest
 import logging
 import restapi.htmlcodes as hcodes
-from restapi.app import create_app
+from restapi.server import create_app
 from restapi import get_logger, myself
 from confs.config import TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
 

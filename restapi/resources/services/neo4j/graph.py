@@ -107,21 +107,27 @@ while testdb:
 
 del graph
 
+
 ########################################
-
-
 class GraphFarm(object):
 
     """ Making some Graphs """
 
     def get_graph_instance(
             self, models2skip=[],
-            pymodule_with_models='restapi.resources.services.neo4j.models'):
+            pymodule_with_models='.resources.services.neo4j.models'):
 
+        # Relative import: Add the name of the package as prefix
+        module = __package__.split('.')[0] + pymodule_with_models
         self._graph = MyGraph()
         meta = Meta()
-        models_found = meta.get_new_classes_from_module(
-            meta.get_module_from_string(pymodule_with_models))
+
+# // TO FIX:
+# load only models once into static class, please!
+
+        models_found = \
+            meta.get_new_classes_from_module(
+                meta.get_module_from_string(module))
         models = set(models_found) - set(models2skip)
         self._graph.load_models(models)
         return self._graph

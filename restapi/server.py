@@ -167,6 +167,7 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
         # INIT USERS/ROLES FOR SECURITY
         if enable_security:
+            custom_auth.setup_secret(microservice.config['SECRET_KEY'])
             custom_auth.init_users_and_roles()
 
     ##############################
