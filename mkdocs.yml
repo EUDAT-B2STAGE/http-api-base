@@ -7,4 +7,5 @@ pages:
 - Manage APIs: manage.md
 - Security: security.md
 - Services: services.md
+- UnitTests: test.md
 theme: journal
