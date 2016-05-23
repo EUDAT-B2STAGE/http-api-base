@@ -11,12 +11,19 @@ from . import myself, lic, get_logger
 # from flask.ext.security import SQLAlchemyUserDatastore  # , Security
 # from .models import db, User, Role
 from confs import config
+from .generic import BaseAuthentication
 
 __author__ = myself
 __copyright__ = myself
 __license__ = lic
 
 logger = get_logger(__name__)
+
+
+class Authentication(BaseAuthentication):
+
+    def __init__(self):
+        raise NotImplementedError("Use the 'graphdb' authentication for now")
 
 # ####################################
 # # Security
