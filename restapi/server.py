@@ -12,8 +12,7 @@ from flask import Flask, request, g  # , jsonify, got_request_exception
 # from .jsonify import make_json_error
 # from werkzeug.exceptions import default_exceptions
 # from .jsonify import log_exception, RESTError
-
-from .resources.services.detect import GRAPHDB_AVAILABLE
+# from .resources.services.detect import GRAPHDB_AVAILABLE
 from .meta import Meta
 from . import myself, lic, get_logger
 
@@ -40,13 +39,12 @@ https://github.com/pallets/flask/wiki/Large-app-how-to
     to create it from a shell with a random key,
     then exit.
     """
-    import os
     filename = os.path.join(app.instance_path, filename)
 
     try:
         app.config['SECRET_KEY'] = open(filename, 'rb').read()
     except IOError:
-        print('Error: No secret key. Create it with:')
+        logger.critical('No secret key!\n\nYou must create it with:')
         full_path = os.path.dirname(filename)
         if not os.path.isdir(full_path):
             print('mkdir -p {filename}'.format(filename=full_path))
@@ -75,6 +73,9 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
                          template_folder=template_dir,
                          **kwargs)
 
+    # Check and use a random file a secret key.
+# // TO FIX:
+    # Maybe only in production?
     install_secret_key(microservice)
 
     # ##############################
@@ -126,9 +127,8 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
 
         meta = Meta()
         module_base = __package__ + ".resources.services.authentication"
-# //TO FIX:
-# import from a selected parameter (os environment docker?)
-        module_name = module_base + '.' + 'graphdb'
+        auth_service = os.environ.get('BACKEND_AUTH_SERVICE', '')
+        module_name = module_base + '.' + auth_service
         module = meta.get_module_from_string(module_name)
 
         # To be stored inside the flask global context

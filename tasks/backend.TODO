@@ -37,15 +37,12 @@ Token:
 
 
 ######################################################
-✔ A generic/abstract class for auth @done (16-05-22 01:00)
- ✔ With graphdb first real implementation @done (16-05-22 01:00)
- ✔ Store the auth instance globally with flask g @done (16-05-22 01:00)
- ✔ Recover the global auth obj with a decorator? @done (16-05-22 01:14)
-
-☐ The secret at startup: fix tests
-☐ Role required decorator?
+✔ Load auth service from a docker variable @done (16-05-23 08:19)
+☐ install flask-httpauth inside the docker image...
 ☐ JWT refactor content
 ☐ Set and check TTL
+☐ The secret at startup: fix tests
+☐ Role required decorator?
 ☐ endpoints
 ☐ oauth2 user
 ☐ profile endpoint
