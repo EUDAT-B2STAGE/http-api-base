@@ -53,6 +53,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
     def login_required(self, f):
         @wraps(f)
         def decorated(*args, **kwargs):
+            token = "EMPTY"
             auth = request.authorization
             if auth is None and HTTPAUTH_AUTH_FIELD in request.headers:
                 # Flask/Werkzeug do not recognize any authentication types
@@ -90,7 +91,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                     headers = {
                         HTTPAUTH_AUTH_HEADER: self.authenticate_header()}
                     return decorated_self.response(
-                        errors={"Token": "Invalid token"},
+                        errors={"Invalid token": "Received '%s'" % token},
                         headers=headers, code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
             return f(*args, **kwargs)
