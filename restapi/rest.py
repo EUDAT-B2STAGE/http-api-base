@@ -7,7 +7,7 @@ App specifications
 from __future__ import division, absolute_import
 from . import myself, lic, get_logger
 
-from flask.ext.restful import Api, Resource
+from flask.ext.restful import Api  # , Resource
 from .resources.endpoints import Endpoints
 from .config import MyConfigs
 
@@ -18,14 +18,8 @@ __license__ = lic
 logger = get_logger(__name__)
 
 ####################################
-# REST activation
-
-errors = {}  # for defining future custom errors
-# Restful plugin
-rest = Api(catch_all_404s=True, errors=errors)
-# Defining AUTOMATIC Resources
-epo = Endpoints(rest)
-logger.debug("Flask: creating REST")
+# REST to be activated inside the app factory
+logger.debug("Restful endpoints to be used: [%s, %s]" % (Api, Endpoints))
 
 
 def create_endpoints(custom_epo, security=False, debug=False):

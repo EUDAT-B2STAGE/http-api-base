@@ -82,6 +82,8 @@ def create_app(name=__name__, enable_security=True,
 # Maybe only in production?
         install_secret_key(microservice)
 
+    print("\n\n\nDEBUG\n\n\n", microservice.config['TESTING'])
+
     # ##############################
     # # ERROR HANDLING
 # This was commented as it eats up the real error
@@ -153,14 +155,12 @@ def create_app(name=__name__, enable_security=True,
 
     ##############################
     # Restful plugin
-    from .rest import epo, create_endpoints
-    logger.info("FLASKING! Injected requested REST endpoints")
-    epo = create_endpoints(epo, enable_security, debug)
-
+    from .rest import Api, Endpoints, create_endpoints
+    # Defining AUTOMATIC Resources
+    current_endpoints = \
+        create_endpoints(Endpoints(Api), enable_security, debug)
     # Restful init of the app
-    epo.rest_api.init_app(microservice)
-
-    print("\n\n\nDEBUG\n\n\n", microservice.config['TESTING'])
+    current_endpoints.rest_api.init_app(microservice)
 
     ##############################
     # Prepare database and tables

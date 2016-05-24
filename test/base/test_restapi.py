@@ -24,16 +24,41 @@ AUTH_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
 
 class TestRestAPI(unittest.TestCase):
 
+    """
+    # initialization logic for the test suite declared in the test module
+    # code that is executed before all tests in one test run
     @classmethod
-    def setUpClass(self):
+    def setUpClass(cls):
+        pass
+
+    # clean up logic for the test suite declared in the test module
+    # code that is executed after all tests in one test run
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+    # initialization logic
+    # code that is executed before each test
+    def setUp(self):
+        pass
+
+    # clean up logic
+    # code that is executed after each test
+    def tearDown(self):
+        pass
+    """
+
+    @classmethod
+    def setUp(self):
         logger.debug('### Setting up the Flask server ###')
         app = create_app(testing=True)
         # app.config['TESTING'] = True
         self.app = app.test_client()
 
     @classmethod
-    def tearDownClass(self):
+    def tearDown(self):
         logger.debug('### Tearing down the Flask server ###')
+        del self.app
 
     def test_01_get_status(self):
         """

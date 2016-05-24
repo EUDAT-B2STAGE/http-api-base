@@ -13,9 +13,10 @@ class Endpoints(object):
 
     rest_api = None
 
-    def __init__(self, api):
+    def __init__(self, Api):
         super(Endpoints, self).__init__()
-        self.rest_api = api
+        # Init Restful plugin
+        self.rest_api = Api(catch_all_404s=True)
 
     def create_single(self, resource, endpoints, endkey):
         """ Adding a single restpoint from a Resource Class """
