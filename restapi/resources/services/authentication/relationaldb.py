@@ -8,9 +8,10 @@ We create all the components here!
 from __future__ import division, absolute_import
 from . import myself, lic, get_logger
 
-from flask.ext.security import SQLAlchemyUserDatastore  # , Security
-from .models import db, User, Role
+# from flask.ext.security import SQLAlchemyUserDatastore  # , Security
+# from .models import db, User, Role
 from confs import config
+from .generic import BaseAuthentication
 
 __author__ = myself
 __copyright__ = myself
@@ -18,14 +19,21 @@ __license__ = lic
 
 logger = get_logger(__name__)
 
-####################################
-# Security
-udstore = SQLAlchemyUserDatastore(db, User, Role)
-# security = Security(datastore=udstore)
+
+class Authentication(BaseAuthentication):
+
+    def __init__(self):
+        raise NotImplementedError("Use the 'graphdb' authentication for now")
+
+# ####################################
+# # Security
+# udstore = SQLAlchemyUserDatastore(db, User, Role)
+# # security = Security(datastore=udstore)
 
 
 ####################################
 # DB init for security
+# THIS WORKS ONLY WITH SQLALCHEMY
 def db_auth():
     """ What to do if the main auth object has no rows """
 

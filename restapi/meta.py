@@ -56,8 +56,10 @@ class Meta(object):
         return self.get_latest_classes()
 
     def get_module_from_string(self, modulestring):
-        """ Getting a module import
-        when your module is stored as a string in a variable """
+        """
+        Getting a module import
+        when your module is stored as a string in a variable
+        """
 
         module = None
         try:

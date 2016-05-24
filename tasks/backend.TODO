@@ -1,35 +1,62 @@
 
---- ✄ -----------------------
 GUIDELINES:
-- python 3.5
-- configuration via JSON file
-- extended a small list of initial services
+- Based on Docker
+-  Python 3.5
+-  Configuration via JSON file
+-  Extending a list of initial services:
+   - Neo4j graphdb
+   - Elasticsearch
+   - Irods virtual resources
+   - Rethinkdb: nosql json + joins + changefeed
 
 ### protocol specifications?
 https://github.com/ga4gh/mme-apis/blob/v1.0a/search-api.md
-
- ### python debugger
-http://nbviewer.ipython.org/github/donnemartin/data-science-ipython-notebooks/blob/master/python-data/pdb.ipynb
-
 ### error handling?
 https://www.youtube.com/watch?v=8kTlzR4HhWo
 
---- ✄ -----------------------
-SERVICES:
- - Neo4j graphdb
- - Elasticsearch
- - Rethinkdb: nosql json + joins + changefeed
- - Irods virtual resources
-
---- ✄ -----------------------
-BUGS:
- ☐ open issue flask-admin @REMEMBER
-   ☐ server.py:87
 
 --- ✄ -----------------------
 Token:
- ☐ PyJWT
-   ☐ working snippet
-   https://github.com/sahat/satellizer/blob/master/examples/server/python/app.py
-   ☐ full integrated example
-   https://github.com/graup/flask-restless-security
+
+# API URLs for AUTH
+
+@app.route('/auth/login', methods=['POST'])
+    return jsonify(token=token)
+
+@app.route('/auth/signup', methods=['POST'])
+    user = User(email=request.json['email'], password=request.json['password'])
+    return jsonify(token=token)
+
+@app.route('/auth/b2access')
+
+@app.route('/auth/logout')
+@login_required
+
+@app.route('/api/me')
+@login_required
+
+
+######################################################
+✔ Load auth service from a docker variable @done (16-05-23 08:19)
+✔ my lib @done (16-05-23 12:44)
+  ✔ verify_token decorator @done (16-05-23 12:44)
+  ✔ login_required decorator @done (16-05-23 12:44)
+✔ bearer @done (16-05-23 12:44)
+http://j.mp/why_auth_bearer
+✘ install flask-httpauth inside the docker image... @cancelled (16-05-23 15:02)
+
+Note:
+  every new login, a new token, which is valid
+
+☐ Prepare basic tests
+☐ loading models at every request?
+☐ write tests for authentication
+☐ JWT refactor content
+☐ Set and check TTL
+☐ The secret at startup: fix tests
+☐ Role required decorator?
+✔ endpoints list @done (16-05-23 15:31)
+☐ profile endpoint
+☐ oauth2 user
+☐ avoid printing the password parameter inside the logs...
+

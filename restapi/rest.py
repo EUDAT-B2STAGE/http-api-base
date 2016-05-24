@@ -7,7 +7,7 @@ App specifications
 from __future__ import division, absolute_import
 from . import myself, lic, get_logger
 
-from flask.ext.restful import Api, Resource
+from flask.ext.restful import Api  # , Resource
 from .resources.endpoints import Endpoints
 from .config import MyConfigs
 
@@ -18,27 +18,22 @@ __license__ = lic
 logger = get_logger(__name__)
 
 ####################################
-# REST activation
-
-errors = {}  # for defining future custom errors
-# Restful plugin
-rest = Api(catch_all_404s=True, errors=errors)
-# Defining AUTOMATIC Resources
-epo = Endpoints(rest)
-logger.debug("Flask: creating REST")
+# REST to be activated inside the app factory
+logger.debug("Restful endpoints to be used: [%s, %s]" % (Api, Endpoints))
 
 
 def create_endpoints(custom_epo, security=False, debug=False):
     """ A single method to add all endpoints """
 
-    ####################################
-    # HELLO WORLD endpoint...
-    @rest.resource('/', '/hello')
-    class Hello(Resource):
-        """ Example with no authentication """
-        def get(self):
-            return "Hello world", 200
-    logger.debug("Base endpoint: Hello world!")
+    # ####################################
+    # # HELLO WORLD endpoint...
+    # @rest.resource('/')
+    # # @rest.resource('/', '/hello')
+    # class Hello(Resource):
+    #     """ Example with no authentication """
+    #     def get(self):
+    #         return "Hello world", 200
+    # logger.debug("Base endpoint: Hello world!")
 
     ####################################
     # Verify configuration
@@ -68,9 +63,11 @@ def create_endpoints(custom_epo, security=False, debug=False):
         custom_epo.create_many([Verify])
 
     ####################################
-    # Profile endpoint
-    from .resources import profiles
-    custom_epo.many_from_module(profiles)
+    # Extra endpoints?
+
+    # #EXAMPLE:
+    # from .resources import profiles
+    # custom_epo.many_from_module(profiles)
 
     ####################################
     # The end

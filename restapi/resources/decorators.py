@@ -135,16 +135,18 @@ def apimethod(func):
             error = str(e).strip("'")
             logger.critical("Key error: %s" % error)
             if error == "security":
-                return {'message': "FAIL: problems with auth check"}, \
-                    hcodes.HTTP_BAD_NOTFOUND
+                return self.response(
+                    errors={'Authentication': "No method available"},
+                    code=hcodes.HTTP_BAD_NOTFOUND)
             raise e
         except TypeError as e:
             logger.warning(e)
             error = str(e).strip("'")
             logger.critical("Type error: %s" % error)
             if "required positional argument" in error:
-                return {'message': "FAIL: missing argument"}, \
-                    hcodes.HTTP_BAD_REQUEST
+                return self.response(
+                    errors={'Type': "FAIL: missing argument"},
+                    code=hcodes.HTTP_BAD_REQUEST)
             raise e
 
         # DO NOT INTERCEPT 404 or status from other plugins (e.g. security)
@@ -162,7 +164,6 @@ def apimethod(func):
             out = subout
 
         # Set standards for my response as specified in base.py
-        #return marshal(out, self.resource_fields), status
         return out, status
 
     return wrapper
@@ -188,10 +189,26 @@ def all_rest_methods(decorator):
         return cls
     return decorate
 
-#####################################################################
-#####################################################################
+
+##############################
+# Allowing the developer to recover from the global object of Flask
+# the authentication instance
+def load_auth_obj(func):
+    def wrapper(self, *args, **kwargs):
+        from flask import g
+        # print(g.__dict__)
+        auth = g.get('_custom_auth', None)
+        if auth is None:
+            return self.response(
+                errors={"Authentication": "No auth object found!"},
+                code=hcodes.HTTP_BAD_CONFLICT)
+        self._auth = auth
+        return func(self, *args, **kwargs)
+    return wrapper
 
 
+#####################################################################
+# Error handling with custom methods
 def exceptionError(self, label, e):
     error = str(e)
     logger.error(error)

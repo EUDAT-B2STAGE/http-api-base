@@ -6,13 +6,15 @@ We create all the components here!
 """
 
 from __future__ import division, absolute_import
-from . import myself, lic, get_logger
 
 import os
-from flask import Flask, request  # , jsonify, got_request_exception
+from flask import Flask, request, g  # , jsonify, got_request_exception
 # from .jsonify import make_json_error
 # from werkzeug.exceptions import default_exceptions
 # from .jsonify import log_exception, RESTError
+# from .resources.services.detect import GRAPHDB_AVAILABLE
+from .meta import Meta
+from . import myself, lic, get_logger
 
 __author__ = myself
 __copyright__ = myself
@@ -21,8 +23,41 @@ __license__ = lic
 logger = get_logger(__name__)
 
 
-###############################
-def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
+########################
+# Configure Secret Key #
+########################
+def install_secret_key(app, filename='secret_key'):
+    """
+
+Found at
+https://github.com/pallets/flask/wiki/Large-app-how-to
+
+    Configure the SECRET_KEY from a file
+    in the instance directory.
+
+    If the file does not exist, print instructions
+    to create it from a shell with a random key,
+    then exit.
+    """
+    filename = os.path.join(app.instance_path, filename)
+
+    try:
+        app.config['SECRET_KEY'] = open(filename, 'rb').read()
+    except IOError:
+        logger.critical('No secret key!\n\nYou must create it with:')
+        full_path = os.path.dirname(filename)
+        if not os.path.isdir(full_path):
+            print('mkdir -p {filename}'.format(filename=full_path))
+        print('head -c 24 /dev/urandom > {filename}'.format(filename=filename))
+        import sys
+        sys.exit(1)
+
+
+########################
+# Flask App factory    #
+########################
+def create_app(name=__name__, enable_security=True,
+               debug=False, testing=False, **kwargs):
     """ Create the server istance for Flask application """
 
     #################################################
@@ -38,8 +73,22 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
                          # the default look of flask-admin
                          template_folder=template_dir,
                          **kwargs)
+
+    if testing:
+        microservice.config['TESTING'] = testing
+    else:
+        # Check and use a random file a secret key.
+# // TO FIX:
+# Maybe only in production?
+        install_secret_key(microservice)
+
+    print("\n\n\nDEBUG\n\n\n", microservice.config['TESTING'])
+
     # ##############################
     # # ERROR HANDLING
+# This was commented as it eats up the real error
+# even if it logs any error that happens,
+# which is useful in production
 
     # # Handling exceptions with json
     # for code in default_exceptions.keys():
@@ -72,115 +121,59 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
     cors.init_app(microservice)
     logger.info("FLASKING! Injected CORS")
 
-    ##############################
-    # DB
-    from .models import db
-    db.init_app(microservice)
-    logger.info("FLASKING! Injected sqlalchemy. (please use it)")
+    # ##############################
+    # # SQLALCHEMY INJECTION. Flask-Sqlalchemy DB
+    # from .models import db
+    # db.init_app(microservice)
+    # logger.info("FLASKING! Injected sqlalchemy. (please use it)")
 
     ##############################
     # Flask security
     if enable_security:
 
-        ############################################
-# Should open an issue on flask-admin!
-        """
-        # BUG!
-         The following is how it should be, but we get infinite loop:
-          File "/usr/local/lib/python3.4/dist-packages/flask_security/core.py"
-          , line 450, in __getattr__
-            return getattr(self._state, name, None)
-        RuntimeError: maximum recursion depth exceeded
-        """
-        # from .security import security
-        # security.init_app(microservice)
-# WORKAROUND
-        from .security import udstore
-        from flask.ext.security import Security
-        security = Security(microservice, udstore)
-# WORKAROUND
-        ############################################
+        # Dynamically load the authentication service
+        meta = Meta()
+        module_base = __package__ + ".resources.services.authentication"
+        auth_service = os.environ.get('BACKEND_AUTH_SERVICE', '')
+        module_name = module_base + '.' + auth_service
+        logger.debug("Trying to load the module %s" % module_name)
+        module = meta.get_module_from_string(module_name)
 
-        logger.info("FLASKING! Injected security")
+        # To be stored inside the flask global context
+        custom_auth = module.Authentication()
 
-        ####################
-        # GRAPHDB login?
-        from .resources.services.detect import GRAPHDB_AVAILABLE
-        if GRAPHDB_AVAILABLE:
-            logger.warning("Using Graphdb for storing users")
-            from .resources.services.accounting.graphbased \
-                import load_graph_user, \
-                load_graph_token   # , unauthorized_on_graph
+        # Instead of using the decorator
+        # Applying Flask_httpauth lib to the current instance
+        from .auth import auth
+        auth.verify_token(custom_auth.verify_token)
 
-            lm = microservice.login_manager
-            lm.user_loader(load_graph_user)
-            lm.token_loader(load_graph_token)
-            # lm.unauthorized_handler(unauthorized_on_graph)
+        @microservice.before_request
+        def enable_global_authentication():
+            g._custom_auth = custom_auth
 
-# UHM
-            microservice.config['SECURITY_LOGIN_URL'] = '/logintest'
+        logger.info("FLASKING! Injected security internal module")
 
     ##############################
     # Restful plugin
-    from .rest import epo, create_endpoints
-    logger.info("FLASKING! Injected rest endpoints")
-    epo = create_endpoints(epo, security, debug)
-
+    from .rest import Api, Endpoints, create_endpoints
+    # Defining AUTOMATIC Resources
+    current_endpoints = \
+        create_endpoints(Endpoints(Api), enable_security, debug)
     # Restful init of the app
-    epo.rest_api.init_app(microservice)
+    current_endpoints.rest_api.init_app(microservice)
 
     ##############################
     # Prepare database and tables
     with microservice.app_context():
-        try:
-            if config.REMOVE_DATA_AT_INIT_TIME:
-                db.drop_all()
-            db.create_all()
-            logger.info("DB: Connected and ready")
-        except Exception as e:
-            logger.critical("Database connection failure: %s" % str(e))
-            exit(1)
+# //TO FIX:
+# INIT (ANY) DATABASE?
+# I could use a decorator to recover from flask.g any connection
+# inside any endpoint
 
+        # INIT USERS/ROLES FOR SECURITY
         if enable_security:
-            from .security import db_auth
-            # Prepare user/roles
-            db_auth()
-
-    ##############################
-    # Flask admin
-    if enable_security and not GRAPHDB_AVAILABLE:
-        from .admin import admin, UserView, RoleView
-        from .models import User, Role
-        from flask.ext.admin import helpers as admin_helpers
-
-        admin.init_app(microservice)
-        admin.add_view(UserView(User, db.session))
-        admin.add_view(RoleView(Role, db.session))
-
-        # Context processor for merging flask-admin's template context
-        # into the flask-security views
-        @security.context_processor
-        def security_context_processor():
-            return dict(admin_base_template=admin.base_template,
-                        admin_view=admin.index_view, h=admin_helpers)
-
-        logger.info("FLASKING! Injected admin endpoints")
-
-#     ##############################
-#     # RETHINKDB
-# # // TO FIX, not for every endpoint
-#     if RDB_AVAILABLE:
-#         @microservice.before_request
-#         def before_request():
-#             logger.debug("Hello request RDB")
-# # === Connection ===
-# # The RethinkDB server doesn’t use a thread-per-connnection approach,
-# # so opening connections per request will not slow down your database.
-
-# # Database should be already connected in "before_first_request"
-# # But the post method fails to find the object!
-#             from .resources.services.rethink import try_to_connect
-#             try_to_connect()
+            custom_auth.setup_secret(microservice.config['SECRET_KEY'])
+            custom_auth.init_users_and_roles()
 
     ##############################
     # Logging responses
@@ -189,6 +182,7 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
         logger.info("{} {} {} {}".format(
                     request.method, request.url, request.data, response))
         return response
+
     # OR
     # http://www.wiredmonk.me/error-handling-and-logging-in-flask-restful.html
     # WRITE TO FILE
