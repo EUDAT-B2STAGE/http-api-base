@@ -85,7 +85,7 @@ BASE_DB_DIR = '/dbs'
 SQLLITE_EXTENSION = 'db'
 SQLLITE_DBFILE = 'backend' + '.' + SQLLITE_EXTENSION
 dbfile = os.path.join(BASE_DB_DIR, SQLLITE_DBFILE)
-SECRET_KEY = 'my-super-secret-keyword_referringtoapiside'
+SECRET_KEY = 'simplesecret'
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + dbfile
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
