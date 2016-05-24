@@ -56,7 +56,8 @@ https://github.com/pallets/flask/wiki/Large-app-how-to
 ########################
 # Flask App factory    #
 ########################
-def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
+def create_app(name=__name__, enable_security=True,
+               debug=False, testing=False, **kwargs):
     """ Create the server istance for Flask application """
 
     #################################################
@@ -73,10 +74,13 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
                          template_folder=template_dir,
                          **kwargs)
 
-    # Check and use a random file a secret key.
+    if testing:
+        microservice.config['TESTING'] = testing
+    else:
+        # Check and use a random file a secret key.
 # // TO FIX:
-    # Maybe only in production?
-    install_secret_key(microservice)
+# Maybe only in production?
+        install_secret_key(microservice)
 
     # ##############################
     # # ERROR HANDLING
@@ -156,10 +160,11 @@ def create_app(name=__name__, enable_security=True, debug=False, **kwargs):
     # Restful init of the app
     epo.rest_api.init_app(microservice)
 
+    print("\n\n\nDEBUG\n\n\n", microservice.config['TESTING'])
+
     ##############################
     # Prepare database and tables
     with microservice.app_context():
-
 # //TO FIX:
 # INIT (ANY) DATABASE?
 # I could use a decorator to recover from flask.g any connection

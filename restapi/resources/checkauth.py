@@ -8,6 +8,7 @@ Add auth checks called /checklogged and /testadmin
 from __future__ import division, absolute_import
 from .. import myself, lic, get_logger
 
+from flask import current_app
 from confs.config import AUTH_URL
 from .base import ExtendedApiResource
 from .. import htmlcodes as hcodes
@@ -46,6 +47,9 @@ class Login(ExtendedApiResource):
     @decorate.apimethod
     def post(self):
         """ Using a service-dependent callback """
+
+        if current_app.config['TESTING']:
+            print("\n\n\nThis is inside a TEST\n\n\n")
 
         username = None
         password = None

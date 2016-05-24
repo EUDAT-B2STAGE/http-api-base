@@ -27,8 +27,8 @@ class TestRestAPI(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         logger.debug('### Setting up the Flask server ###')
-        app = create_app()
-        app.config['TESTING'] = True
+        app = create_app(testing=True)
+        # app.config['TESTING'] = True
         self.app = app.test_client()
 
     @classmethod
