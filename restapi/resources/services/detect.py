@@ -14,25 +14,36 @@ import os
 from ... import get_logger
 logger = get_logger(__name__)
 
+#################
+services = {}
+
 #######################################################
 # RELATIONAL DATABASE
 ### Detect SQL database?
 ### like sqllite, postgres, mysql
 
+# DO something and inject into 'services'
+
 #######################################################
 # GRAPH DATABASE
 GRAPHDB_AVAILABLE = 'GDB_NAME' in os.environ
 
-#######################################################
-# RETHINKDB
-RDB_AVAILABLE = False
-MODELS = []
+if GRAPHDB_AVAILABLE:
+    # DO something and inject into 'services'
+    from .neo4j import graph
+    logger.info("Graphdb checked %s" % graph)
+    services['neo4j'] = graph
 
-if 'RDB_NAME' in os.environ:
-    from .resources.services.rethink import load_models, wait_for_connection
-    # Look for models
-    MODELS = load_models()
-    if len(MODELS) > 0:
-        RDB_AVAILABLE = True
-        wait_for_connection()
-        logger.info("Found RethinkDB container")
+# #######################################################
+# # RETHINKDB
+# RDB_AVAILABLE = False
+# MODELS = []
+
+# if 'RDB_NAME' in os.environ:
+#     from .resources.services.rethink import load_models, wait_for_connection
+#     # Look for models
+#     MODELS = load_models()
+#     if len(MODELS) > 0:
+#         RDB_AVAILABLE = True
+#         wait_for_connection()
+#         logger.info("Found RethinkDB container")

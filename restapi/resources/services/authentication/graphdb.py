@@ -13,8 +13,14 @@ from datetime import datetime
 from .generic import BaseAuthentication
 from ..neo4j.graph import GraphFarm
 
+from ..detect import GRAPHDB_AVAILABLE
 from .... import get_logger
 logger = get_logger(__name__)
+
+
+if not GRAPHDB_AVAILABLE:
+    logger.critical("No GraphDB service found for auth")
+    exit(1)
 
 
 class Authentication(BaseAuthentication):

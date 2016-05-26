@@ -12,7 +12,6 @@ from flask import Flask, request, g  # , jsonify, got_request_exception
 # from .jsonify import make_json_error
 # from werkzeug.exceptions import default_exceptions
 # from .jsonify import log_exception, RESTError
-from .resources.services.detect import GRAPHDB_AVAILABLE
 from .meta import Meta
 from . import myself, lic, get_logger
 
@@ -132,9 +131,8 @@ def create_app(name=__name__, enable_security=True,
 # // TO FIX:
 # This could be done with a list of services
 # It should be cleared compiled in a docker way
-    if GRAPHDB_AVAILABLE:
-        from .resources.services.neo4j import graph
-        logger.info("Graphdb checked %s" % graph)
+    from .resources.services.detect import services
+    logger.info("Available services %s" % services)
 
     ##############################
     # Flask security
