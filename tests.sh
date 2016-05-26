@@ -23,5 +23,9 @@ if [ "$?" == "0" ]; then
     if [ "$?" == "0" ]; then
         # Print coverage if everything went well so far
         $com $cov_options $option/custom
+    else
+        exit $?
     fi
+else
+    exit $?
 fi
