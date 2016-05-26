@@ -26,12 +26,11 @@ if not GRAPHDB_AVAILABLE:
 class Authentication(BaseAuthentication):
 
     def __init__(self):
-        self._graph = GraphFarm().get_graph_instance()
+        self._graph = GraphFarm().get_instance()
 
     def get_user_object(self, username=None, payload=None):
 
         user = None
-        self._graph = GraphFarm().get_graph_instance()
         try:
             if username is not None:
                 user = self._graph.User.nodes.get(email=username)

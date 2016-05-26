@@ -129,10 +129,11 @@ def create_app(name=__name__, enable_security=True,
     ##############################
     # DATABASE/SERVICEs CHECKS
 # // TO FIX:
-# This could be done with a list of services
-# It should be cleared compiled in a docker way
+# This list of services should or could be compiled in a docker way
     from .resources.services.detect import services
-    logger.info("Available services %s" % services)
+    for service, myclass in services.items():
+        logger.info("Available service %s" % service)
+        myclass(check_connection=True)
 
     ##############################
     # Flask security

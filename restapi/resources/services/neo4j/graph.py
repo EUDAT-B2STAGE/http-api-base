@@ -6,6 +6,7 @@ import os
 import time
 from ....meta import Meta
 from .... import get_logger
+from commons.databases import DBinstance
 
 logger = get_logger(__name__)
 
@@ -31,10 +32,10 @@ except Exception as e:
     # raise e
     exit(1)
 
-##############################################################################
-# GRAPHDB
-##############################################################################
 
+#######################
+# GRAPHDB main object
+########################
 
 class MyGraph(object):
     """" A graph db neo4j instance """
@@ -79,50 +80,34 @@ class MyGraph(object):
     def other(self):
         return self
 
-########################################
 
-"""
-Wait for neo4j connection at startup
-"""
+#######################
+# Farm to get Graph instances
+########################
 
-counter = 0
-sleep_time = 1
-testdb = True
 
-while testdb:
-    try:
-        # CREATE INSTANCE
-        graph = MyGraph()
-        logger.info("Neo4j seems available")
+class GraphFarm(DBinstance):
 
-        # Add one model
+    """ Making some Graphs """
+
+    def init_connection(self):
+
+        # CHECK 1: test the environment
+        self._graph = MyGraph()
+        logger.info("Neo4j service seems plugged")
+
+        # CHECK 2: test the models
+        # Do not import neomodel before
+        # because it will force the system to check for the connection
         from neomodel import StructuredNode, StringProperty
 
         class TestConnection(StructuredNode):
             name = StringProperty(unique_index=True)
+
         logger.info("neomodel: checked labeling on active connection")
 
-        testdb = False
-    except BaseException:
-        logger.warning("Neo4j: Not reachable yet")
-
-        counter += 1
-        if counter % 5 == 0:
-            sleep_time += sleep_time * 2
-        logger.debug("Awaiting Neo4j: sleep %s" % sleep_time)
-        time.sleep(sleep_time)
-
-del graph
-
-
-########################################
-class GraphFarm(object):
-
-    """ Making some Graphs """
-
-    def get_graph_instance(
-            self, models2skip=[],
-            pymodule_with_models='.resources.services.neo4j.models'):
+    def get_instance(self, models2skip=[],
+                     pymodule_with_models='.resources.services.neo4j.models'):
 
         # Relative import: Add the name of the package as prefix
         module = __package__.split('.')[0] + pymodule_with_models

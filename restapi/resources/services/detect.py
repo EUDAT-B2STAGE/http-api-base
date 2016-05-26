@@ -30,9 +30,18 @@ GRAPHDB_AVAILABLE = 'GDB_NAME' in os.environ
 
 if GRAPHDB_AVAILABLE:
     # DO something and inject into 'services'
-    from .neo4j import graph
-    logger.info("Graphdb checked %s" % graph)
-    services['neo4j'] = graph
+    from .neo4j.graph import GraphFarm as service
+    services['neo4j'] = service
+
+#######################################################
+# IRODS
+
+#??
+
+#######################################################
+# ELASTICSEARCH
+
+#??
 
 # #######################################################
 # # RETHINKDB

@@ -49,3 +49,7 @@ class DBinstance(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def init_connection(self):
         return
+
+    @abc.abstractmethod
+    def get_instance(self, *args):
+        return
