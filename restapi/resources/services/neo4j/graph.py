@@ -49,7 +49,7 @@ class MyGraph(object):
             os.environ["NEO4J_REST_URL"] = \
                 PROTOCOL + "://" + USER + ":" + PW + "@" + \
                 HOST + ":" + PORT + "/db/data"
-            logger.info("Neo4j connection is set")
+            logger.debug("Neo4j connection socket is set")
             # print(os.environ["NEO4J_REST_URL"])
         except:
             raise EnvironmentError("Missing URL to connect to graph")
@@ -93,8 +93,15 @@ while testdb:
     try:
         # CREATE INSTANCE
         graph = MyGraph()
+        logger.info("Neo4j seems available")
 
-        logger.info("Neo4j: available")
+        # Add one model
+        from neomodel import StructuredNode, StringProperty
+
+        class TestConnection(StructuredNode):
+            name = StringProperty(unique_index=True)
+        logger.info("neomodel: checked labeling on active connection")
+
         testdb = False
     except BaseException:
         logger.warning("Neo4j: Not reachable yet")

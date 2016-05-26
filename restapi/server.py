@@ -12,7 +12,7 @@ from flask import Flask, request, g  # , jsonify, got_request_exception
 # from .jsonify import make_json_error
 # from werkzeug.exceptions import default_exceptions
 # from .jsonify import log_exception, RESTError
-# from .resources.services.detect import GRAPHDB_AVAILABLE
+from .resources.services.detect import GRAPHDB_AVAILABLE
 from .meta import Meta
 from . import myself, lic, get_logger
 
@@ -82,7 +82,7 @@ def create_app(name=__name__, enable_security=True,
 # # Maybe only in production?
 #         install_secret_key(microservice)
 
-    print("\n\n\nDEBUG\n\n\n", microservice.config['TESTING'])
+    print("\nDEBUG TESTING\n", microservice.config['TESTING'])
 
     # ##############################
     # # ERROR HANDLING
@@ -128,6 +128,15 @@ def create_app(name=__name__, enable_security=True,
     # logger.info("FLASKING! Injected sqlalchemy. (please use it)")
 
     ##############################
+    # DATABASE/SERVICEs CHECKS
+# // TO FIX:
+# This could be done with a list of services
+# It should be cleared compiled in a docker way
+    if GRAPHDB_AVAILABLE:
+        from .resources.services.neo4j import graph
+        logger.info("Graphdb checked %s" % graph)
+
+    ##############################
     # Flask security
     if enable_security:
 
@@ -150,6 +159,10 @@ def create_app(name=__name__, enable_security=True,
         @microservice.before_request
         def enable_global_authentication():
             g._custom_auth = custom_auth
+
+        # Enabling also OAUTH library
+        from .oauth import oauth
+        oauth.init_app(microservice)
 
         logger.info("FLASKING! Injected security internal module")
 
@@ -189,6 +202,14 @@ def create_app(name=__name__, enable_security=True,
     # file_handler = logging.FileHandler('app.log')
     # app.logger.addHandler(file_handler)
     # app.logger.setLevel(logging.INFO)
+
+    ##############################
+    # Enabling user callbacks after a request
+    @microservice.after_request
+    def call_after_request_callbacks(response):
+        for callback in getattr(g, 'after_request_callbacks', ()):
+            callback(response)
+        return response
 
     ##############################
     # App is ready
