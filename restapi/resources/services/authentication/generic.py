@@ -90,6 +90,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         self._user = user = self.get_user_object(payload=payload)
         if user is not None:
             logger.info("User authorized")
+# // TO FIX
 # CHECK TTL?
             return True
 
@@ -147,6 +148,9 @@ jti: JWT ID claim provides a unique identifier for the JWT
         """ The method which will check if credentials are good to go """
         token = None
         user = self.get_user_object(username=username)
+
+# // TO FIX:
+# maybe payload should be some basic part + custom payload from the developer
         if user is not None \
            and self.check_passwords(user.password, password):
             token = self.create_token(self.fill_payload(user))

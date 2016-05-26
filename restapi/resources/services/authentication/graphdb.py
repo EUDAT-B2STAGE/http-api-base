@@ -40,6 +40,7 @@ class Authentication(BaseAuthentication):
         return user
 
     def fill_payload(self, userobj):
+# // TO FIX
         return {
             'user_id': userobj._id,
             'hpwd': userobj.password,

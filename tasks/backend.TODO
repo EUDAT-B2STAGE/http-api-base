@@ -18,25 +18,6 @@ https://www.youtube.com/watch?v=8kTlzR4HhWo
 --- ✄ -----------------------
 Token:
 
-# API URLs for AUTH
-
-@app.route('/auth/login', methods=['POST'])
-    return jsonify(token=token)
-
-@app.route('/auth/signup', methods=['POST'])
-    user = User(email=request.json['email'], password=request.json['password'])
-    return jsonify(token=token)
-
-@app.route('/auth/b2access')
-
-@app.route('/auth/logout')
-@login_required
-
-@app.route('/api/me')
-@login_required
-
-
-######################################################
 ✔ Load auth service from a docker variable @done (16-05-23 08:19)
 ✔ my lib @done (16-05-23 12:44)
   ✔ verify_token decorator @done (16-05-23 12:44)
@@ -44,19 +25,16 @@ Token:
 ✔ bearer @done (16-05-23 12:44)
 http://j.mp/why_auth_bearer
 ✘ install flask-httpauth inside the docker image... @cancelled (16-05-23 15:02)
-
-Note:
-  every new login, a new token, which is valid
-
+☐ avoid printing the password parameter inside the logs...
 ☐ Prepare basic tests
+  ☐ write tests for authentication
 ☐ loading models at every request?
-☐ write tests for authentication
 ☐ JWT refactor content
-☐ Set and check TTL
-☐ The secret at startup: fix tests
+  ☐ Set and check TTL
+☐ The secret at startup
+   ☐ common
 ☐ Role required decorator?
 ✔ endpoints list @done (16-05-23 15:31)
 ☐ profile endpoint
 ☐ oauth2 user
-☐ avoid printing the password parameter inside the logs...
 

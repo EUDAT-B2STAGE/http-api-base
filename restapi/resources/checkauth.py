@@ -90,8 +90,9 @@ class Logout(ExtendedApiResource):
     @decorate.apimethod
     def get(self):
 # TO FIX
+        logger.critical("To be completed. Invalidate JWT.")
         print("DEBUG LOGOUT", self._auth._user, self._auth._payload)
-        return self.response("Hello World!")
+        return self.response("", code=hcodes.HTTP_OK_NORESPONSE)
 
 
 class Profile(ExtendedApiResource):
