@@ -1,8 +1,8 @@
 
-# rest-mock
+# Base for modern HTTP REST API written in Python
 
-A python3 flask HTTP server mapping classes into REST API endpoints;
-**the base** for any middleware APIs in my projects.
+A Python **3** Flask HTTP server mapping custom classes into REST API endpoints;
+written with **the base** in mind for middleware APIs in our projects.
 
 It comes bundled with:
 
@@ -10,9 +10,9 @@ It comes bundled with:
 * decorators to add properties and parameters
 * as many best practices i found in my experience for Flask
 * easy configuration
-* sqlalchemy (sqllite as default) backend
 * any database/resource pluggable (in fact, you can write your own)
-* security handling (JWT token will be added)
+* sqlalchemy (sqllite as default) backend
+* security handling (JWT and your database of choice)
 * administration
 
 ---
