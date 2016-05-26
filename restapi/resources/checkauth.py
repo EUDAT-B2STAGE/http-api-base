@@ -86,9 +86,11 @@ class Logout(ExtendedApiResource):
     base_url = AUTH_URL
 
     @auth.login_required
+    @decorate.load_auth_obj
     @decorate.apimethod
     def get(self):
 # TO FIX
+        print("DEBUG LOGOUT", self._auth._user, self._auth._payload)
         return self.response("Hello World!")
 
 
