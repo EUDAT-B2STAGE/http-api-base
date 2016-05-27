@@ -28,31 +28,34 @@ class ExternalServicesLogin(object):
 
     def __init__(self, testing=False):
 
-        if not testing:
-            # For each defined internal service
-            for key, func in Meta().get_methods_inside_instance(self).items():
-                # CHECK IF CREDENTIALS ARE ENABLED INSIDE DOCKER ENV
-                var1 = key.upper() + '_APPNAME'
-                var2 = key.upper() + '_APPKEY'
-                if var1 in os.environ and var2 in os.environ:
-                    # Call the service and save it
-                    try:
-                        self._available_services[key] = func()
-                        logger.info("Created Oauth2 service %s" % key)
-                    except Exception as e:
-                        logger.critical(
-                            "Could not request oauth2 service %s:\n%s" %
-                            (key, str(e)))
-                else:
-                    logger.debug("Skipping Oauth2 service %s" % key)
-                # print(key, func)
+        if testing:
+            return None
+
+        # For each defined internal service
+        for key, func in Meta().get_methods_inside_instance(self).items():
+            # Check if credentials are enabled inside docker env
+            var1 = key.upper() + '_APPNAME'
+            var2 = key.upper() + '_APPKEY'
+            if var1 in os.environ and var2 in os.environ:
+                # Call the service and save it
+                try:
+                    self._available_services[key] = func()
+                    logger.info("Created Oauth2 service %s" % key)
+                except Exception as e:
+                    logger.critical(
+                        "Could not request oauth2 service %s:\n%s" %
+                        (key, str(e)))
+            else:
+                logger.debug("Skipping Oauth2 service %s" % key)
+            # print(key, func)
 
     def github(self):
+        """ This APIs are very useful for testing purpose """
 
         return oauth.remote_app(
             'github',
-            consumer_key='',
-            consumer_secret='',
+            consumer_key=os.environ.get('GITHUB_APPNAME', 'yourappusername'),
+            consumer_secret=os.environ.get('GITHUB_APPKEY', 'yourapppw'),
             base_url='https://github.com/login/oauth',
             request_token_params={'scope': 'user'},
             request_token_url=None,
@@ -80,8 +83,15 @@ class ExternalServicesLogin(object):
 
 def decorate_http_request(remote):
     """
-    Decorate the OAuth call to access token endpoint
-    to inject the Authorization header
+    Necessary for B2ACCESS oauth2 servers.
+
+    Decorate the OAuth call
+    to access token endpoint
+    to inject the Authorization header.
+
+    Original source (for Python2) by Amy:
+    https://github.com/akrause2014
+        /eudat/blob/master/oauth2-client/b2access_client.py
     """
 
     old_http_request = remote.http_request
@@ -97,7 +107,6 @@ def decorate_http_request(remote):
             userpass = b64encode(str.encode("%s:%s" %
                                  (client_id, client_secret))).decode("ascii")
             headers.update({'Authorization': 'Basic %s' % (userpass,)})
-            # print(headers)
         try:
             response = old_http_request(
                 uri, headers=headers, data=data, method=method)

@@ -48,8 +48,10 @@ class Login(ExtendedApiResource):
     def post(self):
         """ Using a service-dependent callback """
 
+## // TO FIX: decide what to do
+# when authenticating on tests
         if current_app.config['TESTING']:
-            print("\n\n\nThis is inside a TEST\n\n\n")
+            print("\nThis is inside a TEST\n")
 
         username = None
         password = None
