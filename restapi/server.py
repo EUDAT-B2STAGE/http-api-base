@@ -150,6 +150,9 @@ def create_app(name=__name__, enable_security=True,
         # To be stored inside the flask global context
         custom_auth = module.Authentication()
 
+# OAUTH2 MODULES?
+# SKIP IF TESTING?
+
         # Instead of using the decorator
         # Applying Flask_httpauth lib to the current instance
         from .auth import auth

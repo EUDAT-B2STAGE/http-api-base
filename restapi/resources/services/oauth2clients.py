@@ -6,8 +6,10 @@ Add auth checks called /checklogged and /testadmin
 """
 
 from __future__ import division, absolute_import
-from .. import myself, lic, get_logger
-from ..oauth import oauth
+from ... import myself, lic, get_logger
+
+import os
+from ...oauth import oauth
 from base64 import b64encode
 
 __author__ = myself
@@ -16,12 +18,24 @@ __license__ = lic
 
 logger = get_logger(__name__)
 
+B2ACCESS_DEV_URL = "https://unity.eudat-aai.fz-juelich.de:8443"
+
 
 class ExternalServicesLogin(object):
 
-    @staticmethod
-    def github():
-        return oauth.remote_app(
+    # _current = None
+
+    # def __init__(self, service='b2access', testing=False):
+
+    #     if self._current is None:
+    #         method = getattr(self, service)
+    #         method()
+
+    def github(self):
+
+        logger.debug("Oauth2 service github")
+
+        self._current = oauth.remote_app(
             'github',
             consumer_key='',
             consumer_secret='',
@@ -32,17 +46,22 @@ class ExternalServicesLogin(object):
             access_token_url='https://github.com/login/oauth/access_token',
             authorize_url='https://github.com/login/oauth/authorize'
         )
+        return self._current
 
-    @staticmethod
-    def b2access():
+    def b2access(self, testing=False):
 
-        B2ACCESS_DEV_URL = "https://unity.eudat-aai.fz-juelich.de:8443"
+        if testing:
+            return None
+
+        logger.debug("Oauth2 service b2access")
+
         # The B2ACCESS DEVELOPMENT
-        return oauth.remote_app(
+        self._current = oauth.remote_app(
             'b2access',
-            consumer_key='yourappusername',
-            consumer_secret='yourapppassword',
+            consumer_key=os.environ.get('B2ACCESS_APPNAME', 'yourappusername'),
+            consumer_secret=os.environ.get('B2ACCESS_APPKEY', 'yourapppw'),
             base_url=B2ACCESS_DEV_URL + '/oauth2/',
+            # LOAD CREDENTIALS FROM DOCKER ENVIRONMENT
             request_token_params={'scope':
                                   'USER_PROFILE GENERATE_USER_CERTIFICATE'},
             request_token_url=None,
@@ -50,6 +69,7 @@ class ExternalServicesLogin(object):
             access_token_url=B2ACCESS_DEV_URL + '/oauth2/token',
             authorize_url=B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
         )
+        return self._current
 
 
 def decorate_http_request(remote):
@@ -59,8 +79,10 @@ def decorate_http_request(remote):
     """
 
     old_http_request = remote.http_request
+    print("old http request", old_http_request)
 
     def new_http_request(uri, headers=None, data=None, method=None):
+        response = None
         if not headers:
             headers = {}
         if not headers.get("Authorization"):
@@ -70,5 +92,10 @@ def decorate_http_request(remote):
                                  (client_id, client_secret))).decode("ascii")
             headers.update({'Authorization': 'Basic %s' % (userpass,)})
             # print(headers)
-        return old_http_request(uri, headers=headers, data=data, method=method)
+        try:
+            response = old_http_request(
+                uri, headers=headers, data=data, method=method)
+        except Exception as e:
+            logger.critical("Failed to authorize:\n%s" % str(e))
+        return response
     remote.http_request = new_http_request
