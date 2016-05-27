@@ -3,7 +3,6 @@
 """ Graph DB abstraction from neo4j server """
 
 import os
-import time
 from ....meta import Meta
 from .... import get_logger
 from commons.databases import DBinstance
@@ -85,7 +84,6 @@ class MyGraph(object):
 # Farm to get Graph instances
 ########################
 
-
 class GraphFarm(DBinstance):
 
     """ Making some Graphs """
@@ -94,7 +92,7 @@ class GraphFarm(DBinstance):
 
         # CHECK 1: test the environment
         self._graph = MyGraph()
-        logger.info("Neo4j service seems plugged")
+        logger.debug("Neo4j service seems plugged")
 
         # CHECK 2: test the models
         # Do not import neomodel before
@@ -104,7 +102,7 @@ class GraphFarm(DBinstance):
         class TestConnection(StructuredNode):
             name = StringProperty(unique_index=True)
 
-        logger.info("neomodel: checked labeling on active connection")
+        logger.debug("neomodel: checked labeling on active connection")
 
     def get_instance(self, models2skip=[],
                      pymodule_with_models='.resources.services.neo4j.models'):

@@ -35,24 +35,14 @@ if GRAPHDB_AVAILABLE:
 
 #######################################################
 # IRODS
+IRODS_AVAILABLE = 'RODSERVER_NAME' in os.environ
 
-#??
+if IRODS_AVAILABLE:
+    # DO something and inject into 'services'
+    from .irods.client import IrodsFarm as service
+    services['irods'] = service
 
 #######################################################
 # ELASTICSEARCH
 
-#??
-
-# #######################################################
-# # RETHINKDB
-# RDB_AVAILABLE = False
-# MODELS = []
-
-# if 'RDB_NAME' in os.environ:
-#     from .resources.services.rethink import load_models, wait_for_connection
-#     # Look for models
-#     MODELS = load_models()
-#     if len(MODELS) > 0:
-#         RDB_AVAILABLE = True
-#         wait_for_connection()
-#         logger.info("Found RethinkDB container")
+# ?

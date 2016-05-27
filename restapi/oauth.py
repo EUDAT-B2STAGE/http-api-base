@@ -13,4 +13,4 @@ logger = get_logger(__name__)
 ####################################
 # Oauth2
 oauth = OAuth()
-logger.info("Oauth2 object created")
+logger.debug("Oauth2 object created")

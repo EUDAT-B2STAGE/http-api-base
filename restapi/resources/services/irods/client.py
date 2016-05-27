@@ -15,13 +15,13 @@ import os
 import inspect
 import re
 from collections import OrderedDict
-from ..basher import BashCommands
-from ..exceptions import RestApiException
+from ...basher import BashCommands
+from ...exceptions import RestApiException
 from confs.config import IRODS_ENV
-from . import irods
+from commons.databases import DBinstance
 
 # from ..templating import Templa
-# from . import string_generator, appconfig
+# from . import string_generator
 
 from restapi import get_logger
 logger = get_logger(__name__)
@@ -101,7 +101,6 @@ class IrodsException(RestApiException):
 #
 # ######################################
 
-
 class ICommands(BashCommands):
     """irods icommands in a class"""
 
@@ -173,7 +172,6 @@ class ICommands(BashCommands):
                 json.dump(self._init_data, fw)
 
             self.set_password()
-            logger.info("Saved irods admin credentials")
             logger.debug("iRODS admin environment found\n%s" % self._init_data)
 
         elif authscheme == 'GSI':
@@ -445,9 +443,9 @@ class ICommands(BashCommands):
             {
                 'path': '/your_zone/your_path/',
                 'ACL': [
-                            ['your_user', 'your_zone', 'own'], 
+                            ['your_user', 'your_zone', 'own'],
                             ['other_user', 'your_zone', 'read']
-                        ], 
+                        ],
                 'inheritance': 'Disabled'
             }
         """
@@ -465,7 +463,7 @@ class ICommands(BashCommands):
             else:
                 data["path"] = d[0]
 
-        popMe = None 
+        popMe = None
         for index, element in enumerate(data["ACL"]):
 
             if element == 'object':
@@ -484,7 +482,7 @@ class ICommands(BashCommands):
 
         if firstRoot is None:
           firstRoot = root
-      
+
         iout = self.list(path=root,detailed=True)
         path = None
         pathLen = 0;
@@ -527,8 +525,8 @@ class ICommands(BashCommands):
             row["acl"] = acl
             row["acl_inheritance"] = inheritance
             row["object_type"] = "collection"
-            row["content_length"] = 0 
-            row["last_modified"] = 0 
+            row["content_length"] = 0
+            row["last_modified"] = 0
             if recursive:
               row["objects"] = objects
             row["path"] = path[1+rootLen:]
@@ -540,13 +538,13 @@ class ICommands(BashCommands):
             row["acl"] = acl
             row["acl_inheritance"] = inheritance
             row["object_type"] = "dataobject"
-            row["content_length"] = d[3] 
-            row["last_modified"] = d[4] 
+            row["content_length"] = d[3]
+            row["last_modified"] = d[4]
             row["path"] = path[1+rootLen:]
 
           data[row["name"]] = row
 
-        return data    
+        return data
 
     def check_user_exists(self, username, checkGroup=None):
         com = 'iuserinfo'
@@ -939,9 +937,11 @@ class ICommands(BashCommands):
 #         exit()
 
 
-#######################################
-# Creating the iRODS main instance
-test_irods = ICommands()
-# Note: this will be changed in the near future
-# We should create the instance before every request
-# (see Flask before_request decorator)
+class IrodsFarm(DBinstance):
+
+    def init_connection(self):
+        self._irods = ICommands()
+        logger.debug("iRODS seems online")
+
+    def get_instance(self):
+        return self._irods
