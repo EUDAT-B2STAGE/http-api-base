@@ -9,6 +9,7 @@ http://python-3-patterns-idioms-test.readthedocs.org/en/latest/Metaprogramming.h
 
 from importlib import import_module
 import pkgutil
+import inspect
 from . import get_logger
 
 logger = get_logger(__name__)
@@ -69,7 +70,18 @@ class Meta(object):
             logger.critical("Failed to load resource: " + str(e))
         return module
 
-    def get_class_from_string(self, classname, module):
+    @staticmethod
+    def get_methods_inside_instance(instance, private_methods=False):
+        methods = {}
+        all_methods = inspect.getmembers(instance, predicate=inspect.ismethod)
+        for name, method in all_methods:
+            if not private_methods and name[0] == '_':
+                continue
+            methods[name] = method
+        return methods
+
+    @staticmethod
+    def get_class_from_string(classname, module):
         """ Get a specific class from a module using a string variable """
 
         myclass = None

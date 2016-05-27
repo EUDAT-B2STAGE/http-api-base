@@ -81,7 +81,7 @@ def create_app(name=__name__, enable_security=True,
 # # Maybe only in production?
 #         install_secret_key(microservice)
 
-    print("\nDEBUG TESTING\n", microservice.config['TESTING'])
+    # print("\nDEBUG TESTING\n", microservice.config['TESTING'])
 
     # ##############################
     # # ERROR HANDLING
@@ -147,8 +147,15 @@ def create_app(name=__name__, enable_security=True,
         logger.debug("Trying to load the module %s" % module_name)
         module = meta.get_module_from_string(module_name)
 
-        # To be stored inside the flask global context
+        # This is the main object that drives authentication
+        # inside our Flask server.
+        # Note: to be stored inside the flask global context
         custom_auth = module.Authentication()
+
+        # Verify if we can inject oauth2 services into this module
+        from .resources.services.oauth2clients import ExternalServicesLogin
+        oauth2 = ExternalServicesLogin(microservice.config['TESTING'])
+        custom_auth.set_oauth2_services(oauth2._available_services)
 
 # OAUTH2 MODULES?
 # SKIP IF TESTING?

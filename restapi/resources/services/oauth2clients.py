@@ -10,6 +10,7 @@ from ... import myself, lic, get_logger
 
 import os
 from ...oauth import oauth
+from ...meta import Meta
 from base64 import b64encode
 
 __author__ = myself
@@ -23,19 +24,32 @@ B2ACCESS_DEV_URL = "https://unity.eudat-aai.fz-juelich.de:8443"
 
 class ExternalServicesLogin(object):
 
-    # _current = None
+    _available_services = {}
 
-    # def __init__(self, service='b2access', testing=False):
+    def __init__(self, testing=False):
 
-    #     if self._current is None:
-    #         method = getattr(self, service)
-    #         method()
+        if not testing:
+            # For each defined internal service
+            for key, func in Meta().get_methods_inside_instance(self).items():
+                # CHECK IF CREDENTIALS ARE ENABLED INSIDE DOCKER ENV
+                var1 = key.upper() + '_APPNAME'
+                var2 = key.upper() + '_APPKEY'
+                if var1 in os.environ and var2 in os.environ:
+                    # Call the service and save it
+                    try:
+                        self._available_services[key] = func()
+                        logger.info("Created Oauth2 service %s" % key)
+                    except Exception as e:
+                        logger.critical(
+                            "Could not request oauth2 service %s:\n%s" %
+                            (key, str(e)))
+                else:
+                    logger.debug("Skipping Oauth2 service %s" % key)
+                # print(key, func)
 
     def github(self):
 
-        logger.debug("Oauth2 service github")
-
-        self._current = oauth.remote_app(
+        return oauth.remote_app(
             'github',
             consumer_key='',
             consumer_secret='',
@@ -46,17 +60,10 @@ class ExternalServicesLogin(object):
             access_token_url='https://github.com/login/oauth/access_token',
             authorize_url='https://github.com/login/oauth/authorize'
         )
-        return self._current
 
     def b2access(self, testing=False):
 
-        if testing:
-            return None
-
-        logger.debug("Oauth2 service b2access")
-
-        # The B2ACCESS DEVELOPMENT
-        self._current = oauth.remote_app(
+        return oauth.remote_app(
             'b2access',
             consumer_key=os.environ.get('B2ACCESS_APPNAME', 'yourappusername'),
             consumer_secret=os.environ.get('B2ACCESS_APPKEY', 'yourapppw'),
@@ -69,7 +76,6 @@ class ExternalServicesLogin(object):
             access_token_url=B2ACCESS_DEV_URL + '/oauth2/token',
             authorize_url=B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
         )
-        return self._current
 
 
 def decorate_http_request(remote):

@@ -37,9 +37,13 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     DEFAULT_USER = USER
     DEFAULT_PASSWORD = PWD
     DEFAULT_ROLES = [ROLE_USER, ROLE_ADMIN]
+    _oauth2 = {}
 
     def setup_secret(self, secret):
         self.SECRET = secret
+
+    def set_oauth2_services(self, services):
+        self._oauth2 = services
 
     @staticmethod
     def encode_string(string):
