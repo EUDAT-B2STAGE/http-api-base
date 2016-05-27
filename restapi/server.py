@@ -130,8 +130,8 @@ def create_app(name=__name__, enable_security=True,
     # DATABASE/SERVICEs CHECKS
 # // TO FIX:
 # This list of services should or could be compiled in a docker way
-    from .resources.services.detect import services
-    for service, myclass in services.items():
+    from .resources.services.detect import services as interal_services
+    for service, myclass in interal_services.items():
         logger.info("Available service %s" % service)
         myclass(check_connection=True)
 
@@ -165,9 +165,13 @@ def create_app(name=__name__, enable_security=True,
         from .auth import auth
         auth.verify_token(custom_auth.verify_token)
 
+        # Global namespace inside the Flask server
         @microservice.before_request
         def enable_global_authentication():
+            # Save auth
             g._custom_auth = custom_auth
+            # Save all databases/services
+            g._services = interal_services
 
         # Enabling also OAUTH library
         from .oauth import oauth
@@ -187,6 +191,7 @@ def create_app(name=__name__, enable_security=True,
     ##############################
     # Prepare database and tables
     with microservice.app_context():
+
 # //TO FIX:
 # INIT (ANY) DATABASE?
 # I could use a decorator to recover from flask.g any connection
@@ -204,13 +209,6 @@ def create_app(name=__name__, enable_security=True,
         logger.info("{} {} {} {}".format(
                     request.method, request.url, request.data, response))
         return response
-
-    # OR
-    # http://www.wiredmonk.me/error-handling-and-logging-in-flask-restful.html
-    # WRITE TO FILE
-    # file_handler = logging.FileHandler('app.log')
-    # app.logger.addHandler(file_handler)
-    # app.logger.setLevel(logging.INFO)
 
     ##############################
     # Enabling user callbacks after a request

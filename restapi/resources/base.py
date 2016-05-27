@@ -160,6 +160,27 @@ class ExtendedApiResource(Resource):
 
         return response[RESPONSE_CONTENT]['data']
 
+    def global_get(self, object_name):
+
+        from flask import g
+        obj = g.get('_' + object_name, None)
+        if obj is None:
+            return self.response(
+                errors={"Internal error": "No %s object found!" % object_name},
+                code=hcodes.HTTP_BAD_CONFLICT)
+        return obj
+
+    def global_get_service(self, service_name, object_name='services'):
+
+        services = self.global_get(object_name)
+        obj = services.get(service_name, None)
+        if obj is None:
+            return self.response(
+                errors={
+                    "Internal error": "No %s service found!" % service_name},
+                code=hcodes.HTTP_BAD_CONFLICT)
+        return obj().get_instance()
+
     def response(self, data=None, elements=None,
                  errors=None, code=hcodes.HTTP_OK_BASIC, headers={}):
         """
