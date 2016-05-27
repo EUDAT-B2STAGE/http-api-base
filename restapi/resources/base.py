@@ -214,18 +214,32 @@ class ExtendedApiResource(Resource):
         #     #warnings
         #     range 300 < 400
 
-        data_type = str(type(data))
-        if elements is None:
-            if data is None:
-                elements = 0
-            elif isinstance(data, str):
-                elements = 1
-            else:
-                elements = len(data)
+        # Try conversions and compute types and length
+        try:
+            data_type = str(type(data))
+            if elements is None:
+                if data is None:
+                    elements = 0
+                elif isinstance(data, str):
+                    elements = 1
+                else:
+                    elements = len(data)
 
-        if errors is None:
-            total_errors = 0
-        else:
+            if errors is None:
+                total_errors = 0
+            else:
+                total_errors = len(errors)
+
+            code = int(code)
+        except Exception as e:
+            logger.critical("Could not build response: %s" % e)
+            # Revert to defaults
+            data = None,
+            data_type = str(type(data))
+            elements = 0
+            # Also set the error
+            code = hcodes.HTTP_SERVICE_UNAVAILABLE
+            errors = [{'Failed to build response': str(e)}]
             total_errors = len(errors)
 
         self._latest_response = {
@@ -237,7 +251,7 @@ class ExtendedApiResource(Resource):
                 'data_type': data_type,
                 'elements': elements,
                 'errors': total_errors,
-                'status': int(code)
+                'status': code
             }
         }
 
