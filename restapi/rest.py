@@ -8,7 +8,7 @@ from __future__ import division, absolute_import
 from . import myself, lic, get_logger
 
 from flask.ext.restful import Api  # , Resource
-from .resources.endpoints import Endpoints
+from .resources.farm import EndpointsFarmer
 from .config import MyConfigs
 
 __author__ = myself
@@ -19,7 +19,8 @@ logger = get_logger(__name__)
 
 ####################################
 # REST to be activated inside the app factory
-logger.debug("Restful endpoints to be used: [%s, %s]" % (Api, Endpoints))
+logger.debug(
+    "Restful endpoints to be used: [%s, %s]" % (Api, EndpointsFarmer))
 
 
 def create_endpoints(custom_epo, security=False, debug=False):
@@ -56,10 +57,10 @@ def create_endpoints(custom_epo, security=False, debug=False):
     ####################################
     # Verify functions on the API server
     if security:
-        from .resources import checkauth
-        custom_epo.many_from_module(checkauth)
+        from .resources import endpoints
+        custom_epo.many_from_module(endpoints)
     else:
-        from .resources.checkauth import Verify
+        from .resources.endpoints import Verify
         custom_epo.create_many([Verify])
 
     ####################################

@@ -167,10 +167,10 @@ def create_app(name=__name__, enable_security=True,
 
     ##############################
     # Restful plugin
-    from .rest import Api, Endpoints, create_endpoints
+    from .rest import Api, EndpointsFarmer, create_endpoints
     # Defining AUTOMATIC Resources
     current_endpoints = \
-        create_endpoints(Endpoints(Api), enable_security, debug)
+        create_endpoints(EndpointsFarmer(Api), enable_security, debug)
     # Restful init of the app
     current_endpoints.rest_api.init_app(microservice)
 
