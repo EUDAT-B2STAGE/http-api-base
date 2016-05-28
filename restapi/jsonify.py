@@ -50,7 +50,16 @@ def make_json_error(ex):
 ##############################
 # Json Serialization as written in restful docs
 def output_json(data, code, headers=None):
+
     """Makes a Flask response with a JSON encoded body"""
+
+    # Skip this method if the whole data
+    # is already a Flask Response
+    from werkzeug.wrappers import Response
+    if isinstance(data, Response):
+        return data
+
+    # Build a flask JSON response
     resp = make_response(json.dumps(data), code)
     resp.headers.extend(headers or {})
     return resp

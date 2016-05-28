@@ -190,23 +190,6 @@ def all_rest_methods(decorator):
     return decorate
 
 
-##############################
-# Allowing the developer to recover from the global object of Flask
-# the authentication instance
-def load_auth_obj(func):
-    def wrapper(self, *args, **kwargs):
-        from flask import g
-        # print(g.__dict__)
-        auth = g.get('_custom_auth', None)
-        if auth is None:
-            return self.response(
-                errors={"Authentication": "No auth object found!"},
-                code=hcodes.HTTP_BAD_CONFLICT)
-        self._auth = auth
-        return func(self, *args, **kwargs)
-    return wrapper
-
-
 #####################################################################
 # Error handling with custom methods
 def exceptionError(self, label, e):

@@ -188,6 +188,12 @@ class ExtendedApiResource(Resource):
         https://github.com/EUDAT-B2STAGE/http-api-base/issues/7
         """
 
+        # Skip this method if the whole data
+        # is already a Flask Response
+        from werkzeug.wrappers import Response
+        if isinstance(data, Response):
+            return data
+
         # Do not apply if the object has already been used
         # as a 'standard response' from a parent call
         existing_content = {}

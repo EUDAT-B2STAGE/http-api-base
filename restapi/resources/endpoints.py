@@ -43,7 +43,6 @@ class Login(ExtendedApiResource):
                     "Please login with the POST method"},
             code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
-    @decorate.load_auth_obj
     @decorate.apimethod
     def post(self):
         """ Using a service-dependent callback """
@@ -72,8 +71,9 @@ class Login(ExtendedApiResource):
                 errors={"Credentials": "Missing 'username' and/or 'password'"},
                 code=bad_code)
 
-        # _auth instance is obtained throught the 'load_auth_obj' decorator
-        token = self._auth.make_login(username, password)
+        # auth instance from the global namespace
+        auth = self.global_get('custom_auth')
+        token = auth.make_login(username, password)
         if token is None:
             return self.response(
                 errors={"Credentials": "Invalid username and/or password"},
@@ -88,12 +88,13 @@ class Logout(ExtendedApiResource):
     base_url = AUTH_URL
 
     @auth.login_required
-    @decorate.load_auth_obj
     @decorate.apimethod
     def get(self):
 # TO FIX
         logger.critical("To be completed. Invalidate JWT.")
-        print("DEBUG LOGOUT", self._auth._user, self._auth._payload)
+        # auth instance from the global namespace
+        auth = self.global_get('custom_auth')
+        print("DEBUG LOGOUT", auth._user, auth._payload)
         return self.response("", code=hcodes.HTTP_OK_NORESPONSE)
 
 
@@ -103,7 +104,6 @@ class Profile(ExtendedApiResource):
     base_url = AUTH_URL
 
     @auth.login_required
-    @decorate.load_auth_obj
     @decorate.apimethod
     def get(self):
         """
@@ -111,7 +111,9 @@ class Profile(ExtendedApiResource):
         http localhost:8081/api/verifylogged
             Authorization:"Bearer RECEIVED_TOKEN"
         """
-        print("DEBUG", self._auth._user, self._auth._payload)
+
+        auth = self.global_get('custom_auth')
+        print("DEBUG PROFILE", auth._user, auth._payload)
         return self.response("Valid user")
 
     """

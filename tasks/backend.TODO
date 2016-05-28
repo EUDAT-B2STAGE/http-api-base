@@ -18,23 +18,21 @@ https://www.youtube.com/watch?v=8kTlzR4HhWo
 --- ✄ -----------------------
 Token:
 
-✔ Load auth service from a docker variable @done (16-05-23 08:19)
-✔ my lib @done (16-05-23 12:44)
-  ✔ verify_token decorator @done (16-05-23 12:44)
-  ✔ login_required decorator @done (16-05-23 12:44)
-✔ bearer @done (16-05-23 12:44)
-http://j.mp/why_auth_bearer
-✘ install flask-httpauth inside the docker image... @cancelled (16-05-23 15:02)
-☐ avoid printing the password parameter inside the logs...
+☐ save the oauth2 token inside the graphdb
+  ☐ create a user
+☐ go with certificates proxy for irods
+
 ☐ Prepare basic tests
   ☐ write tests for authentication
-☐ loading models at every request?
+  ☐ rewrite tests for irods, authenticated
+
+☐ Role required decorator?
+
+☐ avoid printing the password parameter inside the logs...
+☐ loading graph models at every request?
 ☐ JWT refactor content
   ☐ Set and check TTL
-☐ The secret at startup
-   ☐ common
-☐ Role required decorator?
-✔ endpoints list @done (16-05-23 15:31)
+☐ commons
+  ☐ The secret at startup
 ☐ profile endpoint
-☐ oauth2 user
 
