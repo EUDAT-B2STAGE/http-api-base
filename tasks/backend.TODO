@@ -32,7 +32,12 @@ Token:
 ☐ loading graph models at every request?
 ☐ JWT refactor content
   ☐ Set and check TTL
-☐ commons
-  ☐ The secret at startup
 ☐ profile endpoint
+
+☐ commons (for restangulask)
+  ☐ The secret at startup
+  ☐ Meta
+  ☐ HtmlCodes
+  ☐ Users
+
 
