@@ -40,9 +40,13 @@ Here is the index for browsing it internally on GitHub:
 
 ---
 
-## Creator(s)
+## Creator
 
 * [Paolo D'Onorio De Meo](https://twitter.com/paolodonorio/)
+
+## Contributors
+
+* Mattia, Roberto, Amy
 
 ## Copyright and license
 
