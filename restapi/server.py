@@ -157,9 +157,6 @@ def create_app(name=__name__, enable_security=True,
         oauth2 = ExternalServicesLogin(microservice.config['TESTING'])
         custom_auth.set_oauth2_services(oauth2._available_services)
 
-# OAUTH2 MODULES?
-# SKIP IF TESTING?
-
         # Instead of using the decorator
         # Applying Flask_httpauth lib to the current instance
         from .auth import auth

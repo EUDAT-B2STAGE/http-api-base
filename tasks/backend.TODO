@@ -23,7 +23,7 @@ Token:
 ☐ go with certificates proxy for irods
 
 ☐ Prepare basic tests
-  ☐ write tests for authentication
+  ✔ write tests for authentication @done (16-05-30 09:25)
   ☐ rewrite tests for irods, authenticated
 
 ☐ Role required decorator?
