@@ -128,8 +128,6 @@ def create_app(name=__name__, enable_security=True,
 
     ##############################
     # DATABASE/SERVICEs CHECKS
-# // TO FIX:
-# This list of services should or could be compiled in a docker way
     from .resources.services.detect import services as interal_services
     for service, myclass in interal_services.items():
         logger.info("Available service %s" % service)
