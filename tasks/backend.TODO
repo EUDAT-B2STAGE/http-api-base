@@ -20,24 +20,28 @@ Token:
 
 ☐ save the oauth2 token inside the graphdb
   ☐ create a user
+    ☐ create new entry inside main database service
+    ☐ implement refresh token
 ☐ go with certificates proxy for irods
 
-☐ Prepare basic tests
-  ✔ write tests for authentication @done (16-05-30 09:25)
-  ☐ rewrite tests for irods, authenticated
-
-☐ Role required decorator?
-
 ☐ avoid printing the password parameter inside the logs...
+
 ☐ loading graph models at every request?
 ☐ JWT refactor content
   ☐ Set and check TTL
 ☐ profile endpoint
+
+✔ Prepare basic tests @done (16-05-30 11:59)
+  ✔ write tests for authentication @done (16-05-30 09:25)
+  ✔ rewrite tests for irods, authenticated @done (16-05-30 11:59)
+
 
 ☐ commons (for restangulask)
   ☐ The secret at startup
   ☐ Meta
   ☐ HtmlCodes
   ☐ Users
+
+☐ Role required decorator?
 
 
