@@ -212,7 +212,7 @@ def error_handler(func, self, exception, label, catch_generic, args, kwargs):
             raise e
         else:
             return exceptionError(
-                self, default_label, 'Please contact webadministrators')
+                self, default_label, 'Please contact service administrators')
 
     return out
 
