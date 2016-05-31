@@ -15,23 +15,27 @@ from confs.config import DEBUG, \
 myself = "Paolo D'Onorio De Meo <p.donoriodemeo@gmail.com>"
 lic = "MIT"
 
+AVOID_COLORS_ENV_LABEL = 'TESTING_FLASK'
+
+
 ################
 # modify logging labels colors
-logging.addLevelName(
-    logging.CRITICAL,
-    "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.CRITICAL))
-logging.addLevelName(
-    logging.ERROR,
-    "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
-logging.addLevelName(
-    logging.WARNING,
-    "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
-logging.addLevelName(
-    logging.INFO,
-    "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.INFO))
-logging.addLevelName(
-    logging.DEBUG,
-    "\033[1;35m%s\033[1;0m" % logging.getLevelName(logging.DEBUG))
+if AVOID_COLORS_ENV_LABEL not in os.environ:
+    logging.addLevelName(
+        logging.CRITICAL,
+        "\033[1;41m%s\033[1;0m" % logging.getLevelName(logging.CRITICAL))
+    logging.addLevelName(
+        logging.ERROR,
+        "\033[1;31m%s\033[1;0m" % logging.getLevelName(logging.ERROR))
+    logging.addLevelName(
+        logging.WARNING,
+        "\033[1;33m%s\033[1;0m" % logging.getLevelName(logging.WARNING))
+    logging.addLevelName(
+        logging.INFO,
+        "\033[1;32m%s\033[1;0m" % logging.getLevelName(logging.INFO))
+    logging.addLevelName(
+        logging.DEBUG,
+        "\033[1;35m%s\033[1;0m" % logging.getLevelName(logging.DEBUG))
 
 ################
 # From the directory where the app is launched
@@ -63,8 +67,9 @@ fileConfig(LOG_CONFIG)
 
 def get_logger(name):
     """ Recover the right logger + set a proper specific level """
-    colored_name = "\033[1;90m%s\033[1;0m" % name
-    logger = logging.getLogger(colored_name)
+    if AVOID_COLORS_ENV_LABEL not in os.environ:
+        name = "\033[1;90m%s\033[1;0m" % name
+    logger = logging.getLogger(name)
     logger.setLevel(LOG_LEVEL)
     return logger
 

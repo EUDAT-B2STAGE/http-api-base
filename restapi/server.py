@@ -75,13 +75,11 @@ def create_app(name=__name__, enable_security=True,
 
     if testing:
         microservice.config['TESTING'] = testing
-#     else:
+    # else:
 #         # Check and use a random file a secret key.
 # # // TO FIX:
 # # Maybe only in production?
 #         install_secret_key(microservice)
-
-    # print("\nDEBUG TESTING\n", microservice.config['TESTING'])
 
     # ##############################
     # # ERROR HANDLING

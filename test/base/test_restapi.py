@@ -11,9 +11,10 @@ import unittest
 import logging
 import restapi.htmlcodes as hcodes
 from restapi.server import create_app
-from restapi import get_logger, myself
 from confs.config import USER, PWD, \
     TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
+
+from restapi import get_logger, myself
 
 __author__ = myself
 logger = get_logger(__name__)
@@ -50,6 +51,7 @@ class TestRestAPI(unittest.TestCase):
     def tearDown(self):
         pass
     """
+
 
     def setUp(self):
         """

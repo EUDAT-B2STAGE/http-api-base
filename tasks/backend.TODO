@@ -18,14 +18,13 @@ https://www.youtube.com/watch?v=8kTlzR4HhWo
 --- ✄ -----------------------
 Token:
 
-☐ save the oauth2 token inside the graphdb
-  ☐ create a user
-    ☐ create new entry inside main database service
-    ☐ implement refresh token
+✔ save the oauth2 token inside the graphdb @done (16-05-31 11:33)
+  ✔ create a user @done (16-05-31 11:33)
+    ✔ create new entry inside main database service @done (16-05-31 11:33)
+☐ avoid printing the password parameter inside the logs...
 ☐ go with certificates proxy for irods
 
-☐ avoid printing the password parameter inside the logs...
-
+☐ implement refresh token?
 ☐ loading graph models at every request?
 ☐ JWT refactor content
   ☐ Set and check TTL
