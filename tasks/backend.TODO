@@ -36,11 +36,13 @@ Token:
   ✔ rewrite tests for irods, authenticated @done (16-05-30 11:59)
 
 ☐ commons (for restangulask)
-  ☐ Meta
+  ✔ Meta @done (16-05-31 15:33)
   ☐ HtmlCodes
   ☐ Logs
   ☐ Users/models?
   ☐ The secret at startup
+
+☐ from jinja2._compat import iteritems... @compatibility
 
 ☐ Role required decorator?
 

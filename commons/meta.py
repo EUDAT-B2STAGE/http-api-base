@@ -10,9 +10,10 @@ http://python-3-patterns-idioms-test.readthedocs.org/en/latest/Metaprogramming.h
 from importlib import import_module
 import pkgutil
 import inspect
-from . import get_logger
+import logging
 
-logger = get_logger(__name__)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 ################################
@@ -122,7 +123,6 @@ class Meta(object):
 #     "table": label,
 # }
 # # Generating the new class
-# from ...meta import Meta
 # resource_class = RethinkResource
 # if secured:
 #     resource_class = RethinkSecuredResource

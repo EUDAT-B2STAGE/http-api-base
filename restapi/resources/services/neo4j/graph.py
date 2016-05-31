@@ -3,7 +3,7 @@
 """ Graph DB abstraction from neo4j server """
 
 import os
-from ....meta import Meta
+from commons.meta import Meta
 from .... import get_logger
 from commons.databases import DBinstance
 

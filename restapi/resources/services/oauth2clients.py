@@ -10,7 +10,7 @@ from ... import myself, lic, get_logger
 
 import os
 from ...oauth import oauth
-from ...meta import Meta
+from commons.meta import Meta
 from base64 import b64encode
 
 __author__ = myself

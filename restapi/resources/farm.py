@@ -6,7 +6,7 @@ a Farm: How to create endpoints into REST service.
 
 from __future__ import absolute_import
 from .. import myself, lic, get_logger
-from ..meta import Meta
+from commons.meta import Meta
 
 __author__ = myself
 __copyright__ = myself

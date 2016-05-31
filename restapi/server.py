@@ -12,7 +12,7 @@ from flask import Flask, request, g  # , jsonify, got_request_exception
 # from .jsonify import make_json_error
 # from werkzeug.exceptions import default_exceptions
 # from .jsonify import log_exception, RESTError
-from .meta import Meta
+from commons.meta import Meta
 from . import myself, lic, get_logger
 
 __author__ = myself

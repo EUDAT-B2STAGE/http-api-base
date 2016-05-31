@@ -6,7 +6,7 @@ from __future__ import absolute_import
 import os
 from jinja2._compat import iteritems
 from . import get_logger, REST_CONFIG, REST_INIT, DEFAULT_REST_CONFIG
-from .meta import Meta
+from commons.meta import Meta
 try:
     import configparser
 except:
