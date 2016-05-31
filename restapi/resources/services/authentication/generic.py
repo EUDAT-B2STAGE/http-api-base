@@ -150,12 +150,18 @@ jti: JWT ID claim provides a unique identifier for the JWT
 
     def make_login(self, username, password):
         """ The method which will check if credentials are good to go """
-        token = None
+
         user = self.get_user_object(username=username)
+        if user is None:
+            return None
+
+        # Check if Oauth2 is enabled
+        if user.authmethod != 'credentials':
+            return None
 
 # // TO FIX:
 # maybe payload should be some basic part + custom payload from the developer
-        if user is not None \
-           and self.check_passwords(user.password, password):
-            token = self.create_token(self.fill_payload(user))
-        return token
+        if self.check_passwords(user.password, password):
+            return self.create_token(self.fill_payload(user))
+
+        return None

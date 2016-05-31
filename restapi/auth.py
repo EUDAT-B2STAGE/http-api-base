@@ -16,6 +16,19 @@ logger = get_logger(__name__)
 
 # Few costants
 HTTPAUTH_DEFAULT_SCHEME = "Bearer"
+
+"""
+The tokens used are RFC6750 Bearer tokens.
+
+The Resource should validate the tokens using the token validation endpoint;
+its basic use is by adding
+'Authorization: Bearer ' + tokenString to the HTTP header;
+cf. RFC6749 section 7.1.
+
+Note that anyone can validate a token as it is a bearer token:
+there is no client id nor is client authentication required.
+"""
+
 HTTPAUTH_DEFAULT_REALM = "Authentication Required"
 HTTPAUTH_TOKEN_KEY = 'Token'
 HTTPAUTH_AUTH_HEADER = 'WWW-Authenticate'
@@ -99,5 +112,5 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
 
 
 auth = HTTPTokenAuth()
-logger.warning(
+logger.info(
     "Initizialized a valid authentication class: [%s]" % auth._scheme)

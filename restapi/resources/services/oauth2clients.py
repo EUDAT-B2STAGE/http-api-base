@@ -66,7 +66,7 @@ class ExternalServicesLogin(object):
 
     def b2access(self, testing=False):
 
-        return oauth.remote_app(
+        b2access_oauth = oauth.remote_app(
             'b2access',
             consumer_key=os.environ.get('B2ACCESS_APPNAME', 'yourappusername'),
             consumer_secret=os.environ.get('B2ACCESS_APPKEY', 'yourapppw'),
@@ -80,6 +80,16 @@ class ExternalServicesLogin(object):
             authorize_url=B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
         )
 
+# The only way to set the token is the flask session?
+# ASK @AMY!
+        @b2access_oauth.tokengetter
+        # @b2accessCA.tokengetter
+        def get_b2access_oauth_token():
+            from flask import session
+            return session.get('b2access_token')
+
+        return b2access_oauth
+
 
 def decorate_http_request(remote):
     """
@@ -89,13 +99,13 @@ def decorate_http_request(remote):
     to access token endpoint
     to inject the Authorization header.
 
-    Original source (for Python2) by Amy:
+    Original source (for Python2) by @akrause2014:
     https://github.com/akrause2014
         /eudat/blob/master/oauth2-client/b2access_client.py
     """
 
     old_http_request = remote.http_request
-    print("old http request", old_http_request)
+    # print("old http request", old_http_request)
 
     def new_http_request(uri, headers=None, data=None, method=None):
         response = None
@@ -107,10 +117,7 @@ def decorate_http_request(remote):
             userpass = b64encode(str.encode("%s:%s" %
                                  (client_id, client_secret))).decode("ascii")
             headers.update({'Authorization': 'Basic %s' % (userpass,)})
-        try:
-            response = old_http_request(
-                uri, headers=headers, data=data, method=method)
-        except Exception as e:
-            logger.critical("Failed to authorize:\n%s" % str(e))
+        response = old_http_request(
+            uri, headers=headers, data=data, method=method)
         return response
     remote.http_request = new_http_request

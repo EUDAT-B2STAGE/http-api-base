@@ -45,7 +45,18 @@ class Authentication(BaseAuthentication):
         return user
 
     def fill_payload(self, userobj):
+
+        """
 # // TO FIX
+
+This method should be custom.
+This means it should be implemented inside the vanilla folder,
+instead of here
+        """
+
+# ADD IRODS USERNAME?
+        print("OBJ", userobj.email)
+
         return {
             'user_id': userobj._id,
             'hpwd': userobj.password,
@@ -64,6 +75,7 @@ class Authentication(BaseAuthentication):
             logger.warning("No users inside graphdb. Injected default.")
             user = self._graph.User(
                 email=self.DEFAULT_USER,
+                authmethod='credentials',
                 name='Default', surname='User',
                 password=self.hash_password(self.DEFAULT_PASSWORD))
             user.save()
