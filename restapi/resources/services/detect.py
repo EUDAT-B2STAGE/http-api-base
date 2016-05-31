@@ -35,7 +35,8 @@ if GRAPHDB_AVAILABLE:
 
 #######################################################
 # IRODS
-IRODS_AVAILABLE = 'RODSERVER_NAME' in os.environ
+IRODS_AVAILABLE = 'RODSERVER_NAME' in os.environ or \
+                  'ICAT_1_ENV_IRODS_HOST' in os.environ
 
 if IRODS_AVAILABLE:
     # DO something and inject into 'services'
