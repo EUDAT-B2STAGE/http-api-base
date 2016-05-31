@@ -131,14 +131,10 @@ def apimethod(func):
         # Call the wrapped function
         try:
             out = func(self, *args, **kwargs)
-        except KeyError as e:
-            error = str(e).strip("'")
-            logger.critical("Key error: %s" % error)
-            if error == "security":
-                return self.response(
-                    errors={'Authentication': "No method available"},
-                    code=hcodes.HTTP_BAD_NOTFOUND)
-            raise e
+        # except KeyError as e:
+        #     error = str(e).strip("'")
+        #     logger.critical("Key error: %s" % error)
+        #     raise e
         except TypeError as e:
             logger.warning(e)
             error = str(e).strip("'")

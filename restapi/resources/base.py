@@ -170,7 +170,8 @@ class ExtendedApiResource(Resource):
                 code=hcodes.HTTP_BAD_CONFLICT)
         return obj
 
-    def global_get_service(self, service_name, object_name='services'):
+    def global_get_service(self,
+                           service_name, object_name='services', **kwargs):
 
         services = self.global_get(object_name)
         obj = services.get(service_name, None)
@@ -179,7 +180,7 @@ class ExtendedApiResource(Resource):
                 errors={
                     "Internal error": "No %s service found!" % service_name},
                 code=hcodes.HTTP_BAD_CONFLICT)
-        return obj().get_instance()
+        return obj().get_instance(**kwargs)
 
     def response(self, data=None, elements=None,
                  errors=None, code=hcodes.HTTP_OK_BASIC, headers={}):

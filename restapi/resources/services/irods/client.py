@@ -939,21 +939,24 @@ class ICommands(BashCommands):
 
 class IrodsFarm(DBinstance):
 
-    def get_token_user(self):
+    def get_token_user(self, token=None):
         """ Depends on B2ACCESS authentication """
 ################
 #// TO FIX:
 # NOT IMPLEMENTED YET
 # this should be recovered from the JWT token
 ################
-        return 'guest'
+        user = 'guest'
+        print("TOKEN IS", token)
+        print("FIXME: IRODS USER *%s*" % user)
+        return user
 
     def init_connection(self):
         self.get_instance()
         logger.debug("iRODS seems online")
 
-    def get_instance(self, user=None):
-        user = self.get_token_user()
+    def get_instance(self, token=None):
+        user = self.get_token_user(token)
         if user is not None:
             self._irods = ICommands(user)
         return self._irods
