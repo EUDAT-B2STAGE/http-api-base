@@ -35,12 +35,12 @@ Token:
   ✔ write tests for authentication @done (16-05-30 09:25)
   ✔ rewrite tests for irods, authenticated @done (16-05-30 11:59)
 
-
 ☐ commons (for restangulask)
-  ☐ The secret at startup
   ☐ Meta
   ☐ HtmlCodes
-  ☐ Users
+  ☐ Logs
+  ☐ Users/models?
+  ☐ The secret at startup
 
 ☐ Role required decorator?
 

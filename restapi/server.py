@@ -21,7 +21,6 @@ __license__ = lic
 
 logger = get_logger(__name__)
 
-OBSCURED_FIELDS = ['password', 'pwd', 'token']
 
 ########################
 # Configure Secret Key #
@@ -201,16 +200,11 @@ def create_app(name=__name__, enable_security=True,
     @microservice.after_request
     def log_response(response):
 
-        # Avoid printing passwords
-        import json
-        parameters = json.loads(request.data.decode("ascii"))
-        for key, value in parameters.items():
-            if key in OBSCURED_FIELDS:
-                value = '****'
-            parameters[key] = value
+        from commons.logs import obscure_passwords
 
         logger.info("{} {} {} {}".format(
-                    request.method, request.url, parameters, response))
+                    request.method, request.url,
+                    obscure_passwords(request.data), response))
         return response
 
     ##############################
