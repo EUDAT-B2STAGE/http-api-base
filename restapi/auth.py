@@ -2,7 +2,7 @@
 
 from __future__ import division, absolute_import
 
-from . import htmlcodes as hcodes
+from commons import htmlcodes as hcodes
 from functools import wraps
 from flask import request
 from werkzeug.datastructures import Authorization

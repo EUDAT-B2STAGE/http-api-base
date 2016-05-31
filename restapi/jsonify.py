@@ -15,7 +15,7 @@ from . import myself, lic, get_logger
 
 from flask import jsonify, make_response
 from werkzeug.exceptions import HTTPException
-from . import htmlcodes as hcodes
+from commons import htmlcodes as hcodes
 
 # Look for the best chance for json lib
 try:

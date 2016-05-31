@@ -7,7 +7,7 @@ import shutil
 # import subprocess as shell
 from flask import request, send_from_directory
 from werkzeug import secure_filename
-from ... import htmlcodes as hcodes
+from commons import htmlcodes as hcodes
 from ... import get_logger
 from confs.config import UPLOAD_FOLDER, PY2_INTERPRETER
 

@@ -22,7 +22,7 @@ from .. import myself, lic, get_logger
 
 # from flask.ext.restful import marshal
 from flask.wrappers import Response
-from .. import htmlcodes as hcodes
+from commons import htmlcodes as hcodes
 from commons.meta import Meta
 
 __author__ = myself

@@ -8,10 +8,9 @@ And a Farm: How to create endpoints into REST service.
 from __future__ import division, absolute_import
 from .. import myself, lic, get_logger
 
-from flask import current_app
 from confs.config import AUTH_URL
 from .base import ExtendedApiResource
-from .. import htmlcodes as hcodes
+from commons import htmlcodes as hcodes
 from . import decorators as decorate
 from ..auth import auth
 # from confs import config

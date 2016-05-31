@@ -2,7 +2,7 @@
 
 """ The most standard Basic Resource i could """
 
-from .. import htmlcodes as hcodes
+from commons import htmlcodes as hcodes
 # from confs.config import STACKTRACE
 from confs.config import API_URL
 from ..jsonify import output_json  # , RESTError
