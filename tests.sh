@@ -3,6 +3,9 @@
 echo "Launching tests with coverage"
 sleep 1
 
+# Avoid colors when saving tests output into files
+export TESTING_FLASK="True"
+
 # nosetests \
 #     --stop \
 #     --with-coverage \

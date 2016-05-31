@@ -78,6 +78,13 @@ class Login(ExtendedApiResource):
                 errors={"Credentials": "Invalid username and/or password"},
                 code=bad_code)
 
+## TO FIX
+# RESPONSE SHOULD BE:
+#  {
+#       'access_token': '9tiAF8Wozt0ACd-Aum3IKoAKuFlYt4A7ajZBTDyaoYk',
+#       'token_type': 'Bearer'
+#  }
+
         return self.response({'token': token})
 
 
