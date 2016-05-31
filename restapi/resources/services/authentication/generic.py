@@ -155,8 +155,13 @@ jti: JWT ID claim provides a unique identifier for the JWT
         if user is None:
             return None
 
-        # Check if Oauth2 is enabled
-        if user.authmethod != 'credentials':
+        try:
+            # Check if Oauth2 is enabled
+            if user.authmethod != 'credentials':
+                return None
+        except:
+            # Missing authmethod as requested for authentication
+            logger.critical("Current authentication db models are broken!")
             return None
 
 # // TO FIX:

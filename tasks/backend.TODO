@@ -21,7 +21,8 @@ Token:
 ✔ save the oauth2 token inside the graphdb @done (16-05-31 11:33)
   ✔ create a user @done (16-05-31 11:33)
     ✔ create new entry inside main database service @done (16-05-31 11:33)
-☐ avoid printing the password parameter inside the logs...
+✔ avoid printing the password parameter inside the logs... @done (16-05-31 15:08)
+
 ☐ go with certificates proxy for irods
 
 ☐ implement refresh token?

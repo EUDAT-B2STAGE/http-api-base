@@ -21,6 +21,7 @@ __license__ = lic
 
 logger = get_logger(__name__)
 
+OBSCURED_FIELDS = ['password', 'pwd', 'token']
 
 ########################
 # Configure Secret Key #
@@ -199,8 +200,17 @@ def create_app(name=__name__, enable_security=True,
     # Logging responses
     @microservice.after_request
     def log_response(response):
+
+        # Avoid printing passwords
+        import json
+        parameters = json.loads(request.data.decode("ascii"))
+        for key, value in parameters.items():
+            if key in OBSCURED_FIELDS:
+                value = '****'
+            parameters[key] = value
+
         logger.info("{} {} {} {}".format(
-                    request.method, request.url, request.data, response))
+                    request.method, request.url, parameters, response))
         return response
 
     ##############################
