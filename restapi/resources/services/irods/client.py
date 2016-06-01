@@ -972,7 +972,7 @@ class IrodsFarm(DBinstance):
         print("FIXME: IRODS USER *%s*" % user)
         return user
 
-    def init_connection(self):
+    def init_connection(self, app):
         self.get_instance()
         logger.debug("iRODS seems online")
 

@@ -7,8 +7,8 @@ We create all the components here!
 
 from __future__ import absolute_import
 from .... import myself, lic, get_logger
-from confs import config
 from .generic import BaseAuthentication
+from ..sql.alchemy import SQLFarm
 
 __author__ = myself
 __copyright__ = myself
@@ -19,13 +19,23 @@ logger = get_logger(__name__)
 
 class Authentication(BaseAuthentication):
 
+    def __init__(self):
+        self._db = SQLFarm().get_instance()
+
     def fill_payload(self):
         raise NotImplementedError("SQL authentication to be done")
 
-    def get_user_object(self):
-        raise NotImplementedError("SQL authentication to be done")
+    def get_user_object(self, username=None, payload=None):
+        user = None
+        if username is not None:
+            user = self._db.User.query.filter_by(email=username).first()
+        if payload is not None and 'user_id' in payload:
+            user = self._db.User.query.get(payload['user_id'])
+        print("USER", user)
+        return user
 
     def init_users_and_roles(self):
+        self.get_user_object()
         raise NotImplementedError("SQL authentication to be done")
 
 

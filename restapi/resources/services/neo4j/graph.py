@@ -88,7 +88,7 @@ class GraphFarm(DBinstance):
 
     """ Making some Graphs """
 
-    def init_connection(self):
+    def init_connection(self, app):
 
         # CHECK 1: test the environment
         self._graph = MyGraph()

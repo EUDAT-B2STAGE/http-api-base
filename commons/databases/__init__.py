@@ -22,7 +22,7 @@ logger.setLevel(logging.DEBUG)
 
 class DBinstance(metaclass=abc.ABCMeta):
 
-    def __init__(self, check_connection=False):
+    def __init__(self, check_connection=False, app=None):
 
         if not check_connection:
             return
@@ -34,7 +34,7 @@ class DBinstance(metaclass=abc.ABCMeta):
 
         while testdb:
             try:
-                obj = self.init_connection()
+                obj = self.init_connection(app)
                 del obj
                 testdb = False
                 logger.info("Instance of '%s' was connected" % name)
@@ -48,7 +48,7 @@ class DBinstance(metaclass=abc.ABCMeta):
                 time.sleep(sleep_time)
 
     @abc.abstractmethod
-    def init_connection(self):
+    def init_connection(self, app):
         return
 
     @abc.abstractmethod

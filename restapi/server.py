@@ -118,18 +118,12 @@ def create_app(name=__name__, enable_security=True,
     cors.init_app(microservice)
     logger.info("FLASKING! Injected CORS")
 
-    # ##############################
-    # # SQLALCHEMY INJECTION. Flask-Sqlalchemy DB
-    # from .models import db
-    # db.init_app(microservice)
-    # logger.info("FLASKING! Injected sqlalchemy. (please use it)")
-
     ##############################
     # DATABASE/SERVICEs CHECKS
     from .resources.services.detect import services as interal_services
     for service, myclass in interal_services.items():
         logger.info("Available service %s" % service)
-        myclass(check_connection=True)
+        myclass(check_connection=True, app=microservice)
 
     ##############################
     # Flask security
