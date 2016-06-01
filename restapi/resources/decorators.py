@@ -208,6 +208,9 @@ def error_handler(func, self, exception, label, catch_generic, args, kwargs):
     except Exception as e:
         logger.warning(
             "Unexpected exception inside error handler:\n%s" % str(e))
+        import traceback
+        traceback.print_exc()
+
         if not catch_generic:
             raise e
         else:
