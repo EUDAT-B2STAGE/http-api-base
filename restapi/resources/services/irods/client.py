@@ -39,23 +39,28 @@ class IrodsException(RestApiException):
     def __str__(self):
         return self.parsedError
 
-    def parse_CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME(self, utility, error_string, error_code, error_label, role='user'):
-        #imeta add -d obj key value
-        #imeta add -d obj key value
-        #ERROR: rcModAVUMetadata failed with error -809000 CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
+    def parse_CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME(
+            self, utility, error_string, error_code, error_label, role='user'):
+        # imeta add -d obj key value
+        # imeta add -d obj key value
+        # ERROR: rcModAVUMetadata failed with error -809000 CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
 
         return "A resource already exists with this name"
 
-    def parse_CAT_NO_ACCESS_PERMISSION(self, utility, error_string, error_code, error_label, role='user'):
+    def parse_CAT_NO_ACCESS_PERMISSION(
+            self, utility, error_string, error_code, error_label, role='user'):
         return "Permission denied"
 
-    def parse_OVERWRITE_WITHOUT_FORCE_FLAG(self, utility, error_string, error_code, error_label, role='user'):
+    def parse_OVERWRITE_WITHOUT_FORCE_FLAG(
+            self, utility, error_string, error_code, error_label, role='user'):
         return "Trying to overwrite the object. Please add the force option"
 
-    def parse_USER_INPUT_PATH_ERR(self, utility, error_string, error_code, error_label, role='user'):
+    def parse_USER_INPUT_PATH_ERR(
+            self, utility, error_string, error_code, error_label, role='user'):
         return "The requested object does not exist on the specified path"
 
-    def parse_CAT_UNKNOWN_COLLECTION(self, utility, error_string, error_code, error_label, role='user'):
+    def parse_CAT_UNKNOWN_COLLECTION(
+            self, utility, error_string, error_code, error_label, role='user'):
         return "The requested collection does not exist"
 
     def parseIrodsError(self, error):
@@ -69,10 +74,17 @@ class IrodsException(RestApiException):
         m = re.search(regExpr, error)
         if m:
 
-            utility = m.group(1)            # es: mkdirUtil
-            error_string = m.group(2)       # es: mkColl of /abs/path/to/resource error
-            error_code = int(m.group(3))    # es: -809000
-            error_label = m.group(4)        # es: CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
+            # es: mkdirUtil
+            utility = m.group(1)
+
+            # es: mkColl of /abs/path/to/resource error
+            error_string = m.group(2)
+
+            # es: -809000
+            error_code = int(m.group(3))
+
+            # es: CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
+            error_label = m.group(4)
 
             method_name = 'parse_%s' % error_label
             method = getattr(self, method_name, None)
@@ -81,14 +93,18 @@ class IrodsException(RestApiException):
 
             return error_label
 
-        #Error example:
-        #ERROR: lsUtil: srcPath /abs/path/to/resource does not exist or user lacks access permission
+        # Error example:
+        # ERROR: lsUtil: srcPath /abs/path/to/resource does not exist or user lacks access permission
         regExpr = "^ERROR: (.*): (.*)$"
         m = re.search(regExpr, error)
         if m:
             logger.debug(m)
-            utility = m.group(1)        #es: lsUtil
-            error_string = m.group(2)   #es: srcPath /abs/path/to/resource does not exist or user lacks access permission
+
+            # es: lsUtil
+            utility = m.group(1)
+
+            # es: srcPath /abs/path/to/resource does not exist or user lacks access permission
+            error_string = m.group(2)
 
             return error_string
 
@@ -292,7 +308,7 @@ class ICommands(BashCommands):
                 env=self._current_environment,
                 parseException=True,
                 raisedException=IrodsException
-                )
+            )
         except IrodsException as e:
 
             irods_exception = IrodsException(e)
@@ -435,7 +451,8 @@ class ICommands(BashCommands):
         # Execute
         self.basic_icom(com, args)
         # Debug
-        logger.debug("Set %s permission to %s for %s" % (permission, path, userOrGroup))
+        logger.debug("Set %s permission to %s for %s" %
+                     (permission, path, userOrGroup))
 
     def get_permissions(self, path):
         """
@@ -481,68 +498,69 @@ class ICommands(BashCommands):
         data = {}
 
         if firstRoot is None:
-          firstRoot = root
+            firstRoot = root
 
-        iout = self.list(path=root,detailed=True)
+        iout = self.list(path=root, detailed=True)
         path = None
-        pathLen = 0;
+        pathLen = 0
         rootLen = len(firstRoot)
         acl = None
         inheritance = None
         for d in iout:
 
-          if len(d) <= 1:
-            if path is None:
-              path = d[0]
-              if path.endswith(":"):
-                path = path[:-1]
-              if not path.endswith("/"):
-                path+="/"
+            if len(d) <= 1:
+                if path is None:
+                    path = d[0]
+                    if path.endswith(":"):
+                        path = path[:-1]
+                    if not path.endswith("/"):
+                        path += "/"
 
-              pathLen = len(path)
-            continue
+                    pathLen = len(path)
+                continue
 
-          row = {}
+            row = {}
 
-          if d[0] == "ACL":
-            acl = d
-            continue
-          if d[0] == "Inheritance":
-            inheritance = d
-            continue
+            if d[0] == "ACL":
+                acl = d
+                continue
+            if d[0] == "Inheritance":
+                inheritance = d
+                continue
 
-          if d[0] == "C-":
+            if d[0] == "C-":
 
-            absname = d[1]
-            if recursive:
-              objects = self.list_as_json(absname, level+1, True, firstRoot)
+                absname = d[1]
+                if recursive:
+                    objects = self.list_as_json(
+                        absname, level + 1, True, firstRoot)
 
-            name = absname[pathLen:]
-            #print(path, "vs", name)
+                name = absname[pathLen:]
+                # print(path, "vs", name)
 
-            row["name"] = name
-            row["owner"] = "-"
-            row["acl"] = acl
-            row["acl_inheritance"] = inheritance
-            row["object_type"] = "collection"
-            row["content_length"] = 0
-            row["last_modified"] = 0
-            if recursive:
-              row["objects"] = objects
-            row["path"] = path[1+rootLen:]
+                row["name"] = name
+                row["owner"] = "-"
+                row["acl"] = acl
+                row["acl_inheritance"] = inheritance
+                row["object_type"] = "collection"
+                row["content_length"] = 0
+                row["last_modified"] = 0
+                if recursive:
+                    row["objects"] = objects
+                row["path"] = path[1 + rootLen:]
 
-          else:
+            else:
 
-            row["name"] = d[6]
-            row["owner"] = d[0]
-            row["acl"] = acl
-            row["acl_inheritance"] = inheritance
-            row["object_type"] = "dataobject"
-            row["content_length"] = d[3]
-            row["last_modified"] = d[4]
-            row["path"] = path[1+rootLen:]
+                row["name"] = d[6]
+                row["owner"] = d[0]
+                row["acl"] = acl
+                row["acl_inheritance"] = inheritance
+                row["object_type"] = "dataobject"
+                row["content_length"] = d[3]
+                row["last_modified"] = d[4]
+                row["path"] = path[1 + rootLen:]
 
-          data[row["name"]] = row
+            data[row["name"]] = row
 
         return data
 
@@ -946,7 +964,10 @@ class IrodsFarm(DBinstance):
 # NOT IMPLEMENTED YET
 # this should be recovered from the JWT token
 ################
-        user = 'guest'
+        if 'IRODS_USER' in os.environ:
+            user = os.environ.get('IRODS_USER')
+        else:
+            user = 'guest'
         print("TOKEN IS", token)
         print("FIXME: IRODS USER *%s*" % user)
         return user

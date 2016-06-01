@@ -24,12 +24,11 @@ Token:
 ✔ avoid printing the password parameter inside the logs... @done (16-05-31 15:08)
 
 ☐ go with certificates proxy for irods
-
-☐ implement refresh token?
-☐ loading graph models at every request?
 ☐ JWT refactor content
   ☐ Set and check TTL
 ☐ profile endpoint
+☐ refresh token / oauth standards
+☐ loading graph models at every request?
 
 ✔ Prepare basic tests @done (16-05-30 11:59)
   ✔ write tests for authentication @done (16-05-30 09:25)
@@ -45,5 +44,3 @@ Token:
 ☐ from jinja2._compat import iteritems... @compatibility
 
 ☐ Role required decorator?
-
-
