@@ -5,7 +5,7 @@ SECURITY ENDPOINTS CHECK
 Add auth checks called /checklogged and /testadmin
 """
 
-from __future__ import division, absolute_import
+from __future__ import absolute_import
 from .... import myself, lic, get_logger
 
 from ....auth import auth

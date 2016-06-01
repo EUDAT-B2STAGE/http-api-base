@@ -19,10 +19,11 @@ services = {}
 
 #######################################################
 # RELATIONAL DATABASE
-### Detect SQL database?
-### like sqllite, postgres, mysql
-
-# DO something and inject into 'services'
+if 'BACKEND_AUTH_SERVICE' in os.environ:
+    if os.environ['BACKEND_AUTH_SERVICE'] == 'relationaldb':
+        from .sql.alchemy import SQLFarm as service
+        logger.debug("Created SQLAlchemy relational DB objet")
+        services['sql'] = service
 
 #######################################################
 # GRAPH DATABASE
