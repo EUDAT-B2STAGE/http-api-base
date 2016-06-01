@@ -35,35 +35,30 @@ class Authentication(BaseAuthentication):
         return user
 
     def init_users_and_roles(self):
-        self.get_user_object()
-        raise NotImplementedError("SQL authentication to be done")
 
+        # if no roles
+        missing_role = not self._db.Role.query.first()
+        if missing_role:
+            logger.warning("No roles inside db. Injected defaults.")
+            for role in self.DEFAULT_ROLES:
+                sqlrole = self._db.Role(name=role, description="automatic")
+                self._db.session.add(sqlrole)
 
-# ####################################
-# # DB init for security
-# # THIS WORKS ONLY WITH SQLALCHEMY and flask security
-# def db_auth():
-#     """ What to do if the main auth object has no rows """
+        # if no users
+        missing_user = not self._db.User.query.first()
+        if missing_user:
+            logger.warning("No users inside db. Injected default.")
+            user = self._db.User(
+                email=self.DEFAULT_USER,
+                authmethod='credentials',
+                # name='Default', surname='User',
+                password=self.hash_password(self.DEFAULT_PASSWORD))
 
-#     missing_role = not Role.query.first()
-#     logger.debug("Missing role")
-#     if missing_role:
-#         udstore.create_role(name=config.ROLE_ADMIN, description='King')
-#         udstore.create_role(name=config.ROLE_USER, description='Citizen')
-#         logger.debug("Created roles")
+            # link roles into users
+            for role in self.DEFAULT_ROLES:
+                sqlrole = self._db.Role.query.filter_by(name=role).first()
+                user.roles.append(sqlrole)
+            self._db.session.add(user)
 
-#     missing_user = not User.query.first()
-#     logger.debug("Missing user")
-#     if missing_user:
-#         import datetime
-#         now = datetime.datetime.utcnow()
-#         from flask.ext.security.utils import encrypt_password
-#         udstore.create_user(first_name='TheOnlyUser', last_name='IAm',
-#                             email=config.USER, confirmed_at=now,
-#                             password=encrypt_password(config.PWD))
-#         udstore.add_role_to_user(config.USER, config.ROLE_ADMIN)
-#         logger.debug("Created user")
-
-#     if missing_user or missing_role:
-#         db.session.commit()
-#         logger.info("Database init with user/roles from conf")
+        if missing_user or missing_role:
+            self._db.session.commit()
