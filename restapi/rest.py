@@ -20,7 +20,7 @@ logger = get_logger(__name__)
 ####################################
 # REST to be activated inside the app factory
 logger.debug(
-    "Restful endpoints to be used: [%s, %s]" % (Api, EndpointsFarmer))
+    "Restful classes to create endpoints: [%s, %s]" % (Api, EndpointsFarmer))
 
 
 def create_endpoints(custom_epo, security=False, debug=False):

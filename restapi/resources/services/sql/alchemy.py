@@ -44,8 +44,8 @@ class SQLFarm(DBinstance):
 
         if self._db is None:
 
+            # Make sure you have models before doing things
             self.load_models()
-
             if self._models_module is None:
                 raise AttributeError("Sqlalchemy models unavailable!")
 
@@ -55,9 +55,7 @@ class SQLFarm(DBinstance):
 
             # Inject models inside the class
             for name, model in self._models.items():
-                if name is None:
-                    print("UHM", model)
-                logger.debug("Loading SQL model '%s'" % name)
+                logger.debug("Injecting SQL model '%s'" % name)
                 setattr(current_instance, name, model)
 
             # Save the sqlalchemy reference (to init the app)

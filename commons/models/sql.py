@@ -28,13 +28,13 @@ class Role(db.Model):
     description = db.Column(db.String(255))
 
     def __str__(self):
-        return "[db model: %s] %s" % (self.__class__.name, self.name)
+        return "[db model: %s] %s" % (self.__class__.__name__, self.name)
 
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(255))
-    surname = db.Column(db.String(255))
+    # name = db.Column(db.String(255))
+    # surname = db.Column(db.String(255))
     email = db.Column(db.String(100), unique=True)
     authmethod = db.Column(db.String(20))
     password = db.Column(db.String(255))
@@ -42,7 +42,7 @@ class User(db.Model):
                             backref=db.backref('users', lazy='dynamic'))
 
     def __str__(self):
-        return "[db model: %s] %s" % (self.__class__.name, self.email)
+        return "[db model: %s] %s" % (self.__class__.__name__, self.email)
 
 
 # class ExternalAccounts(db.Model):
@@ -54,4 +54,4 @@ class User(db.Model):
 #     description = db.Column(db.String(255))
 
 #     def __str__(self):
-#         return "[db model: %s] %s" % (self.__class__.name, self.email)
+#         return "[db model: %s] %s" % (self.__class__.__name__, self.email)

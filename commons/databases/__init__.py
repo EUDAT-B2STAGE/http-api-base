@@ -20,6 +20,8 @@ from ..meta import Meta
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+BASE_MODELS_PATH = 'commons.models.'
+
 
 class DBinstance(metaclass=abc.ABCMeta):
 
@@ -58,18 +60,23 @@ class DBinstance(metaclass=abc.ABCMeta):
                 logger.debug("Error was %s" % str(e))
                 time.sleep(sleep_time)
 
-    def load_base_models(self):
-        module_path = 'commons.models.' + self._service_name
+    def load_generic_models(self, module_path):
         module = self._meta.get_module_from_string(module_path)
-        self._models_module = module_path
         models = self._meta.get_new_classes_from_module(module)
+        # Keep tracking from where we loaded models
+        # This may help with some service (e.g. sqlalchemy)
+        self._models_module = module_path
         return models
 
+    def load_base_models(self):
+        module_path = BASE_MODELS_PATH + self._service_name
+        logger.debug("Loading base models")
+        return self.load_generic_models(module_path)
+
     def load_custom_models(self):
-        logger.debug("TO DO")
-        # # Update models module?
-        # self._models_module = module_path
-        return []
+        module_path = BASE_MODELS_PATH + 'custom.' + self._service_name
+        logger.debug("Loading custom models")
+        return self.load_generic_models(module_path)
 
     def load_models(self):
         """
@@ -81,15 +88,27 @@ class DBinstance(metaclass=abc.ABCMeta):
         The user MUST define where to load it!
         """
 
-        # LOAD BASE MODELS
+        # Load base models
         base_models = self.load_base_models()
-
-        # LOAD CUSTOM MODELS if file exists
+        # Load custom models, if the file exists
         custom_models = self.load_custom_models()
 
-        # JOIN THEM?
+        # Join models as described by issue #16
         self._models = base_models
+        for key, model in custom_models.items():
+            # Verify if overriding
+            if key in base_models.keys():
+                original_model = base_models[key]
+                # Override
+                if issubclass(model, original_model):
+                    logger.debug("Overriding model %s" % key)
+                    self._models[key] = model
+                    continue
+            # Otherwise just append
+            self._models[key] = model
+
         logger.debug("Loaded service models")
+        return self._models
 
     @abc.abstractmethod
     def define_service_name(self):
