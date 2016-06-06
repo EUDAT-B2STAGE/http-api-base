@@ -19,12 +19,14 @@ services = {}
 
 #######################################################
 # RELATIONAL DATABASE
+SQL_AVAILABLE = False
 
 #// TO FIX:
 # When we have postgres/mysql, you must detect them
 
 if 'BACKEND_AUTH_SERVICE' in os.environ:
     if os.environ['BACKEND_AUTH_SERVICE'] == 'relationaldb':
+        SQL_AVAILABLE = True
         from .sql.alchemy import SQLFarm as service
         logger.debug("Created SQLAlchemy relational DB objet")
         services['sql'] = service

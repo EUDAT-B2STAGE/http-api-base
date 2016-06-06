@@ -55,23 +55,15 @@ https://github.com/pallets/flask/wiki/Large-app-how-to
 ########################
 # Flask App factory    #
 ########################
-def create_app(name=__name__, enable_security=True,
-               debug=False, testing=False, **kwargs):
+def create_app(name=__name__,
+               enable_security=True, debug=False, testing=False, **kwargs):
     """ Create the server istance for Flask application """
 
     #################################################
     # Flask app instance
     #################################################
     from confs import config
-    template_dir = os.path.join(config.BASE_DIR, __package__)
-    microservice = Flask(name,
-                         # Quick note:
-                         # i use the template folder from the current dir
-                         # just for Administration.
-                         # I expect to have 'admin' dir here to change
-                         # the default look of flask-admin
-                         template_folder=template_dir,
-                         **kwargs)
+    microservice = Flask(name, **kwargs)
 
     if testing:
         microservice.config['TESTING'] = testing
@@ -84,8 +76,8 @@ def create_app(name=__name__, enable_security=True,
     # ##############################
     # # ERROR HANDLING
 # This was commented as it eats up the real error
-# even if it logs any error that happens,
-# which is useful in production
+# even if it logs any error that happens;
+# but it could be useful in production.
 
     # # Handling exceptions with json
     # for code in default_exceptions.keys():

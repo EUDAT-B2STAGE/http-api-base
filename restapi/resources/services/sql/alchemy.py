@@ -23,6 +23,8 @@ class SQLFarm(DBinstance):
     def init_connection(self, app):
         self.get_instance()
         self._db.init_app(app)
+# // TO FIX:
+# CHECK IF PASSWORD IS INSIDE THE STRING AND CENSOR IT
         logger.debug(
             "App attached to '%s'" % app.config.get('SQLALCHEMY_DATABASE_URI'))
         # Create database and tables if they don't exist yet

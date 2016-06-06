@@ -43,3 +43,15 @@ class User(db.Model):
 
     def __str__(self):
         return "[db model: %s] %s" % (self.__class__.name, self.email)
+
+
+# class ExternalAccounts(db.Model):
+#     username = db.Column(db.String(60), primary_key=True)
+# # TEXT?
+#     token = db.Column(db.String(255))
+#     email = db.Column(db.String(255))
+#     certificate_cn = db.Column(db.String(255))
+#     description = db.Column(db.String(255))
+
+#     def __str__(self):
+#         return "[db model: %s] %s" % (self.__class__.name, self.email)
