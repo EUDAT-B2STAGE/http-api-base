@@ -9,8 +9,8 @@ from __future__ import absolute_import
 
 from datetime import datetime
 from .... import myself, lic, get_logger
-from .generic import BaseAuthentication
-from ..sql.alchemy import SQLFarm
+from . import BaseAuthentication
+# from ..sql.alchemy import SQLFarm
 
 __author__ = myself
 __copyright__ = myself

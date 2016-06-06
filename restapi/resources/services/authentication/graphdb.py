@@ -10,8 +10,8 @@ MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r
 from __future__ import absolute_import
 
 from datetime import datetime
-from .generic import BaseAuthentication
-from ..neo4j.graph import GraphFarm
+from . import BaseAuthentication
+# from ..neo4j.graph import GraphFarm
 
 from ..detect import GRAPHDB_AVAILABLE
 from .... import get_logger
