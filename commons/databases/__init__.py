@@ -15,9 +15,12 @@ from __future__ import absolute_import
 import abc
 import time
 import logging
+from ..meta import Meta
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
+
+meta = Meta()
 
 
 class DBinstance(metaclass=abc.ABCMeta):
@@ -46,6 +49,28 @@ class DBinstance(metaclass=abc.ABCMeta):
                                % (name, sleep_time))
                 logger.debug("Error was %s" % str(e))
                 time.sleep(sleep_time)
+
+        self.load_models()
+
+    def load_models(self):
+        # LOAD BASE MODELS
+        base_models = self.load_base_models()
+
+        # LOAD CUSTOM MODELS if file exists
+        custom_models = self.load_custom_models()
+
+        # JOIN THEM
+        self._models = []
+        logger.info("Loaded models")
+
+    def load_base_models(self):
+        logger.debug("TO DO")
+        # meta.get_new_classes_from_module
+        return []
+
+    def load_custom_models(self):
+        logger.debug("TO DO")
+        return []
 
     @abc.abstractmethod
     def init_connection(self, app):

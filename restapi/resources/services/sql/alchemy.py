@@ -9,6 +9,7 @@ from __future__ import absolute_import
 from commons.databases import DBinstance
 
 # Flask Sqlalchemy needs to have models defined on existing instance
+# For this reason we create the sql instance where models are defined
 from commons.models import relational as sql
 from commons.meta import Meta
 from .... import get_logger
@@ -33,6 +34,7 @@ class SQLFarm(DBinstance):
 
     def get_instance(self):
         if self._db is None:
+
             # LOAD MODELS
             for name, model in Meta().get_classes_from_module(sql).items():
                 logger.debug("Loading SQL model '%s'" % name)
