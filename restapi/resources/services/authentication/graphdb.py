@@ -25,8 +25,8 @@ if not GRAPHDB_AVAILABLE:
 
 class Authentication(BaseAuthentication):
 
-    def __init__(self):
-        self._graph = GraphFarm().get_instance()
+    # def __init__(self):
+    #     self._graph = GraphFarm().get_instance()
 
     def get_user_object(self, username=None, payload=None):
 

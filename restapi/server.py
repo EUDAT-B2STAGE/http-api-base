@@ -112,8 +112,8 @@ def create_app(name=__name__,
 
     ##############################
     # DATABASE/SERVICEs CHECKS
-    from .resources.services.detect import services as interal_services
-    for service, myclass in interal_services.items():
+    from .resources.services.detect import services as internal_services
+    for service, myclass in internal_services.items():
         logger.info("Available service %s" % service)
         myclass(check_connection=True, app=microservice)
 
@@ -132,7 +132,7 @@ def create_app(name=__name__,
         # This is the main object that drives authentication
         # inside our Flask server.
         # Note: to be stored inside the flask global context
-        custom_auth = module.Authentication()
+        custom_auth = module.Authentication(internal_services)
 
         # Verify if we can inject oauth2 services into this module
         from .resources.services.oauth2clients import ExternalServicesLogin
@@ -150,7 +150,7 @@ def create_app(name=__name__,
             # Save auth
             g._custom_auth = custom_auth
             # Save all databases/services
-            g._services = interal_services
+            g._services = internal_services
 
         # Enabling also OAUTH library
         from .oauth import oauth

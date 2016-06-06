@@ -88,6 +88,9 @@ class GraphFarm(DBinstance):
 
     """ Making some Graphs """
 
+    def define_service_name(self):
+        return 'neo4j'
+
     def init_connection(self, app):
 
         # CHECK 1: test the environment
@@ -95,8 +98,8 @@ class GraphFarm(DBinstance):
         logger.debug("Neo4j service seems plugged")
 
         # CHECK 2: test the models
-        # Do not import neomodel before
-        # because it will force the system to check for the connection
+        # Do not import neomodel before the first check
+        # 'cos it will force the system to check for connection
         from neomodel import StructuredNode, StringProperty
 
         class TestConnection(StructuredNode):
@@ -104,8 +107,9 @@ class GraphFarm(DBinstance):
 
         logger.debug("neomodel: checked labeling on active connection")
 
-    def get_instance(self, models2skip=[],
-                     pymodule_with_models='.resources.services.neo4j.models'):
+    def get_instance(self,
+       pymodule_with_models='.resources.services.neo4j.models',
+       models2skip=[]):
 
         # Relative import: Add the name of the package as prefix
         module = __package__.split('.')[0] + pymodule_with_models
@@ -118,6 +122,6 @@ class GraphFarm(DBinstance):
         models_found = \
             meta.get_new_classes_from_module(
                 meta.get_module_from_string(module))
-        models = set(models_found) - set(models2skip)
+        models = set(list(models_found.values())) - set(models2skip)
         self._graph.load_models(models)
         return self._graph

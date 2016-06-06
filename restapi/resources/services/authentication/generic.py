@@ -39,6 +39,14 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     DEFAULT_ROLES = [ROLE_USER, ROLE_ADMIN]
     _oauth2 = {}
 
+    @abc.abstractmethod
+    def __init__(self, services=None):
+        """
+        Make sure you can create an instance/connection,
+        or reuse one service from `server.py` operations.
+        """
+        return
+
     def setup_secret(self, secret):
         self.SECRET = secret
 

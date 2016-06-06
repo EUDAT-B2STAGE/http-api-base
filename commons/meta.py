@@ -41,19 +41,34 @@ class Meta(object):
         return self._submodules
 
     def get_classes_from_module(self, module):
-        """ Find classes inside a python module file """
-        classes = dict([(name, cls)
-                       for name, cls in module.__dict__.items()
-                       if isinstance(cls, type)])
+        """
+        Find classes inside a python module file.
+
+        Note: this method returns a dict.
+        """
+
+        classes = {}
+        try:
+            classes = dict([(name, cls)
+                           for name, cls in module.__dict__.items()
+                           if isinstance(cls, type)])
+        except AttributeError:
+            logger.warning("Could not find any class inside your module")
+
         self.set_latest_classes(classes)
         return self.get_latest_classes()
 
     def get_new_classes_from_module(self, module):
-        """ Skip classes not originated inside the module """
-        classes = []
+        """
+        Skip classes not originated inside the module.
+
+        Note: this method returns a list.
+        """
+
+        classes = {}
         for key, value in self.get_classes_from_module(module).items():
             if module.__name__ in value.__module__:
-                classes.append(value)
+                classes[key] = value
         self.set_latest_classes(classes)
         return self.get_latest_classes()
 
@@ -100,6 +115,7 @@ class Meta(object):
         Creating a class using metas.
         Very usefull for automatic algorithms.
         """
+
         methods = dict(your_class.__dict__)
         for key, value in attributes.items():
             methods.update({key: value})

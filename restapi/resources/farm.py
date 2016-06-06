@@ -46,7 +46,7 @@ class EndpointsFarmer(object):
     def create_many(self, resources):
         """ Automatic creation from an array of resources """
         # For each RESTful resource i receive
-        for resource in resources:
+        for name, resource in resources.items():
             endpoint, endkey = resource().get_endpoint()
             self.create_single(resource, [endpoint], endkey)
 

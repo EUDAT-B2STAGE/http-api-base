@@ -21,8 +21,13 @@ logger = get_logger(__name__)
 
 class Authentication(BaseAuthentication):
 
-    def __init__(self):
-        self._db = SQLFarm().get_instance()
+    def __init__(self, services=None):
+        """
+        SQLalchemy should be created only once.
+        I will recover initial instance from the Flask app services.
+        """
+
+        self._db = services.get('sql')().get_instance()
 
     def fill_payload(self, userobj):
         print("OBJ", userobj.email)
