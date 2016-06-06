@@ -2,6 +2,15 @@
 
 """
 Operations based on services pre-installed
+
+Should be inspired by:
+http://flask-script.readthedocs.io/en/latest/
+and
+http://flask.pocoo.org/snippets/23/
+
+Note: with flask 0.11 there should be another way,
+probably based on click
+
 """
 
 from __future__ import absolute_import
