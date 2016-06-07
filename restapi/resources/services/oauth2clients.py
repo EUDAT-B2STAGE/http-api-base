@@ -19,7 +19,9 @@ __license__ = lic
 
 logger = get_logger(__name__)
 
-B2ACCESS_DEV_URL = "https://unity.eudat-aai.fz-juelich.de:8443"
+B2ACCESS_DEV_BASEURL = "https://unity.eudat-aai.fz-juelich.de"
+B2ACCESS_DEV_URL = B2ACCESS_DEV_BASEURL + ":8443"
+B2ACCESS_DEV_CA_URL = B2ACCESS_DEV_BASEURL + ":8445"
 
 
 class ExternalServicesLogin(object):
@@ -66,6 +68,7 @@ class ExternalServicesLogin(object):
 
     def b2access(self, testing=False):
 
+        # print("TEST *%s*" % os.environ.get('B2ACCESS_APPKEY'))
         b2access_oauth = oauth.remote_app(
             'b2access',
             consumer_key=os.environ.get('B2ACCESS_APPNAME', 'yourappusername'),
@@ -80,8 +83,6 @@ class ExternalServicesLogin(object):
             authorize_url=B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
         )
 
-# The only way to set the token is the flask session?
-# ASK @AMY!
         @b2access_oauth.tokengetter
         # @b2accessCA.tokengetter
         def get_b2access_oauth_token():
@@ -89,6 +90,28 @@ class ExternalServicesLogin(object):
             return session.get('b2access_token')
 
         return b2access_oauth
+
+    def b2access_certification_authority(self, testing=False):
+
+        b2accessCA = oauth.remote_app(
+            'b2accessCA',
+            consumer_key=os.environ.get('B2ACCESS_APPNAME', 'yourappusername'),
+            consumer_secret=os.environ.get('B2ACCESS_APPKEY', 'yourapppw'),
+            base_url=B2ACCESS_DEV_CA_URL,
+            request_token_params={'scope':
+                                  'USER_PROFILE GENERATE_USER_CERTIFICATE'},
+            request_token_url=None,
+            access_token_method='POST',
+            access_token_url=B2ACCESS_DEV_URL + '/oauth2/token',
+            authorize_url=B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
+        )
+
+        @b2accessCA.tokengetter
+        def get_b2access_ca_oauth_token():
+            from flask import session
+            return session.get('b2access_token')
+
+        return b2accessCA
 
 
 def decorate_http_request(remote):
@@ -119,5 +142,7 @@ def decorate_http_request(remote):
             headers.update({'Authorization': 'Basic %s' % (userpass,)})
         response = old_http_request(
             uri, headers=headers, data=data, method=method)
+## // TO FIX: may we handle failed B2ACCESS response here?
         return response
+
     remote.http_request = new_http_request

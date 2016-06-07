@@ -128,6 +128,7 @@ def apimethod(func):
         # Call the parse method
         self.apply_parameters()
         self.parse()
+
         # Call the wrapped function
         try:
             out = func(self, *args, **kwargs)
