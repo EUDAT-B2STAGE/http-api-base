@@ -6,17 +6,20 @@ We create all the components here!
 """
 
 from __future__ import absolute_import
-
 from datetime import datetime
-from .... import myself, lic, get_logger
+from ..detect import SQL_AVAILABLE
 from . import BaseAuthentication
-# from ..sql.alchemy import SQLFarm
+from .... import myself, lic, get_logger
 
 __author__ = myself
 __copyright__ = myself
 __license__ = lic
 
 logger = get_logger(__name__)
+
+if not SQL_AVAILABLE:
+    logger.critical("No SQLalchemy service found for auth")
+    exit(1)
 
 
 class Authentication(BaseAuthentication):
@@ -44,7 +47,6 @@ class Authentication(BaseAuthentication):
             user = self._db.User.query.filter_by(email=username).first()
         if payload is not None and 'user_id' in payload:
             user = self._db.User.query.get(payload['user_id'])
-        print("USER", user)
         return user
 
     def init_users_and_roles(self):

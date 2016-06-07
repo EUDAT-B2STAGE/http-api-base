@@ -3,7 +3,6 @@
 """ Graph DB abstraction from neo4j server """
 
 import os
-from commons.meta import Meta
 from .... import get_logger
 from commons.databases import DBinstance
 
@@ -68,7 +67,7 @@ class MyGraph(object):
         logger.debug("Graph query. Res: %s\nMeta: %s" % (results, meta))
         return results
 
-    def load_models(self, models=[]):
+    def inject_models(self, models=[]):
         """ Load models mapping Graph entities """
 
         for model in models:
@@ -87,6 +86,8 @@ class MyGraph(object):
 class GraphFarm(DBinstance):
 
     """ Making some Graphs """
+
+    _graph = None
 
     def define_service_name(self):
         return 'neo4j'
@@ -107,21 +108,12 @@ class GraphFarm(DBinstance):
 
         logger.debug("neomodel: checked labeling on active connection")
 
-    def get_instance(self,
-       pymodule_with_models='.resources.services.neo4j.models',
-       models2skip=[]):
+    def get_instance(self, models2skip=[]):
 
-        # Relative import: Add the name of the package as prefix
-        module = __package__.split('.')[0] + pymodule_with_models
-        self._graph = MyGraph()
-        meta = Meta()
-
-# // TO FIX:
-# load only models once into static class, please!
-
-        models_found = \
-            meta.get_new_classes_from_module(
-                meta.get_module_from_string(module))
-        models = set(list(models_found.values())) - set(models2skip)
-        self._graph.load_models(models)
+        if self._graph is None:
+            self._graph = MyGraph()
+            self.load_models()
+            # Remove the ones which developers do not want
+            models = set(list(self._models.values())) - set(models2skip)
+            self._graph.inject_models(models)
         return self._graph

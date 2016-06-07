@@ -8,13 +8,15 @@ MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r
 """
 
 from __future__ import absolute_import
-
 from datetime import datetime
 from . import BaseAuthentication
-# from ..neo4j.graph import GraphFarm
-
 from ..detect import GRAPHDB_AVAILABLE
-from .... import get_logger
+from .... import myself, lic, get_logger
+
+__author__ = myself
+__copyright__ = myself
+__license__ = lic
+
 logger = get_logger(__name__)
 
 
@@ -25,8 +27,8 @@ if not GRAPHDB_AVAILABLE:
 
 class Authentication(BaseAuthentication):
 
-    # def __init__(self):
-    #     self._graph = GraphFarm().get_instance()
+    def __init__(self, services=None):
+        self._graph = services.get('neo4j')().get_instance()
 
     def get_user_object(self, username=None, payload=None):
 

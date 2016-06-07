@@ -38,7 +38,7 @@ Token:
   ✔ Meta @done (16-05-31 15:33)
   ✔ HtmlCodes @done (16-05-31 23:31)
   ☐ Logs
-  ☐ Users/models?
+  ✔ Users/models? @done (16-06-07 07:58)
   ☐ The secret at startup
 
 ☐ from jinja2._compat import iteritems... @compatibility
