@@ -981,3 +981,6 @@ class IrodsFarm(DBinstance):
         if user is not None:
             self._irods = ICommands(user)
         return self._irods
+
+    def define_service_name(self):
+        return 'irods'
