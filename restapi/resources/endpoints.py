@@ -83,6 +83,8 @@ class Login(ExtendedApiResource):
 #       'access_token': '9tiAF8Wozt0ACd-Aum3IKoAKuFlYt4A7ajZBTDyaoYk',
 #       'token_type': 'Bearer'
 #  }
+        user = None
+        auth.save_token(user, token)
 
         return self.response({'token': token})
 

@@ -85,3 +85,15 @@ instead of here
             for role in self.DEFAULT_ROLES:
                 role_obj = self._graph.Role.nodes.get(name=role)
                 user.roles.connect(role_obj)
+
+    def save_token(self, user, token):
+
+        logger.critical("Save token: " + token)
+        token_node = self._graph.Token()
+        token_node.token = token
+        token_node.creation = datetime.now()
+        # token_node.ttl = ???
+        token_node.save()
+        # token.emitted_for.connect(user)
+
+        logger.debug("Token stored in graphDB")

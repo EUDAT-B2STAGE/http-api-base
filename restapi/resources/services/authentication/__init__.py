@@ -8,7 +8,6 @@ Add auth checks called /checklogged and /testadmin
 from __future__ import absolute_import
 from .... import myself, lic, get_logger
 
-from ....auth import auth
 from confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
 
 import abc
@@ -96,6 +95,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return payload
 
     def verify_token(self, token):
+        return False
         # print("TOKEN", token)
         self._payload = payload = self.parse_token(token)
         # print("TOKEN CONTENT", payload)
@@ -107,6 +107,9 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             return True
 
         return False
+
+    def save_token(self, user, token):
+        logger.debug("Token is not saved in base authentication")
 
     @abc.abstractmethod
     def init_users_and_roles(self):

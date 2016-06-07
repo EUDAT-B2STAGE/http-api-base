@@ -4,8 +4,9 @@
 
 from __future__ import absolute_import
 
-from neomodel import StringProperty, \
-    StructuredNode, RelationshipTo, RelationshipFrom, OneOrMore
+from neomodel import StructuredNode, StringProperty, DateTimeProperty, \
+    RelationshipTo, RelationshipFrom, \
+    OneOrMore, ZeroOrMore, One
 
 import logging
 
@@ -23,16 +24,17 @@ class User(StructuredNode):
     surname = StringProperty()
 # TO BE USED INSIDE THE OVERIDED CLASS
 #########################################
-    # tokens = RelationshipTo('Tokens', 'EMITTED', cardinality=OneOrMore)
+    tokens = RelationshipTo('Token', 'EMITTED', cardinality=ZeroOrMore)
     roles = RelationshipTo('Role', 'ROLE', cardinality=OneOrMore)
     externals = RelationshipTo(
         'ExternalAccounts', 'OAUTH', cardinality=OneOrMore)
 
 
-# class Tokens(StructuredNode):
-#     token = StringProperty(required=True)
-#     ttl = StringProperty()
-#     emitted_from = RelationshipFrom(User, 'EMITTED', cardinality=OneOrMore)
+class Token(StructuredNode):
+    token = StringProperty(required=True, unique_index=True)
+    creation = DateTimeProperty(required=True)
+    ttl = StringProperty()
+    emitted_for = RelationshipFrom('User', 'EMITTED', cardinality=One)
 
 
 class Role(StructuredNode):
