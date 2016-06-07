@@ -15,6 +15,7 @@ logger.setLevel(logging.DEBUG)
 
 
 class User(StructuredNode):
+    uuid = StringProperty(required=True, unique_index=True)
     email = StringProperty(required=True, unique_index=True)
     authmethod = StringProperty(required=True)
     password = StringProperty()  # A hash produced by Flask login
@@ -24,7 +25,7 @@ class User(StructuredNode):
     surname = StringProperty()
 # TO BE USED INSIDE THE OVERIDED CLASS
 #########################################
-    tokens = RelationshipTo('Token', 'EMITTED', cardinality=ZeroOrMore)
+    tokens = RelationshipTo('Token', 'HAS_TOKEN', cardinality=ZeroOrMore)
     roles = RelationshipTo('Role', 'ROLE', cardinality=OneOrMore)
     externals = RelationshipTo(
         'ExternalAccounts', 'OAUTH', cardinality=OneOrMore)
@@ -33,8 +34,11 @@ class User(StructuredNode):
 class Token(StructuredNode):
     token = StringProperty(required=True, unique_index=True)
     creation = DateTimeProperty(required=True)
-    ttl = StringProperty()
-    emitted_for = RelationshipFrom('User', 'EMITTED', cardinality=One)
+    expiration = DateTimeProperty()
+    last_access = DateTimeProperty()
+    IP = StringProperty()
+    hostname = StringProperty()
+    emitted_for = RelationshipFrom('User', 'HAS_TOKEN', cardinality=One)
 
 
 class Role(StructuredNode):

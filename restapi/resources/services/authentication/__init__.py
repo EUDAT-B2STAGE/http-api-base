@@ -87,7 +87,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             payload, self.SECRET, algorithm=self.JWT_ALGO).decode('ascii')
 
     def verify_token(self, token):
-
         # print("TOKEN", token)
         if token is not None:
             try:
@@ -134,6 +133,22 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         """
         How to retrieve the user from the current service,
         based on the unique username given, or from the content of the token
+        """
+        return
+
+    @abc.abstractmethod
+    def invalidate_all_tokens(self, user):
+        """
+            With this method all token emitted for this user must be
+            invalidated (no longer valid starting from now)
+        """
+        return
+
+    @abc.abstractmethod
+    def invalidate_token(self, user, token):
+        """
+            With this method the specified token must be invalidated
+            as expected after a user logout
         """
         return
 
