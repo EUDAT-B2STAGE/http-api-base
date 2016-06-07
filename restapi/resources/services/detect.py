@@ -42,15 +42,22 @@ if GRAPHDB_AVAILABLE:
 
 #######################################################
 # IRODS
+IRODS_EXTERNAL = False
 IRODS_AVAILABLE = 'RODSERVER_NAME' in os.environ or \
                   'ICAT_1_ENV_IRODS_HOST' in os.environ
 
 if IRODS_AVAILABLE:
+
+    # We may check if iRODS is an external service
+    # by verifying if this linked container is provided
+    if os.environ.get('RODSERVER_NAME', None) is None:
+        IRODS_EXTERNAL = True
+
     # DO something and inject into 'services'
     from .irods.client import IrodsFarm as service
     services['irods'] = service
 
 #######################################################
-# ELASTICSEARCH
+# ELASTICSEARCH / OTHERS
 
 # ?
