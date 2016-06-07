@@ -81,29 +81,30 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     def create_token(self, payload):
         """ Generate a byte token with JWT library to encrypt the payload """
+        self._payload = payload
+        self._user = self.get_user_object(payload=self._payload)
         return jwt.encode(
             payload, self.SECRET, algorithm=self.JWT_ALGO).decode('ascii')
 
-    def parse_token(self, token):
-        payload = {}
+    def verify_token(self, token):
+
+        # print("TOKEN", token)
         if token is not None:
             try:
-                payload = jwt.decode(
+                self._payload = jwt.decode(
                     token, self.SECRET, algorithms=[self.JWT_ALGO])
             except:
                 logger.warning("Unable to decode JWT token")
-        return payload
+        else:
+            self._payload = {}
 
-    def verify_token(self, token):
-        return False
-        # print("TOKEN", token)
-        self._payload = payload = self.parse_token(token)
-        # print("TOKEN CONTENT", payload)
-        self._user = user = self.get_user_object(payload=payload)
-        if user is not None:
-            logger.info("User authorized")
 # // TO FIX
 # CHECK TTL?
+
+        # print("TOKEN CONTENT", self._payload)
+        self._user = self.get_user_object(payload=self._payload)
+        if self._user is not None:
+            logger.info("User authorized")
             return True
 
         return False
