@@ -87,7 +87,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             payload, self.SECRET, algorithm=self.JWT_ALGO).decode('ascii')
 
     def verify_token(self, token):
-
         # print("TOKEN", token)
         if token is not None:
             try:

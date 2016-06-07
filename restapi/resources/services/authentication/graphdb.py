@@ -88,12 +88,11 @@ instead of here
 
     def save_token(self, user, token):
 
-        logger.critical("Save token: " + token)
         token_node = self._graph.Token()
         token_node.token = token
         token_node.creation = datetime.now()
         # token_node.ttl = ???
         token_node.save()
-        # token_node.emitted_for.connect(user)
+        token_node.emitted_for.connect(user)
 
         logger.debug("Token stored in graphDB")
