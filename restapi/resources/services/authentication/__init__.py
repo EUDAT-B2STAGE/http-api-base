@@ -137,6 +137,22 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return
 
     @abc.abstractmethod
+    def invalidate_all_tokens(self, user):
+        """
+            With this method all token emitted for this user must be
+            invalidated (no longer valid starting from now)
+        """
+        return
+
+    @abc.abstractmethod
+    def invalidate_token(self, user, token):
+        """
+            With this method the specified token must be invalidated
+            as expected after a user logout
+        """
+        return
+
+    @abc.abstractmethod
     def fill_payload(self, userobj):
         """ Informations to store inside the JWT token,
         starting from the user obtained from the current service
