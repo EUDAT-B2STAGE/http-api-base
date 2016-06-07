@@ -95,7 +95,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return payload
 
     def verify_token(self, token):
-        return False
+        # return False
         # print("TOKEN", token)
         self._payload = payload = self.parse_token(token)
         # print("TOKEN CONTENT", payload)

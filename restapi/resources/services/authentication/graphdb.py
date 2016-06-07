@@ -94,6 +94,6 @@ instead of here
         token_node.creation = datetime.now()
         # token_node.ttl = ???
         token_node.save()
-        # token.emitted_for.connect(user)
+        # token_node.emitted_for.connect(user)
 
         logger.debug("Token stored in graphDB")
