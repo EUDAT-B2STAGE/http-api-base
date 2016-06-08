@@ -103,7 +103,12 @@ class MyConfigs(object):
                 oldendpoint, endkey, endtype = instance.get_endpoint()
                 if len(endpoints) < 1:
                     endpoints = [oldendpoint]
-                resources.append((myclass, instance, endpoints, endkey))
+
+                endpoint_id = None
+                if endkey is not None and endtype is not None:
+                    endpoint_id = endtype + ':' + endkey
+
+                resources.append((myclass, instance, endpoints, endpoint_id))
 
         return resources
 
