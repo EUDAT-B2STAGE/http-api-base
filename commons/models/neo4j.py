@@ -6,7 +6,7 @@ from __future__ import absolute_import
 
 from neomodel import StructuredNode, StringProperty, DateTimeProperty, \
     RelationshipTo, RelationshipFrom, \
-    OneOrMore, ZeroOrMore, One
+    OneOrMore, ZeroOrMore, ZeroOrOne
 
 import logging
 
@@ -38,7 +38,7 @@ class Token(StructuredNode):
     last_access = DateTimeProperty()
     IP = StringProperty()
     hostname = StringProperty()
-    emitted_for = RelationshipFrom('User', 'HAS_TOKEN', cardinality=One)
+    emitted_for = RelationshipFrom('User', 'HAS_TOKEN', cardinality=ZeroOrOne)
 
 
 class Role(StructuredNode):

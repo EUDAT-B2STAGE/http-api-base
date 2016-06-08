@@ -67,6 +67,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
         @wraps(f)
         def decorated(*args, **kwargs):
             token = "EMPTY"
+
             auth = request.authorization
             if auth is None and HTTPAUTH_AUTH_FIELD in request.headers:
                 # Flask/Werkzeug do not recognize any authentication types
@@ -80,6 +81,12 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                 except ValueError:
                     # The Authorization header is either empty or has no token
                     pass
+
+            # Call the internal api method by getting 'self'
+            try:
+                decorated_self = list(args).pop(0)
+            except AttributeError:
+                decorated_self = None
 
             # if the auth type does not match, we act as if there is no auth
             # this is better than failing directly, as it allows the callback
@@ -99,14 +106,16 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                 if not self.authenticate(auth, password):
                     # Clear TCP receive buffer of any pending data
                     request.data
-                    # Call the internal api method by getting 'self'
-                    decorated_self = args[0]
                     headers = {
                         HTTPAUTH_AUTH_HEADER: self.authenticate_header()}
                     return decorated_self.response(
                         errors={"Invalid token": "Received '%s'" % token},
                         headers=headers, code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
+            # Save token
+            if decorated_self is not None:
+                decorated_self.global_get('custom_auth')._latest_token = token
+                print("SAVE TOKEN", token, decorated_self)
             return f(*args, **kwargs)
         return decorated
 

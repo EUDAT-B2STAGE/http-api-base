@@ -96,11 +96,8 @@ class Logout(ExtendedApiResource):
     @auth.login_required
     @decorate.apimethod
     def get(self):
-# TO FIX
-        logger.critical("To be completed. Invalidate JWT.")
-        # auth instance from the global namespace
         auth = self.global_get('custom_auth')
-        print("DEBUG LOGOUT", auth._user, auth._payload)
+        auth.invalidate_token()
         return self.response("", code=hcodes.HTTP_OK_NORESPONSE)
 
 

@@ -115,5 +115,14 @@ instead of here
         user.uuid = self.getUUID()
         user.save()
 
-    def invalidate_token(self, user, token):
-        token.emitted_for.disconnect(user)
+    def invalidate_token(self, user=None, token=None):
+        if token is None:
+            token = self._latest_token
+        if user is None:
+            user = self._user
+
+        token_node = self._graph.Token.nodes.get(token=token)
+        if token_node is not None:
+            token_node.emitted_for.disconnect(user)
+        else:
+            logger.warning("Could not invalidate token")
