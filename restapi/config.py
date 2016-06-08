@@ -100,7 +100,7 @@ class MyConfigs(object):
                 # Get the best endpoint comparing inside against configuration
                 instance = myclass()
 
-                oldendpoint, endkey = instance.get_endpoint()
+                oldendpoint, endkey, endtype = instance.get_endpoint()
                 if len(endpoints) < 1:
                     endpoints = [oldendpoint]
                 resources.append((myclass, instance, endpoints, endkey))

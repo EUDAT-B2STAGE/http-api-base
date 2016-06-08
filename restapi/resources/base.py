@@ -28,8 +28,9 @@ class ExtendedApiResource(Resource):
     myname = __name__
     _args = {}
     _params = {}
-    endtype = None
     endpoint = None
+    endkey = None
+    endtype = None
     hcode = hcodes.HTTP_OK_BASIC
     base_url = API_URL
 
@@ -68,7 +69,7 @@ class ExtendedApiResource(Resource):
                 type(self).__name__.lower().replace("resource", "")
 
     def get_endpoint(self):
-        return (self.endpoint, self.endtype)
+        return (self.endpoint, self.endkey, self.endtype)
 
     def get_input(self, forcing=True):
         """ Get JSON. The power of having a real object in our hand. """

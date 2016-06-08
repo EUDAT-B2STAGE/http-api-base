@@ -38,7 +38,10 @@ class EndpointsFarmer(object):
             urls.append(address)
             # Special endpoint, e.g. /api/foo/:endkey
             if endkey is not None:
-                urls.append(address + '/<' + endkey + '>')
+                newaddress = address + '/<' + endkey + '>'
+                urls.append(newaddress)
+                logger.debug(
+                    "Mapping '%s' res to '%s'", resource.__name__, newaddress)
 
         # Create the restful resource with it
         self.rest_api.add_resource(resource, *urls)
@@ -47,8 +50,13 @@ class EndpointsFarmer(object):
         """ Automatic creation from an array of resources """
         # For each RESTful resource i receive
         for name, resource in resources.items():
-            endpoint, endkey = resource().get_endpoint()
-            self.create_single(resource, [endpoint], endkey)
+            endpoint, endkey, endtype = resource().get_endpoint()
+
+            endpoint_id = None
+            if endkey is not None and endtype is not None:
+                endpoint_id = endtype + ':' + endkey
+
+            self.create_single(resource, [endpoint], endpoint_id)
 
     def many_from_module(self, module):
         """ Automatic creation of endpoint from specified resources """
