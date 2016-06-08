@@ -16,11 +16,6 @@ from confs.config import USER, PWD, \
 
 from restapi import get_logger, myself
 
-
-USER = "m.dantonio@cineca.it"
-PWD = "caspur!"
-
-
 __author__ = myself
 logger = get_logger(__name__)
 logger.setLevel(logging.DEBUG)
