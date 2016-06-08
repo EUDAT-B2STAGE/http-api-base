@@ -160,6 +160,13 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return
 
     @abc.abstractmethod
+    def list_all_tokens(self, user):
+        """
+            Return the list of all active tokens
+        """
+        return
+
+    @abc.abstractmethod
     def invalidate_all_tokens(self, user):
         """
             With this method all token emitted for this user must be

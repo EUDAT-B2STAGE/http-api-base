@@ -119,6 +119,25 @@ instead of here
 
         return True
 
+    def list_all_tokens(self, user):
+        # TO FIX: TTL should be considered?
+
+        tokens = user.tokens.all()
+        list = []
+        for token in tokens:
+            t = {}
+
+            t["token"] = token.token
+            t["emitted"] = token.creation.strftime('%s')
+            t["last_access"] = token.last_access.strftime('%s')
+            if token.expiration is not None:
+                t["expiration"] = token.expiration.strftime('%s')
+            t["IP"] = token.IP
+            t["hostname"] = token.hostname
+            list.append(t)
+
+        return list
+
     def invalidate_all_tokens(self, user):
         user.uuid = self.getUUID()
         user.save()

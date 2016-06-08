@@ -101,6 +101,19 @@ class Logout(ExtendedApiResource):
         return self.response("", code=hcodes.HTTP_OK_NORESPONSE)
 
 
+class Tokens(ExtendedApiResource):
+    """ List all active tokens for a user """
+
+    base_url = AUTH_URL
+
+    @auth.login_required
+    @decorate.apimethod
+    def get(self):
+        auth = self.global_get('custom_auth')
+        tokens = auth.list_all_tokens(auth._user)
+        return self.response(tokens)
+
+
 class Profile(ExtendedApiResource):
     """ Current user informations """
 
