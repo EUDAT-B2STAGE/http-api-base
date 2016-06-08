@@ -120,7 +120,10 @@ class Tokens(ExtendedApiResource):
             if token["id"] == token_id:
                 return self.response(token)
 
-        return self.response("")
+        errorMessage = "This token has not emitted to your account " + \
+                       "or does not exist"
+        return self.response(errors=[{"Token not found": errorMessage}],
+                             code=hcodes.HTTP_BAD_NOTFOUND)
 
     @auth.login_required
     @decorate.apimethod
@@ -146,8 +149,8 @@ class Tokens(ExtendedApiResource):
 
             errorMessage = "This token has not emitted to your account " + \
                            "or does not exist"
-            return self.response(
-                "", errors=[{"Token not found": errorMessage}])
+            return self.response(errors=[{"Token not found": errorMessage}],
+                                 code=hcodes.HTTP_BAD_NOTFOUND)
 
 
 class Profile(ExtendedApiResource):
