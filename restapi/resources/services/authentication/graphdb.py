@@ -8,6 +8,7 @@ MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r
 """
 
 from __future__ import absolute_import
+import uuid
 from datetime import datetime
 from . import BaseAuthentication
 from ..detect import GRAPHDB_AVAILABLE
@@ -31,8 +32,7 @@ class Authentication(BaseAuthentication):
         self._graph = services.get('neo4j')().get_instance()
 
     def getUUID(self):
-        return "ABC-UUID"
-        # return str(uuid.uuid4())
+        return str(uuid.uuid4())
 
     def get_user_object(self, username=None, payload=None):
 
