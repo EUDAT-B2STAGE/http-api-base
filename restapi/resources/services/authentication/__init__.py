@@ -37,6 +37,8 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     DEFAULT_PASSWORD = PWD
     DEFAULT_ROLES = [ROLE_USER, ROLE_ADMIN]
     _oauth2 = {}
+    _payload = {}
+    _user = None
 
     @abc.abstractmethod
     def __init__(self, services=None):
@@ -87,15 +89,15 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             payload, self.SECRET, algorithm=self.JWT_ALGO).decode('ascii')
 
     def verify_token(self, token):
+
         # print("TOKEN", token)
+        self._payload = {}
         if token is not None:
             try:
                 self._payload = jwt.decode(
                     token, self.SECRET, algorithms=[self.JWT_ALGO])
             except:
                 logger.warning("Unable to decode JWT token")
-        else:
-            self._payload = {}
 
 # // TO FIX
 # CHECK TTL?
