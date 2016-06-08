@@ -37,6 +37,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     DEFAULT_PASSWORD = PWD
     DEFAULT_ROLES = [ROLE_USER, ROLE_ADMIN]
     _oauth2 = {}
+    _latest_token = None
     _payload = {}
     _user = None
 
@@ -88,27 +89,47 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return jwt.encode(
             payload, self.SECRET, algorithm=self.JWT_ALGO).decode('ascii')
 
+    def verify_time_to_live(self, payload):
+# // TO FIX
+        return True
+
+    def verify_token_custom(self, token, user, payload):
+        """
+            This method can be implemented by specific Authentication Methods
+            to add more specific validation contraints
+        """
+        return True
+
     def verify_token(self, token):
 
-        # print("TOKEN", token)
+        # Force token cleaning
         self._payload = {}
-        if token is not None:
-            try:
-                self._payload = jwt.decode(
-                    token, self.SECRET, algorithms=[self.JWT_ALGO])
-            except:
-                logger.warning("Unable to decode JWT token")
+        self._user = None
 
-# // TO FIX
-# CHECK TTL?
+        if token is None:
+            return False
 
-        # print("TOKEN CONTENT", self._payload)
+        try:
+            self._payload = jwt.decode(
+                token, self.SECRET, algorithms=[self.JWT_ALGO])
+        except:
+            logger.warning("Unable to decode JWT token")
+            return False
+
+        if not self.verify_time_to_live(self._payload):
+            return False
+
         self._user = self.get_user_object(payload=self._payload)
-        if self._user is not None:
-            logger.info("User authorized")
-            return True
+        if self._user is None:
+            return False
 
-        return False
+        if not self.verify_token_custom(
+           token=token, user=self._user, payload=self._payload):
+            return False
+        # e.g. for graph: verify token <- user link
+
+        logger.info("User authorized")
+        return True
 
     def save_token(self, user, token):
         logger.debug("Token is not saved in base authentication")
@@ -147,7 +168,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return
 
     @abc.abstractmethod
-    def invalidate_token(self, user, token):
+    def invalidate_token(self, user=None, token=None):
         """
             With this method the specified token must be invalidated
             as expected after a user logout
