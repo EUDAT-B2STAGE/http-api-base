@@ -127,6 +127,7 @@ instead of here
         for token in tokens:
             t = {}
 
+            t["id"] = token._id
             t["token"] = token.token
             t["emitted"] = token.creation.strftime('%s')
             t["last_access"] = token.last_access.strftime('%s')
@@ -138,7 +139,10 @@ instead of here
 
         return list
 
-    def invalidate_all_tokens(self, user):
+    def invalidate_all_tokens(self, user=None):
+        if user is None:
+            user = self._user
+
         user.uuid = self.getUUID()
         user.save()
 

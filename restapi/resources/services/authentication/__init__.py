@@ -167,7 +167,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return
 
     @abc.abstractmethod
-    def invalidate_all_tokens(self, user):
+    def invalidate_all_tokens(self, user=None):
         """
             With this method all token emitted for this user must be
             invalidated (no longer valid starting from now)

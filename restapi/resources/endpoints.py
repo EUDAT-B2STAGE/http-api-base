@@ -105,6 +105,8 @@ class Tokens(ExtendedApiResource):
     """ List all active tokens for a user """
 
     base_url = AUTH_URL
+    endkey = "token_id"
+    endtype = "int"
 
     @auth.login_required
     @decorate.apimethod
@@ -112,6 +114,33 @@ class Tokens(ExtendedApiResource):
         auth = self.global_get('custom_auth')
         tokens = auth.list_all_tokens(auth._user)
         return self.response(tokens)
+
+    @auth.login_required
+    @decorate.apimethod
+    def delete(self, token_id=None):
+        auth = self.global_get('custom_auth')
+        tokens = auth.list_all_tokens(auth._user)
+
+        if token_id is None:
+            """
+                For additional security, tokens are invalidated both
+                by chanding the user UUID and by removing single tokens
+            """
+            for token in tokens:
+                auth.invalidate_token(token=token["token"])
+            auth.invalidate_all_tokens()
+
+            return self.response("", code=hcodes.HTTP_OK_NORESPONSE)
+        else:
+            for token in tokens:
+                if token["id"] == token_id:
+                    auth.invalidate_token(token=token["token"])
+                    return self.response("", code=hcodes.HTTP_OK_NORESPONSE)
+
+            errorMessage = "This token has not emitted to your account " + \
+                           "or does not exist"
+            return self.response(
+                "", errors=[{"Token not found": errorMessage}])
 
 
 class Profile(ExtendedApiResource):
