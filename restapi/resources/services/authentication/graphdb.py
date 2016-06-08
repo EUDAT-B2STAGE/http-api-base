@@ -111,6 +111,14 @@ instead of here
 
         logger.debug("Token stored in graphDB")
 
+    def verify_token_custom(self, token, user, payload):
+
+        token_node = self._graph.Token.nodes.get(token=token)
+        if not token_node.emitted_for.is_connected(user):
+            return False
+
+        return True
+
     def invalidate_all_tokens(self, user):
         user.uuid = self.getUUID()
         user.save()
