@@ -110,10 +110,17 @@ class Tokens(ExtendedApiResource):
 
     @auth.login_required
     @decorate.apimethod
-    def get(self):
+    def get(self, token_id=None):
         auth = self.global_get('custom_auth')
         tokens = auth.list_all_tokens(auth._user)
-        return self.response(tokens)
+        if token_id is None:
+            return self.response(tokens)
+
+        for token in tokens:
+            if token["id"] == token_id:
+                return self.response(token)
+
+        return self.response("")
 
     @auth.login_required
     @decorate.apimethod
