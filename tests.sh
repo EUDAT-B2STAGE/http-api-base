@@ -16,7 +16,7 @@ export TESTING_FLASK="True"
 com="nose2 -F"
 option="-s test"
 cov_reports=" --coverage-report term --coverage-report html"
-cov_options="--quiet -C --coverage restapi $cov_reports"
+cov_options="-C --coverage restapi $cov_reports"
 
 # Basic tests, written for the http-api-base sake
 $com $option/base --log-capture
@@ -25,7 +25,8 @@ if [ "$?" == "0" ]; then
     $com $option/custom --log-capture
     if [ "$?" == "0" ]; then
         # Print coverage if everything went well so far
-        $com $cov_options
+        $com --output-buffer $cov_options 2> /tmp/logfile.txt
+        grep "platform linux" -A 1000 /tmp/logfile.txt
     else
         exit $?
     fi
