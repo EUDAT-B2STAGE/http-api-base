@@ -90,13 +90,6 @@ class Authentication(BaseAuthentication):
 
     def save_token(self, user, token):
 
-        """
-        token_node = self._graph.Token()
-        token_node.token = token
-        token_node.creation = datetime.now()
-        token_node.last_access = datetime.now()
-        # token_node.expiration = ???
-
         from flask import request
         import socket
         ip = request.remote_addr
@@ -105,26 +98,32 @@ class Authentication(BaseAuthentication):
         except Exception:
             hostname = ""
 
-        token_node.IP = ip
-        token_node.hostname = hostname
+        token_entry = self._db.Token(
+            token=token,
+            creation=datetime.now(),
+            last_access=datetime.now(),
+            IP=ip,
+            hostname=hostname
+        )
+        # expiration = ???
 
-        token_node.save()
-        token_node.emitted_for.connect(user)
+        token_entry.emitted_for = user
+
+        self._db.session.add(token_entry)
+        self._db.session.commit()
 
         logger.debug("Token stored in graphDB")
-        """
 
     def list_all_tokens(self, user):
         # TO FIX: TTL should be considered?
 
         list = []
-
-        """
         tokens = user.tokens.all()
         for token in tokens:
+
             t = {}
 
-            t["id"] = token._id
+            t["id"] = token.id
             t["token"] = token.token
             t["emitted"] = token.creation.strftime('%s')
             t["last_access"] = token.last_access.strftime('%s')
@@ -133,27 +132,27 @@ class Authentication(BaseAuthentication):
             t["IP"] = token.IP
             t["hostname"] = token.hostname
             list.append(t)
-        """
+
         return list
 
     def invalidate_all_tokens(self, user=None):
         if user is None:
             user = self._user
 
-        """
         user.uuid = getUUID()
-        user.save()
-        """
+        self._db.session.add(user)
+        self._db.session.commit()
 
     def invalidate_token(self, user=None, token=None):
         if token is None:
             token = self._latest_token
         if user is None:
             user = self._user
-        """
-        token_node = self._graph.Token.nodes.get(token=token)
-        if token_node is not None:
-            token_node.emitted_for.disconnect(user)
+
+        token_entry = self._db.Token.query.filter_by(token=token).first()
+        if token_entry is not None:
+            token_entry.emitted_for = None
+            self._db.session.commit()
         else:
             logger.warning("Could not invalidate token")
-        """
+

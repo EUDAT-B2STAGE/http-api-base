@@ -54,9 +54,9 @@ class Token(db.Model):
     last_access = db.Column(db.DateTime)
     IP = db.Column(db.String(46))
     hostname = db.Column(db.String(256))
-    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    # emitted_for = db.relationship('User',
-    #                              backref=db.backref('tokens', lazy='dynamic'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    emitted_for = db.relationship('User',
+                                 backref=db.backref('tokens', lazy='dynamic'))
 
 # class ExternalAccounts(db.Model):
 #     username = db.Column(db.String(60), primary_key=True)
