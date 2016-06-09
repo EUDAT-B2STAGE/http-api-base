@@ -125,10 +125,6 @@ class Meta(object):
 ######################################################
 # ## INTERESTING EXAMPLE OF CREATING META CLASSES ## #
 
-# with open(fileschema) as f:
-#     mytemplate = json.load(f)
-# reference_schema = convert_to_marshal(mytemplate)
-
 # # Name for the class. Remove path and extension (json)
 # label = os.path.splitext(
 #     os.path.basename(fileschema))[0].lower()

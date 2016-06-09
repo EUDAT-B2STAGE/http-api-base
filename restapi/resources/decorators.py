@@ -20,7 +20,6 @@ different solutions.
 from __future__ import division, absolute_import
 from .. import myself, lic, get_logger
 
-# from flask.ext.restful import marshal
 from flask.wrappers import Response
 from commons import htmlcodes as hcodes
 from commons.meta import Meta
@@ -111,8 +110,6 @@ def add_endpoint_parameter(name, ptype=str, default=None, required=False):
 # right before the function call
 # this is necessary for the plugin Restful
 # http://flask-restful.readthedocs.org/en/latest/reqparse.html
-# N.B. will change it for marshmallow?
-# http://marshmallow.readthedocs.org/en/latest/
 
 def apimethod(func):
     """ 
