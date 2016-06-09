@@ -77,3 +77,46 @@ class Authentication(BaseAuthentication):
 
         if missing_user or missing_role:
             self._db.session.commit()
+
+    def list_all_tokens(self, user):
+        # TO FIX: TTL should be considered?
+
+        list = []
+        """
+        tokens = user.tokens.all()
+        for token in tokens:
+            t = {}
+
+            t["id"] = token._id
+            t["token"] = token.token
+            t["emitted"] = token.creation.strftime('%s')
+            t["last_access"] = token.last_access.strftime('%s')
+            if token.expiration is not None:
+                t["expiration"] = token.expiration.strftime('%s')
+            t["IP"] = token.IP
+            t["hostname"] = token.hostname
+            list.append(t)
+        """
+        return list
+
+    def invalidate_all_tokens(self, user=None):
+        if user is None:
+            user = self._user
+
+        """
+        user.uuid = self.getUUID()
+        user.save()
+        """
+
+    def invalidate_token(self, user=None, token=None):
+        if token is None:
+            token = self._latest_token
+        if user is None:
+            user = self._user
+        """
+        token_node = self._graph.Token.nodes.get(token=token)
+        if token_node is not None:
+            token_node.emitted_for.disconnect(user)
+        else:
+            logger.warning("Could not invalidate token")
+        """
