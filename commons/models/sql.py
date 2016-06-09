@@ -3,7 +3,7 @@
 """ Models for the relational database """
 
 from __future__ import absolute_import
-from ..databases.alchemy import db
+from ..services.alchemy import db
 
 import logging
 

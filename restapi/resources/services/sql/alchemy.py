@@ -6,13 +6,13 @@ sqllite, MySQL or Postgres
 """
 
 from __future__ import absolute_import
-from commons.databases import DBinstance
+from commons.services import ServiceFarm
 from .... import get_logger
 
 logger = get_logger(__name__)
 
 
-class SQLFarm(DBinstance):
+class SQLFarm(ServiceFarm):
     """
 
     Creating the farm for SQLalchemy as an API service.

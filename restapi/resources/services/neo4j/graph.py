@@ -4,7 +4,7 @@
 
 import os
 from .... import get_logger
-from commons.databases import DBinstance
+from commons.services import ServiceFarm
 
 logger = get_logger(__name__)
 
@@ -83,7 +83,7 @@ class MyGraph(object):
 # Farm to get Graph instances
 ########################
 
-class GraphFarm(DBinstance):
+class GraphFarm(ServiceFarm):
 
     """ Making some Graphs """
 

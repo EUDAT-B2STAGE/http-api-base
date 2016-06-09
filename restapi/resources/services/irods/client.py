@@ -18,7 +18,7 @@ from collections import OrderedDict
 from ...basher import BashCommands
 from ...exceptions import RestApiException
 from confs.config import IRODS_ENV
-from commons.databases import DBinstance
+from commons.services import ServiceFarm
 
 # from ..templating import Templa
 # from . import string_generator
@@ -955,7 +955,7 @@ class ICommands(BashCommands):
 #         exit()
 
 
-class IrodsFarm(DBinstance):
+class IrodsFarm(ServiceFarm):
 
     def get_token_user(self, token=None):
         """ Depends on B2ACCESS authentication """

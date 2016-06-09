@@ -23,7 +23,7 @@ logger.setLevel(logging.DEBUG)
 BASE_MODELS_PATH = 'commons.models.'
 
 
-class DBinstance(metaclass=abc.ABCMeta):
+class ServiceFarm(metaclass=abc.ABCMeta):
 
     _meta = Meta()
     _service_name = None

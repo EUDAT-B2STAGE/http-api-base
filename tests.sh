@@ -25,7 +25,7 @@ if [ "$?" == "0" ]; then
     $com $option/custom --log-capture
     if [ "$?" == "0" ]; then
         # Print coverage if everything went well so far
-        $com $cov_options $option/custom
+        $com $cov_options
     else
         exit $?
     fi
