@@ -9,6 +9,7 @@ MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r
 
 from __future__ import absolute_import
 from datetime import datetime
+from commons.services.uuid import getUUID
 from . import BaseAuthentication
 from ..detect import GRAPHDB_AVAILABLE
 from .... import myself, lic, get_logger
@@ -72,7 +73,7 @@ instead of here
         if not len(self._graph.User.nodes) > 0:
             logger.warning("No users inside graphdb. Injected default.")
             user = self._graph.User(
-                uuid=self._graph.getUUID(),
+                uuid=getUUID(),
                 email=self.DEFAULT_USER,
                 authmethod='credentials',
                 name='Default', surname='User',
@@ -139,7 +140,7 @@ instead of here
         if user is None:
             user = self._user
 
-        user.uuid = self._graph.getUUID()
+        user.uuid = getUUID()
         user.save()
 
     def invalidate_token(self, user=None, token=None):

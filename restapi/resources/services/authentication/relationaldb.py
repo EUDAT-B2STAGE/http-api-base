@@ -7,6 +7,7 @@ We create all the components here!
 
 from __future__ import absolute_import
 from datetime import datetime
+from commons.services.uuid import getUUID
 from ..detect import SQL_AVAILABLE
 from . import BaseAuthentication
 from .... import myself, lic, get_logger
@@ -82,7 +83,7 @@ class Authentication(BaseAuthentication):
         # TO FIX: TTL should be considered?
 
         list = []
-        list.append(self._db.getUUID())
+        list.append(getUUID())
         """
         tokens = user.tokens.all()
         for token in tokens:
