@@ -46,6 +46,18 @@ class User(db.Model):
         return "[db model: %s] %s" % (self.__class__.__name__, self.email)
 
 
+class Token(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(360), unique=True)
+    creation = db.Column(db.DateTime)
+    expiration = db.Column(db.DateTime)
+    last_access = db.Column(db.DateTime)
+    IP = db.Column(db.String(46))
+    hostname = db.Column(db.String(256))
+    # user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    # emitted_for = db.relationship('User',
+    #                              backref=db.backref('tokens', lazy='dynamic'))
+
 # class ExternalAccounts(db.Model):
 #     username = db.Column(db.String(60), primary_key=True)
 # # TEXT?

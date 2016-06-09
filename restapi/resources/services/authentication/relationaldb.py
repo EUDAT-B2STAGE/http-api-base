@@ -80,12 +80,37 @@ class Authentication(BaseAuthentication):
         if missing_user or missing_role:
             self._db.session.commit()
 
+    def save_token(self, user, token):
+
+        """
+        token_node = self._graph.Token()
+        token_node.token = token
+        token_node.creation = datetime.now()
+        token_node.last_access = datetime.now()
+        # token_node.expiration = ???
+
+        from flask import request
+        import socket
+        ip = request.remote_addr
+        try:
+            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
+        except Exception:
+            hostname = ""
+
+        token_node.IP = ip
+        token_node.hostname = hostname
+
+        token_node.save()
+        token_node.emitted_for.connect(user)
+
+        logger.debug("Token stored in graphDB")
+        """
+
     def list_all_tokens(self, user):
         # TO FIX: TTL should be considered?
 
         list = []
-        list.append(getUUID())
-        list.append(user.uuid)
+
         """
         tokens = user.tokens.all()
         for token in tokens:
@@ -108,7 +133,7 @@ class Authentication(BaseAuthentication):
             user = self._user
 
         """
-        user.uuid = self.getUUID()
+        user.uuid = getUUID()
         user.save()
         """
 
