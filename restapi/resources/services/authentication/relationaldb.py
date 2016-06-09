@@ -82,6 +82,7 @@ class Authentication(BaseAuthentication):
         # TO FIX: TTL should be considered?
 
         list = []
+        list.append(self._db.getUUID())
         """
         tokens = user.tokens.all()
         for token in tokens:
