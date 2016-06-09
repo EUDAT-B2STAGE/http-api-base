@@ -72,11 +72,8 @@ class MyGraph(object):
 
         for model in models:
             # Save attribute inside class with the same name
-            logger.debug("Loading model '%s'" % model.__name__)
+            logger.debug("Injecting model '%s'" % model.__name__)
             setattr(self, model.__name__, model)
-
-    def other(self):
-        return self
 
 
 #######################
