@@ -13,6 +13,8 @@ to let the user access a new connection.
 
 from __future__ import absolute_import
 import abc
+import \
+uuid
 import time
 import logging
 from ..meta import Meta
@@ -59,6 +61,9 @@ class ServiceFarm(metaclass=abc.ABCMeta):
                                % (name, sleep_time))
                 logger.debug("Error was %s" % str(e))
                 time.sleep(sleep_time)
+
+    def getUUID(self):
+        return str(uuid.uuid4())
 
     def load_generic_models(self, module_path):
         module = self._meta.get_module_from_string(module_path)
