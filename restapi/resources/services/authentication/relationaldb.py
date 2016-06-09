@@ -65,6 +65,7 @@ class Authentication(BaseAuthentication):
         if missing_user:
             logger.warning("No users inside db. Injected default.")
             user = self._db.User(
+                uuid=getUUID(),
                 email=self.DEFAULT_USER,
                 authmethod='credentials',
                 name='Default', surname='User',
@@ -84,6 +85,7 @@ class Authentication(BaseAuthentication):
 
         list = []
         list.append(getUUID())
+        list.append(user.uuid)
         """
         tokens = user.tokens.all()
         for token in tokens:
