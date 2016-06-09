@@ -34,10 +34,9 @@ class Authentication(BaseAuthentication):
         self._db = services.get('sql')().get_instance()
 
     def fill_payload(self, userobj):
-        print("OBJ", userobj.email)
 
         return {
-            'user_id': userobj.id,
+            'user_id': userobj.uuid,
             'hpwd': userobj.password,
             'emitted': str(datetime.now())
         }
@@ -47,7 +46,8 @@ class Authentication(BaseAuthentication):
         if username is not None:
             user = self._db.User.query.filter_by(email=username).first()
         if payload is not None and 'user_id' in payload:
-            user = self._db.User.query.get(payload['user_id'])
+            user = self._db.User.query.filter_by(
+                uuid=payload['user_id']).first()
         return user
 
     def init_users_and_roles(self):
