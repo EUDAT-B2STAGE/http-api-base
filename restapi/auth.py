@@ -115,7 +115,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
             # Save token
             if decorated_self is not None:
                 decorated_self.global_get('custom_auth')._latest_token = token
-                print("SAVE TOKEN", token, decorated_self)
+                # print("SAVE TOKEN", token, decorated_self)
             return f(*args, **kwargs)
         return decorated
 

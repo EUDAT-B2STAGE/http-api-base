@@ -968,7 +968,7 @@ class IrodsFarm(ServiceFarm):
             user = os.environ.get('IRODS_USER')
         else:
             user = 'guest'
-        print("TOKEN IS", token)
+        # print("TOKEN IS", token)
         print("FIXME: IRODS USER *%s*" % user)
         return user
 
