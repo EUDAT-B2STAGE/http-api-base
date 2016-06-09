@@ -4,7 +4,7 @@
 App specifications
 """
 
-from __future__ import division, absolute_import
+from __future__ import division
 from . import myself, lic, get_logger
 
 from flask.ext.restful import Api

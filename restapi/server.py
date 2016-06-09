@@ -5,7 +5,7 @@ Main server factory.
 We create all the components here!
 """
 
-from __future__ import division, absolute_import
+from __future__ import absolute_import
 
 import os
 from flask import Flask, request, g  # , jsonify, got_request_exception
