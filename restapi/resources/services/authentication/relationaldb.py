@@ -6,6 +6,7 @@ We create all the components here!
 """
 
 from __future__ import absolute_import
+import sqlalchemy
 from datetime import datetime
 from commons.services.uuid import getUUID
 from ..detect import SQL_AVAILABLE
@@ -52,30 +53,37 @@ class Authentication(BaseAuthentication):
 
     def init_users_and_roles(self):
 
-        # if no roles
-        missing_role = not self._db.Role.query.first()
-        if missing_role:
-            logger.warning("No roles inside db. Injected defaults.")
-            for role in self.DEFAULT_ROLES:
-                sqlrole = self._db.Role(name=role, description="automatic")
-                self._db.session.add(sqlrole)
+        missing_role = missing_user = False
 
-        # if no users
-        missing_user = not self._db.User.query.first()
-        if missing_user:
-            logger.warning("No users inside db. Injected default.")
-            user = self._db.User(
-                uuid=getUUID(),
-                email=self.DEFAULT_USER,
-                authmethod='credentials',
-                name='Default', surname='User',
-                password=self.hash_password(self.DEFAULT_PASSWORD))
+        try:
+            # if no roles
+            missing_role = not self._db.Role.query.first()
+            if missing_role:
+                logger.warning("No roles inside db. Injected defaults.")
+                for role in self.DEFAULT_ROLES:
+                    sqlrole = self._db.Role(name=role, description="automatic")
+                    self._db.session.add(sqlrole)
 
-            # link roles into users
-            for role in self.DEFAULT_ROLES:
-                sqlrole = self._db.Role.query.filter_by(name=role).first()
-                user.roles.append(sqlrole)
-            self._db.session.add(user)
+            # if no users
+            missing_user = not self._db.User.query.first()
+            if missing_user:
+                logger.warning("No users inside db. Injected default.")
+                user = self._db.User(
+                    uuid=getUUID(),
+                    email=self.DEFAULT_USER,
+                    authmethod='credentials',
+                    name='Default', surname='User',
+                    password=self.hash_password(self.DEFAULT_PASSWORD))
+
+                # link roles into users
+                for role in self.DEFAULT_ROLES:
+                    sqlrole = self._db.Role.query.filter_by(name=role).first()
+                    user.roles.append(sqlrole)
+                self._db.session.add(user)
+        except sqlalchemy.exc.OperationalError:
+            raise AttributeError("Existing SQL tables are not consistent " +
+                                 "to existing models. Please consider " +
+                                 "rebuilding your DB.")
 
         if missing_user or missing_role:
             self._db.session.commit()
