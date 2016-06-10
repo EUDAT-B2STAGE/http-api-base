@@ -174,7 +174,7 @@ class Profile(ExtendedApiResource):
 
         roles = []
         for role in auth._user.roles:
-            roles.append(role)
+            roles.append(role.name)
         data["roles"] = roles
 
         if hasattr(auth._user, 'name'):
