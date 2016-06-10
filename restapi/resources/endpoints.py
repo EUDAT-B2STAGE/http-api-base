@@ -163,27 +163,30 @@ class Profile(ExtendedApiResource):
     def get(self):
         """
         Token authentication tester. Example of working call is: 
-        http localhost:8081/api/verifylogged
+        http localhost:8081/auth/profile
             Authorization:"Bearer RECEIVED_TOKEN"
         """
 
         auth = self.global_get('custom_auth')
-        print("DEBUG PROFILE", auth._user, auth._payload)
-        return self.response("Valid user")
+        data = {}
+        data["status"] = "Valid user"
+        data["email"] = auth._user.email
 
-    """
-    user = User.query.get(int(tokenizer.user_id))
-    roles = ""
-    for role in user.roles:
-        roles += role.name + '; '
-    response = {
-        'Name': user.first_name,
-        'Surname': user.last_name,
-        'Email': user.email,
-        'Roles': roles
-    }
-    """
+        roles = []
+        for role in auth._user.roles:
+            roles.append(role)
+        data["roles"] = roles
 
+        if hasattr(auth._user, 'name'):
+            data["name"] = auth._user.name
+
+        if hasattr(auth._user, 'surname'):
+            data["surname"] = auth._user.surname
+
+        if hasattr(auth._user, 'irods_user'):
+            data["irods_user"] = auth._user.irods_user
+
+        return self.response(data)
 
 # class Admin(ExtendedApiResource):
 #     """ Token and Role authentication test """
