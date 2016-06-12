@@ -52,5 +52,6 @@ class ExternalAccounts(StructuredNode):
     token = StringProperty(required=True)
     email = StringProperty()
     certificate_cn = StringProperty()
+    proxyfile = StringProperty()
     description = StringProperty(default='No description')
     main_user = RelationshipFrom(User, 'OAUTH', cardinality=OneOrMore)

@@ -62,4 +62,4 @@ class Certificates(object):
         proxyfile = self.write_key_and_cert(key, response.data)
         logger.debug('Wrote certificate to %s' % proxyfile)
 
-        return True
+        return proxyfile
