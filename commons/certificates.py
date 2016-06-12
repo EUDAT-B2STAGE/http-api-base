@@ -31,14 +31,15 @@ class Certificates(object):
         req.get_subject().CN = user
         req.set_pubkey(key)
         req.sign(key, "sha1")
+        # print("CSR", key, req)
         return key, req
 
     def write_key_and_cert(self, key, cert):
         tempfile = "/tmp/%s" % getUUID()
         flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
         with os.fdopen(os.open(tempfile, flags, 0o600), 'w') as f:
-            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key))
-            f.write(cert)
+            f.write(crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode())
+            f.write(cert.decode())
         return tempfile
 
     def make_proxy_from_ca(self, ca):
