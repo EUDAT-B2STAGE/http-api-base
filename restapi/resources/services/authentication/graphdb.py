@@ -155,7 +155,7 @@ instead of here
         else:
             logger.warning("Could not invalidate token")
 
-    def save_oauth2_info_into_user(self, graph, current_user, token):
+    def save_oauth2_info_to_user(self, graph, current_user, token):
         """
         From B2ACCESS endpoint user info,
         update our authentication models
@@ -173,6 +173,7 @@ instead of here
                     'Account already exists with other credentials'}]}
         except graph.User.DoesNotExist:
             user_node = graph.User(
+                uuid=getUUID(),
                 email=email,
                 authmethod='b2access_oauth2')
 
