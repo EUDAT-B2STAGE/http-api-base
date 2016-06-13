@@ -242,20 +242,20 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         user = self.get_user_object(username=username)
         if user is None:
-            return None
+            return None, None
 
         try:
             # Check if Oauth2 is enabled
             if user.authmethod != 'credentials':
-                return None
+                return None, None
         except:
             # Missing authmethod as requested for authentication
             logger.critical("Current authentication db models are broken!")
-            return None
+            return None, None
 
 # // TO FIX:
 # maybe payload should be some basic part + custom payload from the developer
         if self.check_passwords(user.password, password):
             return self.create_token(self.fill_payload(user))
 
-        return None
+        return None, None
