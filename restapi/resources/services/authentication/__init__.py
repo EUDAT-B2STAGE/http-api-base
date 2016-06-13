@@ -98,12 +98,20 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         return encode, self._payload['jti']
 
-    def verify_token_custom(self, token, user, payload):
+    def verify_token_custom(self, jti, user, payload):
         """
             This method can be implemented by specific Authentication Methods
             to add more specific validation contraints
         """
         return True
+
+    @abc.abstractmethod
+    def refresh_token(self, jti):
+        """
+            Verify shortTTL to refresh token if not expired
+            Invalidate token otherwise
+        """
+        return
 
     def verify_token(self, token):
 
@@ -135,12 +143,12 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             return False
 
         if not self.verify_token_custom(
-           token=token, user=self._user, payload=self._payload):
+           jti=self._payload['jti'], user=self._user, payload=self._payload):
             return False
         # e.g. for graph: verify the (token <- user) link
 
-        logger.warning("Here token.last_access should be updated")
-        # logger.critical(token)
+        if not self.refresh_token(self._payload['jti']):
+            return False
 
         logger.info("User authorized")
         return True

@@ -101,11 +101,21 @@ instead of here
 
         logger.debug("Token stored in graphDB")
 
-    def verify_token_custom(self, token, user, payload):
+    def verify_token_custom(self, jti, user, payload):
 
-        token_node = self._graph.Token.nodes.get(token=token)
+        token_node = self._graph.Token.nodes.get(jti=jti)
         if not token_node.emitted_for.is_connected(user):
             return False
+
+        return True
+
+    def refresh_token(self, jti):
+        now = datetime.now()
+        token_node = self._graph.Token.nodes.get(jti=jti)
+
+        token_node.last_access = now
+
+        token_node.save()
 
         return True
 
@@ -117,7 +127,7 @@ instead of here
         for token in tokens:
             t = {}
 
-            t["id"] = token._id
+            t["id"] = token.jti
             t["token"] = token.token
             t["emitted"] = token.creation.strftime('%s')
             t["last_access"] = token.last_access.strftime('%s')

@@ -120,6 +120,17 @@ instead of here
 
         logger.debug("Token stored in graphDB")
 
+    def refresh_token(self, jti):
+        now = datetime.now()
+        token_entry = self._db.Token.query.filter_by(jti=jti).first()
+
+        token_entry.last_access = now
+
+        self._db.session.add(token_entry)
+        self._db.session.commit()
+
+        return True
+
     def list_all_tokens(self, user):
         # TO FIX: TTL should be considered?
 
@@ -129,7 +140,7 @@ instead of here
 
             t = {}
 
-            t["id"] = token.id
+            t["id"] = token.jti
             t["token"] = token.token
             t["emitted"] = token.creation.strftime('%s')
             t["last_access"] = token.last_access.strftime('%s')
