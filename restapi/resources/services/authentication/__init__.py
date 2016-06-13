@@ -15,7 +15,7 @@ import jwt
 import hmac
 import hashlib
 import base64
-from datetime import datetime
+from datetime import datetime, timedelta
 
 __author__ = myself
 __copyright__ = myself
@@ -90,10 +90,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return jwt.encode(
             payload, self.SECRET, algorithm=self.JWT_ALGO).decode('ascii')
 
-    def verify_time_to_live(self, payload):
-# // TO FIX
-        return True
-
     def verify_token_custom(self, token, user, payload):
         """
             This method can be implemented by specific Authentication Methods
@@ -113,8 +109,17 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         try:
             self._payload = jwt.decode(
                 token, self.SECRET, algorithms=[self.JWT_ALGO])
-        except:
-            logger.warning("Unable to decode JWT token")
+        # now > exp
+        except jwt.exceptions.ExpiredSignatureError as e:
+            logger.warning("Unable to decode JWT token. %s" % e)
+            # this token should be invalidated into the DB?
+            return False
+        # now < nbf
+        except jwt.exceptions.ImmatureSignatureError as e:
+            logger.warning("Unable to decode JWT token. %s" % e)
+            return False
+        except Exception as e:
+            logger.warning("Unable to decode JWT token. %s" % e)
             return False
 
         self._user = self.get_user_object(payload=self._payload)
@@ -124,13 +129,9 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         if not self.verify_token_custom(
            token=token, user=self._user, payload=self._payload):
             return False
-        # e.g. for graph: verify token <- user link
-
-        if not self.verify_time_to_live(self._payload):
-            return False
+        # e.g. for graph: verify the (token <- user) link
 
         logger.warning("Here token.last_access should be updated")
-        logger.info(self._payload)
 
         logger.info("User authorized")
         return True
@@ -197,29 +198,29 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         """ Informations to store inside the JWT token,
         starting from the user obtained from the current service
 
-from:
-http://blog.apcelent.com/json-web-token-tutorial-example-python.html
+        Claim attributes listed here:
+        http://blog.apcelent.com/json-web-token-tutorial-example-python.html
 
-Following are the claim attributes :
-
-iss: The issuer of the token
-sub: The subject of the token
-aud: The audience of the token
-qsh: query string hash
-exp: Token expiration time defined in Unix time
-nbf: 'Not before time':
-   identifies the time before which the JWT must not be accepted for processing
-iat: 'Issued at time', in Unix time, at which the token was issued
-jti: JWT ID claim provides a unique identifier for the JWT
-
+        TTL is measured in seconds
         """
+
+        TTL = 86400     # 1 day in seconds
+        TTL = 6        # just for test purpose
+
+        now = datetime.now()
+        exp = now + timedelta(seconds=TTL)
 
         payload = {
             'user_id': userobj.uuid,
             'hpwd': userobj.password,
-            'emitted': str(datetime.now())
+            'iat': now,
+            'nbf': now + timedelta(seconds=0),
+            'exp': exp,
+            'ttl': str(TTL)
         }
-        return self.fill_custom_payload(userobj, payload)
+
+        return payload
+        # return self.fill_custom_payload(userobj, payload)
 
     def make_login(self, username, password):
         """ The method which will check if credentials are good to go """
