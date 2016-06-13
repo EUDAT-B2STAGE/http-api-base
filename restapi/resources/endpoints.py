@@ -72,8 +72,6 @@ class Login(ExtendedApiResource):
         # auth instance from the global namespace
         auth = self.global_get('custom_auth')
         token, jti = auth.make_login(username, password)
-        logger.critical(token)
-        logger.critical(jti)
         if token is None:
             return self.response(
                 errors={"Credentials": "Invalid username and/or password"},
@@ -120,7 +118,6 @@ class Tokens(ExtendedApiResource):
             return self.response(tokens)
 
         for token in tokens:
-            logger.critical(token)
             if token["id"] == token_id:
                 return self.response(token)
 
