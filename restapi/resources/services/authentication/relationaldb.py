@@ -130,7 +130,7 @@ instead of here
 
         if now > token_entry.expiration:
             self.invalidate_token(token=token_entry.token)
-            logger.critical("This token is not longer valid")
+            logger.critical("This token is no longer valid")
             return False
 
         exp = now + timedelta(seconds=self.shortTTL)
