@@ -15,6 +15,7 @@ import jwt
 import hmac
 import hashlib
 import base64
+from datetime import datetime
 
 __author__ = myself
 __copyright__ = myself
@@ -116,9 +117,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             logger.warning("Unable to decode JWT token")
             return False
 
-        if not self.verify_time_to_live(self._payload):
-            return False
-
         self._user = self.get_user_object(payload=self._payload)
         if self._user is None:
             return False
@@ -127,6 +125,12 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
            token=token, user=self._user, payload=self._payload):
             return False
         # e.g. for graph: verify token <- user link
+
+        if not self.verify_time_to_live(self._payload):
+            return False
+
+        logger.warning("Here token.last_access should be updated")
+        logger.info(self._payload)
 
         logger.info("User authorized")
         return True
@@ -182,7 +186,13 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         """
         return
 
-    @abc.abstractmethod
+    def fill_custom_payload(self, userobj, payload):
+        """
+            This method can be implemented by specific Authentication Methods
+            to add more specific payload content
+        """
+        return payload
+
     def fill_payload(self, userobj):
         """ Informations to store inside the JWT token,
         starting from the user obtained from the current service
@@ -203,7 +213,13 @@ iat: 'Issued at time', in Unix time, at which the token was issued
 jti: JWT ID claim provides a unique identifier for the JWT
 
         """
-        return
+
+        payload = {
+            'user_id': userobj.uuid,
+            'hpwd': userobj.password,
+            'emitted': str(datetime.now())
+        }
+        return self.fill_custom_payload(userobj, payload)
 
     def make_login(self, username, password):
         """ The method which will check if credentials are good to go """

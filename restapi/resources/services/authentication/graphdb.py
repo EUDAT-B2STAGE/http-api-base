@@ -43,24 +43,14 @@ class Authentication(BaseAuthentication):
             logger.warning("Could not find user for '%s'" % username)
         return user
 
-    def fill_payload(self, userobj):
-
+    def fill_custom_payload(self, userobj, payload):
         """
 # // TO FIX
 
-This method should be custom.
-This means it should be implemented inside the vanilla folder,
+This method should be implemented inside the vanilla folder,
 instead of here
         """
-
-# ADD IRODS USERNAME?
-        # print("OBJ", userobj.email)
-
-        return {
-            'user_id': userobj.uuid,
-            'hpwd': userobj.password,
-            'emitted': str(datetime.now())
-        }
+        return payload
 
     def init_users_and_roles(self):
 

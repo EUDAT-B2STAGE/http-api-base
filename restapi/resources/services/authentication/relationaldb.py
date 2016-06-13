@@ -34,13 +34,14 @@ class Authentication(BaseAuthentication):
 
         self._db = services.get('sql')().get_instance()
 
-    def fill_payload(self, userobj):
+    def fill_custom_payload(self, userobj, payload):
+        """
+# // TO FIX
 
-        return {
-            'user_id': userobj.uuid,
-            'hpwd': userobj.password,
-            'emitted': str(datetime.now())
-        }
+This method should be implemented inside the vanilla folder,
+instead of here
+        """
+        return payload
 
     def get_user_object(self, username=None, payload=None):
         user = None
