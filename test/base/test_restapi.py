@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Test  dataobjects endpoints
+Tests for http api base
+(mostly authentication)
 """
 
 from __future__ import absolute_import

@@ -43,7 +43,8 @@ class IrodsException(RestApiException):
             self, utility, error_string, error_code, error_label, role='user'):
         # imeta add -d obj key value
         # imeta add -d obj key value
-        # ERROR: rcModAVUMetadata failed with error -809000 CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
+        # ERROR: rcModAVUMetadata failed with error -809000
+        # CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME
 
         return "A resource already exists with this name"
 
@@ -94,7 +95,8 @@ class IrodsException(RestApiException):
             return error_label
 
         # Error example:
-        # ERROR: lsUtil: srcPath /abs/path/to/resource does not exist or user lacks access permission
+        # ERROR: lsUtil: srcPath /abs/path/to/resource
+        # does not exist or user lacks access permission
         regExpr = "^ERROR: (.*): (.*)$"
         m = re.search(regExpr, error)
         if m:
@@ -103,7 +105,8 @@ class IrodsException(RestApiException):
             # es: lsUtil
             utility = m.group(1)
 
-            # es: srcPath /abs/path/to/resource does not exist or user lacks access permission
+            # es: srcPath /abs/path/to/resource
+            # does not exist or user lacks access permission
             error_string = m.group(2)
 
             return error_string
@@ -118,11 +121,12 @@ class IrodsException(RestApiException):
 # ######################################
 
 class ICommands(BashCommands):
-    """irods icommands in a class"""
+    """ iRODS icommands in a python wrapper class """
 
     _init_data = {}
     _current_environment = None
     _base_dir = ''
+    _current_user = None
 
     first_resource = 'demoResc'
     second_resource = 'replicaResc'
@@ -192,6 +196,8 @@ class ICommands(BashCommands):
 
         elif authscheme == 'GSI':
             self.prepare_irods_environment(user, authscheme)
+
+        self._current_user = user
 
     def set_password(self, tmpfile='/tmp/temppw'):
         """
@@ -289,11 +295,15 @@ class ICommands(BashCommands):
             # # NEW: use the certificate
             self.prepare_irods_environment(user)
 
+        self._current_user = user
         logger.info("Switched to user '%s'" % user)
 
         # If i want to check
         # return self.list(self.get_user_home(user))
         return True
+
+    def get_current_user(self):
+        return self._current_user
 
     ###################
     # Basic command with the GSI plugin
@@ -313,7 +323,6 @@ class ICommands(BashCommands):
 
             irods_exception = IrodsException(e)
             raise irods_exception
-
 
     ###################
     # ICOMs !!!
@@ -966,6 +975,8 @@ class IrodsFarm(ServiceFarm):
 ################
         if 'IRODS_USER' in os.environ:
             user = os.environ.get('IRODS_USER')
+            if user == 'rods':
+                user = 'guest'
         else:
             user = 'guest'
         # print("TOKEN IS", token)
@@ -978,6 +989,7 @@ class IrodsFarm(ServiceFarm):
 
     def get_instance(self, token=None):
         user = self.get_token_user(token)
+## // TO FIX
         if user is not None:
             self._irods = ICommands(user)
         return self._irods

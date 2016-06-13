@@ -8,6 +8,7 @@ from confs.config import API_URL
 from ..jsonify import output_json  # , RESTError
 from flask import make_response, jsonify
 from flask_restful import request, Resource, reqparse
+import json
 from .. import get_logger
 
 logger = get_logger(__name__)
@@ -145,12 +146,18 @@ class ExtendedApiResource(Resource):
         if http_out is None:
             http_out = self._latest_response
 
-        if not isinstance(http_out, tuple) or len(http_out) != 2:
+        try:
+            response = json.loads(http_out.get_data().decode())
+        except Exception as e:
+            logger.critical("Failed to load response:\n%s" % e)
             raise ValueError(
                 "Trying to recover informations" +
                 " from a malformed response:\n%s" % http_out)
 
-        response, status = http_out
+        if not isinstance(response, dict) or len(response) != 2:
+            raise ValueError(
+                "Trying to recover informations" +
+                " from a malformed response:\n%s" % response)
 
         if get_error:
             return response[RESPONSE_CONTENT]['errors']
