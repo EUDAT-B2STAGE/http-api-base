@@ -45,8 +45,9 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     _payload = {}
     _user = None
 
+#TO FIX: to be lengthen. Now are short for testing purpose
     longTTL = 86400     # 1 day in seconds
-    shortTTL = 10
+    shortTTL = 3600     # 1 hour in seconds
 
     @abc.abstractmethod
     def __init__(self, services=None):

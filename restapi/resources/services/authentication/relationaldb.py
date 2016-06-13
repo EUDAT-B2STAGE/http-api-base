@@ -7,6 +7,7 @@ We create all the components here!
 
 from __future__ import absolute_import
 import sqlalchemy
+import pytz
 from datetime import datetime, timedelta
 from commons.services.uuid import getUUID
 from ..detect import SQL_AVAILABLE
@@ -99,8 +100,8 @@ instead of here
         except Exception:
             hostname = ""
 
-        now = datetime.now()
-        exp = datetime.now() + timedelta(seconds=self.shortTTL)
+        now = datetime.now(pytz.utc)
+        exp = now + timedelta(seconds=self.shortTTL)
 
         token_entry = self._db.Token(
             jti=jti,
@@ -121,10 +122,18 @@ instead of here
         logger.debug("Token stored in graphDB")
 
     def refresh_token(self, jti):
-        now = datetime.now()
+        now = datetime.now(pytz.utc)
         token_entry = self._db.Token.query.filter_by(jti=jti).first()
 
+        if now > token_entry.expiration:
+            self.invalidate_token(token=token_entry.token)
+            logger.critical("This token is not longer valid")
+            return False
+
+        exp = now + timedelta(seconds=self.shortTTL)
+
         token_entry.last_access = now
+        token_entry.expiration = exp
 
         self._db.session.add(token_entry)
         self._db.session.commit()

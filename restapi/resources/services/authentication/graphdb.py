@@ -8,6 +8,7 @@ MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r
 """
 
 from __future__ import absolute_import
+import pytz
 from datetime import datetime, timedelta
 from commons.services.uuid import getUUID
 from . import BaseAuthentication
@@ -76,8 +77,8 @@ instead of here
 
     def save_token(self, user, token, jti):
 
-        now = datetime.now()
-        exp = datetime.now() + timedelta(seconds=self.shortTTL)
+        now = datetime.now(pytz.utc)
+        exp = now + timedelta(seconds=self.shortTTL)
 
         token_node = self._graph.Token()
         token_node.jti = jti
@@ -110,10 +111,18 @@ instead of here
         return True
 
     def refresh_token(self, jti):
-        now = datetime.now()
+        now = datetime.now(pytz.utc)
         token_node = self._graph.Token.nodes.get(jti=jti)
 
+        if now > token_node.expiration:
+            self.invalidate_token(token=token_node.token)
+            logger.critical("This token is not longer valid")
+            return False
+
+        exp = now + timedelta(seconds=self.shortTTL)
+
         token_node.last_access = now
+        token_node.expiration = exp
 
         token_node.save()
 
