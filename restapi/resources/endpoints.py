@@ -71,21 +71,22 @@ class Login(ExtendedApiResource):
 
         # auth instance from the global namespace
         auth = self.global_get('custom_auth')
-        token = auth.make_login(username, password)
+        token, jti = auth.make_login(username, password)
         if token is None:
             return self.response(
                 errors={"Credentials": "Invalid username and/or password"},
                 code=bad_code)
 
-## TO FIX
-# RESPONSE SHOULD BE:
-#  {
-#       'access_token': '9tiAF8Wozt0ACd-Aum3IKoAKuFlYt4A7ajZBTDyaoYk',
-#       'token_type': 'Bearer'
-#  }
-        auth.save_token(auth._user, token)
+        auth.save_token(auth._user, token, jti)
 
         return self.response({'token': token})
+
+        # The right response should be the following
+        # Just remove the simple response above
+        return self.response({
+                             'access_token': token,
+                             'token_type': auth.token_type
+                             })
 
 
 class Logout(ExtendedApiResource):

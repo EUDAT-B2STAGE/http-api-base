@@ -32,6 +32,7 @@ class User(StructuredNode):
 
 
 class Token(StructuredNode):
+    jti = StringProperty(required=True, unique_index=True)
     token = StringProperty(required=True, unique_index=True)
     creation = DateTimeProperty(required=True)
     expiration = DateTimeProperty()

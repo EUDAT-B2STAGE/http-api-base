@@ -89,7 +89,7 @@ instead of here
         if missing_user or missing_role:
             self._db.session.commit()
 
-    def save_token(self, user, token):
+    def save_token(self, user, token, jti):
 
         from flask import request
         import socket
@@ -103,6 +103,7 @@ instead of here
         exp = datetime.now() + timedelta(seconds=self.shortTTL)
 
         token_entry = self._db.Token(
+            jti=jti,
             token=token,
             creation=now,
             last_access=now,

@@ -74,12 +74,13 @@ instead of here
                 role_obj = self._graph.Role.nodes.get(name=role)
                 user.roles.connect(role_obj)
 
-    def save_token(self, user, token):
+    def save_token(self, user, token, jti):
 
         now = datetime.now()
         exp = datetime.now() + timedelta(seconds=self.shortTTL)
 
         token_node = self._graph.Token()
+        token_node.jti = jti
         token_node.token = token
         token_node.creation = now
         token_node.last_access = now

@@ -35,6 +35,8 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     SECRET = 'top secret!'
     JWT_ALGO = 'HS256'
+#TO FIX: already defined in auth.py HTTPAUTH_DEFAULT_SCHEME
+    token_type = 'Bearer'
     DEFAULT_USER = USER
     DEFAULT_PASSWORD = PWD
     DEFAULT_ROLES = [ROLE_USER, ROLE_ADMIN]
@@ -91,8 +93,10 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         """ Generate a byte token with JWT library to encrypt the payload """
         self._payload = payload
         self._user = self.get_user_object(payload=self._payload)
-        return jwt.encode(
+        encode = jwt.encode(
             payload, self.SECRET, algorithm=self.JWT_ALGO).decode('ascii')
+
+        return encode, self._payload['jti']
 
     def verify_token_custom(self, token, user, payload):
         """
@@ -141,7 +145,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         logger.info("User authorized")
         return True
 
-    def save_token(self, user, token):
+    def save_token(self, user, token, jti):
         logger.debug("Token is not saved in base authentication")
 
     @abc.abstractmethod
