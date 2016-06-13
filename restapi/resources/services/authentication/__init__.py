@@ -16,6 +16,7 @@ import jwt
 import hmac
 import hashlib
 import base64
+import pytz
 from datetime import datetime, timedelta
 
 __author__ = myself
@@ -222,7 +223,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         TTL is measured in seconds
         """
 
-        now = datetime.now()
+        now = datetime.now(pytz.utc)
         nbf = now   # you can add a timedelta
         exp = now + timedelta(seconds=self.longTTL)
 

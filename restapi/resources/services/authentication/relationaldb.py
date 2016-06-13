@@ -100,7 +100,7 @@ instead of here
         except Exception:
             hostname = ""
 
-        now = datetime.now(pytz.utc)
+        now = datetime.now()
         exp = now + timedelta(seconds=self.shortTTL)
 
         token_entry = self._db.Token(
@@ -122,8 +122,11 @@ instead of here
         logger.debug("Token stored in graphDB")
 
     def refresh_token(self, jti):
-        now = datetime.now(pytz.utc)
+        now = datetime.now()
         token_entry = self._db.Token.query.filter_by(jti=jti).first()
+
+        logger.critical(now)
+        logger.critical(token_entry.expiration)
 
         if now > token_entry.expiration:
             self.invalidate_token(token=token_entry.token)
