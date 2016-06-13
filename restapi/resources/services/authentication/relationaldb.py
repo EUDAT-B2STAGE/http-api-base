@@ -7,7 +7,8 @@ We create all the components here!
 
 from __future__ import absolute_import
 import sqlalchemy
-from datetime import datetime
+import pytz
+from datetime import datetime, timedelta
 from commons.services.uuid import getUUID
 from ..detect import SQL_AVAILABLE
 from . import BaseAuthentication
@@ -34,13 +35,14 @@ class Authentication(BaseAuthentication):
 
         self._db = services.get('sql')().get_instance()
 
-    def fill_payload(self, userobj):
+    def fill_custom_payload(self, userobj, payload):
+        """
+# // TO FIX
 
-        return {
-            'user_id': userobj.uuid,
-            'hpwd': userobj.password,
-            'emitted': str(datetime.now())
-        }
+This method should be implemented inside the vanilla folder,
+instead of here
+        """
+        return payload
 
     def get_user_object(self, username=None, payload=None):
         user = None
@@ -88,7 +90,7 @@ class Authentication(BaseAuthentication):
         if missing_user or missing_role:
             self._db.session.commit()
 
-    def save_token(self, user, token):
+    def save_token(self, user, token, jti):
 
         from flask import request
         import socket
@@ -98,10 +100,15 @@ class Authentication(BaseAuthentication):
         except Exception:
             hostname = ""
 
+        now = datetime.now()
+        exp = now + timedelta(seconds=self.shortTTL)
+
         token_entry = self._db.Token(
+            jti=jti,
             token=token,
-            creation=datetime.now(),
-            last_access=datetime.now(),
+            creation=now,
+            last_access=now,
+            expiration=exp,
             IP=ip,
             hostname=hostname
         )
@@ -114,6 +121,28 @@ class Authentication(BaseAuthentication):
 
         logger.debug("Token stored in graphDB")
 
+    def refresh_token(self, jti):
+        now = datetime.now()
+        token_entry = self._db.Token.query.filter_by(jti=jti).first()
+
+        logger.critical(now)
+        logger.critical(token_entry.expiration)
+
+        if now > token_entry.expiration:
+            self.invalidate_token(token=token_entry.token)
+            logger.critical("This token is no longer valid")
+            return False
+
+        exp = now + timedelta(seconds=self.shortTTL)
+
+        token_entry.last_access = now
+        token_entry.expiration = exp
+
+        self._db.session.add(token_entry)
+        self._db.session.commit()
+
+        return True
+
     def list_all_tokens(self, user):
         # TO FIX: TTL should be considered?
 
@@ -123,7 +152,7 @@ class Authentication(BaseAuthentication):
 
             t = {}
 
-            t["id"] = token.id
+            t["id"] = token.jti
             t["token"] = token.token
             t["emitted"] = token.creation.strftime('%s')
             t["last_access"] = token.last_access.strftime('%s')

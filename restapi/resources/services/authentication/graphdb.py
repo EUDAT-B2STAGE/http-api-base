@@ -8,7 +8,8 @@ MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r
 """
 
 from __future__ import absolute_import
-from datetime import datetime
+import pytz
+from datetime import datetime, timedelta
 from commons.services.uuid import getUUID
 from . import BaseAuthentication
 from ..detect import GRAPHDB_AVAILABLE
@@ -43,24 +44,14 @@ class Authentication(BaseAuthentication):
             logger.warning("Could not find user for '%s'" % username)
         return user
 
-    def fill_payload(self, userobj):
-
+    def fill_custom_payload(self, userobj, payload):
         """
 # // TO FIX
 
-This method should be custom.
-This means it should be implemented inside the vanilla folder,
+This method should be implemented inside the vanilla folder,
 instead of here
         """
-
-# ADD IRODS USERNAME?
-        # print("OBJ", userobj.email)
-
-        return {
-            'user_id': userobj.uuid,
-            'hpwd': userobj.password,
-            'emitted': str(datetime.now())
-        }
+        return payload
 
     def init_users_and_roles(self):
 
@@ -84,14 +75,17 @@ instead of here
                 role_obj = self._graph.Role.nodes.get(name=role)
                 user.roles.connect(role_obj)
 
-    def save_token(self, user, token):
+    def save_token(self, user, token, jti):
+
+        now = datetime.now(pytz.utc)
+        exp = now + timedelta(seconds=self.shortTTL)
 
         token_node = self._graph.Token()
+        token_node.jti = jti
         token_node.token = token
-        token_node.creation = datetime.now()
-        token_node.last_access = datetime.now()
-        # token_node.expiration = ???
-
+        token_node.creation = now
+        token_node.last_access = now
+        token_node.expiration = exp
         from flask import request
         import socket
         ip = request.remote_addr
@@ -108,11 +102,31 @@ instead of here
 
         logger.debug("Token stored in graphDB")
 
-    def verify_token_custom(self, token, user, payload):
-
-        token_node = self._graph.Token.nodes.get(token=token)
+    def verify_token_custom(self, jti, user, payload):
+        try:
+            token_node = self._graph.Token.nodes.get(jti=jti)
+        except self._graph.Token.DoesNotExist:
+            return False
         if not token_node.emitted_for.is_connected(user):
             return False
+
+        return True
+
+    def refresh_token(self, jti):
+        now = datetime.now(pytz.utc)
+        token_node = self._graph.Token.nodes.get(jti=jti)
+
+        if now > token_node.expiration:
+            self.invalidate_token(token=token_node.token)
+            logger.critical("This token is not longer valid")
+            return False
+
+        exp = now + timedelta(seconds=self.shortTTL)
+
+        token_node.last_access = now
+        token_node.expiration = exp
+
+        token_node.save()
 
         return True
 
@@ -124,7 +138,7 @@ instead of here
         for token in tokens:
             t = {}
 
-            t["id"] = token._id
+            t["id"] = token.jti
             t["token"] = token.token
             t["emitted"] = token.creation.strftime('%s')
             t["last_access"] = token.last_access.strftime('%s')

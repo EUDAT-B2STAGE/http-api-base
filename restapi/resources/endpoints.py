@@ -71,21 +71,22 @@ class Login(ExtendedApiResource):
 
         # auth instance from the global namespace
         auth = self.global_get('custom_auth')
-        token = auth.make_login(username, password)
+        token, jti = auth.make_login(username, password)
         if token is None:
             return self.response(
                 errors={"Credentials": "Invalid username and/or password"},
                 code=bad_code)
 
-## TO FIX
-# RESPONSE SHOULD BE:
-#  {
-#       'access_token': '9tiAF8Wozt0ACd-Aum3IKoAKuFlYt4A7ajZBTDyaoYk',
-#       'token_type': 'Bearer'
-#  }
-        auth.save_token(auth._user, token)
+        auth.save_token(auth._user, token, jti)
 
         return self.response({'token': token})
+
+        # The right response should be the following
+        # Just remove the simple response above
+        return self.response({
+                             'access_token': token,
+                             'token_type': auth.token_type
+                             })
 
 
 class Logout(ExtendedApiResource):
@@ -106,7 +107,7 @@ class Tokens(ExtendedApiResource):
 
     base_url = AUTH_URL
     endkey = "token_id"
-    endtype = "int"
+    endtype = "string"
 
     @auth.login_required
     @decorate.apimethod
@@ -163,27 +164,30 @@ class Profile(ExtendedApiResource):
     def get(self):
         """
         Token authentication tester. Example of working call is: 
-        http localhost:8081/api/verifylogged
+        http localhost:8081/auth/profile
             Authorization:"Bearer RECEIVED_TOKEN"
         """
 
         auth = self.global_get('custom_auth')
-        print("DEBUG PROFILE", auth._user, auth._payload)
-        return self.response("Valid user")
+        data = {}
+        data["status"] = "Valid user"
+        data["email"] = auth._user.email
 
-    """
-    user = User.query.get(int(tokenizer.user_id))
-    roles = ""
-    for role in user.roles:
-        roles += role.name + '; '
-    response = {
-        'Name': user.first_name,
-        'Surname': user.last_name,
-        'Email': user.email,
-        'Roles': roles
-    }
-    """
+        roles = []
+        for role in auth._user.roles:
+            roles.append(role.name)
+        data["roles"] = roles
 
+        if hasattr(auth._user, 'name'):
+            data["name"] = auth._user.name
+
+        if hasattr(auth._user, 'surname'):
+            data["surname"] = auth._user.surname
+
+        if hasattr(auth._user, 'irods_user'):
+            data["irods_user"] = auth._user.irods_user
+
+        return self.response(data)
 
 # class Admin(ExtendedApiResource):
 #     """ Token and Role authentication test """

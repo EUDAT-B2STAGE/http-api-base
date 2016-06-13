@@ -8,6 +8,7 @@ Add auth checks called /checklogged and /testadmin
 from __future__ import absolute_import
 from .... import myself, lic, get_logger
 
+from commons.services.uuid import getUUID
 from confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
 
 import abc
@@ -15,6 +16,8 @@ import jwt
 import hmac
 import hashlib
 import base64
+import pytz
+from datetime import datetime, timedelta
 
 __author__ = myself
 __copyright__ = myself
@@ -33,6 +36,8 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     SECRET = 'top secret!'
     JWT_ALGO = 'HS256'
+#TO FIX: already defined in auth.py HTTPAUTH_DEFAULT_SCHEME
+    token_type = 'Bearer'
     DEFAULT_USER = USER
     DEFAULT_PASSWORD = PWD
     DEFAULT_ROLES = [ROLE_USER, ROLE_ADMIN]
@@ -40,6 +45,10 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     _latest_token = None
     _payload = {}
     _user = None
+
+#TO FIX: to be lengthen. Now are short for testing purpose
+    longTTL = 86400     # 1 day in seconds
+    shortTTL = 3600     # 1 hour in seconds
 
     @abc.abstractmethod
     def __init__(self, services=None):
@@ -86,19 +95,25 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         """ Generate a byte token with JWT library to encrypt the payload """
         self._payload = payload
         self._user = self.get_user_object(payload=self._payload)
-        return jwt.encode(
+        encode = jwt.encode(
             payload, self.SECRET, algorithm=self.JWT_ALGO).decode('ascii')
 
-    def verify_time_to_live(self, payload):
-# // TO FIX
-        return True
+        return encode, self._payload['jti']
 
-    def verify_token_custom(self, token, user, payload):
+    def verify_token_custom(self, jti, user, payload):
         """
             This method can be implemented by specific Authentication Methods
             to add more specific validation contraints
         """
         return True
+
+    @abc.abstractmethod
+    def refresh_token(self, jti):
+        """
+            Verify shortTTL to refresh token if not expired
+            Invalidate token otherwise
+        """
+        return
 
     def verify_token(self, token):
 
@@ -112,11 +127,17 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         try:
             self._payload = jwt.decode(
                 token, self.SECRET, algorithms=[self.JWT_ALGO])
-        except:
-            logger.warning("Unable to decode JWT token")
+        # now > exp
+        except jwt.exceptions.ExpiredSignatureError as e:
+            logger.warning("Unable to decode JWT token. %s" % e)
+            # this token should be invalidated into the DB?
             return False
-
-        if not self.verify_time_to_live(self._payload):
+        # now < nbf
+        except jwt.exceptions.ImmatureSignatureError as e:
+            logger.warning("Unable to decode JWT token. %s" % e)
+            return False
+        except Exception as e:
+            logger.warning("Unable to decode JWT token. %s" % e)
             return False
 
         self._user = self.get_user_object(payload=self._payload)
@@ -124,14 +145,17 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             return False
 
         if not self.verify_token_custom(
-           token=token, user=self._user, payload=self._payload):
+           jti=self._payload['jti'], user=self._user, payload=self._payload):
             return False
-        # e.g. for graph: verify token <- user link
+        # e.g. for graph: verify the (token <- user) link
+
+        if not self.refresh_token(self._payload['jti']):
+            return False
 
         logger.info("User authorized")
         return True
 
-    def save_token(self, user, token):
+    def save_token(self, user, token, jti):
         logger.debug("Token is not saved in base authentication")
 
     @abc.abstractmethod
@@ -182,48 +206,57 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         """
         return
 
-    @abc.abstractmethod
+    def fill_custom_payload(self, userobj, payload):
+        """
+            This method can be implemented by specific Authentication Methods
+            to add more specific payload content
+        """
+        return payload
+
     def fill_payload(self, userobj):
         """ Informations to store inside the JWT token,
         starting from the user obtained from the current service
 
-from:
-http://blog.apcelent.com/json-web-token-tutorial-example-python.html
+        Claim attributes listed here:
+        http://blog.apcelent.com/json-web-token-tutorial-example-python.html
 
-Following are the claim attributes :
-
-iss: The issuer of the token
-sub: The subject of the token
-aud: The audience of the token
-qsh: query string hash
-exp: Token expiration time defined in Unix time
-nbf: 'Not before time':
-   identifies the time before which the JWT must not be accepted for processing
-iat: 'Issued at time', in Unix time, at which the token was issued
-jti: JWT ID claim provides a unique identifier for the JWT
-
+        TTL is measured in seconds
         """
-        return
+
+        now = datetime.now(pytz.utc)
+        nbf = now   # you can add a timedelta
+        exp = now + timedelta(seconds=self.longTTL)
+
+        payload = {
+            'user_id': userobj.uuid,
+            'hpwd': userobj.password,
+            'iat': now,
+            'nbf': nbf,
+            'exp': exp,
+            'jti': getUUID()
+        }
+
+        return self.fill_custom_payload(userobj, payload)
 
     def make_login(self, username, password):
         """ The method which will check if credentials are good to go """
 
         user = self.get_user_object(username=username)
         if user is None:
-            return None
+            return None, None
 
         try:
             # Check if Oauth2 is enabled
             if user.authmethod != 'credentials':
-                return None
+                return None, None
         except:
             # Missing authmethod as requested for authentication
             logger.critical("Current authentication db models are broken!")
-            return None
+            return None, None
 
 # // TO FIX:
 # maybe payload should be some basic part + custom payload from the developer
         if self.check_passwords(user.password, password):
             return self.create_token(self.fill_payload(user))
 
-        return None
+        return None, None

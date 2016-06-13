@@ -7,7 +7,7 @@ from commons import htmlcodes as hcodes
 from confs.config import API_URL
 from ..jsonify import output_json  # , RESTError
 from flask import make_response, jsonify
-from flask.ext.restful import request, Resource, reqparse
+from flask_restful import request, Resource, reqparse
 from .. import get_logger
 
 logger = get_logger(__name__)

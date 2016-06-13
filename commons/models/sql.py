@@ -48,6 +48,7 @@ class User(db.Model):
 
 class Token(db.Model):
     id = db.Column(db.Integer, primary_key=True)
+    jti = db.Column(db.String(36), unique=True)
     token = db.Column(db.String(360), unique=True)
     creation = db.Column(db.DateTime)
     expiration = db.Column(db.DateTime)
