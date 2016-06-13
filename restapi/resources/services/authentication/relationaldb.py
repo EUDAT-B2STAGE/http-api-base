@@ -7,7 +7,7 @@ We create all the components here!
 
 from __future__ import absolute_import
 import sqlalchemy
-from datetime import datetime
+from datetime import datetime, timedelta
 from commons.services.uuid import getUUID
 from ..detect import SQL_AVAILABLE
 from . import BaseAuthentication
@@ -99,10 +99,14 @@ instead of here
         except Exception:
             hostname = ""
 
+        now = datetime.now()
+        exp = datetime.now() + timedelta(seconds=self.shortTTL)
+
         token_entry = self._db.Token(
             token=token,
-            creation=datetime.now(),
-            last_access=datetime.now(),
+            creation=now,
+            last_access=now,
+            expiration=exp,
             IP=ip,
             hostname=hostname
         )

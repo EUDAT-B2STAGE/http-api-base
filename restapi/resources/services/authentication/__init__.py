@@ -8,6 +8,7 @@ Add auth checks called /checklogged and /testadmin
 from __future__ import absolute_import
 from .... import myself, lic, get_logger
 
+from commons.services.uuid import getUUID
 from confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
 
 import abc
@@ -41,6 +42,9 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     _latest_token = None
     _payload = {}
     _user = None
+
+    longTTL = 86400     # 1 day in seconds
+    shortTTL = 10
 
     @abc.abstractmethod
     def __init__(self, services=None):
@@ -132,6 +136,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         # e.g. for graph: verify the (token <- user) link
 
         logger.warning("Here token.last_access should be updated")
+        # logger.critical(token)
 
         logger.info("User authorized")
         return True
@@ -204,23 +209,20 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         TTL is measured in seconds
         """
 
-        TTL = 86400     # 1 day in seconds
-        TTL = 6        # just for test purpose
-
         now = datetime.now()
-        exp = now + timedelta(seconds=TTL)
+        nbf = now   # you can add a timedelta
+        exp = now + timedelta(seconds=self.longTTL)
 
         payload = {
             'user_id': userobj.uuid,
             'hpwd': userobj.password,
             'iat': now,
-            'nbf': now + timedelta(seconds=0),
+            'nbf': nbf,
             'exp': exp,
-            'ttl': str(TTL)
+            'jti': getUUID()
         }
 
-        return payload
-        # return self.fill_custom_payload(userobj, payload)
+        return self.fill_custom_payload(userobj, payload)
 
     def make_login(self, username, password):
         """ The method which will check if credentials are good to go """

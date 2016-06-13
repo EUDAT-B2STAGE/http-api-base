@@ -8,7 +8,7 @@ MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r
 """
 
 from __future__ import absolute_import
-from datetime import datetime
+from datetime import datetime, timedelta
 from commons.services.uuid import getUUID
 from . import BaseAuthentication
 from ..detect import GRAPHDB_AVAILABLE
@@ -76,12 +76,14 @@ instead of here
 
     def save_token(self, user, token):
 
+        now = datetime.now()
+        exp = datetime.now() + timedelta(seconds=self.shortTTL)
+
         token_node = self._graph.Token()
         token_node.token = token
-        token_node.creation = datetime.now()
-        token_node.last_access = datetime.now()
-        # token_node.expiration = ???
-
+        token_node.creation = now
+        token_node.last_access = now
+        token_node.expiration = exp
         from flask import request
         import socket
         ip = request.remote_addr
