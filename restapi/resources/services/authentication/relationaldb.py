@@ -112,7 +112,6 @@ instead of here
             IP=ip,
             hostname=hostname
         )
-        # expiration = ???
 
         token_entry.emitted_for = user
 
@@ -124,9 +123,6 @@ instead of here
     def refresh_token(self, jti):
         now = datetime.now()
         token_entry = self._db.Token.query.filter_by(jti=jti).first()
-
-        logger.critical(now)
-        logger.critical(token_entry.expiration)
 
         if now > token_entry.expiration:
             self.invalidate_token(token=token_entry.token)
