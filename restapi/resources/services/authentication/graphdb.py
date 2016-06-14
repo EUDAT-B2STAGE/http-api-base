@@ -168,3 +168,43 @@ instead of here
             token_node.emitted_for.disconnect(user)
         else:
             logger.warning("Could not invalidate token")
+
+    def save_oauth2_info_to_user(self, graph, current_user, token):
+        """
+        From B2ACCESS endpoint user info,
+        update our authentication models
+        """
+
+        print("CURRENT USER", current_user.__dict__)
+        email = current_user.data.get('email')
+
+        # A graph node for internal accounts associated to oauth2
+        try:
+            user_node = graph.User.nodes.get(email=email)
+            if user_node.authmethod != 'b2access_oauth2':
+                return {'errors': [{
+                    'invalid email':
+                    'Account already exists with other credentials'}]}
+        except graph.User.DoesNotExist:
+            user_node = graph.User(
+                uuid=getUUID(),
+                email=email,
+                authmethod='b2access_oauth2')
+
+        # A graph node for external oauth2 account
+        try:
+            b2access_node = graph.ExternalAccounts.nodes.get(
+                username=email)
+        except graph.ExternalAccounts.DoesNotExist:
+            b2access_node = graph.ExternalAccounts(
+                username=email)
+
+        b2access_node.email = current_user.data.get('email')
+        b2access_node.token = token
+        b2access_node.certificate_cn = current_user.data.get('cn')
+
+        b2access_node.save()
+        user_node.save()
+        user_node.externals.connect(b2access_node)
+
+        return user_node

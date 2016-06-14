@@ -18,27 +18,18 @@ https://www.youtube.com/watch?v=8kTlzR4HhWo
 --- ✄ -----------------------
 Token:
 
-✔ save the oauth2 token inside the graphdb @done (16-05-31 11:33)
-  ✔ create a user @done (16-05-31 11:33)
-    ✔ create new entry inside main database service @done (16-05-31 11:33)
-✔ avoid printing the password parameter inside the logs... @done (16-05-31 15:08)
-
-☐ go with certificates proxy for irods
 ☐ JWT refactor content
   ☐ Set and check TTL
 ☐ profile endpoint
-☐ refresh token / oauth standards
-☐ loading graph models at every request?
+✘ refresh token / oauth standards @cancelled (16-06-12 15:27)
 
-✔ Prepare basic tests @done (16-05-30 11:59)
-  ✔ write tests for authentication @done (16-05-30 09:25)
-  ✔ rewrite tests for irods, authenticated @done (16-05-30 11:59)
+☐ loading graph models at every request?
 
 ☐ commons (for restangulask)
   ✔ Meta @done (16-05-31 15:33)
   ✔ HtmlCodes @done (16-05-31 23:31)
-  ☐ Logs
   ✔ Users/models? @done (16-06-07 07:58)
+  ☐ Logs
   ☐ The secret at startup
 
 ☐ from jinja2._compat import iteritems... @compatibility

@@ -30,6 +30,7 @@ class ExternalServicesLogin(object):
 
     def __init__(self, testing=False):
 
+## // TO FIX?
         if testing:
             return None
 
@@ -38,18 +39,26 @@ class ExternalServicesLogin(object):
             # Check if credentials are enabled inside docker env
             var1 = key.upper() + '_APPNAME'
             var2 = key.upper() + '_APPKEY'
-            if var1 in os.environ and var2 in os.environ:
-                # Call the service and save it
-                try:
-                    self._available_services[key] = func()
-                    logger.info("Created Oauth2 service %s" % key)
-                except Exception as e:
-                    logger.critical(
-                        "Could not request oauth2 service %s:\n%s" %
-                        (key, str(e)))
-            else:
+
+            if var1 not in os.environ or var2 not in os.environ:
                 logger.debug("Skipping Oauth2 service %s" % key)
-            # print(key, func)
+                continue
+
+            # Call the service and save it
+            try:
+                obj = func()
+
+                # Make sure it's always a dictionary of objects
+                if not isinstance(obj, dict):
+                    obj = {key: obj}
+
+                for name, oauth2 in obj.items():
+                    self._available_services[name] = oauth2
+                    logger.info("Created Oauth2 service %s" % name)
+            except Exception as e:
+                logger.critical(
+                    "Could not request oauth2 service %s:\n%s" %
+                    (key, str(e)))
 
     def github(self):
         """ This APIs are very useful for testing purpose """
@@ -83,16 +92,6 @@ class ExternalServicesLogin(object):
             authorize_url=B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
         )
 
-        @b2access_oauth.tokengetter
-        # @b2accessCA.tokengetter
-        def get_b2access_oauth_token():
-            from flask import session
-            return session.get('b2access_token')
-
-        return b2access_oauth
-
-    def b2access_certification_authority(self, testing=False):
-
         b2accessCA = oauth.remote_app(
             'b2accessCA',
             consumer_key=os.environ.get('B2ACCESS_APPNAME', 'yourappusername'),
@@ -106,12 +105,13 @@ class ExternalServicesLogin(object):
             authorize_url=B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
         )
 
+        @b2access_oauth.tokengetter
         @b2accessCA.tokengetter
-        def get_b2access_ca_oauth_token():
+        def get_b2access_oauth_token():
             from flask import session
             return session.get('b2access_token')
 
-        return b2accessCA
+        return {'b2access': b2access_oauth, 'b2accessCA': b2accessCA}
 
 
 def decorate_http_request(remote):
