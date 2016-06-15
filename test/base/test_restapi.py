@@ -18,7 +18,7 @@ from commons import myself
 from commons.logs import get_logger
 
 __author__ = myself
-logger = get_logger(__name__)
+logger = get_logger(__name__, True)
 
 API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
 AUTH_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
