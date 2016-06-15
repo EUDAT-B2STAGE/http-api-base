@@ -6,6 +6,7 @@ Converting irods data into GraphDB models
 
 import os
 from commons.logs import get_logger
+import neomodel
 
 logger = get_logger(__name__)
 
@@ -95,8 +96,14 @@ class DataObjectToGraph(object):
                 'path': cpath,
                 'name': collection,
             }
-            current_collection = \
-                self._graph.Collection.get_or_create(properties).pop()
+
+            current_collection = None
+            try:
+                current_collection = \
+                    self._graph.createNode(self._graph.Collection, properties)
+            except neomodel.exception.UniqueProperty:
+                current_collection = \
+                    list(self._graph.Collection.nodes.filter(path=cpath)).pop()
 
             # Link the first one to dataobject
             if collection_counter == 1:

@@ -16,17 +16,11 @@ class User(StructuredNode):
     uuid = StringProperty(required=True, unique_index=True)
     email = StringProperty(required=True, unique_index=True)
     authmethod = StringProperty(required=True)
-    password = StringProperty()  # A hash produced by Flask login
-#########################################
-# TO BE USED INSIDE THE OVERIDED CLASS
-    name = StringProperty()
-    surname = StringProperty()
-# TO BE USED INSIDE THE OVERIDED CLASS
-#########################################
+    password = StringProperty()  # Hashed from a custom function
     tokens = RelationshipTo('Token', 'HAS_TOKEN', cardinality=ZeroOrMore)
-    roles = RelationshipTo('Role', 'ROLE', cardinality=OneOrMore)
+    roles = RelationshipTo('Role', 'HAS_ROLE', cardinality=OneOrMore)
     externals = RelationshipTo(
-        'ExternalAccounts', 'OAUTH', cardinality=OneOrMore)
+        'ExternalAccounts', 'HAS_AUTHORIZATION', cardinality=OneOrMore)
 
 
 class Token(StructuredNode):
@@ -43,7 +37,7 @@ class Token(StructuredNode):
 class Role(StructuredNode):
     name = StringProperty(required=True)
     description = StringProperty(default='No description')
-    privileged = RelationshipFrom(User, 'ROLE', cardinality=OneOrMore)
+    privileged = RelationshipFrom(User, 'HAS_ROLE', cardinality=OneOrMore)
 
 
 class ExternalAccounts(StructuredNode):
@@ -53,4 +47,4 @@ class ExternalAccounts(StructuredNode):
     certificate_cn = StringProperty()
     proxyfile = StringProperty()
     description = StringProperty(default='No description')
-    main_user = RelationshipFrom(User, 'OAUTH', cardinality=OneOrMore)
+    main_user = RelationshipFrom(User, 'HAS_AUTHORIZATION', cardinality=OneOrMore)

@@ -304,28 +304,35 @@ class ExtendedApiResource(Resource):
 
         return response
 
-    def formatJsonResponse(self, instances, fields,
-                           resource_type=None, self_link=None):
+    def formatJsonResponse(self, instances, fields, resource_type=None):
         """
             Format specifications can be found here:
             http://jsonapi.org
         """
 
         json_data = {}
+        endpoint = request.url
+        json_data["links"] = {
+            "self": endpoint,
+            "next": None,
+            "last": None,
+        }
 
-        if self_link is not None:
-            json_data["links"] = {"self": self_link}
-
+        json_data["content"] = []
         if not isinstance(instances, list):
             raise AttributeError("Expecting a list of objects to format")
-
         if len(instances) < 1:
             return json_data
 
-        json_data["content"] = []
         for instance in instances:
             data = self.getJsonResponse(instance, fields)
             json_data["content"].append(data)
+
+# FROM SELF ARGS?
+        # json_data["links"]["next"] = \
+        #     endpoint + '?currentpage=2&perpage=1',
+        # json_data["links"]["last"] = \
+        #     endpoint + '?currentpage=' + str(len(instances)) + '&perpage=1',
 
         return json_data
 
@@ -346,7 +353,8 @@ class ExtendedApiResource(Resource):
         data = {
             "id": id,
             "type": resource_type,
-            "attributes": {}
+            "attributes": {},
+            "links": {"self": request.url + '/' + id},
         }
         for key in fields:
 
