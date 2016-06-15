@@ -304,7 +304,7 @@ class ExtendedApiResource(Resource):
 
         return response
 
-    def formatJsonResponse(self, instances, fields, resource_type=None):
+    def formatJsonResponse(self, instances, resource_type=None):
         """
             Format specifications can be found here:
             http://jsonapi.org
@@ -325,10 +325,10 @@ class ExtendedApiResource(Resource):
             return json_data
 
         for instance in instances:
-            data = self.getJsonResponse(instance, fields)
-            json_data["content"].append(data)
+            json_data["content"].append(self.getJsonResponse(instance))
 
-# FROM SELF ARGS?
+## // TO FIX:
+# get pages FROM SELF ARGS?
         # json_data["links"]["next"] = \
         #     endpoint + '?currentpage=2&perpage=1',
         # json_data["links"]["last"] = \
@@ -336,30 +336,43 @@ class ExtendedApiResource(Resource):
 
         return json_data
 
-    def getJsonResponse(self, instance, fields, resource_type=None):
+    def getJsonResponse(self, instance, fields=[],
+                        resource_type=None, from_relationship=False):
+        """
+        Lots of meta introspection to guess the JSON specifications
+        """
 
         if resource_type is None:
             resource_type = type(instance).__name__.lower()
 
+        # Get id
         verify_attribute = hasattr
         if isinstance(instance, dict):
             verify_attribute = dict.get
-
         if verify_attribute(instance, "id"):
             id = instance.id
         else:
+            # Do not show internal id. Only UUID if available.
             id = "-"
 
         data = {
             "id": id,
             "type": resource_type,
             "attributes": {},
+## // TO FIX:
+            # Very difficult for relationships
             "links": {"self": request.url + '/' + id},
         }
+
+        if from_relationship:
+            del data['links']
+
+        # Attributes
+        if len(fields) < 1 and hasattr(instance, '_fields_to_show'):
+            fields = getattr(instance, '_fields_to_show')
+
         for key in fields:
-
             if verify_attribute(instance, key):
-
                 get_attribute = getattr
                 if isinstance(instance, dict):
                     get_attribute = dict.get
@@ -367,8 +380,29 @@ class ExtendedApiResource(Resource):
                 attribute = get_attribute(instance, key)
                 # datetime is not json serializable,
                 # converting it to string
+## // TO FIX:
+# use flask.jsonify
                 if isinstance(attribute, datetime):
                     data["attributes"][key] = attribute.strftime('%s')
                 else:
                     data["attributes"][key] = attribute
+
+        # Relationships
+        if not from_relationship:
+            linked = []
+            relationships = []
+            if hasattr(instance, '_relationships_to_follow'):
+                relationships = getattr(instance, '_relationships_to_follow')
+
+            for relationship in relationships:
+                logger.debug("Investigate relationship %s" % relationship)
+                if hasattr(instance, relationship):
+                    for node in getattr(instance, relationship).all():
+                        linked.append(
+                            self.getJsonResponse(
+                                node, from_relationship=True))
+
+            if len(linked) > 0:
+                data['relationships'] = linked
+
         return data
