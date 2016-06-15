@@ -124,6 +124,8 @@ instead of here
     def refresh_token(self, jti):
         now = datetime.now()
         token_entry = self._db.Token.query.filter_by(jti=jti).first()
+        if token_entry is None:
+            return False
 
         if now > token_entry.expiration:
             self.invalidate_token(token=token_entry.token)
