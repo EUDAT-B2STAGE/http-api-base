@@ -14,7 +14,7 @@ import base64
 import pytz
 from commons.logs import get_logger
 from commons.services.uuid import getUUID
-from confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
+from ....confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
 from datetime import datetime, timedelta
 from .... import myself, lic
 

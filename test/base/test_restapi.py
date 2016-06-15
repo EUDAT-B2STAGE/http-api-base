@@ -11,7 +11,7 @@ import json
 import unittest
 import commons.htmlcodes as hcodes
 from restapi.server import create_app
-from confs.config import USER, PWD, \
+from restapi.confs.config import USER, PWD, \
     TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
 
 from commons import myself

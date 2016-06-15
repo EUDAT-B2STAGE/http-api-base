@@ -129,7 +129,7 @@ To specify which roles are needed (one or more), there is another decorator call
 
 ```python
 from flask_security import roles_required, auth_token_required
-from confs import config
+from .confs import config
 
 @decorate.apimethod
 @auth_token_required

@@ -18,7 +18,7 @@ import re
 from collections import OrderedDict
 from ...basher import BashCommands
 from ...exceptions import RestApiException
-from confs.config import IRODS_ENV
+from ....confs.config import IRODS_ENV
 from commons.services import ServiceFarm
 # from ..templating import Templa
 # from . import string_generator

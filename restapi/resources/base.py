@@ -3,8 +3,7 @@
 """ The most standard Basic Resource i could """
 
 from commons import htmlcodes as hcodes
-# from confs.config import STACKTRACE
-from confs.config import API_URL
+from ..confs.config import API_URL  # , STACKTRACE
 from ..jsonify import output_json  # , RESTError
 from flask import make_response, jsonify
 from flask_restful import request, Resource, reqparse

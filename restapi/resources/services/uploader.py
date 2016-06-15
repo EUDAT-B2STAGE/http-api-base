@@ -10,7 +10,7 @@ from flask import request, send_from_directory
 from werkzeug import secure_filename
 from commons import htmlcodes as hcodes
 from commons.logs import get_logger
-from confs.config import UPLOAD_FOLDER, PY2_INTERPRETER
+from ...confs.config import UPLOAD_FOLDER, PY2_INTERPRETER
 
 logger = get_logger(__name__)
 

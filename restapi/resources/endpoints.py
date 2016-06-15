@@ -9,12 +9,12 @@ from __future__ import absolute_import
 from .. import myself, lic
 from commons.logs import get_logger
 
-from confs.config import AUTH_URL
+from ..confs.config import AUTH_URL
 from .base import ExtendedApiResource
 from commons import htmlcodes as hcodes
 from . import decorators as decorate
 from ..auth import auth
-# from confs import config
+# from ..confs import config
 
 __author__ = myself
 __copyright__ = myself

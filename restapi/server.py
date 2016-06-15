@@ -63,7 +63,7 @@ def create_app(name=__name__,
     #################################################
     # Flask app instance
     #################################################
-    from confs import config
+    from .confs import config
     microservice = Flask(name, **kwargs)
 
     if testing:
