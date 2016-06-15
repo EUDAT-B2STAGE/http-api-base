@@ -183,9 +183,26 @@ instead of here
         except self._graph.Token.DoesNotExist:
             logger.warning("Could not invalidate token")
 
+    def destroy_token(self, token_id):
+        try:
+            token = self._graph.Token.nodes.get(jti=token_id)
+
+            nodes = token.emitted_for.all()
+            if len(nodes) > 0:
+                token.emitted_for.disconnect(nodes[0])
+
+            token.delete()
+
+            return True
+
+        except self._graph.Token.DoesNotExist:
+            return False
+
     def save_oauth2_info_to_user(self, graph, current_user, token):
         """
         From B2ACCESS endpoint user info,
+
+        return True
         update our authentication models
         """
 

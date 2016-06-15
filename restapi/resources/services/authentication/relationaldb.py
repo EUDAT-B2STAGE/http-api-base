@@ -188,3 +188,5 @@ instead of here
         else:
             logger.warning("Could not invalidate token")
 
+    def destroy_token(self, token_id):
+        pass
