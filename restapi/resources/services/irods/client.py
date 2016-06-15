@@ -559,7 +559,10 @@ class ICommands(BashCommands):
                 row["last_modified"] = 0
                 if recursive:
                     row["objects"] = objects
-                row["path"] = path[1 + rootLen:]
+                start = 0
+                if rootLen > 0:
+                    start = 1 + rootLen
+                row["path"] = path[start:]
 
             else:
 
@@ -570,7 +573,10 @@ class ICommands(BashCommands):
                 row["object_type"] = "dataobject"
                 row["content_length"] = d[3]
                 row["last_modified"] = d[4]
-                row["path"] = path[1 + rootLen:]
+                start = 0
+                if rootLen > 0:
+                    start = 1 + rootLen
+                row["path"] = path[start:]
 
             data[row["name"]] = row
 
