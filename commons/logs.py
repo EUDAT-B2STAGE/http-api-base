@@ -26,14 +26,10 @@ class LogMe(object):
     _log_level = logging.INFO
     _colors_enabled = True
 
-    def __init__(self, debug=True, options={}):
+    def __init__(self, debug=True):
 
         super(LogMe, self).__init__()
-        self.debug = debug
-        self.options = options
-
-        if self.debug:
-            self._log_level = logging.DEBUG
+        self.set_debug(debug)
 
         if AVOID_COLORS_ENV_LABEL in os.environ:
             self._colors_enabled = False
@@ -70,6 +66,13 @@ class LogMe(object):
                 logging.DEBUG, "\033[1;35m%s\033[1;0m"
                 % logging.getLevelName(logging.DEBUG))
 
+    def set_debug(self, debug):
+        self.debug = debug
+        if self.debug:
+            self._log_level = logging.DEBUG
+        else:
+            self._log_level = logging.INFO
+
     def get_new_logger(self, name):
         """ Recover the right logger + set a proper specific level """
         if self._colors_enabled:
@@ -81,8 +84,11 @@ class LogMe(object):
 please_logme = LogMe()
 
 
-def get_logger(name):
+def get_logger(name, debug_setter=None):
     """ Recover the right logger + set a proper specific level """
+    if debug_setter is not None:
+        please_logme.set_debug(debug_setter)
+
     return please_logme.get_new_logger(name)
 
 

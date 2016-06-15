@@ -97,6 +97,8 @@ def create_app(name=__name__,
     # Flask configuration from config file
     microservice.config.from_object(config)
     microservice.config['DEBUG'] = debug
+    logger = get_logger(__name__, debug)
+
 # // TO FIX:
 # development/production split?
     logger.info("FLASKING! Created application")
