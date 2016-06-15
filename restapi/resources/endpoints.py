@@ -156,12 +156,32 @@ class Tokens(ExtendedApiResource):
 
 class TokensAdminOnly(ExtendedApiResource):
     """ Admin operations on token list """
+
+    base_url = AUTH_URL
+    endkey = "token_id"
+    endtype = "string"
+
+    @auth.login_required
+    @decorate.apimethod
+    def get(self, token_id):
+        logger.critical("This endpoint should be restricted to admin only!")
+        auth = self.global_get('custom_auth')
+        token = auth.get_tokens(token_jti=token_id)
+        if len(token) == 0:
+            return self.response(errors=[{"Token not found": token_id}],
+                                 code=hcodes.HTTP_BAD_NOTFOUND)
+        return self.response(token)
+
     @auth.login_required
     @decorate.apimethod
     def delete(self, token_id):
+        logger.critical("This endpoint should be restricted to admin only!")
         auth = self.global_get('custom_auth')
-        tokens = auth.get_tokens(token_jti=token_id)
-        return self.response(tokens)
+        if not auth.destroy_token(token_id):
+            return self.response(errors=[{"Token not found": token_id}],
+                                 code=hcodes.HTTP_BAD_NOTFOUND)
+
+        return self.response("", code=hcodes.HTTP_OK_NORESPONSE)
 
 
 class Profile(ExtendedApiResource):
