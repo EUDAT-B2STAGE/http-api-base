@@ -134,23 +134,33 @@ instead of here
             logger.warning("Token %s not found" % jti)
             return False
 
-    def list_all_tokens(self, user):
+    def get_tokens(self, user=None, token_jti=None):
         # TO FIX: TTL should be considered?
 
-        tokens = user.tokens.all()
         list = []
-        for token in tokens:
-            t = {}
+        tokens = None
 
-            t["id"] = token.jti
-            t["token"] = token.token
-            t["emitted"] = token.creation.strftime('%s')
-            t["last_access"] = token.last_access.strftime('%s')
-            if token.expiration is not None:
-                t["expiration"] = token.expiration.strftime('%s')
-            t["IP"] = token.IP
-            t["hostname"] = token.hostname
-            list.append(t)
+        if user is not None:
+            tokens = user.tokens.all()
+        elif token_jti is not None:
+            try:
+                tokens = [self._graph.Token.nodes.get(jti=token_jti)]
+            except self._graph.Token.DoesNotExist:
+                pass
+
+        if tokens is not None:
+            for token in tokens:
+                t = {}
+
+                t["id"] = token.jti
+                t["token"] = token.token
+                t["emitted"] = token.creation.strftime('%s')
+                t["last_access"] = token.last_access.strftime('%s')
+                if token.expiration is not None:
+                    t["expiration"] = token.expiration.strftime('%s')
+                t["IP"] = token.IP
+                t["hostname"] = token.hostname
+                list.append(t)
 
         return list
 

@@ -113,7 +113,7 @@ class Tokens(ExtendedApiResource):
     @decorate.apimethod
     def get(self, token_id=None):
         auth = self.global_get('custom_auth')
-        tokens = auth.list_all_tokens(auth._user)
+        tokens = auth.get_tokens(user=auth._user)
         if token_id is None:
             return self.response(tokens)
 
@@ -130,7 +130,7 @@ class Tokens(ExtendedApiResource):
     @decorate.apimethod
     def delete(self, token_id=None):
         auth = self.global_get('custom_auth')
-        tokens = auth.list_all_tokens(auth._user)
+        tokens = auth.get_tokens(user=auth._user)
 
         if token_id is None:
             """
@@ -152,6 +152,16 @@ class Tokens(ExtendedApiResource):
                            "or does not exist"
             return self.response(errors=[{"Token not found": errorMessage}],
                                  code=hcodes.HTTP_BAD_NOTFOUND)
+
+
+class TokensAdminOnly(ExtendedApiResource):
+    """ Admin operations on token list """
+    @auth.login_required
+    @decorate.apimethod
+    def delete(self, token_id):
+        auth = self.global_get('custom_auth')
+        tokens = auth.get_tokens(token_jti=token_id)
+        return self.response(tokens)
 
 
 class Profile(ExtendedApiResource):

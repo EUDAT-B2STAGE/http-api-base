@@ -139,24 +139,31 @@ instead of here
 
         return True
 
-    def list_all_tokens(self, user):
+    def get_tokens(self, user=None, token_jti=None):
         # TO FIX: TTL should be considered?
 
         list = []
-        tokens = user.tokens.all()
-        for token in tokens:
+        tokens = None
 
-            t = {}
+        if user is not None:
+            tokens = user.tokens.all()
+        elif token_jti is not None:
+            tokens = [self._db.Token.query.filter_by(jti=token_jti).first()]
 
-            t["id"] = token.jti
-            t["token"] = token.token
-            t["emitted"] = token.creation.strftime('%s')
-            t["last_access"] = token.last_access.strftime('%s')
-            if token.expiration is not None:
-                t["expiration"] = token.expiration.strftime('%s')
-            t["IP"] = token.IP
-            t["hostname"] = token.hostname
-            list.append(t)
+        if tokens is not None:
+            for token in tokens:
+
+                t = {}
+
+                t["id"] = token.jti
+                t["token"] = token.token
+                t["emitted"] = token.creation.strftime('%s')
+                t["last_access"] = token.last_access.strftime('%s')
+                if token.expiration is not None:
+                    t["expiration"] = token.expiration.strftime('%s')
+                t["IP"] = token.IP
+                t["hostname"] = token.hostname
+                list.append(t)
 
         return list
 
