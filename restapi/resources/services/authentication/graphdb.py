@@ -5,6 +5,10 @@ Implement authentication with graphdb as user database
 
 Note: to delete the whole db
 MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r
+
+Remove tokens:
+MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a
+
 """
 
 from __future__ import absolute_import
