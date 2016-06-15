@@ -6,6 +6,9 @@
 import os
 from commons.logs import get_logger
 from commons.services import ServiceFarm
+from commons.services.uuid import getUUID
+from datetime import datetime
+import pytz
 
 logger = get_logger(__name__)
 
@@ -75,6 +78,30 @@ class MyGraph(object):
             # Save attribute inside class with the same name
             logger.debug("Injecting model '%s'" % model.__name__)
             setattr(self, model.__name__, model)
+
+    def createNode(self, model, attributes={}):
+        """
+            Generic create of a graph node based on the give model
+            and applying the given attributes
+        """
+
+        node = model()
+        node.id = getUUID()
+        if hasattr(node, 'created'):
+            setattr(node, 'created', datetime.now(pytz.utc))
+
+        if hasattr(node, 'modified'):
+            setattr(node, 'modified', datetime.now(pytz.utc))
+
+        for key in attributes:
+            setattr(node, key, attributes[key])
+
+        node.save()
+
+        return node
+
+
+
 
 
 #######################

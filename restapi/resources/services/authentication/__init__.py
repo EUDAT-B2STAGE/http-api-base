@@ -183,7 +183,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return
 
     @abc.abstractmethod
-    def list_all_tokens(self, user):
+    def get_tokens(self, user=None, token_jti=None):
         """
             Return the list of all active tokens
         """
@@ -202,6 +202,13 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         """
             With this method the specified token must be invalidated
             as expected after a user logout
+        """
+        return
+
+    @abc.abstractmethod
+    def destroy_token(self, token_id):
+        """
+            Destroy a token by removing all references in DB
         """
         return
 

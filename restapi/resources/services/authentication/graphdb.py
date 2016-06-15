@@ -115,39 +115,53 @@ instead of here
 
     def refresh_token(self, jti):
         now = datetime.now(pytz.utc)
-        token_node = self._graph.Token.nodes.get(jti=jti)
+        try:
+            token_node = self._graph.Token.nodes.get(jti=jti)
 
-        if now > token_node.expiration:
-            self.invalidate_token(token=token_node.token)
-            logger.critical("This token is not longer valid")
+            if now > token_node.expiration:
+                self.invalidate_token(token=token_node.token)
+                logger.critical("This token is not longer valid")
+                return False
+
+            exp = now + timedelta(seconds=self.shortTTL)
+
+            token_node.last_access = now
+            token_node.expiration = exp
+
+            token_node.save()
+
+            return True
+        except self._graph.Token.DoesNotExist:
+            logger.warning("Token %s not found" % jti)
             return False
 
-        exp = now + timedelta(seconds=self.shortTTL)
-
-        token_node.last_access = now
-        token_node.expiration = exp
-
-        token_node.save()
-
-        return True
-
-    def list_all_tokens(self, user):
+    def get_tokens(self, user=None, token_jti=None):
         # TO FIX: TTL should be considered?
 
-        tokens = user.tokens.all()
         list = []
-        for token in tokens:
-            t = {}
+        tokens = None
 
-            t["id"] = token.jti
-            t["token"] = token.token
-            t["emitted"] = token.creation.strftime('%s')
-            t["last_access"] = token.last_access.strftime('%s')
-            if token.expiration is not None:
-                t["expiration"] = token.expiration.strftime('%s')
-            t["IP"] = token.IP
-            t["hostname"] = token.hostname
-            list.append(t)
+        if user is not None:
+            tokens = user.tokens.all()
+        elif token_jti is not None:
+            try:
+                tokens = [self._graph.Token.nodes.get(jti=token_jti)]
+            except self._graph.Token.DoesNotExist:
+                pass
+
+        if tokens is not None:
+            for token in tokens:
+                t = {}
+
+                t["id"] = token.jti
+                t["token"] = token.token
+                t["emitted"] = token.creation.strftime('%s')
+                t["last_access"] = token.last_access.strftime('%s')
+                if token.expiration is not None:
+                    t["expiration"] = token.expiration.strftime('%s')
+                t["IP"] = token.IP
+                t["hostname"] = token.hostname
+                list.append(t)
 
         return list
 
@@ -164,15 +178,26 @@ instead of here
         if user is None:
             user = self._user
 
-        token_node = self._graph.Token.nodes.get(token=token)
-        if token_node is not None:
+        try:
+            token_node = self._graph.Token.nodes.get(token=token)
             token_node.emitted_for.disconnect(user)
-        else:
+        except self._graph.Token.DoesNotExist:
             logger.warning("Could not invalidate token")
+
+    def destroy_token(self, token_id):
+        try:
+            token = self._graph.Token.nodes.get(jti=token_id)
+            token.delete()
+            return True
+
+        except self._graph.Token.DoesNotExist:
+            return False
 
     def save_oauth2_info_to_user(self, graph, current_user, token):
         """
         From B2ACCESS endpoint user info,
+
+        return True
         update our authentication models
         """
 
