@@ -506,6 +506,9 @@ class ICommands(BashCommands):
 
         data = {}
 
+        if root is None:
+            root = ''
+
         if firstRoot is None:
             firstRoot = root
 
