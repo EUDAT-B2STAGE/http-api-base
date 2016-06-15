@@ -114,21 +114,25 @@ instead of here
 
     def refresh_token(self, jti):
         now = datetime.now(pytz.utc)
-        token_node = self._graph.Token.nodes.get(jti=jti)
+        try:
+            token_node = self._graph.Token.nodes.get(jti=jti)
 
-        if now > token_node.expiration:
-            self.invalidate_token(token=token_node.token)
-            logger.critical("This token is not longer valid")
+            if now > token_node.expiration:
+                self.invalidate_token(token=token_node.token)
+                logger.critical("This token is not longer valid")
+                return False
+
+            exp = now + timedelta(seconds=self.shortTTL)
+
+            token_node.last_access = now
+            token_node.expiration = exp
+
+            token_node.save()
+
+            return True
+        except self._graph.Token.DoesNotExist:
+            logger.warning("Token %s not found" % jti)
             return False
-
-        exp = now + timedelta(seconds=self.shortTTL)
-
-        token_node.last_access = now
-        token_node.expiration = exp
-
-        token_node.save()
-
-        return True
 
     def list_all_tokens(self, user):
         # TO FIX: TTL should be considered?
@@ -163,10 +167,10 @@ instead of here
         if user is None:
             user = self._user
 
-        token_node = self._graph.Token.nodes.get(token=token)
-        if token_node is not None:
+        try:
+            token_node = self._graph.Token.nodes.get(token=token)
             token_node.emitted_for.disconnect(user)
-        else:
+        except self._graph.Token.DoesNotExist:
             logger.warning("Could not invalidate token")
 
     def save_oauth2_info_to_user(self, graph, current_user, token):
