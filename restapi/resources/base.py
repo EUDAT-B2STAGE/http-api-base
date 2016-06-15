@@ -5,7 +5,7 @@
 from commons import htmlcodes as hcodes
 from ..confs.config import API_URL  # , STACKTRACE
 from ..jsonify import output_json  # , RESTError
-from flask import make_response, jsonify
+from flask import make_response, jsonify, g
 from flask_restful import request, Resource, reqparse
 import json
 from commons.logs import get_logger
@@ -169,7 +169,6 @@ class ExtendedApiResource(Resource):
 
     def global_get(self, object_name):
 
-        from flask import g
         obj = g.get('_' + object_name, None)
         if obj is None:
             return self.response(

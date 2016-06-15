@@ -74,33 +74,12 @@ def create_app(name=__name__,
 # # Maybe only in production?
 #         install_secret_key(microservice)
 
-    # ##############################
-    # # ERROR HANDLING
-# This was commented as it eats up the real error
-# even if it logs any error that happens;
-# but it could be useful in production.
-
-    # # Handling exceptions with json
-    # for code in default_exceptions.keys():
-    #     microservice.error_handler_spec[None][code] = make_json_error
-    # # Custom error handling: save to log
-    # got_request_exception.connect(log_exception, microservice)
-
-    # # Custom exceptions
-    # @microservice.errorhandler(RESTError)
-    # def handle_invalid_usage(error):
-    #     response = jsonify(error.to_dict())
-    #     response.status_code = error.status_code
-    #     return response
-
     ##############################
     # Flask configuration from config file
     microservice.config.from_object(config)
     microservice.config['DEBUG'] = debug
+    # Set the new level of debugging
     logger = get_logger(__name__, debug)
-
-# // TO FIX:
-# development/production split?
     logger.info("FLASKING! Created application")
 
     #################################################
@@ -171,15 +150,15 @@ def create_app(name=__name__,
     current_endpoints.rest_api.init_app(microservice)
 
     ##############################
-    # Prepare database and tables
+    # Init objects inside the app context
     with microservice.app_context():
 
-# //TO FIX:
-# INIT (ANY) DATABASE?
-# I could use a decorator to recover from flask.g any connection
-# inside any endpoint
+        # Note:
+        # Databases are already initialized inside the instances farm
+        # Outside of the context
+        # p.s. search inside this file for 'myclass('
 
-        # INIT USERS/ROLES FOR SECURITY
+        # Init users/roles for Security
         if enable_security:
             custom_auth.setup_secret(microservice.config['SECRET_KEY'])
             custom_auth.init_users_and_roles()
