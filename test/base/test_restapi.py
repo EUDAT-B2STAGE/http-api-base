@@ -9,17 +9,16 @@ from __future__ import absolute_import
 
 import json
 import unittest
-import logging
 import commons.htmlcodes as hcodes
 from restapi.server import create_app
 from confs.config import USER, PWD, \
     TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
 
-from restapi import get_logger, myself
+from commons import myself
+from commons.logs import get_logger
 
 __author__ = myself
 logger = get_logger(__name__)
-logger.setLevel(logging.DEBUG)
 
 API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
 AUTH_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)

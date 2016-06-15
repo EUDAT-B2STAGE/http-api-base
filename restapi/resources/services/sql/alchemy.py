@@ -5,9 +5,9 @@ SQL Alchemy:
 sqllite, MySQL or Postgres
 """
 
-from __future__ import absolute_import
+# from __future__ import absolute_import
 from commons.services import ServiceFarm
-from .... import get_logger
+from commons.logs import get_logger
 
 logger = get_logger(__name__)
 

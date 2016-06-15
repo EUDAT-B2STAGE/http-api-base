@@ -7,12 +7,13 @@ We create all the components here!
 
 from __future__ import absolute_import
 import sqlalchemy
-import pytz
+# import pytz
 from datetime import datetime, timedelta
 from commons.services.uuid import getUUID
 from ..detect import SQL_AVAILABLE
 from . import BaseAuthentication
-from .... import myself, lic, get_logger
+from .... import myself, lic
+from commons.logs import get_logger
 
 __author__ = myself
 __copyright__ = myself

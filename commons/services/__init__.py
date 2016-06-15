@@ -14,11 +14,11 @@ to let the user access a new connection.
 from __future__ import absolute_import
 import abc
 import time
-import logging
 from ..meta import Meta
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from ..logs import get_logger
+
+logger = get_logger(__name__)
 
 BASE_MODELS_PATH = 'commons.models.'
 

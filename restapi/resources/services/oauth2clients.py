@@ -5,13 +5,13 @@ SECURITY ENDPOINTS CHECK
 Add auth checks called /checklogged and /testadmin
 """
 
-from __future__ import division, absolute_import
-from ... import myself, lic, get_logger
-
+from __future__ import absolute_import
 import os
+from commons.logs import get_logger
 from ...oauth import oauth
 from commons.meta import Meta
 from base64 import b64encode
+from ... import myself, lic
 
 __author__ = myself
 __copyright__ = myself

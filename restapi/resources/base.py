@@ -9,7 +9,7 @@ from ..jsonify import output_json  # , RESTError
 from flask import make_response, jsonify
 from flask_restful import request, Resource, reqparse
 import json
-from .. import get_logger
+from commons.logs import get_logger
 
 logger = get_logger(__name__)
 

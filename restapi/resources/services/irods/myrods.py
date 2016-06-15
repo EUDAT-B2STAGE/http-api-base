@@ -8,10 +8,11 @@ UNSUSED AT THE MOMENT!
 
 """
 
+# from __future__ import absolute_import
 import os
 import irods
 from irods.session import iRODSSession
-from restapi import get_logger, silence_loggers
+from commons.logs import get_logger, silence_loggers
 
 logger = get_logger(__name__)
 # Silence the irods debugger which adds some useless handler

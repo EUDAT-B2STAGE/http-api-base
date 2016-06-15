@@ -51,9 +51,6 @@ SERVER_HOSTS = '0.0.0.0'
 TEST_HOST = 'localhost'
 SERVER_PORT = int(os.environ.get('PORT', 5000))
 
-# Other configuration files you may use/need inside the 'confs' directory
-LOGGING_CONFIG_FILE = 'logging_config.ini'
-
 # Use this to specifiy endpoints based on your resources module
 REST_CONFIG_DIR = 'endpoints'
 REST_CONFIG_INIT = 'api_init.json'

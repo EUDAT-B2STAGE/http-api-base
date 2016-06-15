@@ -5,15 +5,14 @@ Using x509 certificates
 """
 
 from __future__ import absolute_import
-
-import logging
 import os
 from .services.uuid import getUUID
 from OpenSSL import crypto
 from commons import htmlcodes as hcodes
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from .logs import get_logger
+
+logger = get_logger(__name__)
 
 
 class Certificates(object):

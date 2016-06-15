@@ -6,10 +6,11 @@
 # see some examples here to take inspiration
 # https://parse.com/docs/rest/guide
 
-from .. import get_logger
+from __future__ import absolute_import
+from commons.logs import get_logger
 from .base import ExtendedApiResource
 from . import decorators as decorate
-from confs import config
+# from confs import config
 from ..auth import auth
 
 logger = get_logger(__name__)

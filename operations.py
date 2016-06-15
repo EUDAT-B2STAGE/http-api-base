@@ -15,7 +15,7 @@ probably based on click
 
 from __future__ import absolute_import
 
-from restapi import get_logger
+from commons.logs import get_logger
 logger = get_logger(__name__)
 
 #########################

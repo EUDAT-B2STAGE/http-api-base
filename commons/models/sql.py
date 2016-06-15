@@ -4,11 +4,9 @@
 
 from __future__ import absolute_import
 from ..services.alchemy import db
+from ..logs import get_logger
 
-import logging
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger = get_logger(__name__)
 
 
 ####################################

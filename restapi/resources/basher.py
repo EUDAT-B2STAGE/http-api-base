@@ -9,7 +9,7 @@ http://plumbum.readthedocs.org/en/latest/index.html#
 
 """
 
-from .. import get_logger
+from commons.logs import get_logger
 from plumbum.commands.processes import ProcessExecutionError
 logger = get_logger(__name__)
 

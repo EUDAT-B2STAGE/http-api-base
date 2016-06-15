@@ -6,9 +6,8 @@ We create all the components here!
 """
 
 from __future__ import division, absolute_import
-from . import myself, lic, get_logger
-
-# Handle cors...
+from . import myself, lic
+from commons.logs import get_logger
 from flask_cors import CORS
 
 __author__ = myself

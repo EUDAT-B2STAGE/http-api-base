@@ -10,10 +10,9 @@ http://python-3-patterns-idioms-test.readthedocs.org/en/latest/Metaprogramming.h
 from importlib import import_module
 import pkgutil
 import inspect
-import logging
+from .logs import get_logger
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger = get_logger(__name__)
 
 
 ################################

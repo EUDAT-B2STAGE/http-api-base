@@ -8,7 +8,8 @@ RESTful API Python 3 Flask server
 """
 
 import time
-from restapi import myself, lic, get_logger
+from restapi import myself, lic
+from commons.logs import get_logger
 from restapi.server import create_app
 from confs.config import SERVER_HOSTS, SERVER_PORT, args
 

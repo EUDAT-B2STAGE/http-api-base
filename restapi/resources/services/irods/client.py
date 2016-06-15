@@ -11,6 +11,7 @@ we based this wrapper on plumbum package handling shell commands.
 
 """
 
+from __future__ import absolute_import
 import os
 import inspect
 import re
@@ -19,11 +20,10 @@ from ...basher import BashCommands
 from ...exceptions import RestApiException
 from confs.config import IRODS_ENV
 from commons.services import ServiceFarm
-
 # from ..templating import Templa
 # from . import string_generator
+from commons.logs import get_logger
 
-from restapi import get_logger
 logger = get_logger(__name__)
 
 IRODS_USER_ALIAS = 'clientUserName'
@@ -975,12 +975,16 @@ class IrodsFarm(ServiceFarm):
 ################
         if 'IRODS_USER' in os.environ:
             user = os.environ.get('IRODS_USER')
+
+## // TO FIX:
+        # from ..services.detect import IRODS_EXTERNAL
+        # if IRODS_EXTERNAL:
             if user == 'rods':
                 user = 'guest'
         else:
             user = 'guest'
         # print("TOKEN IS", token)
-        print("FIXME: IRODS USER *%s*" % user)
+        print("FIXME: Get user from token! For now it's fixed on *%s*" % user)
         return user
 
     def init_connection(self, app):

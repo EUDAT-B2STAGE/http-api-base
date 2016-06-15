@@ -6,7 +6,8 @@ from commons import htmlcodes as hcodes
 from functools import wraps
 from flask import request
 from werkzeug.datastructures import Authorization
-from . import myself, lic, get_logger
+from . import myself, lic
+from commons.logs import get_logger
 
 __author__ = myself
 __copyright__ = myself

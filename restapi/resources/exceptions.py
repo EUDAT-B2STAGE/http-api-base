@@ -7,7 +7,9 @@ to handle services known errors
 
 """
 
-from .. import get_logger
+# from __future__ import absolute_import
+# from commons.logs import get_logger
+
 
 class RestApiException(Exception):
 

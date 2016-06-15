@@ -11,12 +11,14 @@ source: http://flask.pocoo.org/snippets/83/
 """
 
 from __future__ import division, absolute_import
-from . import myself, lic, get_logger
+from . import myself, lic
+from commons.logs import get_logger
 
 from flask import jsonify, make_response
 from werkzeug.exceptions import HTTPException
 from commons import htmlcodes as hcodes
 
+## // TO FIX: json should be imported from anyone from this class
 # Look for the best chance for json lib
 try:
     import simplejson as json

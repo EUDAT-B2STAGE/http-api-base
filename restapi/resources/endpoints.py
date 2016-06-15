@@ -5,8 +5,9 @@ Base endpoints: authorization, status, checks.
 And a Farm: How to create endpoints into REST service.
 """
 
-from __future__ import division, absolute_import
-from .. import myself, lic, get_logger
+from __future__ import absolute_import
+from .. import myself, lic
+from commons.logs import get_logger
 
 from confs.config import AUTH_URL
 from .base import ExtendedApiResource

@@ -18,8 +18,8 @@ different solutions.
 """
 
 from __future__ import division, absolute_import
-from .. import myself, lic, get_logger
-
+from .. import myself, lic
+from commons.logs import get_logger
 from flask.wrappers import Response
 from commons import htmlcodes as hcodes
 from commons.meta import Meta

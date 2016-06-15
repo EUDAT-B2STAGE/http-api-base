@@ -5,7 +5,7 @@ Oauth handling
 """
 
 from __future__ import division, absolute_import
-from . import get_logger
+from commons.logs import  get_logger
 from flask_oauthlib.client import OAuth
 
 logger = get_logger(__name__)

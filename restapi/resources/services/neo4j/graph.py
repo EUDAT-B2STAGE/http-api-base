@@ -2,8 +2,9 @@
 
 """ Graph DB abstraction from neo4j server """
 
+# from __future__ import absolute_import
 import os
-from .... import get_logger
+from commons.logs import get_logger
 from commons.services import ServiceFarm
 
 logger = get_logger(__name__)

@@ -10,8 +10,8 @@ Services:
 
 from __future__ import absolute_import
 import os
+from commons.logs import get_logger
 
-from ... import get_logger
 logger = get_logger(__name__)
 
 #################
