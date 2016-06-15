@@ -311,25 +311,34 @@ class ExtendedApiResource(Resource):
             http://jsonapi.org
         """
 
-        if self_link is not None:
-            self_link = ""
-
         json_data = {}
-        json_data["links"] = {"self": self_link}
-        json_data["data"] = []
 
+        if self_link is not None:
+            json_data["links"] = {"self": self_link}
+
+        if not isinstance(instances, list):
+            raise AttributeError("Expecting a list of objects to format")
+
+        if len(instances) < 1:
+            return json_data
+
+        json_data["content"] = []
         for instance in instances:
             data = self.getJsonResponse(instance, fields)
-
-            json_data["data"].append(data)
+            json_data["content"].append(data)
 
         return json_data
 
     def getJsonResponse(self, instance, fields, resource_type=None):
+
         if resource_type is None:
             resource_type = type(instance).__name__.lower()
 
-        if hasattr(instance, "id"):
+        verify_attribute = hasattr
+        if isinstance(instance, dict):
+            verify_attribute = dict.get
+
+        if verify_attribute(instance, "id"):
             id = instance.id
         else:
             id = "-"
@@ -341,9 +350,13 @@ class ExtendedApiResource(Resource):
         }
         for key in fields:
 
-            if hasattr(instance, key):
+            if verify_attribute(instance, key):
 
-                attribute = getattr(instance, key)
+                get_attribute = getattr
+                if isinstance(instance, dict):
+                    get_attribute = dict.get
+
+                attribute = get_attribute(instance, key)
                 # datetime is not json serializable,
                 # converting it to string
                 if isinstance(attribute, datetime):
