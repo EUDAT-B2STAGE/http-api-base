@@ -421,9 +421,11 @@ class ICommands(BashCommands):
         logger.debug("Obtaining irods object: %s" % absolute_path)
         return iout
 
-    def save(self, path, destination=None):
+    def save(self, path, destination=None, force=False):
         com = 'iput'
         args = [path]
+        if force:
+            args.append('-f')
         if destination is not None:
             args.append(destination)
         # Execute
@@ -626,8 +628,8 @@ class ICommands(BashCommands):
         """
         protocol = 'irods://'
         URL = protocol + \
-            self._init_data['irodsHost'] + ':' + \
-            self._init_data['irodsPort'] + \
+            self._init_data['irods_host'] + ':' + \
+            self._init_data['irods_port'] + \
             os.path.join(self._base_dir, ifile)
         return URL
 
