@@ -189,4 +189,12 @@ instead of here
             logger.warning("Could not invalidate token")
 
     def destroy_token(self, token_id):
-        pass
+        token = self._db.Token.query.filter_by(jti=token_id).first()
+
+        if token is None:
+            return False
+
+        token.emitted_for = None    # required?
+        self._db.session.delete(token)
+        self._db.session.commit()
+        return True
