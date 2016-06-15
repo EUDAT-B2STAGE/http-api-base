@@ -8,6 +8,7 @@ from ..jsonify import output_json  # , RESTError
 from flask import make_response, jsonify
 from flask_restful import request, Resource, reqparse
 import json
+from datetime import datetime
 from commons.logs import get_logger
 
 logger = get_logger(__name__)
@@ -303,3 +304,51 @@ class ExtendedApiResource(Resource):
                 response.headers[header] = header_content
 
         return response
+
+    def formatJsonResponse(self, instances, fields,
+                           resource_type=None, self_link=None):
+        """
+            Format specifications can be found here:
+            http://jsonapi.org
+        """
+
+        if self_link is not None:
+            self_link = ""
+
+        json_data = {}
+        json_data["links"] = {"self": self_link}
+        json_data["data"] = []
+
+        for instance in instances:
+            data = self.getJsonResponse(instance, fields)
+
+            json_data["data"].append(data)
+
+        return json_data
+
+    def getJsonResponse(self, instance, fields, resource_type=None):
+        if resource_type is None:
+            resource_type = type(instance).__name__.lower()
+
+        if hasattr(instance, "id"):
+            id = instance.id
+        else:
+            id = "-"
+
+        data = {
+            "id": id,
+            "type": resource_type,
+            "attributes": {}
+        }
+        for key in fields:
+
+            if hasattr(instance, key):
+
+                attribute = getattr(instance, key)
+                # datetime is not json serializable,
+                # converting it to string
+                if isinstance(attribute, datetime):
+                    data["attributes"][key] = attribute.strftime('%s')
+                else:
+                    data["attributes"][key] = attribute
+        return data
