@@ -629,6 +629,18 @@ class ICommands(BashCommands):
 
         return True, "OK"
 
+    def current_location(self, ifile):
+        """
+        irods://130.186.13.14:1247/cinecaDMPZone/home/pdonorio/replica/test2
+        """
+        protocol = 'irods'
+        URL = "%s://%s:%s%s" % (
+            protocol,
+            self._current_environment['IRODS_HOST'],
+            self._current_environment['IRODS_PORT'],
+            os.path.join(self._base_dir, ifile))
+        return URL
+
 
 ################################################
 ################################################
@@ -646,18 +658,6 @@ class ICommands(BashCommands):
             # 2nd position is the resource in irods ils -l
             resources.append(element[2])
         return resources
-
-    def current_location(self, ifile):
-        """
-        irods://130.186.13.14:1247/cinecaDMPZone/home/pdonorio/replica/test2
-        """
-        protocol = 'irods'
-        URL = "%s://%s:%s%s" % (
-            protocol,
-            self._current_environment['IRODS_HOST'],
-            self._current_environment['IRODS_PORT'],
-            os.path.join(self._base_dir, ifile))
-        return URL
 
     def check(self, path, retcodes=(0, 4)):
         """
@@ -717,10 +717,25 @@ class ICommands(BashCommands):
 #
 # ######################################
 
-# class IMetaCommands(ICommands):
-#     """irods icommands in a class"""
-#     ###################
-#     # METADATA for irods
+class IMetaCommands(ICommands):
+
+    """ irods icommands in a class """
+
+    ###################
+    # METADATA for irods
+
+    def meta_sys_list(self, path):
+        """ Listing file system metadata """
+        com = "isysmeta"
+        args = ['ls']
+        args.append(path)
+        out = self.basic_icom(com, args)
+        metas = {}
+        if out:
+            print("OUTPUT IS", out)
+            pattern = re.compile("([a-z_]+):\s+([^\n]+)")
+            metas = pattern.findall(out)
+        return metas
 
 #     def meta_command(self, path, action='list', attributes=[], values=[]):
 #         com = "imeta"
@@ -776,18 +791,6 @@ class ICommands(BashCommands):
 #         # if m1 and m2:
 #         #     metas[m1.group(1)] = m2.group(1)
 
-#         return metas
-
-#     def meta_sys_list(self, path):
-#         """ Listing file system metadata """
-#         com = "isysmeta"
-#         args = ['ls']
-#         args.append(path)
-#         out = self.execute_command(com, args)
-#         metas = {}
-#         if out:
-#             pattern = re.compile("([a-z_]+):\s+([^\n]+)")
-#             metas = pattern.findall(out)
 #         return metas
 
 #     def meta_write(self, path, attributes, values):
@@ -1032,7 +1035,7 @@ class IrodsFarm(ServiceFarm):
         user = self.get_token_user(token)
 ## // TO FIX
         if user is not None:
-            self._irods = ICommands(user)
+            self._irods = IMetaCommands(user)
         return self._irods
 
     def define_service_name(self):

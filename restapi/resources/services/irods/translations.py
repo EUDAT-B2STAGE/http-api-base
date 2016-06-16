@@ -22,7 +22,7 @@ class DataObjectToGraph(object):
         self._graph = graph
         self._icom = icom
 
-    def ifile2nodes(self, ifile):
+    def ifile2nodes(self, ifile, service_user=None):
 
         ##################################
         # Getting the three pieces from Absolute Path of data object:
@@ -47,11 +47,6 @@ class DataObjectToGraph(object):
         location = self._icom.current_location(ifile)
         logger.debug("Location: %s" % location)
 
-## // TO FIX:
-# Connect to irods user
-
-# Connect the irods user to current_token
-
         ##################################
         # Store Zone node
         current_zone = self._graph.Zone.get_or_create({'name': zone}).pop()
@@ -75,6 +70,31 @@ class DataObjectToGraph(object):
         # Connect the object
         current_dobj.located.connect(current_zone)
         logger.info("Created and connected data object %s" % filename)
+
+        ##################################
+        # Connect to irods user
+        user = self._icom.get_current_user()
+        current_user = self._graph.IrodsUser.get_or_create(
+            {'username': user}).pop()
+        current_dobj.owned.connect(current_user)
+
+        # Connect the irods user to current_token
+        if service_user is not None:
+            current_user.associated.connect(service_user)
+
+        ##################################
+        # # System metadata
+        # for key, value in self._icom.meta_sys_list(ifile):
+
+        #     print("key", key, "value", value)
+        #     # data = {'metatype':'system', 'key':key, 'value':value}
+        #     # save_node_metadata(graph, data, current_dobj)
+
+        #     # People/User
+        #     if key == 'data_owner_name':
+        #         current_user = self._graph.IrodsUser.get_or_create(
+        #             {'username': value}).pop()
+        #         current_dobj.owned.connect(current_user)
 
         ##################################
         # Get Name and Store Resource node
@@ -130,6 +150,6 @@ class DataObjectToGraph(object):
                 current_collection.matrioska_from.connect(last_collection)
 
             last_collection = current_collection
-            logger.debug("Last collection: %s", last_collection)
+            # logger.debug("Last collection: %s", last_collection)
 
         return current_dobj.id
