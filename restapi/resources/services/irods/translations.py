@@ -43,11 +43,9 @@ class DataObjectToGraph(object):
                 # Save collection name (zone) and its path (prefix+zone)
                 collections.append((zone, oripath))
 
-## // TO FIX: disabled for now
         # # Eudat URL
-        # location = self._icom.current_location(ifile)
-        # logger.debug("Location: %s" % location)
-        location = "Unknown"
+        location = self._icom.current_location(ifile)
+        logger.debug("Location: %s" % location)
 
         ##################################
         # Store Zone node
@@ -58,14 +56,17 @@ class DataObjectToGraph(object):
 
         # Prepare properties
         properties = {
-## // TO FIX: avoid duplicates
-            # 'location' :location,
+            'location': location,
             'filename': filename,
             'path': ifile,
         }
         # Build UUID
-        current_dobj = self._graph.createNode(
-            self._graph.DataObject, properties)
+        current_dobj = None
+        try:
+            current_dobj = self._graph.DataObject.nodes.get(location=location)
+        except self._graph.DataObject.DoesNotExist:
+            current_dobj = self._graph.createNode(
+                self._graph.DataObject, properties)
         # Connect the object
         current_dobj.located.connect(current_zone)
         logger.info("Created and connected data object %s" % filename)
@@ -80,7 +81,6 @@ class DataObjectToGraph(object):
                 self._graph.Resource.get_or_create(
                     {'name': resource_name}).pop()
             # Connect resource to Zone
-## // TO FIX: only if not connected already?
             current_resource.hosted.connect(current_zone)
             # Connect data object to this replica resource
             current_dobj.stored.connect(current_resource)

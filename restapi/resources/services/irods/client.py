@@ -172,8 +172,8 @@ class ICommands(BashCommands):
 
         if authscheme == 'credentials' or authscheme == 'PAM':
 
-# // TO FIX: use the method prepare_irods_environment...
-
+## // TO FIX:
+# use the method prepare_irods_environment...
             self._init_data = OrderedDict({
                 "irods_host": os.environ['ICAT_1_ENV_IRODS_HOST'],
                 "irods_port":
@@ -626,11 +626,12 @@ class ICommands(BashCommands):
         """
         irods://130.186.13.14:1247/cinecaDMPZone/home/pdonorio/replica/test2
         """
-        protocol = 'irods://'
-        URL = protocol + \
-            self._init_data['irods_host'] + ':' + \
-            self._init_data['irods_port'] + \
-            os.path.join(self._base_dir, ifile)
+        protocol = 'irods'
+        URL = "%s://%s:%s%s" % (
+            protocol,
+            self._current_environment['IRODS_HOST'],
+            self._current_environment['IRODS_PORT'],
+            os.path.join(self._base_dir, ifile))
         return URL
 
     def check(self, path, retcodes=(0, 4)):
