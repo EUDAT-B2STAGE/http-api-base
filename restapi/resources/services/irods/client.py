@@ -376,12 +376,7 @@ class ICommands(BashCommands):
         self.basic_icom(com, args)
         logger.debug("Created %s" % path)
 
-        if not path.startswith('/'):
-            path = os.path.join(self.get_base_dir(), path)
-        else:
-            path = self.get_current_zone() + path
-
-        return path
+        return self.handle_collection_path(path)
 
     def list(self, path=None, detailed=False, acl=False):
         """ List the files inside an iRODS path/collection """

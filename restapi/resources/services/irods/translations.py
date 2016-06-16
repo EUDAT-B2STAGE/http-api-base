@@ -22,11 +22,7 @@ class DataObjectToGraph(object):
         self._graph = graph
         self._icom = icom
 
-    def collection2node(self, collection, path, current_zone=None):
-
-        if current_zone is None:
-            class current_zone(object):
-                name = self._icom.get_current_zone()
+    def collection2node(self, collection, path, current_zone):
 
         p = path.lstrip('/').lstrip(current_zone.name)
         properties = {
@@ -46,16 +42,57 @@ class DataObjectToGraph(object):
 
         return current_collection
 
-    def ifile2nodes(self, ifile, service_user=None):
+    def recursive_collection2node(
+            self, collections, current_dobj=None, current_zone=None):
 
-        ##################################
-        # Getting the three pieces from Absolute Path of data object:
-        # zone, absolute path and filename
-        # also keeps track of collections
+        if current_zone is None:
+            current_zone = self._graph.Zone.nodes.get(
+                name=self._icom.get_current_zone())
+
+        collection_counter = 0
+        last_collection = None
+
+        for collection, path in collections:
+
+            collection_counter += 1
+            logger.debug("Collection %s" % collection)
+            current_collection = self.collection2node(
+                collection, path, current_zone)
+
+            # Link the first one to dataobject
+            if collection_counter == 1 and current_dobj is not None:
+                current_dobj.belonging.connect(current_collection)
+
+            # Link to zone
+            # if collection_counter == len(collections):
+            current_collection.hosted.connect(current_zone)
+
+            print("TEST OBJ COLL", current_collection, last_collection)
+            # Otherwise connect to the previous?
+            if last_collection is not None:
+                current_collection.matrioska_to.connect(last_collection)
+
+            last_collection = current_collection
+
+        return last_collection
+
+    def split_ipath(self, ipath, with_file=True):
+        """
+        Getting the three pieces from Absolute Path of data object:
+            zone, absolute path and filename.
+        Also keeps track of collections.
+        """
+
         zone = ""
         irods_path = ""
         collections = []
-        (prefix, filename) = os.path.split(ifile)
+        filename = None
+
+        if with_file:
+            (prefix, filename) = os.path.split(ipath)
+        else:
+            prefix = ipath
+
         while prefix != "/":
             oripath = prefix
             # Note: THIS IS NOT IRODS_PATH AS EUDAT THINKS OF IT
@@ -63,17 +100,23 @@ class DataObjectToGraph(object):
             # Split into basename and dir
             (prefix, zone) = os.path.split(prefix)
             # Skip the last one, as it is a Zone and not a collection
-            if zone != oripath.strip('/'):
+            if zone != oripath.strip('/') and zone.strip() != '':
                 # Save collection name (zone) and its path (prefix+zone)
                 collections.append((zone, oripath))
-
-        # # Eudat URL
-        location = self._icom.current_location(ifile)
-        logger.debug("Location: %s" % location)
 
         ##################################
         # Store Zone node
         current_zone = self._graph.Zone.get_or_create({'name': zone}).pop()
+
+        return (filename, collections, current_zone)
+
+    def ifile2nodes(self, ifile, service_user=None):
+
+        filename, collections, current_zone = self.split_ipath(ifile)
+
+        # Eudat URL
+        location = self._icom.current_location(ifile)
+        logger.debug("Location: %s" % location)
 
         ##################################
         # Store Data Object
@@ -137,29 +180,7 @@ class DataObjectToGraph(object):
         ##################################
         # Store Collections
 
-        collection_counter = 0
-        last_collection = None
-
-        for collection, cpath in collections:
-
-            collection_counter += 1
-            current_collection = self.collection2node(
-                collection, cpath, current_zone)
-            logger.debug("Collection %s" % collection)
-
-            # Link the first one to dataobject
-            if collection_counter == 1:
-                current_dobj.belonging.connect(current_collection)
-
-            # Link to zone
-            # if collection_counter == len(collections):
-            current_collection.hosted.connect(current_zone)
-
-            # Otherwise connect to the previous?
-            if last_collection is not None:
-                current_collection.matrioska_from.connect(last_collection)
-
-            last_collection = current_collection
-            # logger.debug("Last collection: %s", last_collection)
+        self.recursive_collection2node(
+            collections, current_zone=current_zone, current_dobj=current_dobj)
 
         return current_dobj.id
