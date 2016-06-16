@@ -372,9 +372,16 @@ class ICommands(BashCommands):
                          inspect.currentframe().f_code.co_name)
             return
 
-        # Debug
+        # This command does not give you any output
         self.basic_icom(com, args)
         logger.debug("Created %s" % path)
+
+        if not path.startswith('/'):
+            path = os.path.join(self.get_base_dir(), path)
+        else:
+            path = self.get_current_zone() + path
+
+        return path
 
     def list(self, path=None, detailed=False, acl=False):
         """ List the files inside an iRODS path/collection """
@@ -732,7 +739,7 @@ class IMetaCommands(ICommands):
         out = self.basic_icom(com, args)
         metas = {}
         if out:
-            print("OUTPUT IS", out)
+            # print("OUTPUT IS", out)
             pattern = re.compile("([a-z_]+):\s+([^\n]+)")
             metas = pattern.findall(out)
         return metas

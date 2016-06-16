@@ -22,6 +22,30 @@ class DataObjectToGraph(object):
         self._graph = graph
         self._icom = icom
 
+    def collection2node(self, collection, path, current_zone=None):
+
+        if current_zone is None:
+            class current_zone(object):
+                name = self._icom.get_current_zone()
+
+        p = path.lstrip('/').lstrip(current_zone.name)
+        properties = {
+            # remove the zone from collection path
+            'path': p,
+            'name': collection,
+        }
+
+        current_collection = None
+        try:
+            current_collection = \
+                self._graph.createNode(self._graph.Collection, properties)
+        except (GraphError, RequiredProperty,
+                UniqueProperty, ConstraintViolation):
+            current_collection = \
+                list(self._graph.Collection.nodes.filter(path=p)).pop()
+
+        return current_collection
+
     def ifile2nodes(self, ifile, service_user=None):
 
         ##################################
@@ -115,27 +139,13 @@ class DataObjectToGraph(object):
 
         collection_counter = 0
         last_collection = None
-        # print("Collections", collections)
 
         for collection, cpath in collections:
 
             collection_counter += 1
+            current_collection = self.collection2node(
+                collection, cpath, current_zone)
             logger.debug("Collection %s" % collection)
-            p = cpath.lstrip('/').lstrip(current_zone.name)
-            properties = {
-                # remove the zone from collection path
-                'path': p,
-                'name': collection,
-            }
-
-            current_collection = None
-            try:
-                current_collection = \
-                    self._graph.createNode(self._graph.Collection, properties)
-            except (GraphError, RequiredProperty,
-                    UniqueProperty, ConstraintViolation):
-                current_collection = \
-                    list(self._graph.Collection.nodes.filter(path=p)).pop()
 
             # Link the first one to dataobject
             if collection_counter == 1:
