@@ -71,6 +71,9 @@ class MyGraph(object):
         logger.debug("Graph query. Res: %s\nMeta: %s" % (results, meta))
         return results
 
+    def clean_pending_tokens(self):
+        return self.cypher("MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a")
+
     def inject_models(self, models=[]):
         """ Load models mapping Graph entities """
 
