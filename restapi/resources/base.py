@@ -336,8 +336,8 @@ class ExtendedApiResource(Resource):
 
         return json_data
 
-    def getJsonResponse(self, instance, fields=[],
-                        resource_type=None, from_relationship=False):
+    def getJsonResponse(self, instance, fields=[], resource_type=None,
+                        relationship_depth=0, max_relationship_depth=1):
         """
         Lots of meta introspection to guess the JSON specifications
         """
@@ -364,7 +364,7 @@ class ExtendedApiResource(Resource):
             "links": {"self": request.url + '/' + id},
         }
 
-        if from_relationship:
+        if relationship_depth > 0:
             del data['links']
 
         # Attributes
@@ -388,20 +388,18 @@ class ExtendedApiResource(Resource):
                     data["attributes"][key] = attribute
 
         # Relationships
-        if not from_relationship:
+        if relationship_depth < max_relationship_depth:
             linked = {}
             relationships = []
             if hasattr(instance, '_relationships_to_follow'):
                 relationships = getattr(instance, '_relationships_to_follow')
-
             for relationship in relationships:
                 subrelationship = []
                 logger.debug("Investigate relationship %s" % relationship)
                 if hasattr(instance, relationship):
                     for node in getattr(instance, relationship).all():
                         subrelationship.append(
-                            self.getJsonResponse(
-                                node, from_relationship=True))
+                            self.getJsonResponse(node, relationship_depth=relationship_depth + 1, max_relationship_depth=max_relationship_depth))
 
                 linked[relationship] = subrelationship
 
