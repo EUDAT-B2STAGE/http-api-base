@@ -47,6 +47,11 @@ class DataObjectToGraph(object):
         location = self._icom.current_location(ifile)
         logger.debug("Location: %s" % location)
 
+## // TO FIX:
+# Connect to irods user
+
+# Connect the irods user to current_token
+
         ##################################
         # Store Zone node
         current_zone = self._graph.Zone.get_or_create({'name': zone}).pop()
@@ -126,3 +131,5 @@ class DataObjectToGraph(object):
 
             last_collection = current_collection
             logger.debug("Last collection: %s", last_collection)
+
+        return current_dobj.id
