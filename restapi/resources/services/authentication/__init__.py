@@ -35,7 +35,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     SECRET = 'top secret!'
     JWT_ALGO = 'HS256'
-#TO FIX: already defined in auth.py HTTPAUTH_DEFAULT_SCHEME
+# TO FIX: already defined in auth.py HTTPAUTH_DEFAULT_SCHEME
     token_type = 'Bearer'
     DEFAULT_USER = USER
     DEFAULT_PASSWORD = PWD
@@ -45,9 +45,8 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     _payload = {}
     _user = None
 
-#TO FIX: to be lengthen. Now are short for testing purpose
-    longTTL = 86400     # 1 day in seconds
-    shortTTL = 3600     # 1 hour in seconds
+    longTTL = 2592000     # 1 month in seconds
+    shortTTL = 604800     # 1 week in seconds
 
     @abc.abstractmethod
     def __init__(self, services=None):
