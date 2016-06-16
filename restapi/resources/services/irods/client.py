@@ -224,6 +224,31 @@ class ICommands(BashCommands):
             'home',
             user)
 
+    def get_current_zone(self):
+        return self._current_environment['IRODS_ZONE']
+
+    def handle_collection_path(self, ipath):
+        """ iRODS specific pattern to handle paths """
+
+        home = self.get_base_dir()
+
+        # Should add the base dir if doesn't start with /
+        if ipath is None or ipath == '':
+            ipath = home
+        elif ipath[0] != '/':
+            ipath = home + '/' + ipath
+        else:
+            # Add the zone
+            ipath = '/' + self.get_current_zone() + ipath
+        # Append / if missing in the end
+        if ipath[-1] != '/':
+            ipath += '/'
+
+        return ipath
+
+    def get_irods_path(self, collection, filename):
+        return self.handle_collection_path(collection) + filename
+
     def prepare_irods_environment(self, user, schema='GSI'):
         """
         Prepare the OS variables environment
