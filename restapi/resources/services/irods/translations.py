@@ -67,7 +67,6 @@ class DataObjectToGraph(object):
             # if collection_counter == len(collections):
             current_collection.hosted.connect(current_zone)
 
-            print("TEST OBJ COLL", current_collection, last_collection)
             # Otherwise connect to the previous?
             if last_collection is not None:
                 current_collection.matrioska_to.connect(last_collection)

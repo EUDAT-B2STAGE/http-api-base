@@ -79,22 +79,34 @@ class ExtendedApiResource(Resource):
     def myname(self):
         return self.__class__.__name__
 
-    def add_parameter(self, name, mytype=str, default=None, required=False):
+    def add_parameter(self, name, method,
+                      mytype=str, default=None, required=False):
         """ Save a parameter inside the class """
+
         # Class name as a key
         key = self.myname()
+
         if key not in self._params:
             self._params[key] = {}
-        # Avoid if already exists?
-        if name not in self._params[key]:
-            self._params[key][name] = [mytype, default, required]
 
-    def apply_parameters(self):
+        if method not in self._params[key]:
+            self._params[key][method] = {}
+
+        # Avoid if already exists?
+        if name not in self._params[key][method]:
+            self._params[key][method][name] = [mytype, default, required]
+
+    def apply_parameters(self, method):
         """ Use parameters received via decoration """
 
         key = self.myname()
         if key not in self._params:
             return False
+
+        if method not in self._params[key]:
+            return False
+
+        p = self._params[key][method]
 
         ##############################
         # Basic options
@@ -105,12 +117,10 @@ class ExtendedApiResource(Resource):
         trim = True
 
 # // TO FIX?
-        self._params[key][PERPAGE_KEY] = (int, DEFAULT_PERPAGE, False)
-        self._params[key][CURRENTPAGE_KEY] = (int, DEFAULT_CURRENTPAGE, False)
+        p[PERPAGE_KEY] = (int, DEFAULT_PERPAGE, False)
+        p[CURRENTPAGE_KEY] = (int, DEFAULT_CURRENTPAGE, False)
 
-        for param, \
-            (param_type, param_default, param_required) in \
-                self._params[key].items():
+        for param, (param_type, param_default, param_required) in p.items():
 
             # Decide what is left for this parameter
             if param_type is None:
@@ -207,12 +217,9 @@ class ExtendedApiResource(Resource):
         existing_content = {}
         existing_code = hcodes.HTTP_OK_BASIC
 
-        # print("Tuple?", data, isinstance(data, tuple), len(data))
-
         # Normal response
         if isinstance(data, tuple) and len(data) == 2:
             existing_content, existing_code = data
-            # print("Received", existing_content, existing_code)
 
         # Missing code in response
         if isinstance(data, dict) and len(data) == 2:
@@ -395,11 +402,15 @@ class ExtendedApiResource(Resource):
                 relationships = getattr(instance, '_relationships_to_follow')
             for relationship in relationships:
                 subrelationship = []
-                logger.debug("Investigate relationship %s" % relationship)
+                # logger.debug("Investigate relationship %s" % relationship)
+
                 if hasattr(instance, relationship):
                     for node in getattr(instance, relationship).all():
                         subrelationship.append(
-                            self.getJsonResponse(node, relationship_depth=relationship_depth + 1, max_relationship_depth=max_relationship_depth))
+                            self.getJsonResponse(
+                                node,
+                                relationship_depth=relationship_depth + 1,
+                                max_relationship_depth=max_relationship_depth))
 
                 linked[relationship] = subrelationship
 
