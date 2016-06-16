@@ -389,18 +389,21 @@ class ExtendedApiResource(Resource):
 
         # Relationships
         if not from_relationship:
-            linked = []
+            linked = {}
             relationships = []
             if hasattr(instance, '_relationships_to_follow'):
                 relationships = getattr(instance, '_relationships_to_follow')
 
             for relationship in relationships:
+                subrelationship = []
                 logger.debug("Investigate relationship %s" % relationship)
                 if hasattr(instance, relationship):
                     for node in getattr(instance, relationship).all():
-                        linked.append(
+                        subrelationship.append(
                             self.getJsonResponse(
                                 node, from_relationship=True))
+
+                linked[relationship] = subrelationship
 
             if len(linked) > 0:
                 data['relationships'] = linked

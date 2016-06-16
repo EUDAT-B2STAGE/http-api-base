@@ -6,7 +6,12 @@ Converting irods data into GraphDB models
 
 import os
 from commons.logs import get_logger
-import neomodel
+
+# TO MOVE?
+from py2neo.error import GraphError
+from py2neo.cypher.error.schema import ConstraintViolation
+from neomodel.exception import RequiredProperty
+from neomodel.exception import UniqueProperty
 
 logger = get_logger(__name__)
 
@@ -91,9 +96,10 @@ class DataObjectToGraph(object):
 
             collection_counter += 1
             logger.debug("Collection %s" % collection)
-            # print("COLLECTON", collection, cpath)
+            p = cpath.lstrip('/').lstrip(current_zone.name)
             properties = {
-                'path': cpath,
+                # remove the zone from collection path
+                'path': p,
                 'name': collection,
             }
 
@@ -101,9 +107,10 @@ class DataObjectToGraph(object):
             try:
                 current_collection = \
                     self._graph.createNode(self._graph.Collection, properties)
-            except neomodel.exception.UniqueProperty:
+            except (GraphError, RequiredProperty,
+                    UniqueProperty, ConstraintViolation):
                 current_collection = \
-                    list(self._graph.Collection.nodes.filter(path=cpath)).pop()
+                    list(self._graph.Collection.nodes.filter(path=p)).pop()
 
             # Link the first one to dataobject
             if collection_counter == 1:
