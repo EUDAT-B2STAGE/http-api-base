@@ -1008,37 +1008,28 @@ class IMetaCommands(ICommands):
 
 class IrodsFarm(ServiceFarm):
 
-    def get_token_user(self, token=None):
-        """ Depends on B2ACCESS authentication """
-
-        # Default or Admin
-        if token is None:
-            if 'IRODS_USER' in os.environ:
-                return os.environ.get('IRODS_USER')
-            else:
-                raise AttributeError("No iRODS user available")
-
-## // TO FIX:
-        # from ..services.detect import IRODS_EXTERNAL
-        # if IRODS_EXTERNAL:
-
-## // TO FIX:
-        user = 'guest'
-        print("TOKEN", token, "User", user)
-        return user
-
     def init_connection(self, app):
         self.get_instance()
         logger.debug("iRODS seems online")
 
-    def get_instance(self, token=None):
-        user = self.get_token_user(token)
+    def get_instance(self, user=None):
 
-# ADMIN?
+        # Default or Admin
+        if user is None:
+            if 'IRODS_USER' in os.environ:
+                user = os.environ.get('IRODS_USER')
+            else:
+                raise AttributeError("No iRODS user available")
+        else:
 
-## // TO FIX
+## // TO FIX:
+            # from ..services.detect import IRODS_EXTERNAL
+            # if IRODS_EXTERNAL:
+            pass
+
         if user is not None:
             self._irods = IMetaCommands(user)
+
         return self._irods
 
     def define_service_name(self):

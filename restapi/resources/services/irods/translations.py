@@ -16,6 +16,14 @@ from neomodel.exception import UniqueProperty
 logger = get_logger(__name__)
 
 
+class AccountsToIrodsUsers(object):
+
+    @staticmethod
+    def email2iuser(username):
+        """ Get first 8 chars of the first part of email (with no dots) """
+        return username.split('@')[0].replace('.', '')[:8]
+
+
 class DataObjectToGraph(object):
 
     def __init__(self, graph, icom):

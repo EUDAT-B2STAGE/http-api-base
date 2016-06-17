@@ -159,7 +159,8 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def init_users_and_roles(self):
         """
-        Here i write a possible good pattern:
+        Create roles and a user if no one exists.
+        A possible algorithm:
 
         if not exist_one_role():
             for role in self.DEFAULT_ROLES:
