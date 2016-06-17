@@ -178,6 +178,20 @@ class ExtendedApiResource(Resource):
 
         return response[RESPONSE_CONTENT]['data']
 
+    def set_latest_token(self, token):
+        self.global_get('custom_auth')._latest_token = token
+## // TO FIX:
+# The token should be saved into SESSION
+# or this will be a global token across different users
+
+    def get_latest_token(self):
+        return self.global_get('custom_auth')._latest_token
+
+    def get_current_token(self):
+        from ..auth import HTTPTokenAuth
+        _, token = HTTPTokenAuth.get_authentication_from_headers()
+        return token
+
     def global_get(self, object_name):
 
         obj = g.get('_' + object_name, None)

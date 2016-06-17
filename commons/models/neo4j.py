@@ -18,7 +18,7 @@ class User(StructuredNode):
     authmethod = StringProperty(required=True)
     password = StringProperty()  # Hashed from a custom function
     tokens = RelationshipTo('Token', 'HAS_TOKEN', cardinality=ZeroOrMore)
-    roles = RelationshipTo('Role', 'HAS_ROLE', cardinality=OneOrMore)
+    roles = RelationshipTo('Role', 'HAS_ROLE', cardinality=ZeroOrMore)
     externals = RelationshipTo(
         'ExternalAccounts', 'HAS_AUTHORIZATION', cardinality=OneOrMore)
 

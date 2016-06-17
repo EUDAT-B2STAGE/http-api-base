@@ -1010,23 +1010,21 @@ class IrodsFarm(ServiceFarm):
 
     def get_token_user(self, token=None):
         """ Depends on B2ACCESS authentication """
-################
-#// TO FIX:
-# NOT IMPLEMENTED YET
-# this should be recovered from the JWT token
-################
-        if 'IRODS_USER' in os.environ:
-            user = os.environ.get('IRODS_USER')
+
+        # Default or Admin
+        if token is None:
+            if 'IRODS_USER' in os.environ:
+                return os.environ.get('IRODS_USER')
+            else:
+                raise AttributeError("No iRODS user available")
 
 ## // TO FIX:
         # from ..services.detect import IRODS_EXTERNAL
         # if IRODS_EXTERNAL:
-            if user == 'rods':
-                user = 'guest'
-        else:
-            user = 'guest'
-        # print("TOKEN IS", token)
-        print("FIXME: Get user from token! For now it's fixed on *%s*" % user)
+
+## // TO FIX:
+        user = 'guest'
+        print("TOKEN", token, "User", user)
         return user
 
     def init_connection(self, app):
@@ -1035,6 +1033,9 @@ class IrodsFarm(ServiceFarm):
 
     def get_instance(self, token=None):
         user = self.get_token_user(token)
+
+# ADMIN?
+
 ## // TO FIX
         if user is not None:
             self._irods = IMetaCommands(user)

@@ -180,6 +180,8 @@ instead of here
 
     def invalidate_token(self, user=None, token=None):
         if token is None:
+## // TO FIX:
+## WARNING: this is a global token across different users!
             token = self._latest_token
         if user is None:
             user = self._user
