@@ -332,7 +332,8 @@ class ICommands(BashCommands):
     def get_current_user(self):
         return self._current_user
 
-    def get_translated_user(self, user):
+    @staticmethod
+    def get_translated_user(user):
         from .translations import AccountsToIrodsUsers
         return AccountsToIrodsUsers.email2iuser(user)
 
