@@ -30,6 +30,12 @@ logger = get_logger(__name__)
 IRODS_USER_ALIAS = 'clientUserName'
 CERTIFICATES_DIR = '/opt/certificates'
 
+IRODS_DEFAULT_USER = 'guest'
+IRODS_DEFAULT_ADMIN = 'rods'
+if not IRODS_EXTERNAL:
+    IRODS_DEFAULT_USER = os.environ.get('RODSERVER_ENV_GSI_USER')
+    IRODS_DEFAULT_ADMIN = os.environ.get('RODSERVER_ENV_GSI_ADMIN')
+
 
 class IrodsException(RestApiException):
 
@@ -475,6 +481,17 @@ class ICommands(BashCommands):
         logger.debug("iRODS admininistration command '%s'" % command)
         # Execute
         return self.basic_icom(com, args)
+
+    def create_user(self, user, admin=False):
+
+        user_type = 'rodsuser'
+        if admin:
+            user_type = 'rodsadmin'
+
+        try:
+            self.admin('mkuser', user, user_type)
+        except:
+            logger.warning("User %s already exists in iRODS" % user)
 
     def set_inheritance(self, path, inheritance=True, recursive=False):
         com = 'ichmod'
