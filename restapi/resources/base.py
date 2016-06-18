@@ -5,7 +5,7 @@
 from commons import htmlcodes as hcodes
 from ..confs.config import API_URL  # , STACKTRACE
 from ..jsonify import output_json  # , RESTError
-from flask import make_response, jsonify, g
+from flask import make_response, jsonify, g, Response
 from flask_restful import request, Resource, reqparse
 import json
 from datetime import datetime
@@ -194,11 +194,10 @@ class ExtendedApiResource(Resource):
 
     def global_get(self, object_name):
 
-        obj = g.get('_' + object_name, None)
+        obj = g.get('_%s' % object_name, None)
         if obj is None:
-            return self.response(
-                errors={"Internal error": "No %s object found!" % object_name},
-                code=hcodes.HTTP_BAD_CONFLICT)
+            raise AttributeError(
+                "Global variables: no %s object found!" % object_name)
         return obj
 
     def global_get_service(self,
@@ -207,10 +206,8 @@ class ExtendedApiResource(Resource):
         services = self.global_get(object_name)
         obj = services.get(service_name, None)
         if obj is None:
-            return self.response(
-                errors={
-                    "Internal error": "No %s service found!" % service_name},
-                code=hcodes.HTTP_BAD_CONFLICT)
+            raise AttributeError(
+                "Global variables: no %s object found!" % object_name)
         return obj().get_instance(**kwargs)
 
     def response(self, data=None, elements=None,

@@ -19,6 +19,7 @@ from collections import OrderedDict
 from ...basher import BashCommands
 from ...exceptions import RestApiException
 from ....confs.config import IRODS_ENV
+from ..detect import IRODS_EXTERNAL
 from commons.services import ServiceFarm
 # from ..templating import Templa
 # from . import string_generator
@@ -275,6 +276,7 @@ class ICommands(BashCommands):
         irods_env['IRODS_ZONE'] = zone
 
         if schema == 'GSI':
+
             # ## X509 certificates variables
             # CA Authority
             irods_env['X509_CERT_DIR'] = CERTIFICATES_DIR + '/caauth'
@@ -329,6 +331,10 @@ class ICommands(BashCommands):
 
     def get_current_user(self):
         return self._current_user
+
+    def get_translated_user(self, user):
+        from .translations import AccountsToIrodsUsers
+        return AccountsToIrodsUsers.email2iuser(user)
 
     ###################
     # Basic command with the GSI plugin
@@ -455,6 +461,17 @@ class ICommands(BashCommands):
             args.append('-f')
         if destination is not None:
             args.append(destination)
+        # Execute
+        return self.basic_icom(com, args)
+
+    def admin(self, command, user=None, extra=False):
+        com = 'iadmin'
+        args = [command]
+        if user is not None:
+            args.append(user)
+        if extra is not None:
+            args.append(extra)
+        logger.debug("iRODS admininistration command '%s'" % command)
         # Execute
         return self.basic_icom(com, args)
 
@@ -1019,17 +1036,12 @@ class IrodsFarm(ServiceFarm):
             if 'IRODS_USER' in os.environ:
                 user = os.environ.get('IRODS_USER')
             else:
-                raise AttributeError("No iRODS user available")
-        else:
+                if IRODS_EXTERNAL:
+                    raise KeyError("No iRODS user available")
+                else:
+                    logger.warning("Becoming iRODS admin")
 
-## // TO FIX:
-            # from ..services.detect import IRODS_EXTERNAL
-            # if IRODS_EXTERNAL:
-            pass
-
-        if user is not None:
-            self._irods = IMetaCommands(user)
-
+        self._irods = IMetaCommands(user)
         return self._irods
 
     def define_service_name(self):
