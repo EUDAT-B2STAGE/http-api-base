@@ -77,7 +77,7 @@ class DataObjectToGraph(object):
 
             # Otherwise connect to the previous?
             if last_collection is not None:
-                current_collection.matrioska_to.connect(last_collection)
+                last_collection.matrioska_to.connect(current_collection)
 
             last_collection = current_collection
 
