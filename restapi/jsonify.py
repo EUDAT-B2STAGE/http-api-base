@@ -45,7 +45,7 @@ logger = get_logger(__name__)
 def make_json_error(ex):
     response = jsonify(message=str(ex))
     response.status_code = (ex.code if isinstance(ex, HTTPException)
-                            else hcodes.HTTP_DEFAULT_SERVICE_FAIL)
+                            else hcodes.HTTP_SERVER_ERROR)
     return response
 
 

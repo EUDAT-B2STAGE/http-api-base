@@ -161,14 +161,14 @@ class Uploader(ZoomEnabling):
         except Exception:
             return self.response(
                 errors={'Upload failed': "Write of uploaded file has failed"},
-                code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
+                code=hcodes.HTTP_SERVER_ERROR)
 
         # Check exists
         if not os.path.exists(abs_file):
             return self.response(
                 errors={"Upload failed":
                         "Unable to recover the uploaded file"},
-                code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
+                code=hcodes.HTTP_SERVER_ERROR)
 
         ########################
         # Let the user decide about zoomify inside the JSON configuration
@@ -181,7 +181,7 @@ class Uploader(ZoomEnabling):
                 os.unlink(abs_file)     # Remove the file!
                 return self.response(
                     errors={"Image": "Pre-scaling for zoom has failed"},
-                    code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
+                    code=hcodes.HTTP_SERVER_ERROR)
 
         # Extra info
         ftype = None
@@ -235,7 +235,7 @@ class Uploader(ZoomEnabling):
             logger.critical("Cannot remove local file %s" % abs_file)
             return self.response(
                 errors={'Failed removal': "Wrong permissions"},
-                code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
+                code=hcodes.HTTP_SERVER_ERROR)
         logger.warn("Removed '%s' " % abs_file)
 
         return self.response(code=hcodes.HTTP_OK_NORESPONSE)

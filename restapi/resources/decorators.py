@@ -186,10 +186,10 @@ def all_rest_methods(decorator):
 
 #####################################################################
 # Error handling with custom methods
-def exceptionError(self, label, e):
+def exceptionError(self, label, e, code=hcodes.HTTP_BAD_REQUEST):
     error = str(e)
     logger.error(error)
-    return self.response(errors={label: error})
+    return self.response(errors={label: error}, code=code)
 
 
 def error_handler(func, self, exception, label, catch_generic, args, kwargs):
@@ -213,7 +213,8 @@ def error_handler(func, self, exception, label, catch_generic, args, kwargs):
             raise e
         else:
             return exceptionError(
-                self, default_label, 'Please contact service administrators')
+                self, default_label, 'Please contact service administrators',
+                code=hcodes.HTTP_SERVER_ERROR)
 
     return out
 
