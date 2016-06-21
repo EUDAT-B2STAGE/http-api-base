@@ -64,6 +64,10 @@ class IrodsException(RestApiException):
             self, utility, error_string, error_code, error_label, role='user'):
         return "The requested collection does not exist"
 
+    def parse_SYS_LINK_CNT_EXCEEDED_ERR(
+            self, utility, error_string, error_code, error_label, role='user'):
+        return "This collection is a mount point, cannot delete it"
+
     def parseIrodsError(self, error):
         error = str(error)
         logger.debug("*%s*" % error)
@@ -343,8 +347,8 @@ class ICommands(BashCommands):
             # super call of create_tempy with file (touch)
             # icp / iput of that file
             # super call of remove for the original temporary file
-            logger.debug("NOT IMPLEMENTED for a file '%s'" %
-                         inspect.currentframe().f_code.co_name)
+            logger.warning("NOT IMPLEMENTED for a file '%s'" %
+                           inspect.currentframe().f_code.co_name)
             return
 
         # Debug
@@ -531,6 +535,11 @@ class ICommands(BashCommands):
                         path += "/"
 
                     pathLen = len(path)
+                continue
+
+            # Unable to retrieve a path for this collection
+            # This collection may be empty
+            if path is None:
                 continue
 
             row = {}
