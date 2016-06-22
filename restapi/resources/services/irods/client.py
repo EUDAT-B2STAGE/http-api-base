@@ -19,6 +19,7 @@ from collections import OrderedDict
 from ...basher import BashCommands
 from ...exceptions import RestApiException
 from ....confs.config import IRODS_ENV
+from ..detect import IRODS_EXTERNAL
 from commons.services import ServiceFarm
 # from ..templating import Templa
 # from . import string_generator
@@ -28,6 +29,12 @@ logger = get_logger(__name__)
 
 IRODS_USER_ALIAS = 'clientUserName'
 CERTIFICATES_DIR = '/opt/certificates'
+
+IRODS_DEFAULT_USER = 'guest'
+IRODS_DEFAULT_ADMIN = 'rods'
+if not IRODS_EXTERNAL:
+    IRODS_DEFAULT_USER = os.environ.get('RODSERVER_ENV_GSI_USER')
+    IRODS_DEFAULT_ADMIN = os.environ.get('RODSERVER_ENV_GSI_ADMIN')
 
 
 class IrodsException(RestApiException):
@@ -228,6 +235,31 @@ class ICommands(BashCommands):
             'home',
             user)
 
+    def get_current_zone(self):
+        return self._current_environment['IRODS_ZONE']
+
+    def handle_collection_path(self, ipath):
+        """ iRODS specific pattern to handle paths """
+
+        home = self.get_base_dir()
+
+        # Should add the base dir if doesn't start with /
+        if ipath is None or ipath == '':
+            ipath = home
+        elif ipath[0] != '/':
+            ipath = home + '/' + ipath
+        else:
+            # Add the zone
+            ipath = '/' + self.get_current_zone() + ipath
+        # Append / if missing in the end
+        if ipath[-1] != '/':
+            ipath += '/'
+
+        return ipath
+
+    def get_irods_path(self, collection, filename):
+        return self.handle_collection_path(collection) + filename
+
     def prepare_irods_environment(self, user, schema='GSI'):
         """
         Prepare the OS variables environment
@@ -254,6 +286,7 @@ class ICommands(BashCommands):
         irods_env['IRODS_ZONE'] = zone
 
         if schema == 'GSI':
+
             # ## X509 certificates variables
             # CA Authority
             irods_env['X509_CERT_DIR'] = CERTIFICATES_DIR + '/caauth'
@@ -309,6 +342,11 @@ class ICommands(BashCommands):
     def get_current_user(self):
         return self._current_user
 
+    @staticmethod
+    def get_translated_user(user):
+        from .translations import AccountsToIrodsUsers
+        return AccountsToIrodsUsers.email2iuser(user)
+
     ###################
     # Basic command with the GSI plugin
     def basic_icom(self, com, args=[]):
@@ -351,9 +389,11 @@ class ICommands(BashCommands):
                            inspect.currentframe().f_code.co_name)
             return
 
-        # Debug
+        # This command does not give you any output
         self.basic_icom(com, args)
         logger.debug("Created %s" % path)
+
+        return self.handle_collection_path(path)
 
     def list(self, path=None, detailed=False, acl=False):
         """ List the files inside an iRODS path/collection """
@@ -434,6 +474,28 @@ class ICommands(BashCommands):
             args.append(destination)
         # Execute
         return self.basic_icom(com, args)
+
+    def admin(self, command, user=None, extra=False):
+        com = 'iadmin'
+        args = [command]
+        if user is not None:
+            args.append(user)
+        if extra is not None:
+            args.append(extra)
+        logger.debug("iRODS admininistration command '%s'" % command)
+        # Execute
+        return self.basic_icom(com, args)
+
+    def create_user(self, user, admin=False):
+
+        user_type = 'rodsuser'
+        if admin:
+            user_type = 'rodsadmin'
+
+        try:
+            self.admin('mkuser', user, user_type)
+        except:
+            logger.warning("User %s already exists in iRODS" % user)
 
     def set_inheritance(self, path, inheritance=True, recursive=False):
         com = 'ichmod'
@@ -613,6 +675,18 @@ class ICommands(BashCommands):
 
         return True, "OK"
 
+    def current_location(self, ifile):
+        """
+        irods://130.186.13.14:1247/cinecaDMPZone/home/pdonorio/replica/test2
+        """
+        protocol = 'irods'
+        URL = "%s://%s:%s%s" % (
+            protocol,
+            self._current_environment['IRODS_HOST'],
+            self._current_environment['IRODS_PORT'],
+            os.path.join(self._base_dir, ifile))
+        return URL
+
 
 ################################################
 ################################################
@@ -630,18 +704,6 @@ class ICommands(BashCommands):
             # 2nd position is the resource in irods ils -l
             resources.append(element[2])
         return resources
-
-    def current_location(self, ifile):
-        """
-        irods://130.186.13.14:1247/cinecaDMPZone/home/pdonorio/replica/test2
-        """
-        protocol = 'irods'
-        URL = "%s://%s:%s%s" % (
-            protocol,
-            self._current_environment['IRODS_HOST'],
-            self._current_environment['IRODS_PORT'],
-            os.path.join(self._base_dir, ifile))
-        return URL
 
     def check(self, path, retcodes=(0, 4)):
         """
@@ -701,10 +763,25 @@ class ICommands(BashCommands):
 #
 # ######################################
 
-# class IMetaCommands(ICommands):
-#     """irods icommands in a class"""
-#     ###################
-#     # METADATA for irods
+class IMetaCommands(ICommands):
+
+    """ irods icommands in a class """
+
+    ###################
+    # METADATA for irods
+
+    def meta_sys_list(self, path):
+        """ Listing file system metadata """
+        com = "isysmeta"
+        args = ['ls']
+        args.append(path)
+        out = self.basic_icom(com, args)
+        metas = {}
+        if out:
+            # print("OUTPUT IS", out)
+            pattern = re.compile("([a-z_]+):\s+([^\n]+)")
+            metas = pattern.findall(out)
+        return metas
 
 #     def meta_command(self, path, action='list', attributes=[], values=[]):
 #         com = "imeta"
@@ -760,18 +837,6 @@ class ICommands(BashCommands):
 #         # if m1 and m2:
 #         #     metas[m1.group(1)] = m2.group(1)
 
-#         return metas
-
-#     def meta_sys_list(self, path):
-#         """ Listing file system metadata """
-#         com = "isysmeta"
-#         args = ['ls']
-#         args.append(path)
-#         out = self.execute_command(com, args)
-#         metas = {}
-#         if out:
-#             pattern = re.compile("([a-z_]+):\s+([^\n]+)")
-#             metas = pattern.findall(out)
 #         return metas
 
 #     def meta_write(self, path, attributes, values):
@@ -987,36 +1052,23 @@ class ICommands(BashCommands):
 
 class IrodsFarm(ServiceFarm):
 
-    def get_token_user(self, token=None):
-        """ Depends on B2ACCESS authentication """
-################
-#// TO FIX:
-# NOT IMPLEMENTED YET
-# this should be recovered from the JWT token
-################
-        if 'IRODS_USER' in os.environ:
-            user = os.environ.get('IRODS_USER')
-
-## // TO FIX:
-        # from ..services.detect import IRODS_EXTERNAL
-        # if IRODS_EXTERNAL:
-            if user == 'rods':
-                user = 'guest'
-        else:
-            user = 'guest'
-        # print("TOKEN IS", token)
-        print("FIXME: Get user from token! For now it's fixed on *%s*" % user)
-        return user
-
     def init_connection(self, app):
         self.get_instance()
         logger.debug("iRODS seems online")
 
-    def get_instance(self, token=None):
-        user = self.get_token_user(token)
-## // TO FIX
-        if user is not None:
-            self._irods = ICommands(user)
+    def get_instance(self, user=None):
+
+        # Default or Admin
+        if user is None:
+            if 'IRODS_USER' in os.environ:
+                user = os.environ.get('IRODS_USER')
+            else:
+                if IRODS_EXTERNAL:
+                    raise KeyError("No iRODS user available")
+                else:
+                    logger.warning("Becoming iRODS admin")
+
+        self._irods = IMetaCommands(user)
         return self._irods
 
     def define_service_name(self):

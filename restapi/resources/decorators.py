@@ -18,11 +18,13 @@ different solutions.
 """
 
 from __future__ import division, absolute_import
-from .. import myself, lic
-from commons.logs import get_logger
+import traceback
+from functools import wraps
 from flask.wrappers import Response
+from commons.logs import get_logger
 from commons import htmlcodes as hcodes
 from commons.meta import Meta
+from .. import myself, lic
 
 __author__ = myself
 __copyright__ = myself
@@ -77,14 +79,17 @@ def add_endpoint_parameter(name, ptype=str, default=None, required=False):
     Another note: you could/should use JSON instead...
     """
     def decorator(func):
+        @wraps(func)
         def wrapper(self, *args, **kwargs):
             # Debug
             class_name = self.__class__.__name__
-            logger.debug("[Class: %s] Decorated to add parameter '%s'"
-                         % (class_name, name))
+            method_name = func.__name__.upper()
+            logger.debug("[Class: %s] %s decorated with parameter '%s'"
+                         % (class_name, method_name, name))
 
             params = {
                 'name': name,
+                'method': method_name,
                 # Check list type? for filters
                 'mytype': ptype,
                 'default': default,
@@ -116,6 +121,7 @@ def apimethod(func):
     Decorate methods to return the most standard json data
     and also to parse available args before using them in the function
     """
+    @wraps(func)
     def wrapper(self, *args, **kwargs):
         # Debug
         class_name = self.__class__.__name__
@@ -123,7 +129,7 @@ def apimethod(func):
         logger.info("[Class: %s] %s request" % (class_name, method_name))
 
         # Call the parse method
-        self.apply_parameters()
+        self.apply_parameters(method_name)
         self.parse()
 
         # Call the wrapped function
@@ -206,12 +212,11 @@ def error_handler(func, self, exception, label, catch_generic, args, kwargs):
     except Exception as e:
         logger.warning(
             "Unexpected exception inside error handler:\n%s" % str(e))
-        import traceback
-        traceback.print_exc()
 
         if not catch_generic:
             raise e
         else:
+            traceback.print_exc()
             return exceptionError(
                 self, default_label, 'Please contact service administrators',
                 code=hcodes.HTTP_SERVER_ERROR)
@@ -226,6 +231,7 @@ def catch_error(
     and catch a specific error.
     """
     def decorator(func):
+        @wraps(func)
         def wrapper(self, *args, **kwargs):
             return error_handler(
                 func, self,

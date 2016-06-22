@@ -68,8 +68,11 @@ class MyGraph(object):
             raise BaseException(
                 "Failed to execute Cypher Query: %s\n%s" % (query, str(e)))
             return False
-        logger.debug("Graph query. Res: %s\nMeta: %s" % (results, meta))
+        logger.debug("Graph query.\nResults: %s\nMeta: %s" % (results, meta))
         return results
+
+    def clean_pending_tokens(self):
+        return self.cypher("MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a")
 
     def inject_models(self, models=[]):
         """ Load models mapping Graph entities """
@@ -133,12 +136,14 @@ class GraphFarm(ServiceFarm):
 
         logger.debug("neomodel: checked labeling on active connection")
 
-    def get_instance(self, models2skip=[]):
+    def get_instance(self, models2skip=[], use_models=True):
 
         if self._graph is None:
             self._graph = MyGraph()
-            self.load_models()
-            # Remove the ones which developers do not want
-            models = set(list(self._models.values())) - set(models2skip)
-            self._graph.inject_models(models)
+            if use_models:
+                self.load_models()
+                # Remove the ones which developers do not want
+                models = set(list(self._models.values())) - set(models2skip)
+                self._graph.inject_models(models)
+
         return self._graph

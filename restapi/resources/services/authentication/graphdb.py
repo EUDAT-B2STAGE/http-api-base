@@ -139,6 +139,10 @@ instead of here
             logger.warning("Token %s not found" % jti)
             return False
 
+    def get_user_from_token(self, user):
+        pass
+
+
     def get_tokens(self, user=None, token_jti=None):
         # TO FIX: TTL should be considered?
 
@@ -178,6 +182,8 @@ instead of here
 
     def invalidate_token(self, user=None, token=None):
         if token is None:
+## // TO FIX:
+## WARNING: this is a global token across different users!
             token = self._latest_token
         if user is None:
             user = self._user
@@ -205,7 +211,7 @@ instead of here
         update our authentication models
         """
 
-        print("CURRENT USER", current_user.__dict__)
+        # print("CURRENT USER", current_user.__dict__)
         email = current_user.data.get('email')
 
         # A graph node for internal accounts associated to oauth2
@@ -236,5 +242,12 @@ instead of here
         b2access_node.save()
         user_node.save()
         user_node.externals.connect(b2access_node)
+
+        # Link the new external account to at least at the very default Role
+        if len(user_node.roles.all()) < 1:
+            logger.debug("Adding default role")
+            role = self.DEFAULT_ROLES[0]
+            role_obj = self._graph.Role.nodes.get(name=role)
+            user_node.roles.connect(role_obj)
 
         return user_node

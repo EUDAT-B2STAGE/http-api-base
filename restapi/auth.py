@@ -64,6 +64,13 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
             return self.verify_token_callback(token)
         return False
 
+    @staticmethod
+    def get_authentication_from_headers():
+        """
+        Returns (auth, token)
+        """
+        return request.headers.get(HTTPAUTH_AUTH_FIELD).split(None, 1)
+
     def login_required(self, f):
         @wraps(f)
         def decorated(*args, **kwargs):
@@ -75,8 +82,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                 # other than Basic or Digest, so here we parse the header by
                 # hand
                 try:
-                    auth_type, token = \
-                        request.headers[HTTPAUTH_AUTH_FIELD].split(None, 1)
+                    auth_type, token = self.get_authentication_from_headers()
                     auth = \
                         Authorization(auth_type, {HTTPAUTH_TOKEN_KEY: token})
                 except ValueError:
@@ -115,8 +121,8 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
 
             # Save token
             if decorated_self is not None:
-                decorated_self.global_get('custom_auth')._latest_token = token
-                # print("SAVE TOKEN", token, decorated_self)
+                decorated_self.set_latest_token(token)
+
             return f(*args, **kwargs)
         return decorated
 

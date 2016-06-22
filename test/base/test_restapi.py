@@ -67,6 +67,11 @@ class TestRestAPI(unittest.TestCase):
         logger.debug('### Tearing down the Flask server ###')
         del self.app
 
+        # Tokens clean up
+        logger.debug("Cleaned up invalid tokens")
+        from restapi.resources.services.neo4j.graph import MyGraph
+        MyGraph().clean_pending_tokens()
+
     def test_01_get_status(self):
         """ Test that the flask server is running and reachable """
 
