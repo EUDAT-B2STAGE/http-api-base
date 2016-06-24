@@ -55,6 +55,10 @@ class IrodsException(RestApiException):
 
         return "A resource already exists with this name"
 
+    def parse_CAT_INVALID_USER(
+            self, utility, error_string, error_code, error_label, role='user'):
+        return "The requested user does not exist on the server"
+
     def parse_CAT_NO_ACCESS_PERMISSION(
             self, utility, error_string, error_code, error_label, role='user'):
         return "Permission denied"
@@ -111,8 +115,6 @@ class IrodsException(RestApiException):
         regExpr = "^ERROR: (.*): (.*)$"
         m = re.search(regExpr, error)
         if m:
-            logger.debug(m)
-
             # es: lsUtil
             utility = m.group(1)
 
@@ -121,6 +123,24 @@ class IrodsException(RestApiException):
             error_string = m.group(2)
 
             return error_string
+
+        # Error example:
+        # ERROR: rcModAccessControl failure  status = -827000 CAT_INVALID_USER
+        regExpr = "ERROR: (.+) status = (-[0-9]+) ([A-Z0-9_]+)"
+        m = re.search(regExpr, error)
+        if m:
+            utility = None
+            error_string = m.group(1)
+            error_code = int(m.group(2))
+            error_label = m.group(3)
+
+            method_name = 'parse_%s' % error_label
+            method = getattr(self, method_name, None)
+            if method is not None:
+                return method(utility, error_string, error_code, error_label)
+
+            return error_label
+
 
         return error
 
