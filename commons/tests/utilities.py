@@ -1,9 +1,15 @@
 import unittest
 import random
 import json
+import string
+import logging
 
+from commons.logs import get_logger
 from restapi.confs.config import TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
 import commons.htmlcodes as hcodes
+
+logger = get_logger(__name__)
+logger.setLevel(logging.DEBUG)
 
 API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
 AUTH_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
@@ -99,6 +105,16 @@ class TestUtilities(unittest.TestCase):
             del partialData[key]
             return partialData
         return None
+
+    def randomString(self, len=16, prefix="TEST:"):
+        rand = random.SystemRandom()
+        charset = string.ascii_uppercase + string.digits
+
+        random_string = prefix
+        for _ in range(len):
+            random_string += rand.choice(charset)
+
+        return random_string
 
     def buildData(self, schema):
         data = {}
