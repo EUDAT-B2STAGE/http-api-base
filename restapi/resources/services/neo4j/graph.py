@@ -117,7 +117,8 @@ class GraphFarm(ServiceFarm):
 
     _graph = None
 
-    def define_service_name(self):
+    @staticmethod
+    def define_service_name():
         return 'neo4j'
 
     def init_connection(self, app):

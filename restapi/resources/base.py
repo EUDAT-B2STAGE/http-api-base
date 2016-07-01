@@ -197,7 +197,7 @@ class ExtendedApiResource(Resource):
         obj = g.get('_%s' % object_name, None)
         if obj is None:
             raise AttributeError(
-                "Global variables: no %s object found!" % object_name)
+                "Global API variables: no %s object found!" % object_name)
         return obj
 
     def global_get_service(self,
@@ -207,7 +207,7 @@ class ExtendedApiResource(Resource):
         obj = services.get(service_name, None)
         if obj is None:
             raise AttributeError(
-                "Global variables: no %s object found!" % object_name)
+                "Global API services: '%s' not found!" % service_name)
         return obj().get_instance(**kwargs)
 
     def response(self, data=None, elements=None,
