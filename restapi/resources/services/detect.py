@@ -67,7 +67,7 @@ if IRODS_AVAILABLE:
 ELASTIC_AVAILABLE = 'EL_NAME' in os.environ
 
 if ELASTIC_AVAILABLE:
-    from .elasticsearch.api import ElasticFarm as service
+    from .elasticsearch.service import ElasticFarm as service
     farm_queue.append(service)
 
 

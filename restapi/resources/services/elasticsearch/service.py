@@ -26,8 +26,14 @@ class BeElastic(object):
 
     def __init__(self):
         super(BeElastic, self).__init__()
-        logger.debug("Trying connection")
         self._connection = Elasticsearch(**ES_SERVICE)
+        logger.debug("Connected")
+
+    def index_up(self, index_name):
+
+        # Create if not exist
+        if not self._connection.indices.exists(index=index_name):
+            self._connection.indices.create(index=index_name, body={})
 
 
 #######################

@@ -11,11 +11,12 @@ GUIDELINES:
 THINGS TO DO:
 
 ☐ Elasticsearch service
- ☐ farm
+ ✔ farm @done (16-07-01 16:18)
  ☐ basic index use
+   ☐ minimum mappings/settings json to create the elasticsearch index
 
 ☐ custom response
- ☐ with a decorator?
+ ☐ within a decorator?
  ☐ default is self.response
  ☐ option to use flask original response
 
