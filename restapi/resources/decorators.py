@@ -15,11 +15,6 @@ http://flask.pocoo.org/docs/0.10/views/#decorating-views
 
 I didn't manage so far to have it working in the way the documentation require.
 
-// TO FIX:
-- Make it a class to customize some internal decorations callbacks
-- Create the instance at the end of the class
-
-
 """
 
 from __future__ import absolute_import
@@ -27,9 +22,11 @@ from __future__ import absolute_import
 import traceback
 from functools import wraps
 from flask.wrappers import Response
-from commons.logs import get_logger
 from commons import htmlcodes as hcodes
+from commons.globals import mem
+from commons.logs import get_logger
 from commons.meta import Meta
+from .base import ExtendedApiResource as api
 
 from .. import myself, lic
 
@@ -38,6 +35,28 @@ __copyright__ = myself
 __license__ = lic
 
 logger = get_logger(__name__)
+
+
+#################################
+# Decide what is the response method for every endpoint
+
+def set_response(original=False, custom_method=None):
+
+    # Set the actual method
+    mem.restapi_response_method = api.response
+
+    # Use identity if requested
+    if original:
+        def identity(*args):
+            return args
+        mem.restapi_response_method = identity
+
+    # Custom method is another option
+    elif custom_method is not None:
+
+# // TO FIX:
+# Should there be some checks here?
+        mem.restapi_response_method = custom_method
 
 
 #################################
@@ -156,22 +175,27 @@ def apimethod(func):
                     code=hcodes.HTTP_BAD_REQUEST)
             raise e
 
+#################
+# UHM
         # DO NOT INTERCEPT 404 or status from other plugins (e.g. security)
+        print("Hello 0")
         if isinstance(out, Response):
             return out
 
         # BASE STATUS?
         status = hcodes.HTTP_OK_BASIC
 
-        # VERY IMPORTANT
-        # DO NOT INTERFERE when
-        # at some level we already provided the couple out/response
+        # VERY IMPORTANT! # DO NOT interfere when
+        # at some other level we already provided the couple out/response
+        print("Hello 1")
         if isinstance(out, tuple) and len(out) == 2:
             subout, status = out
             out = subout
+#################
 
         # Set standards for my response as specified in base.py
-        return out, status
+        print("Hello 2")
+        return mem.restapi_response_method(out), status
 
     return wrapper
 
