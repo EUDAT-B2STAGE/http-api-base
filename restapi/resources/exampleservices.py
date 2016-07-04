@@ -23,7 +23,7 @@ class FooOne(ExtendedApiResource):
 
     @decorate.apimethod
     def get(self):
-        return self.response('Hello world!')
+        return 'Hello world!'
     # Works with request(s) to:
     # GET /api/foo
 
@@ -47,8 +47,7 @@ class FooTwo(ExtendedApiResource):
             key += ' ' + identifier
             logger.info("Using data key '%s'" % identifier)
 
-        obj = {key: 'new endpoint'}
-        return self.response(obj)
+        return {key: 'new endpoint'}
     # Works with requests to:
     # GET /api/another/path
     # GET /api/another/path/:identifier
@@ -81,7 +80,7 @@ class FooThree(ExtendedApiResource):
     @decorate.apimethod
     def get(self):
         logger.debug("Received args %s" % self._args)
-        return self.response(self._args)
+        return self._args
     # Works with requests to:
     # GET /api/another/path?myarg=a
 
@@ -92,6 +91,6 @@ class FooThree(ExtendedApiResource):
     @decorate.apimethod
     def post(self):
         logger.debug("Received args %s" % self._args)
-        return self.response(errors={'something': 'went wrong'})
+        return self.force_response(errors={'something': 'went wrong'})
     # Works with requests to:
     # POST /api/another/path?arg2=3&arg3=test
