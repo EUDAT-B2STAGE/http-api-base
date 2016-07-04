@@ -313,7 +313,9 @@ class ExtendedApiResource(Resource):
         name = inspect.currentframe().f_code.co_name
         logger.warning("Called method '%s' has been DEPRECATED" % name)
         return self.force_response(*args, **kwargs)
-# TO BE REMOVED
+
+    def empty_response(self):
+        return self.force_response("", code=hcodes.HTTP_OK_NORESPONSE)
 
     def report_generic_error(self):
         return self.force_response(

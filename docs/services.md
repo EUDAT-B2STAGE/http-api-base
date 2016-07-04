@@ -53,7 +53,7 @@ class MyAPI(ExtendedApiResource):
     @decorate.apimethod
     def get(self):
         result = migraph.cipher("MATCH (n)")
-        return self.response(result)
+        return result
 ```
 
 Note: Importing the service you will create a graphdb connection.

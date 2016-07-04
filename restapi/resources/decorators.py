@@ -179,7 +179,7 @@ def apimethod(func):
             error = str(e).strip("'")
             logger.critical("Type error: %s" % error)
 
-            # This error can be possible only if using self.response
+            # This error can be possible only if using the default response
             if "required positional argument" in error:
                 return self.default_response(
                     errors={'Type': "FAIL: missing argument"},
@@ -242,7 +242,7 @@ def all_rest_methods(decorator):
 def exceptionError(self, label, e, code=hcodes.HTTP_BAD_REQUEST):
     error = str(e)
     logger.error(error)
-    return self.response(errors={label: error}, code=code)
+    return self.force_response(errors={label: error}, code=code)
 
 
 def error_handler(func, self, exception, label, catch_generic, args, kwargs):
