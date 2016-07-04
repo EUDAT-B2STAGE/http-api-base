@@ -126,9 +126,9 @@ class TestUtilities(unittest.TestCase):
 
             if type == "select":
                 if len(d["options"]) > 0:
-                    value = d["options"].pop(0)["value"]
+                    value = d["options"].pop(0)["id"]
                 else:
-                    value = ""
+                    value = "NOT_FOUND"
             elif type == "int":
                 value = random.randrange(0, 1000, 1)
             else:
@@ -136,6 +136,26 @@ class TestUtilities(unittest.TestCase):
 
             data[key] = value
 
+        return data
+
+    def applyTroubles(self, data, trouble_type):
+
+        if trouble_type == 'EMPTY_STRING':
+            return ""
+
+        if trouble_type == 'EXTERNAL_DOUBLE_QUOTES':
+            return '%s%s%s' % ("\"", data, "\"")
+        if trouble_type == 'EXTERNAL_SINGLE_QUOTES':
+            return '%s%s%s' % ("\'", data, "\'")
+        if trouble_type == 'INTERNAL_DOUBLE_QUOTES':
+            return '%s%s%s' % ("PRE_\"", data, "\"_POST")
+        if trouble_type == 'INTERNAL_SINGLE_QUOTES':
+            return '%s%s%s' % ("PRE_\'", data, "\'_POST")
+
+        if trouble_type == 'NEGATIVE_NUMBER':
+            return -42
+
+        self.assertFalse("Unexpected trouble type: %s" % trouble_type)
         return data
 
     def parseResponse(self, response, inner=False):
@@ -273,6 +293,9 @@ class TestUtilities(unittest.TestCase):
 
         self.assertEqual(r.status_code, status)
 
+        if status == NO_CONTENT:
+            return None
+
         content = json.loads(r.data.decode('utf-8'))
 
         # In this case the response is returned by Flask
@@ -320,3 +343,57 @@ class TestUtilities(unittest.TestCase):
             DELETE, endpoint, headers, status,
             data=data, error=error
         )
+
+    def _test_troublesome_create(self, endpoint, headers, schema,
+                                 status_configuration={},
+                                 delete_endpoint=None):
+
+        troublesome_tests = {}
+        troublesome_tests["EXTERNAL_DOUBLE_QUOTES"] = ["text", OK]
+        troublesome_tests["EXTERNAL_SINGLE_QUOTES"] = ["text", OK]
+        troublesome_tests["INTERNAL_DOUBLE_QUOTES"] = ["text", OK]
+        troublesome_tests["INTERNAL_SINGLE_QUOTES"] = ["text", OK]
+        troublesome_tests["EMPTY_STRING"] = ["text", OK]
+        troublesome_tests["NEGATIVE_NUMBER"] = ["int", OK]
+
+        data = self.buildData(schema)
+
+        for trouble_type in troublesome_tests:
+
+            t_type = troublesome_tests[trouble_type][0]
+            t_status = troublesome_tests[trouble_type][1]
+
+            newdata = data.copy()
+            t_found = False
+
+            for s in schema:
+                if s["required"] != "true":
+                    continue
+                if s["type"] != t_type:
+                    continue
+
+                field_key = s["key"]
+                trouble = self.applyTroubles(data[field_key], trouble_type)
+                newdata[field_key] = trouble
+                t_found = True
+
+            if not t_found:
+                print(
+                    "\t *** SKIPPING TEST %s - type %s not found" %
+                    (trouble_type, t_type))
+                continue
+
+            print("\t *** TESTING %s " % trouble_type)
+
+            status = t_status
+            error = {}
+
+            id = self._test_create(
+                endpoint, headers, newdata, status, error)
+
+            if delete_endpoint is None:
+                tmp_ep = "%s/%s" % (endpoint, id)
+            else:
+                tmp_ep = "%s/%s" % (delete_endpoint, id)
+
+            self._test_delete(tmp_ep, headers, NO_CONTENT)
