@@ -126,7 +126,7 @@ class TestUtilities(unittest.TestCase):
 
             if type == "select":
                 if len(d["options"]) > 0:
-                    value = d["options"].pop(0)["id"]
+                    value = d["options"][0]["id"]
                 else:
                     value = "NOT_FOUND"
             elif type == "int":
