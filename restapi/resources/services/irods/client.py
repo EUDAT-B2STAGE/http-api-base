@@ -1072,6 +1072,10 @@ class IMetaCommands(ICommands):
 
 class IrodsFarm(ServiceFarm):
 
+    @staticmethod
+    def define_service_name():
+        return 'irods'
+
     def init_connection(self, app):
         self.get_instance()
         logger.debug("iRODS seems online")
@@ -1090,6 +1094,3 @@ class IrodsFarm(ServiceFarm):
 
         self._irods = IMetaCommands(user)
         return self._irods
-
-    def define_service_name(self):
-        return 'irods'

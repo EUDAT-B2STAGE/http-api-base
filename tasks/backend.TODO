@@ -7,31 +7,26 @@ GUIDELINES:
    - Neo4j graphdb
    - Elasticsearch
    - Irods virtual resources
-   - Rethinkdb: nosql json + joins + changefeed
 
-### protocol specifications?
-https://github.com/ga4gh/mme-apis/blob/v1.0a/search-api.md
-### error handling?
-https://www.youtube.com/watch?v=8kTlzR4HhWo
+THINGS TO DO:
 
+✔ Elasticsearch service @done (16-07-01 16:42)
+ ✔ farm @done (16-07-01 16:18)
+ ✔ basic index use @done (16-07-01 16:42)
+   ✔ minimum mappings/settings json to create the elasticsearch index @done (16-07-01 16:42)
 
---- ✄ -----------------------
-Token:
-
-☐ JWT refactor content
-  ☐ Set and check TTL
-☐ profile endpoint
-✘ refresh token / oauth standards @cancelled (16-06-12 15:27)
-
-☐ loading graph models at every request?
+☐ custom response
+ ☐ within a decorator?
+   ☐ make decorate file a class of methods
+ ☐ default is self.response
+ ☐ option to use flask original response
 
 ☐ commons (for restangulask)
-  ✔ Meta @done (16-05-31 15:33)
-  ✔ HtmlCodes @done (16-05-31 23:31)
-  ✔ Users/models? @done (16-06-07 07:58)
-  ☐ Logs
-  ☐ The secret at startup
+ ☐ move services (containers) confs?
+ ☐ a secret for the server at startup
+   ☐ to be generated with file if in production
 
 ☐ from jinja2._compat import iteritems... @compatibility
 
 ☐ Role required decorator?
+ ☐ for internal endpoints

@@ -115,9 +115,14 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                     request.data
                     headers = {
                         HTTPAUTH_AUTH_HEADER: self.authenticate_header()}
-                    return decorated_self.response(
+
+                    # Mimic the response from a normal endpoint
+                    # To use the same standards
+                    return decorated_self.force_response(
                         errors={"Invalid token": "Received '%s'" % token},
-                        headers=headers, code=hcodes.HTTP_BAD_UNAUTHORIZED)
+                        headers=headers,
+                        code=hcodes.HTTP_BAD_UNAUTHORIZED
+                    )
 
             # Save token
             if decorated_self is not None:

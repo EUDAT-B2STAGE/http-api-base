@@ -23,7 +23,8 @@ class SQLFarm(ServiceFarm):
 
     _db = None
 
-    def define_service_name(self):
+    @staticmethod
+    def define_service_name():
         return 'sql'
 
     def init_connection(self, app):

@@ -1,29 +1,31 @@
 # -*- coding: utf-8 -*-
 
 """
+
 Decorating my REST API resources.
 
-Decorate is a cool but dangerous place in Python i guess.
-Here i am testing different kind of decorations for different problems.
+Decorate is a cool but sometimes dangerous place in Python, I guess.
+Here we test different kind of decorations for different problems.
 
-YET TO TEST: from functools import wraps
-
-Restful resources are Flask Views classes. Docs talks about their decoration:
+Restful resources are Flask Views classes.
+Official docs talks about their decoration:
 http://flask-restful.readthedocs.org/en/latest/extending.html#resource-method-decorators
 So... you should also read better this section of Flask itself:
 http://flask.pocoo.org/docs/0.10/views/#decorating-views
 
-I didn't manage to have it play the way docs require, so i tested some slightly
-different solutions.
+I didn't manage so far to have it working in the way the documentation require.
+
 """
 
-from __future__ import division, absolute_import
+from __future__ import absolute_import
+
 import traceback
 from functools import wraps
-from flask.wrappers import Response
-from commons.logs import get_logger
 from commons import htmlcodes as hcodes
+from commons.globals import mem
+from commons.logs import get_logger
 from commons.meta import Meta
+
 from .. import myself, lic
 
 __author__ = myself
@@ -31,6 +33,42 @@ __copyright__ = myself
 __license__ = lic
 
 logger = get_logger(__name__)
+
+RESPONSE_CONTENT_KEY = 'defined_content'
+
+
+#################################
+# Identity is usefull to some (very) extreme decorators cases
+
+def identity(*args):
+    """
+    Expecting no keywords arguments
+
+# // TO CHECK
+
+    """
+    return args
+
+
+#################################
+# Decide what is the response method for every endpoint
+
+def set_response(original=False, custom_method=None):
+
+    # Use identity if requested
+    if original:
+        mem.current_response = identity
+
+    # Custom method is another option
+    elif custom_method is not None:
+# // TO FIX:
+# Should there be some checks here?
+# this method should take data, code, headers
+        mem.current_response = custom_method
+
+
+def get_response():
+    return mem.current_response
 
 
 #################################
@@ -128,43 +166,52 @@ def apimethod(func):
         method_name = func.__name__.upper()
         logger.info("[Class: %s] %s request" % (class_name, method_name))
 
-        # Call the parse method
+        # Load the right parameters that were decorated
         self.apply_parameters(method_name)
+        # Call the parse method
         self.parse()
 
         # Call the wrapped function
         try:
             out = func(self, *args, **kwargs)
-        # except KeyError as e:
-        #     error = str(e).strip("'")
-        #     logger.critical("Key error: %s" % error)
-        #     raise e
         except TypeError as e:
             logger.warning(e)
             error = str(e).strip("'")
             logger.critical("Type error: %s" % error)
+
+            # This error can be possible only if using the default response
             if "required positional argument" in error:
-                return self.response(
+                return self.default_response(
                     errors={'Type': "FAIL: missing argument"},
                     code=hcodes.HTTP_BAD_REQUEST)
             raise e
 
-        # DO NOT INTERCEPT 404 or status from other plugins (e.g. security)
-        if isinstance(out, Response):
+        # Do not intercept if it's already a Flask Response:
+        # Avoids doubles and doesn't interfere with Flask plugins
+        if self.check_response(out):
             return out
+        # Make sure it has the content key if it's a dictionary
+        if isinstance(out, dict):
+            if RESPONSE_CONTENT_KEY not in out:
+                out = {RESPONSE_CONTENT_KEY: out}
+        else:
+            out = {RESPONSE_CONTENT_KEY: out}
 
-        # BASE STATUS?
-        status = hcodes.HTTP_OK_BASIC
-
-        # VERY IMPORTANT
-        # DO NOT INTERFERE when
-        # at some level we already provided the couple out/response
-        if isinstance(out, tuple) and len(out) == 2:
-            subout, status = out
-            out = subout
+        ########################################
+        # Make a Flask Response
 
         # Set standards for my response as specified in base.py
-        return out, status
+        make_response = get_response()
+
+        # Convert output
+        response = make_response(**out)
+
+        # Verify if a custom function broke the Flask rules
+        if not self.check_response(response):
+            logger.critical("Custom response did not return a Flask Response!")
+            return self.report_generic_error()
+
+        return response
 
     return wrapper
 
@@ -195,7 +242,7 @@ def all_rest_methods(decorator):
 def exceptionError(self, label, e, code=hcodes.HTTP_BAD_REQUEST):
     error = str(e)
     logger.error(error)
-    return self.response(errors={label: error}, code=code)
+    return self.force_response(errors={label: error}, code=code)
 
 
 def error_handler(func, self, exception, label, catch_generic, args, kwargs):

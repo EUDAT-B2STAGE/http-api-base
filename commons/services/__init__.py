@@ -110,8 +110,9 @@ class ServiceFarm(metaclass=abc.ABCMeta):
         logger.debug("Loaded service models")
         return self._models
 
+    @staticmethod
     @abc.abstractmethod
-    def define_service_name(self):
+    def define_service_name():
         """
         Please define a name for the current implementation
         """
