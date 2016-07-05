@@ -85,7 +85,7 @@ class Login(ExtendedApiResource):
 
         # The right response should be the following
         # Just remove the simple response above
-        return self.response({
+        return self.force_response({
                              'access_token': token,
                              'token_type': auth.token_type
                              })
@@ -117,7 +117,7 @@ class Tokens(ExtendedApiResource):
         auth = self.global_get('custom_auth')
         tokens = auth.get_tokens(user=auth._user)
         if token_id is None:
-            return self.response(tokens)
+            return self.force_response(tokens)
 
         for token in tokens:
             if token["id"] == token_id:
@@ -236,4 +236,4 @@ class Profile(ExtendedApiResource):
 # # // TO FIX:
 #     # @roles_required(config.ROLE_ADMIN)
 #     def get(self):
-#         return self.response("I am admin!")
+#         return self.force_response("I am admin!")
