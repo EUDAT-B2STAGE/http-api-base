@@ -170,9 +170,18 @@ def create_app(name=__name__,
 
         from commons.logs import obscure_passwords
 
+        data = obscure_passwords(request.data)
+
+        # Shrink too long data in log output
+        for k in data:
+            if not isinstance(data[k], str):
+                continue
+            if len(data[k]) > 255:
+                data[k] = data[k][:255] + "..."
+
         logger.info("{} {} {} {}".format(
                     request.method, request.url,
-                    obscure_passwords(request.data), response))
+                    data, response))
         return response
 
     ##############################
