@@ -53,7 +53,7 @@ def identity(*args):
 #################################
 # Decide what is the response method for every endpoint
 
-def set_response(original=False, custom_method=None):
+def set_response(original=False, custom_method=None, first_call=False):
 
     # Use identity if requested
     if original:
@@ -61,14 +61,19 @@ def set_response(original=False, custom_method=None):
 
     # Custom method is another option
     elif custom_method is not None:
-# // TO FIX:
-# Should there be some checks here?
-# this method should take data, code, headers
         mem.current_response = custom_method
+
+    # Debug when response is injected
+    if not first_call:
+        logger.info("Response is '%s'" % mem.current_response)
 
 
 def get_response():
     return mem.current_response
+
+
+def custom_response(func):
+    set_response(original=False, custom_method=func)
 
 
 #################################
@@ -208,8 +213,9 @@ def apimethod(func):
 
         # Verify if a custom function broke the Flask rules
         if not self.check_response(response):
-            logger.critical("Custom response did not return a Flask Response!")
-            return self.report_generic_error()
+            return self.report_generic_error(
+                "Custom response did not return a Flask Response!",
+                current_response_available=False)
 
         return response
 

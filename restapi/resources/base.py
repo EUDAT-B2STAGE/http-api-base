@@ -46,7 +46,6 @@ class ExtendedApiResource(Resource):
             'application/json': output_json,
         }
 
-        set_response(original=False, custom_method=self.default_response)
         # Init for DEFAULT latest response
         self._latest_response = {
             RESPONSE_CONTENT: None,
@@ -317,10 +316,18 @@ class ExtendedApiResource(Resource):
     def empty_response(self):
         return self.force_response("", code=hcodes.HTTP_OK_NORESPONSE)
 
-    def report_generic_error(self):
-        return self.force_response(
-            errors={"Failed": "Server unable to respond your request."},
-            code=hcodes.HTTP_SERVER_ERROR)
+    def report_generic_error(self, message=None, current_response_available=True):
+
+        if message is None:
+            message = "Something BAD happened somewhere..."
+        logger.critical(message)
+
+        user_message = "Server unable to respond."
+        code = hcodes.HTTP_SERVER_ERROR
+        if current_response_available:
+            return self.force_response(user_message, code=code)
+        else:
+            return self.flask_response(user_message, status=code)
 
     @staticmethod
     def check_response(response):
@@ -462,3 +469,8 @@ class ExtendedApiResource(Resource):
                 data['relationships'] = linked
 
         return data
+
+# Set default response
+set_response(
+    original=False,  # first_call=True,
+    custom_method=ExtendedApiResource().default_response)
