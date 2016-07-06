@@ -170,7 +170,6 @@ def create_app(name=__name__, avoid_context=False,
     def log_response(response):
 
         from commons.logs import obscure_passwords
-        print(request.data)
 
         try:
             data = obscure_passwords(request.data)
