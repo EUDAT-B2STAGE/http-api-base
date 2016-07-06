@@ -77,9 +77,8 @@ if ELASTIC_AVAILABLE:
 CELERY_AVAILABLE = 'QUEUE_NAME' in os.environ
 
 if CELERY_AVAILABLE:
-    pass
-    # from .elasticsearch.service import ElasticFarm as service
-    # farm_queue.append(service)
+    from .celery.tasks import CeleryFarm as service
+    farm_queue.append(service)
 
 
 #####################################
