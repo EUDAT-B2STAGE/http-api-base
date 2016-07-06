@@ -54,8 +54,9 @@ https://github.com/pallets/flask/wiki/Large-app-how-to
 ########################
 # Flask App factory    #
 ########################
-def create_app(name=__name__,
-               enable_security=True, debug=False, testing=False, **kwargs):
+def create_app(name=__name__, avoid_context=False,
+               enable_security=True, skip_endpoint_mapping=False,
+               debug=False, testing=False, **kwargs):
     """ Create the server istance for Flask application """
 
     #################################################
@@ -140,26 +141,28 @@ def create_app(name=__name__,
 
     ##############################
     # Restful plugin
-    from .rest import Api, EndpointsFarmer, create_endpoints
-    # Defining AUTOMATIC Resources
-    current_endpoints = \
-        create_endpoints(EndpointsFarmer(Api), enable_security, debug)
-    # Restful init of the app
-    current_endpoints.rest_api.init_app(microservice)
+    if not skip_endpoint_mapping:
+        from .rest import Api, EndpointsFarmer, create_endpoints
+        # Defining AUTOMATIC Resources
+        current_endpoints = \
+            create_endpoints(EndpointsFarmer(Api), enable_security, debug)
+        # Restful init of the app
+        current_endpoints.rest_api.init_app(microservice)
 
     ##############################
     # Init objects inside the app context
-    with microservice.app_context():
+    if not avoid_context:
+        with microservice.app_context():
 
-        # Note:
-        # Databases are already initialized inside the instances farm
-        # Outside of the context
-        # p.s. search inside this file for 'myclass('
+            # Note:
+            # Databases are already initialized inside the instances farm
+            # Outside of the context
+            # p.s. search inside this file for 'myclass('
 
-        # Init users/roles for Security
-        if enable_security:
-            custom_auth.setup_secret(microservice.config['SECRET_KEY'])
-            custom_auth.init_users_and_roles()
+            # Init users/roles for Security
+            if enable_security:
+                custom_auth.setup_secret(microservice.config['SECRET_KEY'])
+                custom_auth.init_users_and_roles()
 
     ##############################
     # Logging responses

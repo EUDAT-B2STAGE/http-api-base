@@ -34,11 +34,13 @@ def my_cli_arguments():
 
 args = None
 default_debug = False
+
 is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
 is_nose = "nose" in sys.modules.keys()
 is_nose2 = "nose2" in sys.modules.keys()
+is_celery = "celery" in sys.modules.keys()
 
-if not is_gunicorn and not is_nose and not is_nose2:
+if not is_gunicorn and not is_nose and not is_nose2 and not is_celery:
     args = my_cli_arguments()
     default_debug = args.debug
 

@@ -36,7 +36,7 @@ if args is not None:
 #############################
 # BE FLASK
 app = create_app(
-    name='API', enable_security=enable_security, debug=enable_debug)
+    name='REST_API', enable_security=enable_security, debug=enable_debug)
 
 if __name__ == "__main__":
     # Note: 'threaded' option avoid to see

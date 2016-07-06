@@ -71,6 +71,16 @@ if ELASTIC_AVAILABLE:
     farm_queue.append(service)
 
 
+#######################################################
+# REDIS for CELERY TASKS QUEUE
+
+CELERY_AVAILABLE = 'QUEUE_NAME' in os.environ
+
+if CELERY_AVAILABLE:
+    from .celery.tasks import CeleryFarm as service
+    farm_queue.append(service)
+
+
 #####################################
 #####################################
 
