@@ -40,14 +40,15 @@ RESPONSE_CONTENT_KEY = 'defined_content'
 #################################
 # Identity is usefull to some (very) extreme decorators cases
 
-def identity(*args):
+def identity(*args, **kwargs):
     """
     Expecting no keywords arguments
 
 # // TO CHECK
 
     """
-    return args
+    kwargs['content'] = args
+    return kwargs
 
 
 #################################
@@ -72,8 +73,8 @@ def get_response():
     return mem.current_response
 
 
-def custom_response(func):
-    set_response(original=False, custom_method=func)
+def custom_response(func=None, original=False):
+    set_response(original=original, custom_method=func)
 
 
 #################################

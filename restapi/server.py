@@ -8,10 +8,8 @@ We create all the components here!
 from __future__ import absolute_import
 
 import os
-from flask import Flask, request, g  # , jsonify, got_request_exception
-# from .jsonify import make_json_error
-# from werkzeug.exceptions import default_exceptions
-# from .jsonify import log_exception, RESTError
+import json
+from flask import Flask, request, g
 from commons.meta import Meta
 from . import myself, lic
 from commons.logs import get_logger
@@ -169,8 +167,12 @@ def create_app(name=__name__,
     def log_response(response):
 
         from commons.logs import obscure_passwords
+        print(request.data)
 
-        data = obscure_passwords(request.data)
+        try:
+            data = obscure_passwords(request.data)
+        except json.decoder.JSONDecodeError:
+            data = request.data
 
         # Shrink too long data in log output
         for k in data:
