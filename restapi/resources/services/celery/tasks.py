@@ -17,31 +17,13 @@ def my_async_task(arg):
 
 """
 
-from __future__ import absolute_import
+# from __future__ import absolute_import
 
-import os
-from celery import Celery
-from commons.logs import get_logger
 from commons.services import ServiceFarm
+from commons.services.celery import celery_app
+from commons.logs import get_logger
 
 logger = get_logger(__name__)
-
-REDIS_HOST = os.environ.get('QUEUE_NAME').split('/')[::-1][0]
-REDIS_PORT = int(os.environ.get('QUEUE_PORT').split(':')[::-1][0])
-REDIS_BROKER_URL = 'redis://%s:%s/0' % (REDIS_HOST, REDIS_PORT)
-
-celery_app = Celery(
-    'RestApiQueue',
-    backend=REDIS_BROKER_URL,
-    # backend=app.config['CELERY_BACKEND'],
-    broker=REDIS_BROKER_URL,
-    # broker=app.config['CELERY_BROKER_URL']
-)
-
-# Skip initial warnings, avoiding pickle
-celery_app.conf.CELERY_ACCEPT_CONTENT = ['json']
-celery_app.conf.CELERY_TASK_SERIALIZER = 'json'
-celery_app.conf.CELERY_RESULT_SERIALIZER = 'json'
 
 
 class MyCelery(object):
@@ -81,7 +63,7 @@ class CeleryFarm(ServiceFarm):
 
 # // TO FIX:
         # Should we check also the REDIS connection?
-        # Or celery is going to give us error if that does not work?
+        # Or is celery going to give us error if that does not work?
 
         # self._flask_app = app
         celery = self.get_instance(app)
