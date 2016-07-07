@@ -98,3 +98,131 @@ To test endpoint behaviours when receiving partial data you can use the getParti
 	
 This method takes as input both json schema and built data and remove one of the required fields
 
+### Test endpoints with specific conditions
+
+You can test your endpoints by simulating your own conditions by using the utility methods: 
+ - _test_get
+ - _test_create
+ - _test_update
+ - _test_delete
+  
+All methods take as input the endpoint, the headers (should be made optional, now is a required input) and a return status. As optional a returned errors can also be provided. 
+Create and update also require a pre-built data dictionary. 
+As option delete can take as input the data dictionary.
+
+This utility returns a response content (content['Response']['data'])3
+When parse_response=True, the returned response is parsed using self.parseResponse mnethod
+
+This utility tests the returned status code. If it matches and the response has a content (status != NO_CONTENT) and an error is provided, it is matched against content['Response']['errors']
+
+If requested the returned responses is parsed using the parseResponse utility
+
+### Parsed response
+
+To test and simplify the access to json-standard-responses (as described in http://jsonapi.org) thid method create an Object filled with attributes obtained by mapping json content
+
+obj = ParsedResponse()
+obj._id = response["id"]
+obj._type = response["type"]
+obj._links = response["links"]
+obj.attributes.item1Key = response["attributes"][item1Key]
+obj.attributes.item2Key = response["attributes"][item2Key]
+obj._relatedItem1 = recursiveCallOnInnerElement(response["relationships"][relatedItem1]
+obj._relatedItem2 = recursiveCallOnInnerElement(response["relationships"][relatedItem2]
+
+Example:
+
+INPUT:
+
+	{
+                "attributes": {
+                    "access_type": "inherit", 
+                    "accession": "CRD00000013493", 
+                    "created": "1466659830", 
+                    "description": "test", 
+                    "modified": "1467103075", 
+                    "name": "My name", 
+                    "nfiles": 0
+                }, 
+                "id": "1724c562-8cab-4178-8b19-3823e1725d46", 
+                "relationships": {
+                    "ownership": [
+                        {
+                            "attributes": {
+                                "email": "myself@myemail.com", 
+                                "name": "MyName", 
+                                "surname": "MySurname"
+                            }, 
+                            "id": "-", 
+                            "type": "user"
+                        }
+                    ],
+                    "sample": [
+                        {
+                            "attributes": {
+                                "accession": "CRN00000014466", 
+                                "age": 89, 
+                                "cell": "-", 
+                                "description": "sample descr", 
+                                "name": "sample name", 
+                                "tissue": "-"
+                            }, 
+                            "id": "716e0883-2459-4136-88bd-88aaaece35fd", 
+                            "relationships": {
+                                "father": [], 
+                                "mother": [], 
+                                "organism": [
+                                    {
+                                        "attributes": {
+                                            "common_name": "House mouse", 
+                                            "scientific_name": "Mus Musculus", 
+                                            "short_name": "mouse", 
+                                            "taxon_id": 10090
+                                        }, 
+                                        "id": "-", 
+                                        "type": "organism"
+                                    }
+                                ], 
+                                "son": []
+                            }, 
+                            "type": "sample"
+                        }
+                    ], 
+                }, 
+                "type": "dataset"
+        }
+            
+            
+            
+OUTPUT:
+
+	obj.type = "dataset"
+	obj.id = "1724c562-8cab-4178-8b19-3823e1725d46"
+	obj.attributes.access_type = "inherit"
+	obj.attributes.accession = "CRD00000013493"
+	obj.attributes.created = "1466659830"
+	obj.attributes.description = "test"
+	obj.attributes.modified = "1467103075"
+	obj.attributes.name = My name"
+	obj.attributes.nfiles= 0
+	
+	obj._ownership.type = "user"
+	obj._ownership.id = "-"
+	obj._ownership.attributes.email = "myself@myemail.com"
+	obj._ownership.attributes.name = "MyName"
+	obj._ownership.attributes.surname = "MySurname"
+	
+	obj._sample.type = "sample"
+	obj._sample.id = "716e0883-2459-4136-88bd-88aaaece35fd"
+	obj._sample.attributes.accession = "CRN00000014466"
+	obj._sample.attributes.age = 89, 
+	obj._sample.attributes.cell = "-"
+	obj._sample.attributes.description = "sample descr"
+	obj._sample.attributes.name = "sample name"
+	obj._sample.attributes.tissue = "-"
+	obj._sample._organism.type = "organism"
+	obj._sample._organism.id = "-"
+	obj._sample._organism.attributes.common_name = "House mouse"
+	obj._sample._organism.attributes.scientific_name = "Mus Musculus"
+	obj._sample._organism.attributes.short_name = "mouse"
+	obj._sample._organism.attributes.taxon_id = 10090
