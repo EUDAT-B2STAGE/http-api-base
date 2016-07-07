@@ -363,6 +363,10 @@ class ExtendedApiResource(Resource):
 
         return response
 
+    @staticmethod
+    def timestamp_from_string(timestamp_string):
+        return datetime.fromtimestamp(float(timestamp_string))
+
     def formatJsonResponse(self, instances, resource_type=None):
         """
             Format specifications can be found here:
