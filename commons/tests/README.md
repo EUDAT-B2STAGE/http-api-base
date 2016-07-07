@@ -226,3 +226,26 @@ OUTPUT:
 	obj._sample._organism.attributes.scientific_name = "Mus Musculus"
 	obj._sample._organism.attributes.short_name = "mouse"
 	obj._sample._organism.attributes.taxon_id = 10090
+
+### Verify the content of the response
+
+You can verify that the response returned by your endpoint, contains expected field and relationships by using the checkResponse utility (a parsed response is required as input)
+
+	response = self._test_get(endpoint, headers, OK)
+	required_fields = ['accession', 'name', 'description', 'nfiles', 'created', 'modified', 'access_type']
+	required_relationships = ['ownership', 'sample']
+	self.checkResponse(response, required_fields, required_relationships)
+	
+### Automatic verification of troublesome conditions
+
+Based on the input field type POST and PUT method can be can be overwhelmed by particular inputs (for example strings contained quotes or very long numbers)
+
+Based on the input type described in the json schema, the _test_troublesome_create utility can verify the behaviour on an endpoint when such conditions occur. This method expect specific status codes for each trouble test but expected status code can be overwritten by providing a status_configuration dictionary.
+When POST calls return a 200 OK PUT and DELETE are also called
+
+	# Overwrite expected status code for NEGATIVE_NUMBER and LONG_NUMBER tests
+	status_conf = {}
+	status_conf["NEGATIVE_NUMBER"] = BAD_REQUEST
+	status_conf["LONG_NUMBER"] = BAD_REQUEST
+	
+	self._test_troublesome_create(my_endpoint, headers, schema, status_conf)
