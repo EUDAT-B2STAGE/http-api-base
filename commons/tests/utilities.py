@@ -19,6 +19,7 @@ POST = 'POST'
 PUT = 'PUT'
 DELETE = 'DELETE'
 
+# Status aliases used to shorten method calls
 OK = hcodes.HTTP_OK_BASIC                           # 200
 NO_CONTENT = hcodes.HTTP_OK_NORESPONSE              # 204
 BAD_REQUEST = hcodes.HTTP_BAD_REQUEST               # 400
@@ -28,6 +29,7 @@ NOTFOUND = hcodes.HTTP_BAD_NOTFOUND                 # 404
 NOT_ALLOWED = hcodes.HTTP_BAD_METHOD_NOT_ALLOWED    # 405
 CONFLICT = hcodes.HTTP_BAD_CONFLICT                 # 409
 
+# This error is returned by Flask when a method is not implemented [405 status]
 NOT_ALLOWED_ERROR = {
     'message': 'The method is not allowed for the requested URL.'
 }
@@ -40,7 +42,10 @@ class ParsedResponse(object):
 class TestUtilities(unittest.TestCase):
 
     def save(self, variable, value, read_only=False):
-
+        """
+            Save a variable in the class, to be re-used in further tests
+            In read_only mode the variable cannot be rewritten
+        """
         if hasattr(self.__class__, variable):
             data = getattr(self.__class__, variable)
             if "read_only" in data and data["read_only"]:
@@ -52,6 +57,9 @@ class TestUtilities(unittest.TestCase):
         setattr(self.__class__, variable, data)
 
     def get(self, variable):
+        """
+            Retrieve a previously stored variable using the .save method
+        """
         if not hasattr(self.__class__, variable):
             return None
 
@@ -61,6 +69,9 @@ class TestUtilities(unittest.TestCase):
         return None
 
     def do_login(self, USER, PWD):
+        """
+            Make login and return both token and authorization header
+        """
 
         r = self.app.post(AUTH_URI + '/login',
                           data=json.dumps({
@@ -94,17 +105,6 @@ class TestUtilities(unittest.TestCase):
         content = json.loads(r.data.decode('utf-8'))
         return content['Response']['data']
 
-    def getPartialData(self, schema, data):
-        partialData = data.copy()
-        for d in schema:
-            if not d['required']:
-                continue
-
-            key = d["key"]
-
-            del partialData[key]
-            return partialData
-        return None
 
     def randomString(self, len=16, prefix="TEST:"):
         if len > 500000:
@@ -121,6 +121,22 @@ class TestUtilities(unittest.TestCase):
         return random_string
 
     def buildData(self, schema):
+        """
+            Taking as input a json schema returns a dictionary of random data
+            expected json schema:
+            schema = [
+                {
+                    "key": "unique-key-name-of-this-field",
+                    "type": "text/int/select",
+                    "required": "true/false",
+                    "options": [
+                        {"id": "OptionID", "value": "OptionValue"},
+                        ...
+                    ]
+                },
+                ...
+            ]
+        """
         data = {}
         for d in schema:
 
@@ -142,14 +158,38 @@ class TestUtilities(unittest.TestCase):
 
         return data
 
+    def getPartialData(self, schema, data):
+        """
+            Following directives contained in the json schema and
+            taking as input a pre-built data dictionary, this method
+            remove one of the required fields from data
+        """
+        partialData = data.copy()
+        for d in schema:
+            if not d['required']:
+                continue
+
+            key = d["key"]
+
+            del partialData[key]
+            return partialData
+        return None
+
     def parseResponse(self, response, inner=False):
+        """
+            This method is used to verify and simplify the access to
+            json-standard-responses. It returns an Object filled
+            with attributes obtained by mapping json content.
+            This is a recursive method, the inner flag is used to
+            distinguish further calls on inner elements.
+        """
+
+        if response is None:
+            return None
 
         # OLD RESPONSE, NOT STANDARD-JSON
         if not inner and isinstance(response, dict):
             return response
-
-        if response is None:
-            return None
 
         data = []
 
@@ -159,8 +199,10 @@ class TestUtilities(unittest.TestCase):
             self.assertIsInstance(element, dict)
             self.assertIn("id", element)
             self.assertIn("type", element)
-            # self.assertIn("links", element)
             self.assertIn("attributes", element)
+            # # links is optional -> don't test
+            # self.assertIn("links", element)
+            # # relationships is optional -> don't test
             # self.assertIn("relationships", element)
 
             newelement = ParsedResponse()
@@ -207,6 +249,17 @@ class TestUtilities(unittest.TestCase):
                        private_post=None,
                        private_put=None,
                        private_delete=None):
+
+        """
+            Makes standard tests on endpoint
+            private=False   -> test the method exists
+                                    GET -> 200 OK
+                                    POST/PUT/DELETE -> 400 BAD REQUEST
+            private=True    -> test the method exists and requires a token
+                                    no token -> 401 UNAUTHORIZED
+                                    with token -> 200 OK / 400 BAD REQUEST
+            private=None    -> test the method do not exist -> 405 NOT ALLOWED
+        """
 
         # # # TEST GET # # #
         r = self.app.get(API_URI + '/' + endpoint)
@@ -260,6 +313,15 @@ class TestUtilities(unittest.TestCase):
     def _test_method(self, method, endpoint, headers,
                      status, parse_response=False,
                      data=None, error={}):
+
+        """
+            Test a method (GET/POST/PUT/DELETE) on a given endpoint
+            and verifies status error and optionally the returned error
+            (disabled when error=None)
+            It returns content['Response']['data']
+            when parse_response=True the returned response
+            is parsed using self.parseResponse mnethod
+        """
 
         if data is not None:
             data = json.dumps(data)
@@ -331,6 +393,17 @@ class TestUtilities(unittest.TestCase):
     def _test_troublesome_create(self, endpoint, headers, schema,
                                  status_configuration={},
                                  second_endpoint=None):
+        """
+            Test several troublesome conditions based on field types
+                (obtained from json schema)
+            If POST call returns a 200 OK PUT and DELETE are also called
+
+            returned status code can be overwritten by providing a
+                status_configuration dictionary, e.g:
+                    status_conf = {}
+                    status_conf["NEGATIVE_NUMBER"] = BAD_REQUEST
+                    status_conf["LONG_NUMBER"] = BAD_REQUEST
+        """
 
         troublesome_tests = {}
         troublesome_tests["EXTERNAL_DOUBLE_QUOTES"] = ["text", OK]
@@ -409,6 +482,11 @@ class TestUtilities(unittest.TestCase):
             self._test_delete(tmp_ep, headers, NO_CONTENT)
 
     def applyTroubles(self, data, trouble_type):
+        """
+            Applies one of known troublesome conditions to a prefilled data.
+            Returned value can contain or not the original data, depending
+                on the specific trouble type
+        """
 
         if trouble_type == 'EMPTY_STRING':
             return ""
