@@ -316,7 +316,8 @@ class ExtendedApiResource(Resource):
     def empty_response(self):
         return self.force_response("", code=hcodes.HTTP_OK_NORESPONSE)
 
-    def report_generic_error(self, message=None, current_response_available=True):
+    def report_generic_error(self,
+                             message=None, current_response_available=True):
 
         if message is None:
             message = "Something BAD happened somewhere..."

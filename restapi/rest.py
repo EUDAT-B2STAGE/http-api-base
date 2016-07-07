@@ -60,8 +60,8 @@ def create_endpoints(custom_epo, security=False, debug=False):
         from .resources import endpoints
         custom_epo.many_from_module(endpoints)
     else:
-        from .resources.endpoints import Verify
-        custom_epo.create_many([Verify])
+        from .resources.endpoints import Status
+        custom_epo.create_many({'status': Status})
 
     ####################################
     # Extra endpoints?

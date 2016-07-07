@@ -85,6 +85,18 @@ class Meta(object):
             logger.critical("Failed to load resource: " + str(e))
         return module
 
+    def import_submodules_from_package(self, package_name):
+
+        submodules = []
+        package = self.get_module_from_string(package_name)
+
+        for module_name in self.get_submodules_from_package(package):
+            module_path = package_name + '.' + module_name
+            logger.debug("Loading module '%s'" % module_path)
+            submodules.append(
+                self.get_module_from_string(module_path))
+        return submodules
+
     @staticmethod
     def get_methods_inside_instance(instance, private_methods=False):
         methods = {}
