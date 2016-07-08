@@ -398,7 +398,8 @@ class ExtendedApiResource(Resource):
 
         return json_data
 
-    def getJsonResponse(self, instance, fields=[], resource_type=None,
+    def getJsonResponse(self, instance,
+                        fields=[], resource_type=None, skip_missing_ids=False,
                         relationship_depth=0, max_relationship_depth=1):
         """
         Lots of meta introspection to guess the JSON specifications
@@ -425,6 +426,9 @@ class ExtendedApiResource(Resource):
             # Very difficult for relationships
             "links": {"self": request.url + '/' + id},
         }
+
+        if skip_missing_ids and id == '-':
+            del data['id']
 
         if relationship_depth > 0:
             del data['links']
@@ -464,6 +468,7 @@ class ExtendedApiResource(Resource):
                         subrelationship.append(
                             self.getJsonResponse(
                                 node,
+                                skip_missing_ids=skip_missing_ids,
                                 relationship_depth=relationship_depth + 1,
                                 max_relationship_depth=max_relationship_depth))
 
