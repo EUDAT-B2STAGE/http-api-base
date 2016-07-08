@@ -23,7 +23,20 @@ logger = get_logger(__name__)
 BASE_MODELS_PATH = 'commons.models.'
 
 
+def get_instance_from_services(services, service_name='relational', **kwargs):
+    """
+    Recover an instance among many services factory
+    """
+    obj = services.get(service_name, None)
+    if obj is None:
+        raise AttributeError(
+            "Global API services: '%s' not found!" % service_name)
+    return obj().get_instance(**kwargs)
+
+
 class ServiceFarm(metaclass=abc.ABCMeta):
+
+    """ The basic farm for any service in our framework """
 
     _meta = Meta()
     _service_name = None

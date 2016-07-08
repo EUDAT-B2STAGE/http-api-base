@@ -54,9 +54,11 @@ https://github.com/pallets/flask/wiki/Large-app-how-to
 ########################
 # Flask App factory    #
 ########################
-def create_app(name=__name__, avoid_context=False,
-               enable_security=True, skip_endpoint_mapping=False,
-               debug=False, testing=False, **kwargs):
+def create_app(name=__name__, debug=False,
+               worker_mode=False, testing_mode=False,
+               avoid_context=False, enable_security=True,
+               skip_endpoint_mapping=False,
+               **kwargs):
     """ Create the server istance for Flask application """
 
     #################################################
@@ -65,8 +67,11 @@ def create_app(name=__name__, avoid_context=False,
     from .confs import config
     microservice = Flask(name, **kwargs)
 
-    if testing:
-        microservice.config['TESTING'] = testing
+    if worker_mode:
+        enable_security = False
+
+    if testing_mode:
+        microservice.config['TESTING'] = testing_mode
     # else:
 #         # Check and use a random file a secret key.
 # # // TO FIX:
@@ -128,16 +133,21 @@ def create_app(name=__name__, avoid_context=False,
         # Global namespace inside the Flask server
         @microservice.before_request
         def enable_global_authentication():
-            # Save auth
+            """ Save auth object """
             g._custom_auth = custom_auth
-            # Save all databases/services
-            g._services = internal_services
 
         # Enabling also OAUTH library
         from .oauth import oauth
         oauth.init_app(microservice)
 
         logger.info("FLASKING! Injected security internal module")
+
+    if not worker_mode:
+        # Global namespace inside the Flask server
+        @microservice.before_request
+        def enable_global_services():
+            """ Save all databases/services """
+            g._services = internal_services
 
     ##############################
     # Restful plugin
@@ -153,6 +163,11 @@ def create_app(name=__name__, avoid_context=False,
     # Init objects inside the app context
     if not avoid_context:
         with microservice.app_context():
+
+            # Set global objects for celery workers
+            if worker_mode:
+                from commons.globals import mem
+                mem.services = internal_services
 
             # Note:
             # Databases are already initialized inside the instances farm

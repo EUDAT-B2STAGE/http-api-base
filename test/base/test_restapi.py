@@ -23,6 +23,9 @@ logger = get_logger(__name__, True)
 API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
 AUTH_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
 
+## TO FIX:
+# skip login tests if no_security requested on Flask server create_app
+
 
 class TestRestAPI(unittest.TestCase):
 
@@ -60,7 +63,7 @@ class TestRestAPI(unittest.TestCase):
         Thi is why i prefer setUp on setUpClass
         """
         logger.debug('### Setting up the Flask server ###')
-        app = create_app(testing=True)
+        app = create_app(testing_mode=True)
         self.app = app.test_client()
 
     def tearDown(self):

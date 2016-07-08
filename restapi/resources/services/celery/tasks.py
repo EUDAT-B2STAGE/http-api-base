@@ -31,12 +31,19 @@ class MyCelery(object):
     def __init__(self, app):
         self._current = self.make_celery(app)
 
+    @staticmethod
+    def get_service(service_name):
+        from commons.globals import mem
+        from commons.services import get_instance_from_services
+        return get_instance_from_services(mem.services, service_name)
+
     def make_celery(self, app):
         """
         Following the snippet on:
         http://flask.pocoo.org/docs/0.11/patterns/celery/
         """
 
+        # print("SETTING APP", hex(id(app)))
         celery_app.conf.update(app.config)
         TaskBase = celery_app.Task
 
@@ -47,7 +54,11 @@ class MyCelery(object):
                 with app.app_context():
                     return TaskBase.__call__(self, *args, **kwargs)
 
+        # Inject objects into celery
         celery_app.Task = ContextTask
+        celery_app.app = app
+        celery_app.get_service = self.get_service
+
         return celery_app
 
 
