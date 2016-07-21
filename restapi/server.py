@@ -178,10 +178,14 @@ def create_app(name=__name__, avoid_context=False,
 
         # Shrink too long data in log output
         for k in data:
-            if not isinstance(data[k], str):
-                continue
-            if len(data[k]) > 255:
-                data[k] = data[k][:255] + "..."
+            # print("K", k, "DATA", data)
+            try:
+                if not isinstance(data[k], str):
+                    continue
+                if len(data[k]) > 255:
+                    data[k] = data[k][:255] + "..."
+            except IndexError:
+                pass
 
         logger.info("{} {} {} {}".format(
                     request.method, request.url,

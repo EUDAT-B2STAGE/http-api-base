@@ -187,9 +187,9 @@ def apimethod(func):
 
             # This error can be possible only if using the default response
             if "required positional argument" in error:
-                return self.default_response(
-                    errors={'Type': "FAIL: missing argument"},
-                    code=hcodes.HTTP_BAD_REQUEST)
+                return self.report_generic_error(
+                    "Custom response defined is not compliant",
+                    current_response_available=False)
             raise e
 
         # Do not intercept if it's already a Flask Response:
