@@ -5,7 +5,7 @@
 # from __future__ import absolute_import
 import os
 from commons.logs import get_logger
-from commons.services import ServiceFarm
+from commons.services import ServiceFarm, ServiceObject
 from commons.services.uuid import getUUID
 from datetime import datetime
 import pytz
@@ -39,7 +39,7 @@ except Exception as e:
 # GRAPHDB main object
 ########################
 
-class MyGraph(object):
+class MyGraph(ServiceObject):
     """" A graph db neo4j instance """
 
     def __init__(self):
@@ -74,13 +74,13 @@ class MyGraph(object):
     def clean_pending_tokens(self):
         return self.cypher("MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a")
 
-    def inject_models(self, models=[]):
-        """ Load models mapping Graph entities """
+    # def inject_models(self, models=[]):
+    #     """ Load models mapping Graph entities """
 
-        for model in models:
-            # Save attribute inside class with the same name
-            logger.debug("Injecting model '%s'" % model.__name__)
-            setattr(self, model.__name__, model)
+    #     for model in models:
+    #         # Save attribute inside class with the same name
+    #         logger.debug("Injecting model '%s'" % model.__name__)
+    #         setattr(self, model.__name__, model)
 
     def createNode(self, model, attributes={}):
         """
@@ -102,9 +102,6 @@ class MyGraph(object):
         node.save()
 
         return node
-
-
-
 
 
 #######################

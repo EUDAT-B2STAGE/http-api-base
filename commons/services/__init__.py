@@ -23,6 +23,20 @@ logger = get_logger(__name__)
 BASE_MODELS_PATH = 'commons.models.'
 
 
+class ServiceObject(object):
+
+    def inject_models(self, models=None):
+        """ Load models mapping entities """
+
+        if models is None:
+            models = self._models
+
+        for model in models:
+            # Save attribute inside class with the same name
+            logger.debug("Injecting model '%s'" % model.__name__)
+            setattr(self, model.__name__, model)
+
+
 class ServiceFarm(metaclass=abc.ABCMeta):
 
     _meta = Meta()

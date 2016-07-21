@@ -7,8 +7,7 @@ Enter ElasticSearch!
 
 # from __future__ import absolute_import
 from commons.logs import get_logger
-from elasticsearch import Elasticsearch
-from commons.services import ServiceFarm
+from commons.services import ServiceFarm, ServiceObject
 # from commons.services.uuid import getUUID
 # from datetime import datetime
 # import pytz
@@ -22,18 +21,40 @@ logger = get_logger(__name__)
 #######################
 # ElasticSearch main object
 ########################
-class BeElastic(object):
+class BeElastic(ServiceObject):
 
     def __init__(self):
-        super(BeElastic, self).__init__()
-        self._connection = Elasticsearch(**ES_SERVICE)
+
+        # super(BeElastic, self).__init__()
+
+        ## Original
+        # from elasticsearch import Elasticsearch
+        # self._connection = Elasticsearch(**ES_SERVICE)
+
+        ## New feature (ORM like)
+        from elasticsearch_dsl.connections import connections
+        connections.create_connection(**ES_SERVICE)
+        # from elasticsearch_dsl import Search
+        # s = Search()
+        # response = s.execute()
+        # print("TEST", response)
+
         logger.debug("Connected")
 
-    def index_up(self, index_name):
+    def index_up(self, index_name=None):
 
+        # if index_name is None:
+        #     index_name = self._index
+
+        raise NotImplementedError("To be modified for DSL library")
+
+        ## Original
         # Create if not exist
         if not self._connection.indices.exists(index=index_name):
             self._connection.indices.create(index=index_name, body={})
+
+        ## New feature (ORM like)
+        # TO DO
 
 
 #######################
@@ -41,7 +62,7 @@ class BeElastic(object):
 ########################
 class ElasticFarm(ServiceFarm):
 
-    _link = None
+    _instance = None
 
     @staticmethod
     def define_service_name():
@@ -51,8 +72,22 @@ class ElasticFarm(ServiceFarm):
         return self.get_instance()
 
     def get_instance(self, models2skip=[], use_models=True):
-        if self._link is None:
-            self._link = BeElastic()
+        if self._instance is None:
+
+            # Connect
+            self._instance = BeElastic()
             logger.debug("ElasticSearch service seems plugged")
 
-        return self._link
+            # Use DSL models
+            if use_models:
+                self.load_models()
+                # Remove the ones which developers do not want
+                models = set(list(self._models.values())) - set(models2skip)
+                self._instance.inject_models(models)
+
+                for _, model_obj in self.load_models().items():
+                    model_obj.init()
+                    print("Es index",
+                          model_obj._doc_type.name, model_obj._doc_type.index)
+
+        return self._instance

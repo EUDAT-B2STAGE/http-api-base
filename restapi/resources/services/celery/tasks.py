@@ -19,14 +19,14 @@ def my_async_task(arg):
 
 # from __future__ import absolute_import
 
-from commons.services import ServiceFarm
+from commons.services import ServiceFarm, ServiceObject
 from commons.services.celery import celery_app
 from commons.logs import get_logger
 
 logger = get_logger(__name__)
 
 
-class MyCelery(object):
+class MyCelery(ServiceObject):
 
     def __init__(self, app):
         self._current = self.make_celery(app)
