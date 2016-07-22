@@ -208,12 +208,11 @@ class ExtendedApiResource(Resource):
     def global_get_service(self,
                            service_name, object_name='services', **kwargs):
 
-        services = self.global_get(object_name)
-        obj = services.get(service_name, None)
-        if obj is None:
-            raise AttributeError(
-                "Global API services: '%s' not found!" % service_name)
-        return obj().get_instance(**kwargs)
+        from commons.services import get_instance_from_services
+        return get_instance_from_services(
+            self.global_get(object_name),   # services
+            service_name,
+            **kwargs)
 
     def force_response(self, *args, **kwargs):
         method = get_response()

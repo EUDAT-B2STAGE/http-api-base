@@ -105,7 +105,6 @@ class TestUtilities(unittest.TestCase):
         content = json.loads(r.data.decode('utf-8'))
         return content['Response']['data']
 
-
     def randomString(self, len=16, prefix="TEST:"):
         if len > 500000:
             lis = list(string.ascii_lowercase)
