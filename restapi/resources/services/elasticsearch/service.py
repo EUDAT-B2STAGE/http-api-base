@@ -33,7 +33,7 @@ class BeElastic(ServiceObject):
 
         ## New feature (ORM like)
         from elasticsearch_dsl.connections import connections
-        connections.create_connection(**ES_SERVICE)
+        self._connection = connections.create_connection(**ES_SERVICE)
         # from elasticsearch_dsl import Search
         # s = Search()
         # response = s.execute()
@@ -41,20 +41,22 @@ class BeElastic(ServiceObject):
 
         logger.debug("Connected")
 
-    def index_up(self, index_name=None):
+## The index is already created if not existing by the model .init() function
 
-        # if index_name is None:
-        #     index_name = self._index
+    # def index_up(self, index_name=None):
 
-        raise NotImplementedError("To be modified for DSL library")
+    #     # if index_name is None:
+    #     #     index_name = self._index
 
-        ## Original
-        # Create if not exist
-        if not self._connection.indices.exists(index=index_name):
-            self._connection.indices.create(index=index_name, body={})
+    #     raise NotImplementedError("To be modified for DSL library")
 
-        ## New feature (ORM like)
-        # TO DO
+    #     ## Original
+    #     # Create if not exist
+    #     if not self._connection.indices.exists(index=index_name):
+    #         self._connection.indices.create(index=index_name, body={})
+
+    #     ## New feature (ORM like)
+    #     # TO DO
 
 
 #######################
@@ -85,9 +87,18 @@ class ElasticFarm(ServiceFarm):
                 models = set(list(self._models.values())) - set(models2skip)
                 self._instance.inject_models(models)
 
+                from elasticsearch_dsl import Index
                 for _, model_obj in self.load_models().items():
+
+# // TO BE FIXED
+# waiting for https://github.com/elastic/elasticsearch-dsl-py/pull/272
+                    i = Index(model_obj._doc_type.index)
+                    if i.exists():
+                        i.close()
                     model_obj.init()
+                    i.open()
                     print("Es index",
                           model_obj._doc_type.name, model_obj._doc_type.index)
+                    # model_obj._doc_type.refresh()
 
         return self._instance
