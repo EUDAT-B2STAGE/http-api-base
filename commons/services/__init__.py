@@ -72,6 +72,14 @@ class ServiceFarm(metaclass=abc.ABCMeta):
                 logger.warning("%s: Not reachable yet. Sleeping %s."
                                % (name, sleep_time))
                 logger.debug("Error was %s" % str(e))
+
+# // TO FIX:
+                ## ELASTICSEARCH strange connection errors
+                # # which lasts only at the first round
+                # if 'elasticsearch' in e.__module__:
+                #     print("Failed")
+                #     import sys
+                #     sys.exit(1)
                 time.sleep(sleep_time)
 
     def load_generic_models(self, module_path):

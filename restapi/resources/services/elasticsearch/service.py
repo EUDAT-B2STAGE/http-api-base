@@ -13,7 +13,7 @@ from commons.services import ServiceFarm, ServiceObject
 # import pytz
 
 ES_SERVER = 'el'
-ES_SERVICE = {"host": ES_SERVER, "port": 9200}
+ES_SERVICE = {"host": ES_SERVER, "port": 9200, 'timeout': 5}
 
 logger = get_logger(__name__)
 
