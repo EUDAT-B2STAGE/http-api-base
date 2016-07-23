@@ -81,7 +81,9 @@ class CeleryFarm(ServiceFarm):
         logger.debug("Celery queue is available")
         return celery
 
-    def get_instance(self, app=None):
-        if self._celery_app is None:
-            self._celery_app = MyCelery(app)._current
-        return self._celery_app
+    @classmethod
+    def get_instance(cls, app=None):
+
+        if CeleryFarm._celery_app is None:
+            CeleryFarm._celery_app = MyCelery(app)._current
+        return CeleryFarm._celery_app

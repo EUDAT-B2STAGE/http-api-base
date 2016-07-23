@@ -10,19 +10,8 @@ GUIDELINES:
 
 THINGS TO DO:
 
-✔ Elasticsearch service @done (16-07-01 16:42)
- ✔ farm @done (16-07-01 16:18)
- ✔ basic index use @done (16-07-01 16:42)
-   ✔ minimum mappings/settings json to create the elasticsearch index @done (16-07-01 16:42)
-✔ custom response @done (16-07-05 09:52)
- ✔ within a decorator? @done (16-07-05 09:52)
-   ✔ make decorate file a class of methods @done (16-07-05 09:52)
- ✔ default is self.response @done (16-07-05 09:52)
- ✔ option to use flask original response @done (16-07-05 09:52)
-
-☐ commons (for restangulask)
- ☐ CONF
-   ☐ move services (containers) confs?
+☐ commons
+ ☐ move services (containers) base
  ☐ a secret for the server at startup
    ☐ to be generated with file if in production
 

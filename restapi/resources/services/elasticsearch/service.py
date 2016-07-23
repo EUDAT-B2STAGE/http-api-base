@@ -75,8 +75,11 @@ class ElasticFarm(ServiceFarm):
         loggerUrlib.setLevel(logging.CRITICAL)
 
         # CHECK 1: verify the library
-        self._instance = BeElastic()
-        logger.debug("Plugging '%s' service" % name)
+
+        # self._instance = BeElastic()
+        # logger.debug("Plugging '%s' service" % name)
+        self.get_instance()
+
         self._instance._connection.ping()
         logger.debug("'%s' service seems plugged" % name)
 
@@ -91,7 +94,11 @@ class ElasticFarm(ServiceFarm):
 
         # self.init_models({'test': TestConnection})
 
-    def init_models(self, models):
+        # del self._instance
+        # self._instance._connection.close()
+
+    @staticmethod
+    def init_models(models):
         """
         Init a model and create the index if not existing
         """
@@ -109,18 +116,20 @@ class ElasticFarm(ServiceFarm):
                   model_obj._doc_type.name, model_obj._doc_type.index)
             # model_obj._doc_type.refresh()
 
-    def get_instance(self, models2skip=[], use_models=True):
-        if self._instance is None:
+    @classmethod
+    def get_instance(cls, models2skip=[], use_models=True):
+
+        if ElasticFarm._instance is None:
 
             # Connect
-            self._instance = BeElastic()
+            ElasticFarm._instance = BeElastic()
 
             # Use DSL models
             if use_models:
-                self.init_models(self.load_models())
+                cls.init_models(cls.load_models())
 
                 # Remove the ones which developers do not want
-                models = set(list(self._models.values())) - set(models2skip)
-                self._instance.inject_models(models)
+                models = set(list(cls._models.values())) - set(models2skip)
+                ElasticFarm._instance.inject_models(models)
 
-        return self._instance
+        return ElasticFarm._instance

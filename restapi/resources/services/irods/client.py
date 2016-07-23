@@ -1080,7 +1080,8 @@ class IrodsFarm(ServiceFarm):
         self.get_instance()
         logger.debug("iRODS seems online")
 
-    def get_instance(self, user=None):
+    @classmethod
+    def get_instance(cls, user=None):
 
         # Default or Admin
         if user is None:
@@ -1092,5 +1093,8 @@ class IrodsFarm(ServiceFarm):
                 else:
                     logger.warning("Becoming iRODS admin")
 
-        self._irods = IMetaCommands(user)
-        return self._irods
+# We should check if here classmethod is the wrong option
+        # cls._irods = IMetaCommands(user)
+        # return cls._irods
+
+        return IMetaCommands(user)
