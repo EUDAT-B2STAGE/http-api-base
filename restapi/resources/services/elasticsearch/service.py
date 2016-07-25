@@ -3,10 +3,18 @@
 """
 Quick search text (mostly for web UI).
 Enter ElasticSearch!
+
+Note: to delete all data with ipython from the server:
+```
+es = Elasticsearch(host='el')
+for index in es.indices.get_aliases().keys():
+    es.indices.delete(index)
+```
 """
 
 # from __future__ import absolute_import
 import os
+# import pytz
 
 from collections import OrderedDict
 from commons.logs import get_logger
@@ -14,7 +22,7 @@ from commons.services import ServiceFarm, ServiceObject
 # from commons.services.uuid import getUUID
 from commons.services.uuid import getUUIDfromString
 # from datetime import datetime
-# import pytz
+from elasticsearch_dsl.connections import connections
 
 HOST = os.environ['EL_NAME'].split('/').pop()
 PORT = os.environ['EL_PORT'].split(':').pop()
@@ -32,7 +40,6 @@ class BeElastic(ServiceObject):
     def __init__(self):
 
         # super(BeElastic, self).__init__()
-        from elasticsearch_dsl.connections import connections
         self._connection = connections.create_connection(**ES_SERVICE)
 
     def get_or_create(self, DocumentClass, args={}):
@@ -72,6 +79,29 @@ class BeElastic(ServiceObject):
             obj.save()
 
         return obj
+
+    def get_or_create_suggestion(self, DocumentClass, text,
+                                 attribute='suggestme', output=None,
+                                 weight=1, payload=None):
+
+        input = [text]
+        text_lower = text.lower()
+        if text != text_lower:
+            input.append(text_lower)
+
+        if output is None:
+            output = text
+
+        suggestion = {
+            "input": input,
+            "output": output,
+            "payload": payload,
+        }
+
+        if weight > 1:
+            suggestion["weight"] = weight
+
+        return self.get_or_create(DocumentClass, {attribute: suggestion})
 
 
 #######################
