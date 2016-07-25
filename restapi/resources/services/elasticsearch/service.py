@@ -103,6 +103,36 @@ class BeElastic(ServiceObject):
 
         return self.get_or_create(DocumentClass, {attribute: suggestion})
 
+    def search_suggestion(self, DocumentClass, keyword,
+                          manipulate_output=None, attribute='suggestme'):
+        """
+        A search for a suggestion field
+        """
+
+        output = []
+        suggest = None
+        try:
+            suggest = DocumentClass.search() \
+                .suggest('data', keyword, completion={'field': attribute}) \
+                .execute_suggest()
+
+        except Exception as e:
+            logger.warning("Suggestion error:\n%s" % e)
+            return self.force_response(errors={'suggest': 'internal error'})
+        # finally:
+        #     if suggest is None or 'data' not in suggest:
+        #         return output
+
+        # IF using execute_suggest...
+        # print(suggest.data)
+        for results in suggest.data:
+            for result in results.options:
+                if manipulate_output is not None:
+                    result = manipulate_output(result)
+                output.append(result)
+
+        return output
+
 
 #######################
 # Farm to get Elastic instances
