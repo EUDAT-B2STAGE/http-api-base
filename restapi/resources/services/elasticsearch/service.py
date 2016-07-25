@@ -8,9 +8,11 @@ Enter ElasticSearch!
 # from __future__ import absolute_import
 import os
 
+from collections import OrderedDict
 from commons.logs import get_logger
 from commons.services import ServiceFarm, ServiceObject
 # from commons.services.uuid import getUUID
+from commons.services.uuid import getUUIDfromString
 # from datetime import datetime
 # import pytz
 
@@ -33,22 +35,43 @@ class BeElastic(ServiceObject):
         from elasticsearch_dsl.connections import connections
         self._connection = connections.create_connection(**ES_SERVICE)
 
-## The index is already created if not existing by the model .init() function
+    def get_or_create(self, DocumentClass, args={}):
+        """
+        Inspired by `neomodel` function get_or_create
+        I want to send args which will create the document inside the index
+        only if the data is not there yet.
 
-    # def index_up(self, index_name=None):
+        To make sure we do we use the update with an ID manually generated.
+        If we create the same string with same args,
+        the hash will be our unique ID.
 
-    #     # if index_name is None:
-    #     #     index_name = self._index
+        The solution is to build
+        an OrderedDict from the original args dictionary,
+        which converted to string will always be the same with same parameters.
+        """
 
-    #     raise NotImplementedError("To be modified for DSL library")
+        if len(args) < 1:
+            raise AttributeError("Cannot create id from no arguments")
 
-    #     ## Original
-    #     # Create if not exist
-    #     if not self._connection.indices.exists(index=index_name):
-    #         self._connection.indices.create(index=index_name, body={})
+        # Since the ID with same parameters is the same
+        # the document will be created only with non existing data
+        ordered_args = OrderedDict(sorted(args.items()))
+        id = getUUIDfromString(str(ordered_args))
 
-    #     ## New feature (ORM like)
-    #     # TO DO
+        # If you want to check existence
+        obj = DocumentClass.get(id=id, ignore=404)
+        # print("Check", id, check)
+        if obj is None:
+            logger.debug("Creating a new document '%s'" % id)
+
+            # Put the id in place
+            args['meta'] = {'id': id}
+            # print("ARGS", args)
+            obj = DocumentClass(**args)
+            # obj.update()
+            obj.save()
+
+        return obj
 
 
 #######################
