@@ -3,6 +3,7 @@
 """ The most standard Basic Resource i could """
 
 import json
+import pytz
 from datetime import datetime
 from flask import g, make_response, jsonify, Response
 from flask_restful import request, Resource, reqparse
@@ -364,7 +365,18 @@ class ExtendedApiResource(Resource):
 
     @staticmethod
     def timestamp_from_string(timestamp_string):
-        return datetime.fromtimestamp(float(timestamp_string))
+        """
+        Neomodels complains about UTC, this is to fix it.
+        Taken from http://stackoverflow.com/a/21952077/2114395
+        """
+
+        precision = float(timestamp_string)
+        # return datetime.fromtimestamp(precision)
+
+        utc_dt = datetime.utcfromtimestamp(precision)
+        aware_utc_dt = utc_dt.replace(tzinfo=pytz.utc)
+
+        return aware_utc_dt
 
     def formatJsonResponse(self, instances, resource_type=None):
         """
