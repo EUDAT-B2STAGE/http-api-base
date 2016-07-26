@@ -73,15 +73,12 @@ class MyGraph(ServiceObject):
         return results
 
     def clean_pending_tokens(self):
+        logger.debug("Removing all pending tokens")
         return self.cypher("MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a")
 
-    # def inject_models(self, models=[]):
-    #     """ Load models mapping Graph entities """
-
-    #     for model in models:
-    #         # Save attribute inside class with the same name
-    #         logger.debug("Injecting model '%s'" % model.__name__)
-    #         setattr(self, model.__name__, model)
+    def clean_all(self):
+        logger.warning("Removing all data")
+        return self.cypher("MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r")
 
     def createNode(self, model, attributes={}):
         """

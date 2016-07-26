@@ -120,6 +120,11 @@ class BeElastic(ServiceObject):
         return self.get_or_create(
             DocumentClass, {attribute: suggestion}, forced_id=id)
 
+    def clean_all(self):
+        logger.warning("Removing all data")
+        for index in self._connection.indices.get_aliases().keys():
+            self._connection.indices.delete(index)
+
     def search_suggestion(self, DocumentClass, keyword,
                           manipulate_output=None, attribute='suggestme'):
         """
