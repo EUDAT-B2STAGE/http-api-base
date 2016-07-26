@@ -42,7 +42,15 @@ class BeElastic(ServiceObject):
         # super(BeElastic, self).__init__()
         self._connection = connections.create_connection(**ES_SERVICE)
 
-    def get_or_create(self, DocumentClass, args={}):
+    @staticmethod
+    def dict2ordered_string(mydict):
+
+        if mydict is None or not isinstance(mydict, dict) or len(mydict) < 1:
+            return ""
+
+        return str(OrderedDict(sorted(mydict.items())))
+
+    def get_or_create(self, DocumentClass, args={}, forced_id=None):
         """
         Inspired by `neomodel` function get_or_create
         I want to send args which will create the document inside the index
@@ -60,10 +68,13 @@ class BeElastic(ServiceObject):
         if len(args) < 1:
             raise AttributeError("Cannot create id from no arguments")
 
-        # Since the ID with same parameters is the same
-        # the document will be created only with non existing data
-        ordered_args = OrderedDict(sorted(args.items()))
-        id = getUUIDfromString(str(ordered_args))
+        id = None
+        if forced_id is None:
+            # Since the ID with same parameters is the same
+            # the document will be created only with non existing data
+            id = getUUIDfromString(self.dict2ordered_string(args))
+        else:
+            id = forced_id
 
         # If you want to check existence
         obj = DocumentClass.get(id=id, ignore=404)
@@ -101,7 +112,11 @@ class BeElastic(ServiceObject):
         if weight > 1:
             suggestion["weight"] = weight
 
-        return self.get_or_create(DocumentClass, {attribute: suggestion})
+        # force the new id with the subnested dictionary
+        id = getUUIDfromString(self.dict2ordered_string(suggestion))
+
+        return self.get_or_create(
+            DocumentClass, {attribute: suggestion}, forced_id=id)
 
     def search_suggestion(self, DocumentClass, keyword,
                           manipulate_output=None, attribute='suggestme'):
