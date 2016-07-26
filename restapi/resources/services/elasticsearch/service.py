@@ -39,9 +39,16 @@ logger = get_logger(__name__)
 ########################
 class BeElastic(ServiceObject):
 
+    _connection = None
+
     def __init__(self):
 
         # super(BeElastic, self).__init__()
+        self.rebuild_connection()
+
+    def rebuild_connection(self):
+        if self._connection is not None:
+            del self._connection
         self._connection = connections.create_connection(**ES_SERVICE)
 
     @staticmethod
@@ -122,8 +129,13 @@ class BeElastic(ServiceObject):
 
     def clean_all(self):
         logger.warning("Removing all data")
+
         for index in self._connection.indices.get_aliases().keys():
             self._connection.indices.delete(index)
+
+            # # Rebuild index for new connections
+            # self._connection.indices.create(index)
+        # self.rebuild_connection()
 
     def search_suggestion(self, DocumentClass, keyword,
                           manipulate_output=None, attribute='suggestme'):
@@ -140,7 +152,7 @@ class BeElastic(ServiceObject):
 
         except Exception as e:
             logger.warning("Suggestion error:\n%s" % e)
-            return self.force_response(errors={'suggest': 'internal error'})
+            raise e
         # finally:
         #     if suggest is None or 'data' not in suggest:
         #         return output
@@ -220,9 +232,9 @@ class ElasticFarm(ServiceFarm):
             # # model_obj._doc_type.refresh()
 
     @classmethod
-    def get_instance(cls, models2skip=[], use_models=True):
+    def get_instance(cls, models2skip=[], use_models=True, force=False):
 
-        if ElasticFarm._instance is None:
+        if ElasticFarm._instance is None or force:
 
             # Connect
             ElasticFarm._instance = BeElastic()

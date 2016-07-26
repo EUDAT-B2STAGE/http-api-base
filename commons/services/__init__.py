@@ -32,11 +32,14 @@ def get_instance_from_services(services, service_name='relational', **kwargs):
         raise AttributeError(
             "Global API services: '%s' not found!" % service_name)
 
-# // TO FIX:
-# probably this decision should be made with a parameter for this function
+    ####################
+    # Build the object & get the Instance
 
     # # If we want to use a new instance every time
     # return obj().get_instance(**kwargs)
+
+# // TO FIX:
+# probably this decision should be made with a parameter for this function
 
     # If we want to use a global connection pool for database instances
     return obj.get_instance(**kwargs)
@@ -98,7 +101,7 @@ class ServiceFarm(metaclass=abc.ABCMeta):
                     sleep_time += sleep_time * 2
                 logger.warning("%s: Not reachable yet. Sleeping %s."
                                % (name, sleep_time))
-                logger.debug("Error was %s" % str(e))
+                logger.critical("Error was %s" % str(e))
                 time.sleep(sleep_time)
 
     @classmethod
