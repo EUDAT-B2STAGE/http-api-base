@@ -14,6 +14,7 @@ for index in es.indices.get_aliases().keys():
 
 # from __future__ import absolute_import
 import os
+import logging
 # import pytz
 
 from collections import OrderedDict
@@ -23,6 +24,7 @@ from commons.services import ServiceFarm, ServiceObject
 from commons.services.uuid import getUUIDfromString
 # from datetime import datetime
 from elasticsearch_dsl.connections import connections
+from elasticsearch_dsl import Index
 
 HOST = os.environ['EL_NAME'].split('/').pop()
 PORT = os.environ['EL_PORT'].split(':').pop()
@@ -166,7 +168,6 @@ class ElasticFarm(ServiceFarm):
 
         # Elasticsearch logger to be silenced
         # in checking the existing connection
-        import logging
         loggerES = logging.getLogger('elasticsearch')
         loggerES.setLevel(logging.CRITICAL)
         loggerUrlib = logging.getLogger('urllib3')
@@ -200,7 +201,6 @@ class ElasticFarm(ServiceFarm):
         """
         Init a model and create the index if not existing
         """
-        from elasticsearch_dsl import Index
         for _, model_obj in models.items():
 
 # // TO BE FIXED
@@ -210,9 +210,9 @@ class ElasticFarm(ServiceFarm):
                 i.close()
             model_obj.init()
             i.open()
-            print("Es index",
-                  model_obj._doc_type.name, model_obj._doc_type.index)
-            # model_obj._doc_type.refresh()
+            # print("Es index",
+            #       model_obj._doc_type.name, model_obj._doc_type.index)
+            # # model_obj._doc_type.refresh()
 
     @classmethod
     def get_instance(cls, models2skip=[], use_models=True):
