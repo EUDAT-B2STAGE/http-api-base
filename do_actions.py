@@ -29,19 +29,21 @@ class ImplementedActions:
     def do_check(project, action, service):
         ImplementedActions.service_incompatible(service)
         raise NotImplemented(
-            'verify if the %s blueprint is well-configured' % project
+            'verify if the %s blueprint is well-configured [verify all blueprint-specific directories and configuration files]' % project
         )
 
     def do_init(command, project, action, service):
         ImplementedActions.service_incompatible(service)
         raise NotImplemented(
-            'init the %s blueprint (in old do command)' % project
+            'init the %s blueprint (in old do command) [clone backend and frontend, pull docker images, pull bower libs' % project
         )
 
     def do_update(command, action, service):
         ImplementedActions.service_incompatible(service)
+        raise NotImplemented(
+            'update docker images and bower libs in blueprint %s' % project
+        )
 
-        ImplementedActions._exec("%s %s" % (command, action))
 
     def do_start(command, action, service):
         ImplementedActions.service_mandatory(service)
