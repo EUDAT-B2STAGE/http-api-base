@@ -36,15 +36,15 @@ backend:
         # Base code
         - ../backend:/code
         # Rest API configuration
-        - ../vanilla/specs:/code/restapi/confs/endpoints
+        - ../specs:/code/restapi/confs/endpoints
         # Rest API endpoints
-        - ../vanilla/apis:/code/restapi/resources/custom
+        - ../apis:/code/restapi/resources/custom
         # Rest API services models
-        - ../vanilla/models:/code/commons/models/custom
+        - ../models:/code/commons/models/custom
         # Other libs
-        - ../vanilla/libs:/code/libs
+        - ../libs:/code/libs
         # Tests
-        - ../vanilla/tests/backend:/code/test/custom
+        - ../tests/backend:/code/test/custom
 
 
 ###############################
@@ -60,7 +60,7 @@ redqueue:
 worker:
   extends:
     file: docker-compose.yml
-    service: rest
+    service: backend 
   hostname: celworker
   command: celery worker -A restapi.resources.services.celery.worker.celery_app
 
