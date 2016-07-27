@@ -41,8 +41,8 @@ backend:
         - ../apis:/code/restapi/resources/custom
         # Rest API services models
         - ../models:/code/commons/models/custom
-        # Other libs
-        - ../libs:/code/libs
+        # Other libs	--- WHY BOWER is mounted on backend???
+        # - ../libs:/code/libs
         # Tests
         - ../tests/backend:/code/test/custom
 
