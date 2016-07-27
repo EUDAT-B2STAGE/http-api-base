@@ -23,8 +23,9 @@ from commons.services import ServiceFarm, ServiceObject
 # from commons.services.uuid import getUUID
 from commons.services.uuid import getUUIDfromString
 # from datetime import datetime
-from elasticsearch_dsl.connections import connections
 from elasticsearch_dsl import Index
+from elasticsearch_dsl.connections import connections
+from elasticsearch_dsl.query import MultiMatch
 
 HOST = os.environ['EL_NAME'].split('/').pop()
 PORT = os.environ['EL_PORT'].split(':').pop()
@@ -136,6 +137,53 @@ class BeElastic(ServiceObject):
             # # Rebuild index for new connections
             # self._connection.indices.create(index)
         # self.rebuild_connection()
+
+    def search(self, DocumentClass, parameters={}, filter=False):
+        """
+        It should be:
+            MyESobj.search() \
+                .query('match', field=value).execute()
+        """
+
+        output = []
+        query = DocumentClass.search()
+        if isinstance(parameters, dict) and len(parameters) > 0:
+            if filter:
+                query = query.filter('term', **parameters)
+            else:
+                query = query.query('match', **parameters)
+
+        # for hit in query.execute():
+        #     print("TEST", hit, DocumentClass.from_es(hit))
+
+        results = query.execute().to_dict()
+        for element in results['hits']['hits']:
+            output.append(element['_source'])
+
+        return output
+
+    @staticmethod
+    def get_fields_from_doc(DocumentClass):
+
+        doc_name = DocumentClass._doc_type.name
+        mapping = DocumentClass._doc_type.mapping.to_dict()[doc_name]
+        return list(mapping['properties'].keys())
+
+    def search_multifields(self, DocumentClass, keyword, fields=[]):
+
+        if len(fields) < 1:
+            fields = self.get_fields_from_doc(DocumentClass)
+
+        output = []
+        m = MultiMatch(fields=fields, query=keyword)
+        results = DocumentClass.search().query(m).execute().to_dict()
+        for element in results['hits']['hits']:
+            # print("TEST", element)
+            output.append({
+                '_data': element['_source'],
+                '_meta': {'id': element['_id'], 'score': element['_score']}
+            })
+        return output
 
     def search_suggestion(self, DocumentClass, keyword,
                           manipulate_output=None, attribute='suggestme'):
