@@ -28,8 +28,6 @@ backend:
         service: conf
     image: eudatb2safe/apiserver 
     hostname: restapi
-    ports:
-        - 8081:5000
     volumes:
         # # Sql lite database
         # - restangulask_apilitedb:/dbs
