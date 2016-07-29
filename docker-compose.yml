@@ -43,6 +43,8 @@ backend:
         # - ../libs:/code/libs
         # Tests
         - ../tests/backend:/code/test/custom
+        # Celery Tasks
+        - ../tasks:/code/commons/tasks/custom
 
 
 ###############################
