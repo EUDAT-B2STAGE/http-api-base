@@ -1,45 +1,80 @@
 
-##############################################
-# This configuration is for development only
+###############################
+# GLOBAL CONFIGURATION
+conf:
+    image: busybox
+    command: ./boot
+    environment:
+        # Decide which service should handle users inside the backend server
+        BACKEND_AUTH_SERVICE: relationaldb
 
-rest:
-  image: pdonorio/py3api
-  hostname: restapi
-  # DEBUG
-  #command: sleep infinity
-  command: ./run.py
-#########################
-# Our services API want to use the HTTP range port: 8081-8089
-  ports:
-    - 8081:5000
-#########################
+        ## If you are still developing
+        ## (flask wsgi restartable on edit + sqllite dbs + print DEBUG level)
+        # APP_MODE: development
+
+        ## If you need to get serious
+        ## (gunicorn/nginx servers + postgres dbs + print INFO level)
+        # APP_MODE: production
+
+        ## If you are testing something that does not work
+        ## (containers that do not start anything)
+        APP_MODE: debug
+###############################
+
+
+###############################
+backend:
+    extends:
+        service: conf
+    image: eudatb2safe/apiserver 
+    hostname: restapi
+    working_dir: /code
+    volumes:
+        # # Sql lite database
+        # - restangulask_apilitedb:/dbs
+        # Base code
+        - ../backend:/code
+        # Rest API configuration
+        - ../specs:/code/restapi/confs/endpoints
+        # Rest API endpoints
+        - ../apis:/code/restapi/resources/custom
+        # Rest API services models
+        - ../models:/code/commons/models/custom
+        # Other libs	--- WHY BOWER is mounted on backend???
+        # - ../libs:/code/libs
+        # Tests
+        - ../tests/backend:/code/test/custom
+        # Celery Tasks
+        - ../tasks:/code/commons/tasks/custom
+
+
+###############################
+#################################
+# REDIS key/value store
+redqueue:
+  image: redis:alpine
+  command: redis-server --appendonly yes
+  hostname: myqueue
   volumes:
-    - .:/code:rw
-    - apiuploads:/uploads
-  working_dir: /code
+      - ${VOLUMES_PREFIX}_redisdata:/data
 
-# ##############################################
-# # TEST API FROM ANOTHER CONTAINER
-# client:
-#   image: pdonorio/py3api
-#   command: sleep infinity
-#   links:
-#     - rest:api
-#   volumes:
-#     - .:/code:rw
+worker:
+  extends:
+    file: docker-compose.yml
+    service: backend 
+  hostname: celworker
+  command: celery worker -A restapi.resources.services.celery.worker.celery_app
 
-# ##############################################
-# # MY RANDOM TESTS
-# # Access http://IP:80/admin/user/
-# tests:
-#   image: pdonorio/py3api
-#   hostname: justatest
-#   #command: python3 admin.py
-#   #command: python3 security.py
-#   command: sleep infinity
-#   ports:
-#     - 8888:5000
-#   volumes:
-#     - ./flasktests:/code:rw
-#   working_dir: /code
-# ##############################################
+#################################
+# Database administration
+
+# This image let you access the postgres db with a 'phpmyadmin' like web page
+sqladmin:
+    image: clue/adminer
+    # # Sql lite database & common models
+    # volumes:
+    #     - restangulask_apilitedb:/dbs
+    # links:
+    #     - sql:db
+    ports:
+        - 8888:80
