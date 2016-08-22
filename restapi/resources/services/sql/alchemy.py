@@ -23,7 +23,8 @@ class SQLFarm(ServiceFarm):
 
     _db = None
 
-    def define_service_name(self):
+    @staticmethod
+    def define_service_name():
         return 'sql'
 
     def init_connection(self, app):
@@ -40,26 +41,27 @@ class SQLFarm(ServiceFarm):
         with app.app_context():
             self._db.create_all()
 
-    def get_instance(self):
+    @classmethod
+    def get_instance(cls, models2skip=[], use_models=True):
 
-        if self._db is None:
+        if SQLFarm._db is None:
 
             # Make sure you have models before doing things
-            self.load_models()
-            if self._models_module is None:
+            cls.load_models()
+            if cls._models_module is None:
                 raise AttributeError("Sqlalchemy models unavailable!")
 
             # We load the instance where the models have been created...
-            sql = self._meta.get_module_from_string(self._models_module)
+            sql = cls._meta.get_module_from_string(cls._models_module)
             current_instance = sql.db
 
             # Inject models inside the class
-            for name, model in self._models.items():
+            for name, model in cls._models.items():
                 logger.debug("Injecting SQL model '%s'" % name)
                 setattr(current_instance, name, model)
 
             # Save the sqlalchemy reference (to init the app)
-            self._db = current_instance
+            SQLFarm._db = current_instance
             logger.debug("SQLAlchemy for Flask initialized")
 
-        return self._db
+        return SQLFarm._db

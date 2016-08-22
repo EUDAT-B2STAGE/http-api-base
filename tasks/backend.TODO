@@ -7,31 +7,15 @@ GUIDELINES:
    - Neo4j graphdb
    - Elasticsearch
    - Irods virtual resources
-   - Rethinkdb: nosql json + joins + changefeed
 
-### protocol specifications?
-https://github.com/ga4gh/mme-apis/blob/v1.0a/search-api.md
-### error handling?
-https://www.youtube.com/watch?v=8kTlzR4HhWo
+THINGS TO DO:
 
+☐ commons
+ ☐ move services (containers) base
+ ☐ a secret for the server at startup
+   ☐ to be generated with file if in production
 
---- ✄ -----------------------
-Token:
-
-☐ JWT refactor content
-  ☐ Set and check TTL
-☐ profile endpoint
-✘ refresh token / oauth standards @cancelled (16-06-12 15:27)
-
-☐ loading graph models at every request?
-
-☐ commons (for restangulask)
-  ✔ Meta @done (16-05-31 15:33)
-  ✔ HtmlCodes @done (16-05-31 23:31)
-  ✔ Users/models? @done (16-06-07 07:58)
-  ☐ Logs
-  ☐ The secret at startup
-
-☐ from jinja2._compat import iteritems... @compatibility
+☐ from jinja2._compat import iteritems... @python2_compatibility
 
 ☐ Role required decorator?
+ ☐ for internal endpoints

@@ -55,6 +55,10 @@ class IrodsException(RestApiException):
 
         return "A resource already exists with this name"
 
+    def parse_CAT_INVALID_USER(
+            self, utility, error_string, error_code, error_label, role='user'):
+        return "The requested user does not exist on the server"
+
     def parse_CAT_NO_ACCESS_PERMISSION(
             self, utility, error_string, error_code, error_label, role='user'):
         return "Permission denied"
@@ -70,6 +74,10 @@ class IrodsException(RestApiException):
     def parse_CAT_UNKNOWN_COLLECTION(
             self, utility, error_string, error_code, error_label, role='user'):
         return "The requested collection does not exist"
+
+    def parse_SYS_LINK_CNT_EXCEEDED_ERR(
+            self, utility, error_string, error_code, error_label, role='user'):
+        return "This collection is a mount point, cannot delete it"
 
     def parseIrodsError(self, error):
         error = str(error)
@@ -107,8 +115,6 @@ class IrodsException(RestApiException):
         regExpr = "^ERROR: (.*): (.*)$"
         m = re.search(regExpr, error)
         if m:
-            logger.debug(m)
-
             # es: lsUtil
             utility = m.group(1)
 
@@ -117,6 +123,24 @@ class IrodsException(RestApiException):
             error_string = m.group(2)
 
             return error_string
+
+        # Error example:
+        # ERROR: rcModAccessControl failure  status = -827000 CAT_INVALID_USER
+        regExpr = "ERROR: (.+) status = (-[0-9]+) ([A-Z0-9_]+)"
+        m = re.search(regExpr, error)
+        if m:
+            utility = None
+            error_string = m.group(1)
+            error_code = int(m.group(2))
+            error_label = m.group(3)
+
+            method_name = 'parse_%s' % error_label
+            method = getattr(self, method_name, None)
+            if method is not None:
+                return method(utility, error_string, error_code, error_label)
+
+            return error_label
+
 
         return error
 
@@ -381,8 +405,8 @@ class ICommands(BashCommands):
             # super call of create_tempy with file (touch)
             # icp / iput of that file
             # super call of remove for the original temporary file
-            logger.debug("NOT IMPLEMENTED for a file '%s'" %
-                         inspect.currentframe().f_code.co_name)
+            logger.warning("NOT IMPLEMENTED for a file '%s'" %
+                           inspect.currentframe().f_code.co_name)
             return
 
         # This command does not give you any output
@@ -593,6 +617,11 @@ class ICommands(BashCommands):
                         path += "/"
 
                     pathLen = len(path)
+                continue
+
+            # Unable to retrieve a path for this collection
+            # This collection may be empty
+            if path is None:
                 continue
 
             row = {}
@@ -1043,11 +1072,16 @@ class IMetaCommands(ICommands):
 
 class IrodsFarm(ServiceFarm):
 
+    @staticmethod
+    def define_service_name():
+        return 'irods'
+
     def init_connection(self, app):
         self.get_instance()
         logger.debug("iRODS seems online")
 
-    def get_instance(self, user=None):
+    @classmethod
+    def get_instance(cls, user=None):
 
         # Default or Admin
         if user is None:
@@ -1059,8 +1093,8 @@ class IrodsFarm(ServiceFarm):
                 else:
                     logger.warning("Becoming iRODS admin")
 
-        self._irods = IMetaCommands(user)
-        return self._irods
+# We should check if here classmethod is the wrong option
+        # cls._irods = IMetaCommands(user)
+        # return cls._irods
 
-    def define_service_name(self):
-        return 'irods'
+        return IMetaCommands(user)

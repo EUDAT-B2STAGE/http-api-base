@@ -5,7 +5,7 @@
 # from __future__ import absolute_import
 import os
 from commons.logs import get_logger
-from commons.services import ServiceFarm
+from commons.services import ServiceFarm, ServiceObject
 from commons.services.uuid import getUUID
 from datetime import datetime
 import pytz
@@ -23,11 +23,12 @@ USER = 'neo4j'
 PW = USER
 
 try:
-    HOST = os.environ['GDB_NAME'].split('/')[2]
-    PORT = os.environ['GDB_PORT_7474_TCP_PORT']
-    tmp = os.environ['GDB_ENV_NEO4J_AUTH'].split('/')
-    USER = tmp[0]
-    PW = tmp[1]
+
+# TO FIX:
+# should we make a function in commons for this docker variables splits?
+    HOST = os.environ['GDB_NAME'].split('/').pop()
+    PORT = os.environ['GDB_PORT_7474_TCP_PORT'].split(':').pop()
+    USER, PW = os.environ['GDB_ENV_NEO4J_AUTH'].split('/')
 except Exception as e:
     logger.critical("Cannot find a Graph database inside the environment\n" +
                     "Please check variable GDB_NAME")
@@ -39,7 +40,7 @@ except Exception as e:
 # GRAPHDB main object
 ########################
 
-class MyGraph(object):
+class MyGraph(ServiceObject):
     """" A graph db neo4j instance """
 
     def __init__(self):
@@ -72,15 +73,12 @@ class MyGraph(object):
         return results
 
     def clean_pending_tokens(self):
+        logger.debug("Removing all pending tokens")
         return self.cypher("MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a")
 
-    def inject_models(self, models=[]):
-        """ Load models mapping Graph entities """
-
-        for model in models:
-            # Save attribute inside class with the same name
-            logger.debug("Injecting model '%s'" % model.__name__)
-            setattr(self, model.__name__, model)
+    def clean_all(self):
+        logger.warning("Removing all data")
+        return self.cypher("MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r")
 
     def createNode(self, model, attributes={}):
         """
@@ -104,9 +102,6 @@ class MyGraph(object):
         return node
 
 
-
-
-
 #######################
 # Farm to get Graph instances
 ########################
@@ -117,7 +112,8 @@ class GraphFarm(ServiceFarm):
 
     _graph = None
 
-    def define_service_name(self):
+    @staticmethod
+    def define_service_name():
         return 'neo4j'
 
     def init_connection(self, app):
@@ -136,14 +132,15 @@ class GraphFarm(ServiceFarm):
 
         logger.debug("neomodel: checked labeling on active connection")
 
-    def get_instance(self, models2skip=[], use_models=True):
+    @classmethod
+    def get_instance(cls, models2skip=[], use_models=True):
 
-        if self._graph is None:
-            self._graph = MyGraph()
+        if GraphFarm._graph is None:
+            GraphFarm._graph = MyGraph()
             if use_models:
-                self.load_models()
+                cls.load_models()
                 # Remove the ones which developers do not want
-                models = set(list(self._models.values())) - set(models2skip)
-                self._graph.inject_models(models)
+                models = set(list(cls._models.values())) - set(models2skip)
+                GraphFarm._graph.inject_models(models)
 
-        return self._graph
+        return GraphFarm._graph

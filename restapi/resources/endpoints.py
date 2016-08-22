@@ -28,7 +28,7 @@ class Status(ExtendedApiResource):
 
     @decorate.apimethod
     def get(self):
-        return self.response("Server is alive!")
+        return 'Server is alive!'
 
 
 class Login(ExtendedApiResource):
@@ -36,12 +36,12 @@ class Login(ExtendedApiResource):
 
     base_url = AUTH_URL
 
-    @decorate.apimethod
-    def get(self):
-        return self.response(
-            errors={"Wrong method":
-                    "Please login with the POST method"},
-            code=hcodes.HTTP_BAD_UNAUTHORIZED)
+    # @decorate.apimethod
+    # def get(self):
+    #     return self.force_response(
+    #         errors={"Wrong method":
+    #                 "Please login with the POST method"},
+    #         code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
     @decorate.apimethod
     def post(self):
@@ -66,7 +66,7 @@ class Login(ExtendedApiResource):
             password = jargs['pwd']
 
         if username is None or password is None:
-            return self.response(
+            return self.force_response(
                 errors={"Credentials": "Missing 'username' and/or 'password'"},
                 code=bad_code)
 
@@ -74,17 +74,18 @@ class Login(ExtendedApiResource):
         auth = self.global_get('custom_auth')
         token, jti = auth.make_login(username, password)
         if token is None:
-            return self.response(
+            return self.force_response(
                 errors={"Credentials": "Invalid username and/or password"},
                 code=bad_code)
 
         auth.save_token(auth._user, token, jti)
 
-        return self.response({'token': token})
+# TO BE FIXED
+        return {'token': token}
 
         # The right response should be the following
         # Just remove the simple response above
-        return self.response({
+        return self.force_response({
                              'access_token': token,
                              'token_type': auth.token_type
                              })
@@ -100,7 +101,7 @@ class Logout(ExtendedApiResource):
     def get(self):
         auth = self.global_get('custom_auth')
         auth.invalidate_token()
-        return self.response("", code=hcodes.HTTP_OK_NORESPONSE)
+        return self.empty_response()
 
 
 class Tokens(ExtendedApiResource):
@@ -116,16 +117,17 @@ class Tokens(ExtendedApiResource):
         auth = self.global_get('custom_auth')
         tokens = auth.get_tokens(user=auth._user)
         if token_id is None:
-            return self.response(tokens)
+            return self.force_response(tokens)
 
         for token in tokens:
             if token["id"] == token_id:
-                return self.response(token)
+                return token
 
         errorMessage = "This token has not emitted to your account " + \
                        "or does not exist"
-        return self.response(errors=[{"Token not found": errorMessage}],
-                             code=hcodes.HTTP_BAD_NOTFOUND)
+        return self.force_response(
+            errors=[{"Token not found": errorMessage}],
+            code=hcodes.HTTP_BAD_NOTFOUND)
 
     @auth.login_required
     @decorate.apimethod
@@ -142,17 +144,18 @@ class Tokens(ExtendedApiResource):
                 auth.invalidate_token(token=token["token"])
             auth.invalidate_all_tokens()
 
-            return self.response("", code=hcodes.HTTP_OK_NORESPONSE)
+            return self.empty_response()
         else:
             for token in tokens:
                 if token["id"] == token_id:
                     auth.invalidate_token(token=token["token"])
-                    return self.response("", code=hcodes.HTTP_OK_NORESPONSE)
+                    return self.empty_response()
 
             errorMessage = "This token has not emitted to your account " + \
                            "or does not exist"
-            return self.response(errors=[{"Token not found": errorMessage}],
-                                 code=hcodes.HTTP_BAD_NOTFOUND)
+            return self.force_response(
+                errors=[{"Token not found": errorMessage}],
+                code=hcodes.HTTP_BAD_NOTFOUND)
 
 
 class TokensAdminOnly(ExtendedApiResource):
@@ -169,9 +172,10 @@ class TokensAdminOnly(ExtendedApiResource):
         auth = self.global_get('custom_auth')
         token = auth.get_tokens(token_jti=token_id)
         if len(token) == 0:
-            return self.response(errors=[{"Token not found": token_id}],
-                                 code=hcodes.HTTP_BAD_NOTFOUND)
-        return self.response(token)
+            return self.force_response(
+                errors={"Token not found": token_id},
+                code=hcodes.HTTP_BAD_NOTFOUND)
+        return token
 
     @auth.login_required
     @decorate.apimethod
@@ -179,10 +183,11 @@ class TokensAdminOnly(ExtendedApiResource):
         logger.critical("This endpoint should be restricted to admin only!")
         auth = self.global_get('custom_auth')
         if not auth.destroy_token(token_id):
-            return self.response(errors=[{"Token not found": token_id}],
-                                 code=hcodes.HTTP_BAD_NOTFOUND)
+            return self.force_response(
+                errors={"Token not found": token_id},
+                code=hcodes.HTTP_BAD_NOTFOUND)
 
-        return self.response("", code=hcodes.HTTP_OK_NORESPONSE)
+        return self.empty_response()
 
 
 class Profile(ExtendedApiResource):
@@ -218,7 +223,8 @@ class Profile(ExtendedApiResource):
         if hasattr(auth._user, 'irods_user'):
             data["irods_user"] = auth._user.irods_user
 
-        return self.response(data)
+        return data
+
 
 # class Admin(ExtendedApiResource):
 #     """ Token and Role authentication test """
@@ -230,4 +236,4 @@ class Profile(ExtendedApiResource):
 # # // TO FIX:
 #     # @roles_required(config.ROLE_ADMIN)
 #     def get(self):
-#         return self.response("I am admin!")
+#         return self.force_response("I am admin!")

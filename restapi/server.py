@@ -8,10 +8,8 @@ We create all the components here!
 from __future__ import absolute_import
 
 import os
-from flask import Flask, request, g  # , jsonify, got_request_exception
-# from .jsonify import make_json_error
-# from werkzeug.exceptions import default_exceptions
-# from .jsonify import log_exception, RESTError
+import json
+from flask import Flask, request, g
 from commons.meta import Meta
 from . import myself, lic
 from commons.logs import get_logger
@@ -56,8 +54,11 @@ https://github.com/pallets/flask/wiki/Large-app-how-to
 ########################
 # Flask App factory    #
 ########################
-def create_app(name=__name__,
-               enable_security=True, debug=False, testing=False, **kwargs):
+def create_app(name=__name__, debug=False,
+               worker_mode=False, testing_mode=False,
+               avoid_context=False, enable_security=True,
+               skip_endpoint_mapping=False,
+               **kwargs):
     """ Create the server istance for Flask application """
 
     #################################################
@@ -66,8 +67,11 @@ def create_app(name=__name__,
     from .confs import config
     microservice = Flask(name, **kwargs)
 
-    if testing:
-        microservice.config['TESTING'] = testing
+    if worker_mode:
+        enable_security = False
+
+    if testing_mode:
+        microservice.config['TESTING'] = testing_mode
     # else:
 #         # Check and use a random file a secret key.
 # # // TO FIX:
@@ -129,10 +133,8 @@ def create_app(name=__name__,
         # Global namespace inside the Flask server
         @microservice.before_request
         def enable_global_authentication():
-            # Save auth
+            """ Save auth object """
             g._custom_auth = custom_auth
-            # Save all databases/services
-            g._services = internal_services
 
         # Enabling also OAUTH library
         from .oauth import oauth
@@ -140,28 +142,42 @@ def create_app(name=__name__,
 
         logger.info("FLASKING! Injected security internal module")
 
+    if not worker_mode:
+        # Global namespace inside the Flask server
+        @microservice.before_request
+        def enable_global_services():
+            """ Save all databases/services """
+            g._services = internal_services
+
     ##############################
     # Restful plugin
-    from .rest import Api, EndpointsFarmer, create_endpoints
-    # Defining AUTOMATIC Resources
-    current_endpoints = \
-        create_endpoints(EndpointsFarmer(Api), enable_security, debug)
-    # Restful init of the app
-    current_endpoints.rest_api.init_app(microservice)
+    if not skip_endpoint_mapping:
+        from .rest import Api, EndpointsFarmer, create_endpoints
+        # Defining AUTOMATIC Resources
+        current_endpoints = \
+            create_endpoints(EndpointsFarmer(Api), enable_security, debug)
+        # Restful init of the app
+        current_endpoints.rest_api.init_app(microservice)
 
     ##############################
     # Init objects inside the app context
-    with microservice.app_context():
+    if not avoid_context:
+        with microservice.app_context():
 
-        # Note:
-        # Databases are already initialized inside the instances farm
-        # Outside of the context
-        # p.s. search inside this file for 'myclass('
+            # Set global objects for celery workers
+            if worker_mode:
+                from commons.globals import mem
+                mem.services = internal_services
 
-        # Init users/roles for Security
-        if enable_security:
-            custom_auth.setup_secret(microservice.config['SECRET_KEY'])
-            custom_auth.init_users_and_roles()
+            # Note:
+            # Databases are already initialized inside the instances farm
+            # Outside of the context
+            # p.s. search inside this file for 'myclass('
+
+            # Init users/roles for Security
+            if enable_security:
+                custom_auth.setup_secret(microservice.config['SECRET_KEY'])
+                custom_auth.init_users_and_roles()
 
     ##############################
     # Logging responses
@@ -170,9 +186,25 @@ def create_app(name=__name__,
 
         from commons.logs import obscure_passwords
 
+        try:
+            data = obscure_passwords(request.data)
+        except json.decoder.JSONDecodeError:
+            data = request.data
+
+        # Shrink too long data in log output
+        for k in data:
+            # print("K", k, "DATA", data)
+            try:
+                if not isinstance(data[k], str):
+                    continue
+                if len(data[k]) > 255:
+                    data[k] = data[k][:255] + "..."
+            except IndexError:
+                pass
+
         logger.info("{} {} {} {}".format(
                     request.method, request.url,
-                    obscure_passwords(request.data), response))
+                    data, response))
         return response
 
     ##############################

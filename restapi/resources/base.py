@@ -2,13 +2,15 @@
 
 """ The most standard Basic Resource i could """
 
-from commons import htmlcodes as hcodes
+import json
+import pytz
+from datetime import datetime
+from flask import g, make_response, jsonify, Response
+from flask_restful import request, Resource, reqparse
+from .decorators import get_response, set_response
 from ..confs.config import API_URL  # , STACKTRACE
 from ..jsonify import output_json  # , RESTError
-from flask import make_response, jsonify, g, Response
-from flask_restful import request, Resource, reqparse
-import json
-from datetime import datetime
+from commons import htmlcodes as hcodes
 from commons.logs import get_logger
 
 logger = get_logger(__name__)
@@ -27,6 +29,8 @@ class ExtendedApiResource(Resource):
     """ Implement a generic Resource for Restful model """
 
     myname = __name__
+    _latest_response = {}
+    _latest_headers = {}
     _args = {}
     _params = {}
     endpoint = None
@@ -42,11 +46,13 @@ class ExtendedApiResource(Resource):
             # Be sure of handling JSON
             'application/json': output_json,
         }
-        # Init for latest response
+
+        # Init for DEFAULT latest response
         self._latest_response = {
             RESPONSE_CONTENT: None,
             RESPONSE_META: None,
         }
+
         # Apply decision about the url of endpoint
         self.set_endpoint()
         # Make sure you can parse arguments at every call
@@ -197,51 +203,37 @@ class ExtendedApiResource(Resource):
         obj = g.get('_%s' % object_name, None)
         if obj is None:
             raise AttributeError(
-                "Global variables: no %s object found!" % object_name)
+                "Global API variables: no %s object found!" % object_name)
         return obj
 
     def global_get_service(self,
                            service_name, object_name='services', **kwargs):
 
-        services = self.global_get(object_name)
-        obj = services.get(service_name, None)
-        if obj is None:
-            raise AttributeError(
-                "Global variables: no %s object found!" % object_name)
-        return obj().get_instance(**kwargs)
+        from commons.services import get_instance_from_services
+        return get_instance_from_services(
+            self.global_get(object_name),   # services
+            service_name,
+            **kwargs)
 
-    def response(self, data=None, elements=None,
-                 errors=None, code=hcodes.HTTP_OK_BASIC, headers={}):
+    def force_response(self, *args, **kwargs):
+        method = get_response()
+        return method(*args, **kwargs)
+
+    def default_response(self, defined_content=None, elements=None,
+                         code=hcodes.HTTP_OK_BASIC, errors=None, headers={}):
         """
-        Handle a standard response following criteria described in
+        Handle OUR standard response following criteria described in
         https://github.com/EUDAT-B2STAGE/http-api-base/issues/7
         """
 
-        # Skip this method if the whole data
-        # is already a Flask Response
-        from werkzeug.wrappers import Response
-        if isinstance(data, Response):
-            return data
-
-        # Do not apply if the object has already been used
-        # as a 'standard response' from a parent call
-        existing_content = {}
-        existing_code = hcodes.HTTP_OK_BASIC
-
-        # Normal response
-        if isinstance(data, tuple) and len(data) == 2:
-            existing_content, existing_code = data
-
-        # Missing code in response
-        if isinstance(data, dict) and len(data) == 2:
-            existing_content = data
-            if RESPONSE_META in existing_content:
-                existing_code = existing_content[RESPONSE_META]['status']
-
-        if RESPONSE_CONTENT in existing_content \
-           and RESPONSE_META in existing_content:
-            if existing_code > 0 and existing_code < 600:
-                return existing_content, existing_code
+        # Avoid adding content and meta if it's already inside the data
+        # In this situation probably we already called this same response
+        # somewhere else
+        if defined_content is not None:
+            if RESPONSE_CONTENT in defined_content:
+                if RESPONSE_META in defined_content:
+                    # (code > 0 and code < 600):
+                    return defined_content, code
 
         #########################
         # Compute the elements
@@ -254,29 +246,31 @@ class ExtendedApiResource(Resource):
                 errors = [errors]
 
         # Decide code range
-        if errors is None and data is None:
+        if errors is None and defined_content is None:
             logger.warning("RESPONSE: Warning, no data and no errors")
             code = hcodes.HTTP_OK_NORESPONSE
         elif errors is None:
             if code not in range(0, hcodes.HTTP_MULTIPLE_CHOICES):
                 code = hcodes.HTTP_OK_BASIC
-        elif data is None:
+        elif defined_content is None:
             if code < hcodes.HTTP_BAD_REQUEST:
-                code = hcodes.HTTP_BAD_REQUEST
+                # code = hcodes.HTTP_BAD_REQUEST
+                code = hcodes.HTTP_SERVER_ERROR
         # else:
         #     #warnings
         #     range 300 < 400
 
+        #########################
         # Try conversions and compute types and length
         try:
-            data_type = str(type(data))
+            data_type = str(type(defined_content))
             if elements is None:
-                if data is None:
+                if defined_content is None:
                     elements = 0
-                elif isinstance(data, str):
+                elif isinstance(defined_content, str):
                     elements = 1
                 else:
-                    elements = len(data)
+                    elements = len(defined_content)
 
             if errors is None:
                 total_errors = 0
@@ -285,10 +279,10 @@ class ExtendedApiResource(Resource):
 
             code = int(code)
         except Exception as e:
-            logger.critical("Could not build response: %s" % e)
+            logger.critical("Could not build response!\n%s" % e)
             # Revert to defaults
-            data = None,
-            data_type = str(type(data))
+            defined_content = None,
+            data_type = str(type(defined_content))
             elements = 0
             # Also set the error
             code = hcodes.HTTP_SERVICE_UNAVAILABLE
@@ -297,7 +291,7 @@ class ExtendedApiResource(Resource):
 
         self._latest_response = {
             RESPONSE_CONTENT: {
-                'data': data,
+                'data': defined_content,
                 'errors': errors,
             },
             RESPONSE_META: {
@@ -308,19 +302,81 @@ class ExtendedApiResource(Resource):
             }
         }
 
-        ########################################
-        # Make a Flask Response
-        # http://blog.miguelgrinberg.com/
-        # # post/customizing-the-flask-response-class
-        response = make_response(
-            (jsonify(self._latest_response), code))
+        return self.flask_response(
+            data=self._latest_response, status=code, headers=headers)
 
+# TO BE REMOVED
+    def response(self, *args, **kwargs):
+        """ DEPRECATED """
+        import inspect
+        name = inspect.currentframe().f_code.co_name
+        logger.warning("Called method '%s' has been DEPRECATED" % name)
+        return self.force_response(*args, **kwargs)
+
+    def empty_response(self):
+        return self.force_response("", code=hcodes.HTTP_OK_NORESPONSE)
+
+    def report_generic_error(self,
+                             message=None, current_response_available=True):
+
+        if message is None:
+            message = "Something BAD happened somewhere..."
+        logger.critical(message)
+
+        user_message = "Server unable to respond."
+        code = hcodes.HTTP_SERVER_ERROR
+        if current_response_available:
+            return self.force_response(user_message, code=code)
+        else:
+            return self.flask_response(user_message, status=code)
+
+    @staticmethod
+    def check_response(response):
+        return isinstance(response, Response)
+
+    @staticmethod
+    def flask_response(data, status=hcodes.HTTP_OK_BASIC, headers={}):
+        """
+        Inspired by
+        http://blog.miguelgrinberg.com/
+            post/customizing-the-flask-response-class
+
+        Every default/custom response should use this in the end
+        """
+
+        # Handle normal response (not Flaskified)
+        if isinstance(data, tuple) and len(data) == 2:
+            subdata, substatus = data
+            data = subdata
+            if isinstance(substatus, int):
+                status = substatus
+
+        # Create the Flask original response
+        response = make_response((jsonify(data), status))
+
+        # Handle headers if specified by the user
         response_headers = response.headers.keys()
         for header, header_content in headers.items():
+            # Only headers that are missing
             if header not in response_headers:
                 response.headers[header] = header_content
 
         return response
+
+    @staticmethod
+    def timestamp_from_string(timestamp_string):
+        """
+        Neomodels complains about UTC, this is to fix it.
+        Taken from http://stackoverflow.com/a/21952077/2114395
+        """
+
+        precision = float(timestamp_string)
+        # return datetime.fromtimestamp(precision)
+
+        utc_dt = datetime.utcfromtimestamp(precision)
+        aware_utc_dt = utc_dt.replace(tzinfo=pytz.utc)
+
+        return aware_utc_dt
 
     def formatJsonResponse(self, instances, resource_type=None):
         """
@@ -354,7 +410,8 @@ class ExtendedApiResource(Resource):
 
         return json_data
 
-    def getJsonResponse(self, instance, fields=[], resource_type=None,
+    def getJsonResponse(self, instance,
+                        fields=[], resource_type=None, skip_missing_ids=False,
                         relationship_depth=0, max_relationship_depth=1):
         """
         Lots of meta introspection to guess the JSON specifications
@@ -381,6 +438,9 @@ class ExtendedApiResource(Resource):
             # Very difficult for relationships
             "links": {"self": request.url + '/' + id},
         }
+
+        if skip_missing_ids and id == '-':
+            del data['id']
 
         if relationship_depth > 0:
             del data['links']
@@ -420,6 +480,7 @@ class ExtendedApiResource(Resource):
                         subrelationship.append(
                             self.getJsonResponse(
                                 node,
+                                skip_missing_ids=skip_missing_ids,
                                 relationship_depth=relationship_depth + 1,
                                 max_relationship_depth=max_relationship_depth))
 
@@ -429,3 +490,8 @@ class ExtendedApiResource(Resource):
                 data['relationships'] = linked
 
         return data
+
+# Set default response
+set_response(
+    original=False,  # first_call=True,
+    custom_method=ExtendedApiResource().default_response)

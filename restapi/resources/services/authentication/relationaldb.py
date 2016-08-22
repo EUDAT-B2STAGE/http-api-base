@@ -34,7 +34,7 @@ class Authentication(BaseAuthentication):
         I will recover initial instance from the Flask app services.
         """
 
-        self._db = services.get('sql')().get_instance()
+        self._db = services.get('sql').get_instance()
 
     def fill_custom_payload(self, userobj, payload):
         """

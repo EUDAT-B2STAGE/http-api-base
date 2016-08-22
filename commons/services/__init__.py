@@ -23,7 +23,50 @@ logger = get_logger(__name__)
 BASE_MODELS_PATH = 'commons.models.'
 
 
+def get_instance_from_services(services, service_name='relational', **kwargs):
+    """
+    Recover an instance among many services factory
+    """
+    obj = services.get(service_name, None)
+    if obj is None:
+        raise AttributeError(
+            "Global API services: '%s' not found!" % service_name)
+
+    ####################
+    # Build the object & get the Instance
+
+    # # If we want to use a new instance every time
+    # return obj().get_instance(**kwargs)
+
+# // TO FIX:
+# probably this decision should be made with a parameter for this function
+
+    # If we want to use a global connection pool for database instances
+    return obj.get_instance(**kwargs)
+
+
+class ServiceObject(object):
+    """
+    Basic object for a service
+    """
+
+    def inject_models(self, models=None):
+        """ Load models mapping entities """
+
+        if models is None:
+            models = self._models
+
+        for model in models:
+            # Save attribute inside class with the same name
+            logger.debug("Injecting model '%s'" % model.__name__)
+            setattr(self, model.__name__, model)
+
+
 class ServiceFarm(metaclass=abc.ABCMeta):
+
+    """
+    basic farm for any service in our framework
+    """
 
     _meta = Meta()
     _service_name = None
@@ -50,6 +93,7 @@ class ServiceFarm(metaclass=abc.ABCMeta):
                 logger.info("Instance of '%s' was connected" % name)
             except AttributeError as e:
                 # Give the developer a way to stop this cycle if critical
+                logger.critical("An attribute error:\n%s" % e)
                 raise e
             except Exception as e:
                 counter += 1
@@ -57,28 +101,32 @@ class ServiceFarm(metaclass=abc.ABCMeta):
                     sleep_time += sleep_time * 2
                 logger.warning("%s: Not reachable yet. Sleeping %s."
                                % (name, sleep_time))
-                logger.debug("Error was %s" % str(e))
+                logger.critical("Error was %s" % str(e))
                 time.sleep(sleep_time)
 
-    def load_generic_models(self, module_path):
-        module = self._meta.get_module_from_string(module_path)
-        models = self._meta.get_new_classes_from_module(module)
+    @classmethod
+    def load_generic_models(cls, module_path):
+        module = cls._meta.get_module_from_string(module_path)
+        models = cls._meta.get_new_classes_from_module(module)
         # Keep tracking from where we loaded models
         # This may help with some service (e.g. sqlalchemy)
-        self._models_module = module_path
+        cls._models_module = module_path
         return models
 
-    def load_base_models(self):
-        module_path = BASE_MODELS_PATH + self._service_name
+    @classmethod
+    def load_base_models(cls):
+        module_path = BASE_MODELS_PATH + cls.define_service_name()
         logger.debug("Loading base models")
-        return self.load_generic_models(module_path)
+        return cls.load_generic_models(module_path)
 
-    def load_custom_models(self):
-        module_path = BASE_MODELS_PATH + 'custom.' + self._service_name
+    @classmethod
+    def load_custom_models(cls):
+        module_path = BASE_MODELS_PATH + 'custom.' + cls.define_service_name()
         logger.debug("Loading custom models")
-        return self.load_generic_models(module_path)
+        return cls.load_generic_models(module_path)
 
-    def load_models(self):
+    @classmethod
+    def load_models(cls):
         """
         Algorithm to define basic models for authorization/authentication
         and optionally let users add custom models or override existing ones.
@@ -89,12 +137,12 @@ class ServiceFarm(metaclass=abc.ABCMeta):
         """
 
         # Load base models
-        base_models = self.load_base_models()
+        base_models = cls.load_base_models()
         # Load custom models, if the file exists
-        custom_models = self.load_custom_models()
+        custom_models = cls.load_custom_models()
 
         # Join models as described by issue #16
-        self._models = base_models
+        cls._models = base_models
         for key, model in custom_models.items():
             # Verify if overriding
             if key in base_models.keys():
@@ -102,16 +150,17 @@ class ServiceFarm(metaclass=abc.ABCMeta):
                 # Override
                 if issubclass(model, original_model):
                     logger.debug("Overriding model %s" % key)
-                    self._models[key] = model
+                    cls._models[key] = model
                     continue
             # Otherwise just append
-            self._models[key] = model
+            cls._models[key] = model
 
         logger.debug("Loaded service models")
-        return self._models
+        return cls._models
 
+    @staticmethod
     @abc.abstractmethod
-    def define_service_name(self):
+    def define_service_name():
         """
         Please define a name for the current implementation
         """
@@ -121,6 +170,7 @@ class ServiceFarm(metaclass=abc.ABCMeta):
     def init_connection(self, app):
         return
 
+    @classmethod
     @abc.abstractmethod
-    def get_instance(self, *args):
+    def get_instance(cls, *args):
         return

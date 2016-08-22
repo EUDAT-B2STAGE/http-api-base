@@ -16,20 +16,22 @@ logger = get_logger(__name__)
 
 #################
 services = {}
+farm_queue = []
 
 #######################################################
 # RELATIONAL DATABASE
 SQL_AVAILABLE = False
 
 #// TO FIX:
-# When we have postgres/mysql, you must detect them
+# If we have postgres/mysql, you must detect them
 
 if 'BACKEND_AUTH_SERVICE' in os.environ:
     if os.environ['BACKEND_AUTH_SERVICE'] == 'relationaldb':
         SQL_AVAILABLE = True
         from .sql.alchemy import SQLFarm as service
-        logger.debug("Created SQLAlchemy relational DB objet")
-        services['sql'] = service
+        # logger.debug("Created SQLAlchemy relational DB objet")
+        farm_queue.append(service)
+        # services['sql'] = service
 
 #######################################################
 # GRAPH DATABASE
@@ -38,7 +40,8 @@ GRAPHDB_AVAILABLE = 'GDB_NAME' in os.environ
 if GRAPHDB_AVAILABLE:
     # DO something and inject into 'services'
     from .neo4j.graph import GraphFarm as service
-    services['neo4j'] = service
+    # services['neo4j'] = service
+    farm_queue.append(service)
 
 #######################################################
 # IRODS
@@ -55,9 +58,34 @@ if IRODS_AVAILABLE:
 
     # DO something and inject into 'services'
     from .irods.client import IrodsFarm as service
-    services['irods'] = service
+    # services['irods'] = service
+    farm_queue.append(service)
 
 #######################################################
 # ELASTICSEARCH / OTHERS
 
-# ?
+ELASTIC_AVAILABLE = 'EL_NAME' in os.environ
+
+if ELASTIC_AVAILABLE:
+    from .elasticsearch.service import ElasticFarm as service
+    farm_queue.append(service)
+
+
+#######################################################
+# REDIS for CELERY TASKS QUEUE
+
+CELERY_AVAILABLE = 'QUEUE_NAME' in os.environ
+
+if CELERY_AVAILABLE:
+    from .celery.tasks import CeleryFarm as service
+    farm_queue.append(service)
+
+
+#####################################
+#####################################
+
+# Create the dictionary of services
+for farm in farm_queue:
+    service_name = farm.define_service_name()
+    logger.debug("Adding service '%s'" % service_name)
+    services[service_name] = farm
