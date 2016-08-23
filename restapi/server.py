@@ -179,6 +179,13 @@ def create_app(name=__name__, debug=False,
                 custom_auth.setup_secret(microservice.config['SECRET_KEY'])
                 custom_auth.init_users_and_roles()
 
+            # Allow a custom method for mixed services init
+            try:
+                from .resources.custom import services as custom_services
+                custom_services.init(internal_services, enable_security)
+            except:
+                logger.debug("No custom init available for mixed services")
+
     ##############################
     # Logging responses
     @microservice.after_request

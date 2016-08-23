@@ -64,9 +64,9 @@ def set_response(original=False, custom_method=None, first_call=False):
     elif custom_method is not None:
         mem.current_response = custom_method
 
-    # Debug when response is injected
-    if not first_call:
-        logger.info("Response is '%s'" % mem.current_response)
+        # Debug when response is injected and if custom
+        if not first_call:
+            logger.debug("Response method: %s" % custom_method)
 
 
 def get_response():

@@ -359,6 +359,9 @@ class ICommands(BashCommands):
         # return self.list(self.get_user_home(user))
         return True
 
+    def get_default_user(self):
+        return IRODS_DEFAULT_USER
+
     def get_current_user(self):
         return self._current_user
 

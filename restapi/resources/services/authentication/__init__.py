@@ -113,6 +113,25 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         """
         return
 
+    def unpack_token(self, token):
+
+        payload = None
+
+        try:
+            payload = jwt.decode(
+                token, self.SECRET, algorithms=[self.JWT_ALGO])
+        # now > exp
+        except jwt.exceptions.ExpiredSignatureError as e:
+# should this token be invalidated into the DB?
+            logger.warning("Unable to decode JWT token. %s" % e)
+        # now < nbf
+        except jwt.exceptions.ImmatureSignatureError as e:
+            logger.warning("Unable to decode JWT token. %s" % e)
+        except Exception as e:
+            logger.warning("Unable to decode JWT token. %s" % e)
+
+        return payload
+
     def verify_token(self, token):
 
         # Force token cleaning
@@ -122,22 +141,14 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         if token is None:
             return False
 
-        try:
-            self._payload = jwt.decode(
-                token, self.SECRET, algorithms=[self.JWT_ALGO])
-        # now > exp
-        except jwt.exceptions.ExpiredSignatureError as e:
-            logger.warning("Unable to decode JWT token. %s" % e)
-            # this token should be invalidated into the DB?
+        # Decode the current token
+        tmp_payload = self.unpack_token(token)
+        if tmp_payload is None:
             return False
-        # now < nbf
-        except jwt.exceptions.ImmatureSignatureError as e:
-            logger.warning("Unable to decode JWT token. %s" % e)
-            return False
-        except Exception as e:
-            logger.warning("Unable to decode JWT token. %s" % e)
-            return False
+        else:
+            self._payload = tmp_payload
 
+        # Get the user from payload
         self._user = self.get_user_object(payload=self._payload)
         if self._user is None:
             return False

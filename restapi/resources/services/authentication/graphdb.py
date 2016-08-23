@@ -139,10 +139,6 @@ instead of here
             logger.warning("Token %s not found" % jti)
             return False
 
-    def get_user_from_token(self, user):
-        pass
-
-
     def get_tokens(self, user=None, token_jti=None):
         # TO FIX: TTL should be considered?
 

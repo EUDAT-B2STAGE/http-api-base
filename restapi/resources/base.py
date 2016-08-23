@@ -198,6 +198,19 @@ class ExtendedApiResource(Resource):
         _, token = HTTPTokenAuth.get_authentication_from_headers()
         return token
 
+    def get_current_user(self):
+        """
+        Return the associated User OBJECT if:
+        - the endpoint requires authentication
+        - a valid token was provided
+        in the current endpoint call.
+
+        Note: this method works because of actions inside
+        authentication/__init__.py@verify_token method
+        """
+
+        return self.global_get('custom_auth')._user
+
     def global_get(self, object_name):
 
         obj = g.get('_%s' % object_name, None)
