@@ -47,13 +47,14 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
         self._scheme = scheme or HTTPAUTH_DEFAULT_SCHEME
         self._realm = realm or HTTPAUTH_DEFAULT_REALM
         self.verify_token_callback = None
+        self.verify_roles_callback = None
 
     def authenticate_header(self):
         return '{0} realm="{1}"'.format(self._scheme, self._realm)
 
-    def verify_token(self, f):
-        self.verify_token_callback = f
-        return f
+    def callbacks(self, verify_token_f=None, verify_roles_f=None):
+        self.verify_token_callback = verify_token_f
+        self.verify_roles_callback = verify_roles_f
 
     def authenticate(self, auth, stored_password):
         if auth:
@@ -70,6 +71,32 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
         Returns (auth, token)
         """
         return request.headers.get(HTTPAUTH_AUTH_FIELD).split(None, 1)
+
+    def authenticate_roles(self, roles):
+        if self.verify_roles_callback:
+            return self.verify_roles_callback(roles)
+        return False
+
+    def roles_required(self, *roles):
+        def decorator(f):
+            @wraps(f)
+            def decorated(*args, **kwargs):
+
+                # Call the internal api method by getting 'self'
+                try:
+                    decorated_self = list(args).pop(0)
+                except AttributeError:
+                    decorated_self = None
+
+                if not self.authenticate_roles(roles):
+                    return decorated_self.force_response(
+                        errors={"Missing privileges":
+                                "One or more role required"},
+                        code=hcodes.HTTP_BAD_UNAUTHORIZED
+                    )
+                return f(*args, **kwargs)
+            return decorated
+        return decorator
 
     def login_required(self, f):
         @wraps(f)

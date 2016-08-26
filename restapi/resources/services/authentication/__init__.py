@@ -132,6 +132,11 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         return payload
 
+    def verify_roles(self, roles):
+        for role in roles:
+            print("Verify role", role)
+        return False
+
     def verify_token(self, token):
 
         # Force token cleaning
