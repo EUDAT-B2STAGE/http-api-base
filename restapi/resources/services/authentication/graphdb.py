@@ -120,14 +120,8 @@ instead of here
         token_node.creation = now
         token_node.last_access = now
         token_node.expiration = exp
-        from flask import request
-        import socket
-        ip = request.remote_addr
-        try:
-            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
-        except Exception:
-            hostname = ""
 
+        ip, hostname = self.get_host_info()
         token_node.IP = ip
         token_node.hostname = hostname
 

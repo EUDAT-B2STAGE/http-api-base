@@ -91,6 +91,34 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         proposed_password = BaseAuthentication.hash_password(password)
         return hashed_password == proposed_password
 
+    @staticmethod
+    def get_host_info():
+
+        import socket
+
+        ###############
+        # Note: timeout do not work on dns lookup...
+        # also read:
+        # http://depier.re/attempts_to_speed_up_gethostbyaddr/
+
+        # # if getting slow when network is unreachable
+        # timer = 1
+        # if hasattr(socket, 'setdefaulttimeout'):
+        #     socket.setdefaulttimeout(timer)
+        # # socket.socket.settimeout(timer)
+
+        ###############
+        from flask import request
+        ip = request.remote_addr
+
+        try:
+            # note: this will return the ip if hostname is not available
+            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
+        except Exception as e:
+            logger.warning("Hostname solving: error '%s'" % e)
+            hostname = ""
+        return ip, hostname
+
     def create_token(self, payload):
         """ Generate a byte token with JWT library to encrypt the payload """
         self._payload = payload
