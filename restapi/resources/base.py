@@ -80,7 +80,13 @@ class ExtendedApiResource(Resource):
 
     def get_input(self, forcing=True):
         """ Get JSON. The power of having a real object in our hand. """
-        return request.get_json(force=forcing)
+        json = []
+        try:
+            json = request.get_json(force=forcing)
+        except Exception as e:
+            logger.warning("Failed to get JSON params for current req: '%s'"
+                           % e)
+        return json
 
     def myname(self):
         return self.__class__.__name__
