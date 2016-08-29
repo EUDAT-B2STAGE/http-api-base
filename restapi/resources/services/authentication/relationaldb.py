@@ -54,10 +54,17 @@ instead of here
                 uuid=payload['user_id']).first()
         return user
 
+###############
+## TO FIX
+    def get_roles_from_user(self, userobj=None):
+        return NotImplementedError("To do")
+
     def create_user(self, userdata, roles=[]):
         if self.DEFAULT_ROLE not in roles:
             roles.append(self.DEFAULT_ROLE)
         return NotImplementedError("To do")
+## TO FIX
+###############
 
     def init_users_and_roles(self):
 

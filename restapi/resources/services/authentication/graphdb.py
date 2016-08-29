@@ -49,6 +49,20 @@ class Authentication(BaseAuthentication):
             logger.warning("Could not find user for '%s'" % username)
         return user
 
+    def get_roles_from_user(self, userobj=None):
+
+        roles = []
+        if userobj is None:
+            try:
+                userobj = self._user
+            except Exception as e:
+                logger.warning("Roles check: invalid current user.\n%s" % e)
+                return roles
+
+        for role in userobj.roles.all():
+            roles.append(role.name)
+        return roles
+
     def fill_custom_payload(self, userobj, payload):
 ## // TO FIX
         """

@@ -163,9 +163,13 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return payload
 
     def verify_roles(self, roles):
+
+        current_roles = self.get_roles_from_user()
         for role in roles:
-            print("Verify role", role)
-        return False
+            if role not in current_roles:
+                logger.warning("Auth role '%s' missing for request" % role)
+                return False
+        return True
 
     def verify_token(self, token):
 
@@ -226,6 +230,15 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         A method to create a new user following some standards.
         - The user should be at least associated to the default (basic) role
         - More to come
+        """
+        return
+
+    @abc.abstractmethod
+    def get_roles_from_user(self, userobj=None):
+        """
+        How to retrieve the role of a user from the current service,
+        based on a user object.
+        If not provided, uses the current user obj stored in self._user.
         """
         return
 

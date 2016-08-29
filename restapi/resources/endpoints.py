@@ -14,7 +14,7 @@ from .base import ExtendedApiResource
 from commons import htmlcodes as hcodes
 from . import decorators as decorate
 from ..auth import auth
-# from ..confs import config
+from ..confs import config
 
 __author__ = myself
 __copyright__ = myself
@@ -80,15 +80,16 @@ class Login(ExtendedApiResource):
 
         auth.save_token(auth._user, token, jti)
 
-# TO BE FIXED
+## // TO FIX
+# split response as above in access_token and token_type?
+# also set headers?
+        # # The right response should be the following
+        # # Just remove the simple response above
+        # return self.force_response({
+        #     'access_token': token,
+        #     'token_type': auth.token_type
+        # })
         return {'token': token}
-
-        # The right response should be the following
-        # Just remove the simple response above
-        return self.force_response({
-                             'access_token': token,
-                             'token_type': auth.token_type
-                             })
 
 
 class Logout(ExtendedApiResource):
@@ -226,14 +227,25 @@ class Profile(ExtendedApiResource):
         return data
 
 
-# class Admin(ExtendedApiResource):
-#     """ Token and Role authentication test """
+class Internal(ExtendedApiResource):
+    """ Token and Role authentication test """
 
-#     base_url = AUTH_URL
+    base_url = AUTH_URL
 
-#     @auth.login_required
-#     @decorate.apimethod
-# # // TO FIX:
-#     # @roles_required(config.ROLE_ADMIN)
-#     def get(self):
-#         return self.force_response("I am admin!")
+    @auth.login_required
+    @auth.roles_required(config.ROLE_INTERNAL)
+    @decorate.apimethod
+    def get(self):
+        return self.force_response("I am internal")
+
+
+class Admin(ExtendedApiResource):
+    """ Token and Role authentication test """
+
+    base_url = AUTH_URL
+
+    @auth.login_required
+    @auth.roles_required(config.ROLE_ADMIN)
+    @decorate.apimethod
+    def get(self):
+        return self.force_response("I am admin!")
