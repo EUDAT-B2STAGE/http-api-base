@@ -35,7 +35,7 @@ class Token(StructuredNode):
 
 
 class Role(StructuredNode):
-    name = StringProperty(required=True)
+    name = StringProperty(required=True, unique_index=True)
     description = StringProperty(default='No description')
     privileged = RelationshipFrom(User, 'HAS_ROLE', cardinality=OneOrMore)
 
@@ -47,4 +47,5 @@ class ExternalAccounts(StructuredNode):
     certificate_cn = StringProperty()
     proxyfile = StringProperty()
     description = StringProperty(default='No description')
-    main_user = RelationshipFrom(User, 'HAS_AUTHORIZATION', cardinality=OneOrMore)
+    main_user = RelationshipFrom(
+        User, 'HAS_AUTHORIZATION', cardinality=OneOrMore)

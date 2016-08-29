@@ -148,8 +148,13 @@ class DataObjectToGraph(object):
         ##################################
         # Connect to irods user
         user = self._icom.get_current_user()
-        current_user = self._graph.IrodsUser.get_or_create(
-            {'username': user}).pop()
+        current_user = None
+        try:
+## to check: irods user should already exist?
+            current_user = self._graph.IrodsUser.search(username=user).pop()
+        except Exception as e:
+            raise AttributeError(
+                "Irods user %s does not exist in the graph!\n%s" % (user, e))
         current_dobj.owned.connect(current_user)
 
         # Connect the irods user to current_token

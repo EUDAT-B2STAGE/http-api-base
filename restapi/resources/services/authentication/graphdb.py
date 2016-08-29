@@ -13,7 +13,6 @@ MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a
 
 from __future__ import absolute_import
 import pytz
-import neomodel
 from datetime import datetime, timedelta
 from commons.services.uuid import getUUID
 from commons.logs import get_logger
@@ -90,7 +89,11 @@ instead of here
     def init_users_and_roles(self):
 
         # Handle system roles
-        current_roles = self._graph.Role.nodes.all()
+        current_roles = []
+        current_roles_objs = self._graph.Role.nodes.all()
+        for role in current_roles_objs:
+            current_roles.append(role.name)
+
         for role in self.DEFAULT_ROLES:
             if role not in current_roles:
                 self.create_role(role)
