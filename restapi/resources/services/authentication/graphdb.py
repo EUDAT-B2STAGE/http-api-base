@@ -13,6 +13,7 @@ MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a
 
 from __future__ import absolute_import
 import pytz
+import neomodel
 from datetime import datetime, timedelta
 from commons.services.uuid import getUUID
 from commons.logs import get_logger
@@ -50,35 +51,60 @@ class Authentication(BaseAuthentication):
         return user
 
     def fill_custom_payload(self, userobj, payload):
+## // TO FIX
         """
-# // TO FIX
-
 This method should be implemented inside the vanilla folder,
 instead of here
         """
         return payload
 
+    def create_user(self, userdata, roles=[]):
+
+        if self.DEFAULT_ROLE not in roles:
+            roles.append(self.DEFAULT_ROLE)
+
+        user_node = self._graph.User(**userdata)
+        try:
+            user_node.save()
+        except Exception as e:
+            message = "Can't create user %s:\n%s" % (userdata['email'], e)
+            logger.error(message)
+            raise AttributeError(message)
+
+        # Link the new external account to at least at the very default Role
+        for role in roles:
+            logger.debug("Adding role %s" % role)
+            try:
+                role_obj = self._graph.Role.nodes.get(name=role)
+            except self._graph.Role.DoesNotExist:
+                raise Exception("Graph role %s does not exist" % role)
+            user_node.roles.connect(role_obj)
+
+        return user_node
+
+    def create_role(self, role, description="automatic"):
+        role = self._graph.Role(name=role, description=description)
+        role.save()
+        return role
+
     def init_users_and_roles(self):
 
-        if not len(self._graph.Role.nodes) > 0:
-            logger.warning("No roles inside graphdb. Injected defaults.")
-            for role in self.DEFAULT_ROLES:
-                role = self._graph.Role(name=role, description="automatic")
-                role.save()
+        # Handle system roles
+        current_roles = self._graph.Role.nodes.all()
+        for role in self.DEFAULT_ROLES:
+            if role not in current_roles:
+                self.create_role(role)
 
+        # Default user (if no users yet available)
         if not len(self._graph.User.nodes) > 0:
-            logger.warning("No users inside graphdb. Injected default.")
-            user = self._graph.User(
-                uuid=getUUID(),
-                email=self.DEFAULT_USER,
-                authmethod='credentials',
-                name='Default', surname='User',
-                password=self.hash_password(self.DEFAULT_PASSWORD))
-            user.save()
-
-            for role in self.DEFAULT_ROLES:
-                role_obj = self._graph.Role.nodes.get(name=role)
-                user.roles.connect(role_obj)
+            logger.warning("No users inside graphdb. Injecting default.")
+            self.create_user({
+                'uuid': getUUID(),
+                'email': self.DEFAULT_USER,
+                'authmethod': 'credentials',
+                'name': 'Default', 'surname': 'User',
+                'password': self.hash_password(self.DEFAULT_PASSWORD)
+            }, roles=self.DEFAULT_ROLES)
 
     def save_token(self, user, token, jti):
 
@@ -201,49 +227,38 @@ instead of here
 
     def save_oauth2_info_to_user(self, graph, current_user, token):
         """
-        From B2ACCESS endpoint user info,
-
-        return True
-        update our authentication models
+        Allow external accounts (oauth2 credentials)
+        to be connected to internal local user
         """
 
-        # print("CURRENT USER", current_user.__dict__)
         email = current_user.data.get('email')
 
         # A graph node for internal accounts associated to oauth2
         try:
             user_node = graph.User.nodes.get(email=email)
-            if user_node.authmethod != 'b2access_oauth2':
+            if user_node.authmethod != 'oauth2':
                 return {'errors': [{
                     'invalid email':
                     'Account already exists with other credentials'}]}
         except graph.User.DoesNotExist:
-            user_node = graph.User(
-                uuid=getUUID(),
-                email=email,
-                authmethod='b2access_oauth2')
+## // TO FIX:
+# TO BE VERIFIED
+            user_node = self.create_user(userdata={
+                'uuid': getUUID(),
+                'email': email,
+                'authmethod': 'oauth2'
+            })
 
         # A graph node for external oauth2 account
         try:
-            b2access_node = graph.ExternalAccounts.nodes.get(
-                username=email)
+            oauth2_external = graph.ExternalAccounts.nodes.get(username=email)
         except graph.ExternalAccounts.DoesNotExist:
-            b2access_node = graph.ExternalAccounts(
-                username=email)
+            oauth2_external = graph.ExternalAccounts(username=email)
+        oauth2_external.email = current_user.data.get('email')
+        oauth2_external.token = token
+        oauth2_external.certificate_cn = current_user.data.get('cn')
+        oauth2_external.save()
 
-        b2access_node.email = current_user.data.get('email')
-        b2access_node.token = token
-        b2access_node.certificate_cn = current_user.data.get('cn')
-
-        b2access_node.save()
-        user_node.save()
-        user_node.externals.connect(b2access_node)
-
-        # Link the new external account to at least at the very default Role
-        if len(user_node.roles.all()) < 1:
-            logger.debug("Adding default role")
-            role = self.DEFAULT_ROLES[0]
-            role_obj = self._graph.Role.nodes.get(name=role)
-            user_node.roles.connect(role_obj)
+        user_node.externals.connect(oauth2_external)
 
         return user_node

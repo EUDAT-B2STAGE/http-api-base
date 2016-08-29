@@ -14,7 +14,8 @@ import base64
 import pytz
 from commons.logs import get_logger
 from commons.services.uuid import getUUID
-from ....confs.config import USER, PWD, ROLE_ADMIN, ROLE_USER
+from ....confs.config import USER, PWD, \
+    ROLE_ADMIN, ROLE_INTERNAL, ROLE_USER
 from datetime import datetime, timedelta
 from .... import myself, lic
 
@@ -39,7 +40,8 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     token_type = 'Bearer'
     DEFAULT_USER = USER
     DEFAULT_PASSWORD = PWD
-    DEFAULT_ROLES = [ROLE_USER, ROLE_ADMIN]
+    DEFAULT_ROLE = ROLE_USER
+    DEFAULT_ROLES = [ROLE_USER, ROLE_INTERNAL, ROLE_ADMIN]
     _oauth2 = {}
     _latest_token = None
     _payload = {}
@@ -187,6 +189,15 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
                 name="Whatever", surname="YouLike",
                 password=self.DEFAULT_PASSWORD,
                 roles=DEFAULT_ROLES)
+        """
+        return
+
+    @abc.abstractmethod
+    def create_user(self, userdata, roles=[DEFAULT_ROLE]):
+        """
+        A method to create a new user following some standards.
+        - The user should be at least associated to the default (basic) role
+        - More to come
         """
         return
 

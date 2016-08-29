@@ -60,10 +60,10 @@ REST_CONFIG_INIT = 'api_init.json'
 TRAP_BAD_REQUEST_ERRORS = True
 PROPAGATE_EXCEPTIONS = False
 
-# Roles
-ROLE_ADMIN = 'adminer'
-ROLE_USER = 'justauser'
-##OTHER ROLES?
+# System ROLES
+ROLE_ADMIN = 'admin_root'
+ROLE_INTERNAL = 'staff_user'
+ROLE_USER = 'normal_user'
 
 # I am inside the conf dir.
 # The base dir is one level up from here

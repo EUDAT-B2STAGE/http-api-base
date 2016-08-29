@@ -54,6 +54,11 @@ instead of here
                 uuid=payload['user_id']).first()
         return user
 
+    def create_user(self, userdata, roles=[]):
+        if self.DEFAULT_ROLE not in roles:
+            roles.append(self.DEFAULT_ROLE)
+        return NotImplementedError("To do")
+
     def init_users_and_roles(self):
 
         missing_role = missing_user = False
@@ -83,6 +88,7 @@ instead of here
                     sqlrole = self._db.Role.query.filter_by(name=role).first()
                     user.roles.append(sqlrole)
                 self._db.session.add(user)
+
         except sqlalchemy.exc.OperationalError:
             raise AttributeError("Existing SQL tables are not consistent " +
                                  "to existing models. Please consider " +
