@@ -151,7 +151,8 @@ class DataObjectToGraph(object):
         current_user = None
         try:
 ## to check: irods user should already exist?
-            current_user = self._graph.IrodsUser.search(username=user).pop()
+            current_user = list(self._graph.
+                                IrodsUser.nodes.filter(username=user)).pop()
         except Exception as e:
             raise AttributeError(
                 "Irods user %s does not exist in the graph!\n%s" % (user, e))

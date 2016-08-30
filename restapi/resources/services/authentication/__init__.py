@@ -108,15 +108,19 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         # # socket.socket.settimeout(timer)
 
         ###############
-        from flask import request
+        hostname = ""
+        from flask import current_app, request
         ip = request.remote_addr
 
-        try:
-            # note: this will return the ip if hostname is not available
-            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
-        except Exception as e:
-            logger.warning("Hostname solving: error '%s'" % e)
-            hostname = ""
+        if current_app.config['TESTING'] and ip is None:
+            pass
+        else:
+            try:
+                # note: this will return the ip if hostname is not available
+                hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
+            except Exception as e:
+                logger.warning(
+                    "Hostname from '%s' solving:\nerror '%s'" % (ip, e))
         return ip, hostname
 
     def create_token(self, payload):
