@@ -132,6 +132,24 @@ class Meta(object):
             methods.update({key: value})
         return type(label, (your_class,), methods)
 
+    @staticmethod
+    def get_self_reference_from_args(*args):
+
+        """
+        Useful in decorators:
+        being able to call the internal method by getting
+        the 'self' reference from the decorated method
+        (when it's there)
+        """
+
+        import inspect
+        if len(args) > 0:
+            candidate_as_self = args[0]
+            cls_attribute = getattr(candidate_as_self, '__class__', None)
+            if cls_attribute is not None and inspect.isclass(cls_attribute):
+                return args[0]
+        return None
+
 
 ######################################################
 # ## INTERESTING EXAMPLE OF CREATING META CLASSES ## #

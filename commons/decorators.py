@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 
 
 #################################
-def doublewrap_for_class_method(f):
+def class_method_decorator_with_optional_parameters(f):
     """
     a decorator decorator, allowing the decorator to be used as:
     @decorator(with, arguments, and=kwargs)

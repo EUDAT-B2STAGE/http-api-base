@@ -2,13 +2,14 @@
 
 from __future__ import division, absolute_import
 
-from commons import htmlcodes as hcodes
-from commons.decorators import doublewrap_for_class_method
 from functools import wraps
 from flask import request
 from werkzeug.datastructures import Authorization
-from . import myself, lic
+from commons import htmlcodes as hcodes
+from commons.meta import Meta
+from commons.decorators import class_method_decorator_with_optional_parameters
 from commons.logs import get_logger
+from . import myself, lic
 
 __author__ = myself
 __copyright__ = myself
@@ -78,53 +79,82 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
             return self.verify_roles_callback(roles)
         return False
 
-    @doublewrap_for_class_method
-    def authorization_required(self, f, roles=[]):
+    def get_auth_from_header(self):
+
+        # If token is unavailable, clearly state it in response to user
+        token = "EMPTY"
+
+        auth = request.authorization
+        if auth is None and HTTPAUTH_AUTH_FIELD in request.headers:
+            # Flask/Werkzeug do not recognize any authentication types
+            # other than Basic or Digest, so here we parse the header by hand
+            try:
+                auth_type, token = self.get_authentication_from_headers()
+                auth = Authorization(auth_type, {HTTPAUTH_TOKEN_KEY: token})
+            except ValueError:
+                # The Authorization header is either empty or has no token
+                pass
+
+        # if the auth type does not match, we act as if there is no auth
+        # this is better than failing directly, as it allows the callback
+        # to handle special cases, like supporting multiple auth types
+        if auth is not None and auth.type.lower() != self._scheme.lower():
+            auth = None
+
+        return auth, token
+
+    def login_required(self, f):
+## DEPRECATED: to be removed very soon
         @wraps(f)
         def decorated(*args, **kwargs):
 
-            token = "EMPTY"
+            auth, token = self.get_auth_from_header()
+            decorated_self = Meta.get_self_reference_from_args(*args)
 
-            auth = request.authorization
-            if auth is None and HTTPAUTH_AUTH_FIELD in request.headers:
-                # Flask/Werkzeug do not recognize any authentication types
-                # other than Basic or Digest, so here we parse the header by
-                # hand
-                try:
-                    auth_type, token = self.get_authentication_from_headers()
-                    auth = \
-                        Authorization(auth_type, {HTTPAUTH_TOKEN_KEY: token})
-                except ValueError:
-                    # The Authorization header is either empty or has no token
-                    pass
-
-            # Call the internal api method by getting 'self'
-            try:
-                decorated_self = list(args).pop(0)
-            except AttributeError:
-                decorated_self = None
-
-            # if the auth type does not match, we act as if there is no auth
-            # this is better than failing directly, as it allows the callback
-            # to handle special cases, like supporting multiple auth types
-            if auth is not None and auth.type.lower() != self._scheme.lower():
-                auth = None
-
-            # Flask normally handles OPTIONS requests on its own, but in the
-            # case it is configured to forward those to the application, we
-            # need to ignore authentication headers and let the request through
-            # to avoid unwanted interactions with CORS.
-            if request.method != 'OPTIONS':  # pragma: no cover
+            if request.method != 'OPTIONS':
                 if auth and auth.username:
                     password = self.get_password_callback(auth.username)
                 else:
                     password = None
                 if not self.authenticate(auth, password):
+                    request.data
+                    headers = {
+                        HTTPAUTH_AUTH_HEADER: self.authenticate_header()}
+                    return decorated_self.force_response(
+                        errors={"Invalid token": "Received '%s'" % token},
+                        headers=headers,
+                        code=hcodes.HTTP_BAD_UNAUTHORIZED
+                    )
+            if decorated_self is not None:
+                decorated_self.set_latest_token(token)
+            return f(*args, **kwargs)
+        return decorated
+
+    @class_method_decorator_with_optional_parameters
+    def authorization_required(self, f, roles=[]):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+
+            # Recover the auth object
+            auth, token = self.get_auth_from_header()
+            # Internal API 'self' reference
+            decorated_self = Meta.get_self_reference_from_args(*args)
+
+            # Handling OPTIONS forwarded to our application:
+            # ignore headers and let go, avoid unwanted interactions with CORS
+            if request.method != 'OPTIONS':
+                if auth and auth.username:
+                    # case of username and password
+                    password = self.get_password_callback(auth.username)
+                else:
+                    # case for a header token
+                    password = None
+                # Check authentication
+                if not self.authenticate(auth, password):
                     # Clear TCP receive buffer of any pending data
                     request.data
                     headers = {
                         HTTPAUTH_AUTH_HEADER: self.authenticate_header()}
-
                     # Mimic the response from a normal endpoint
                     # To use the same standards
                     return decorated_self.force_response(
@@ -133,11 +163,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                         code=hcodes.HTTP_BAD_UNAUTHORIZED
                     )
 
-            # Save token?
-            if decorated_self is not None:
-                decorated_self.set_latest_token(token)
-
-            # Finally check roles
+            # Check roles
             if len(roles) > 0:
                 if not self.authenticate_roles(roles):
                     return decorated_self.force_response(
@@ -146,17 +172,20 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                         code=hcodes.HTTP_BAD_UNAUTHORIZED
                     )
 
+            # Save token
+            if decorated_self is not None:
+## // TO FIX
+# the token should be saved into session
+                decorated_self.set_latest_token(token)
+
             return f(*args, **kwargs)
         return decorated
 
 
 authentication = HTTPTokenAuth()
 
-#######################
-## // TO FIX:
-## Deprecating
+## DEPRECATED: to be removed very soon
 auth = authentication
-#######################
 
 logger.info(
     "Initizialized a valid authentication class: [%s]"
