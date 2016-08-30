@@ -127,8 +127,8 @@ def create_app(name=__name__, debug=False,
 
         # Instead of using the decorator
         # Applying Flask_httpauth lib to the current instance
-        from .auth import auth
-        auth.callbacks(
+        from .auth import authentication
+        authentication.callbacks(
             verify_token_f=custom_auth.verify_token,
             verify_roles_f=custom_auth.verify_roles)
 

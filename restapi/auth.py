@@ -3,6 +3,7 @@
 from __future__ import division, absolute_import
 
 from commons import htmlcodes as hcodes
+from commons.decorators import doublewrap_for_class_method
 from functools import wraps
 from flask import request
 from werkzeug.datastructures import Authorization
@@ -77,30 +78,11 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
             return self.verify_roles_callback(roles)
         return False
 
-    def roles_required(self, *roles):
-        def decorator(f):
-            @wraps(f)
-            def decorated(*args, **kwargs):
-
-                # Call the internal api method by getting 'self'
-                try:
-                    decorated_self = list(args).pop(0)
-                except AttributeError:
-                    decorated_self = None
-
-                if not self.authenticate_roles(roles):
-                    return decorated_self.force_response(
-                        errors={"Missing privileges":
-                                "One or more role required"},
-                        code=hcodes.HTTP_BAD_UNAUTHORIZED
-                    )
-                return f(*args, **kwargs)
-            return decorated
-        return decorator
-
-    def login_required(self, f):
+    @doublewrap_for_class_method
+    def authorization_required(self, f, roles=[]):
         @wraps(f)
         def decorated(*args, **kwargs):
+
             token = "EMPTY"
 
             auth = request.authorization
@@ -151,14 +133,31 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                         code=hcodes.HTTP_BAD_UNAUTHORIZED
                     )
 
-            # Save token
+            # Save token?
             if decorated_self is not None:
                 decorated_self.set_latest_token(token)
+
+            # Finally check roles
+            if len(roles) > 0:
+                if not self.authenticate_roles(roles):
+                    return decorated_self.force_response(
+                        errors={"Missing privileges":
+                                "One or more role required"},
+                        code=hcodes.HTTP_BAD_UNAUTHORIZED
+                    )
 
             return f(*args, **kwargs)
         return decorated
 
 
-auth = HTTPTokenAuth()
+authentication = HTTPTokenAuth()
+
+#######################
+## // TO FIX:
+## Deprecating
+auth = authentication
+#######################
+
 logger.info(
-    "Initizialized a valid authentication class: [%s]" % auth._scheme)
+    "Initizialized a valid authentication class: [%s]"
+    % authentication._scheme)

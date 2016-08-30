@@ -10,8 +10,8 @@ from __future__ import absolute_import
 from commons.logs import get_logger
 from .base import ExtendedApiResource
 from . import decorators as decorate
-# from ..confs import config
-from ..auth import auth
+from ..confs import config
+from ..auth import authentication
 
 logger = get_logger(__name__)
 
@@ -54,8 +54,7 @@ class FooTwo(ExtendedApiResource):
 
 # NOTE: this endpoint will crash if you DISABLE SECURITY on this app
     @decorate.apimethod
-    @auth.login_required
-    # @auth.roles_required(config.ROLE_ADMIN)
+    @authentication.authorization_required(roles=[config.ROLE_USER])
 # NOTE: this endpoint will crash if you DISABLE SECURITY on this app
     def post(self, identifier=None):
         """ I do nothing """

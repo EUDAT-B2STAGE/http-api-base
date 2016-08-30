@@ -13,7 +13,7 @@ from ..confs.config import AUTH_URL
 from .base import ExtendedApiResource
 from commons import htmlcodes as hcodes
 from . import decorators as decorate
-from ..auth import auth
+from ..auth import authentication
 from ..confs import config
 
 __author__ = myself
@@ -97,7 +97,7 @@ class Logout(ExtendedApiResource):
 
     base_url = AUTH_URL
 
-    @auth.login_required
+    @authentication.authorization_required
     @decorate.apimethod
     def get(self):
         auth = self.global_get('custom_auth')
@@ -112,7 +112,7 @@ class Tokens(ExtendedApiResource):
     endkey = "token_id"
     endtype = "string"
 
-    @auth.login_required
+    @authentication.authorization_required
     @decorate.apimethod
     def get(self, token_id=None):
         auth = self.global_get('custom_auth')
@@ -130,7 +130,7 @@ class Tokens(ExtendedApiResource):
             errors=[{"Token not found": errorMessage}],
             code=hcodes.HTTP_BAD_NOTFOUND)
 
-    @auth.login_required
+    @authentication.authorization_required
     @decorate.apimethod
     def delete(self, token_id=None):
         auth = self.global_get('custom_auth')
@@ -166,7 +166,7 @@ class TokensAdminOnly(ExtendedApiResource):
     endkey = "token_id"
     endtype = "string"
 
-    @auth.login_required
+    @authentication.authorization_required
     @decorate.apimethod
     def get(self, token_id):
         logger.critical("This endpoint should be restricted to admin only!")
@@ -178,7 +178,7 @@ class TokensAdminOnly(ExtendedApiResource):
                 code=hcodes.HTTP_BAD_NOTFOUND)
         return token
 
-    @auth.login_required
+    @authentication.authorization_required
     @decorate.apimethod
     def delete(self, token_id):
         logger.critical("This endpoint should be restricted to admin only!")
@@ -196,7 +196,7 @@ class Profile(ExtendedApiResource):
 
     base_url = AUTH_URL
 
-    @auth.login_required
+    @authentication.authorization_required
     @decorate.apimethod
     def get(self):
         """
@@ -232,8 +232,7 @@ class Internal(ExtendedApiResource):
 
     base_url = AUTH_URL
 
-    @auth.login_required
-    @auth.roles_required(config.ROLE_INTERNAL)
+    @authentication.authorization_required(roles=[config.ROLE_INTERNAL])
     @decorate.apimethod
     def get(self):
         return self.force_response("I am internal")
@@ -244,8 +243,7 @@ class Admin(ExtendedApiResource):
 
     base_url = AUTH_URL
 
-    @auth.login_required
-    @auth.roles_required(config.ROLE_ADMIN)
+    @authentication.authorization_required(roles=[config.ROLE_ADMIN])
     @decorate.apimethod
     def get(self):
         return self.force_response("I am admin!")
