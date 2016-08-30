@@ -112,6 +112,11 @@ instead of here
             if role not in current_roles:
                 self.create_role(role)
 
+        from flask import current_app
+        if current_app.config['TESTING']:
+            # Create some users for testing
+            pass
+
         # Default user (if no users yet available)
         if not len(self._graph.User.nodes) > 0:
             logger.warning("No users inside graphdb. Injecting default.")
