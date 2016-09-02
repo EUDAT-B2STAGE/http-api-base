@@ -103,33 +103,6 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
 
         return auth, token
 
-    def login_required(self, f):
-## DEPRECATED: to be removed very soon
-        @wraps(f)
-        def decorated(*args, **kwargs):
-
-            auth, token = self.get_auth_from_header()
-            decorated_self = Meta.get_self_reference_from_args(*args)
-
-            if request.method != 'OPTIONS':
-                if auth and auth.username:
-                    password = self.get_password_callback(auth.username)
-                else:
-                    password = None
-                if not self.authenticate(auth, password):
-                    request.data
-                    headers = {
-                        HTTPAUTH_AUTH_HEADER: self.authenticate_header()}
-                    return decorated_self.force_response(
-                        errors={"Invalid token": "Received '%s'" % token},
-                        headers=headers,
-                        code=hcodes.HTTP_BAD_UNAUTHORIZED
-                    )
-            if decorated_self is not None:
-                decorated_self.set_latest_token(token)
-            return f(*args, **kwargs)
-        return decorated
-
     @class_method_decorator_with_optional_parameters
     def authorization_required(self, f, roles=[]):
         @wraps(f)
@@ -183,9 +156,6 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
 
 
 authentication = HTTPTokenAuth()
-
-## DEPRECATED: to be removed very soon
-auth = authentication
 
 logger.info(
     "Initizialized a valid authentication class: [%s]"
