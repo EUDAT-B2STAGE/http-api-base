@@ -8,11 +8,12 @@ We create all the components here!
 from __future__ import absolute_import
 
 import os
-import json
-from flask import Flask, request, g
+from json.decoder import JSONDecodeError
+from flask import Flask, request, g, Response, json
 from commons.meta import Meta
-from . import myself, lic
 from commons.logs import get_logger
+from .resources.base import ExtendedApiResource
+from . import myself, lic
 
 __author__ = myself
 __copyright__ = myself
@@ -49,6 +50,30 @@ https://github.com/pallets/flask/wiki/Large-app-how-to
         print('head -c 24 /dev/urandom > {filename}'.format(filename=filename))
         import sys
         sys.exit(1)
+
+
+########################
+# Flask custom response
+########################
+
+class MyResponse(Response):
+
+    def __init__(self, response, **kwargs):
+
+        # Get the status
+        code = kwargs.get('status', 0)
+        # Convert back the response
+        if isinstance(response, bytes):
+            response = response.decode()
+        if isinstance(response, str):
+            response = json.loads(response)
+
+        # Apply the custom response
+        tmp = ExtendedApiResource.make_custom_response(
+            errors=response, code=code)
+        response = json.dumps(tmp)
+
+        return super(MyResponse, self).__init__(response, **kwargs)
 
 
 ########################
@@ -138,6 +163,9 @@ def create_app(name=__name__, debug=False,
             """ Save auth object """
             g._custom_auth = custom_auth
 
+## // TO FIX
+        # microservice.response_class = MyResponse
+
         # Enabling also OAUTH library
         from .oauth import oauth
         oauth.init_app(microservice)
@@ -197,7 +225,7 @@ def create_app(name=__name__, debug=False,
 
         try:
             data = obscure_passwords(request.data)
-        except json.decoder.JSONDecodeError:
+        except JSONDecodeError:
             data = request.data
 
         # Shrink too long data in log output

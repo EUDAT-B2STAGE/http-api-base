@@ -29,7 +29,6 @@ class ExtendedApiResource(Resource):
     """ Implement a generic Resource for Restful model """
 
     myname = __name__
-    _latest_response = {}
     _latest_headers = {}
     _args = {}
     _params = {}
@@ -234,6 +233,20 @@ class ExtendedApiResource(Resource):
             service_name,
             **kwargs)
 
+    def method_not_allowed(self, methods=['GET']):
+
+        methods.append('HEAD')
+        methods.append('OPTIONS')
+        methods_string = ""
+        for method in methods:
+            methods_string += method + ', '
+
+        return self.force_response(
+            headers={'ALLOW': methods_string.strip(', ')},
+            errors={'message':
+                    'The method is not allowed for the requested URL.'},
+            code=hcodes.HTTP_BAD_METHOD_NOT_ALLOWED)
+
     def force_response(self, *args, **kwargs):
         method = get_response()
         return method(*args, **kwargs)
@@ -279,8 +292,18 @@ class ExtendedApiResource(Resource):
         #     #warnings
         #     range 300 < 400
 
-        #########################
-        # Try conversions and compute types and length
+        self._latest_response = self.make_custom_response(
+            defined_content, errors, code, elements)
+
+        return self.flask_response(
+            data=self._latest_response, status=code, headers=headers)
+
+    @staticmethod
+    def make_custom_response(
+            defined_content=None, errors=None, code=None, elements=None):
+        """
+        Try conversions and compute types and length
+        """
         try:
             data_type = str(type(defined_content))
             if elements is None:
@@ -308,7 +331,9 @@ class ExtendedApiResource(Resource):
             errors = [{'Failed to build response': str(e)}]
             total_errors = len(errors)
 
-        self._latest_response = {
+        # Note: latest_response is an attribute
+        # of an object instance created per request
+        return {
             RESPONSE_CONTENT: {
                 'data': defined_content,
                 'errors': errors,
@@ -320,17 +345,6 @@ class ExtendedApiResource(Resource):
                 'status': code
             }
         }
-
-        return self.flask_response(
-            data=self._latest_response, status=code, headers=headers)
-
-# # TO BE REMOVED
-#     def response(self, *args, **kwargs):
-#         """ DEPRECATED """
-#         import inspect
-#         name = inspect.currentframe().f_code.co_name
-#         logger.warning("Called method '%s' has been DEPRECATED" % name)
-#         return self.force_response(*args, **kwargs)
 
     def empty_response(self):
         return self.force_response("", code=hcodes.HTTP_OK_NORESPONSE)

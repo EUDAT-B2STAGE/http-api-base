@@ -1,21 +1,14 @@
 
 GUIDELINES:
+
 - Based on Docker
+
 -  Python 3.5
--  Configuration via JSON file
+
+-  Configuration via aggregated JSON file
+
 -  Extending a list of initial services:
    - Neo4j graphdb
    - Elasticsearch
    - Irods virtual resources
-
-THINGS TO DO:
-
-☐ commons
- ☐ move services (containers) base
- ☐ a secret for the server at startup
-   ☐ to be generated with file if in production
-
-☐ from jinja2._compat import iteritems... @python2_compatibility
-
-☐ Role required decorator?
- ☐ for internal endpoints
+   - Rethinkdb?
