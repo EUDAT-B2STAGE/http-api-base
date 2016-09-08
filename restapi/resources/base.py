@@ -162,7 +162,7 @@ class ExtendedApiResource(Resource):
 
     def get_content_from_response(
             self, http_out=None,
-            get_error=False, get_status=False, get_meta=False):
+            get_all=False, get_error=False, get_status=False, get_meta=False):
 
         if http_out is None:
             http_out = self._latest_response
@@ -180,14 +180,21 @@ class ExtendedApiResource(Resource):
                 "Trying to recover informations" +
                 " from a malformed response:\n%s" % response)
 
-        if get_error:
-            return response[RESPONSE_CONTENT]['errors']
-        elif get_meta:
-            return response[RESPONSE_META]
-        elif get_status:
-            return response[RESPONSE_META]['status']
+        content = response[RESPONSE_CONTENT]['data']
+        err = response[RESPONSE_CONTENT]['errors']
+        meta = response[RESPONSE_META]
+        code = meta['status']
 
-        return response[RESPONSE_CONTENT]['data']
+        if get_error:
+            return err
+        elif get_meta:
+            return meta
+        elif get_status:
+            return code
+        elif get_all:
+            return content, err, code
+
+        return content
 
     def set_latest_token(self, token):
 ## // TO FIX:
