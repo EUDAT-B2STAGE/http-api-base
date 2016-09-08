@@ -24,7 +24,7 @@ class AccountsToIrodsUsers(object):
         return username.split('@')[0].replace('.', '')[:8]
 
 
-class DataObjectToGraph(object):
+class Irods2Graph(object):
 
     def __init__(self, graph, icom):
         self._graph = graph
@@ -117,7 +117,21 @@ class DataObjectToGraph(object):
 
         return (filename, collections, current_zone)
 
+    def graphuser2irodsuser(self, graphuser, set_as_current=True):
+        users = graphuser.associated.search(default_user=True)
+        if len(users) != 1:
+            raise AttributeError(
+                "No unique default user for %s" % graphuser.name)
+        user = users.pop()
+        if set_as_current:
+            self._icom.change_user(user.username)
+        return user
+
     def ifile2nodes(self, ifile, service_user=None):
+        """
+TO BE FIXED
+        """
+        raise NotImplementedError("Fix with new graphdb models")
 
         filename, collections, current_zone = self.split_ipath(ifile)
 

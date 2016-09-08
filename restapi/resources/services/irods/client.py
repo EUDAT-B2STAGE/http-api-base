@@ -370,6 +370,10 @@ class ICommands(BashCommands):
         from .translations import AccountsToIrodsUsers
         return AccountsToIrodsUsers.email2iuser(user)
 
+    def translate_graph_user(self, graph, graph_user):
+        from .translations import Irods2Graph
+        return Irods2Graph(graph, self).graphuser2irodsuser(graph_user)
+
     ###################
     # Basic command with the GSI plugin
     def basic_icom(self, com, args=[]):
