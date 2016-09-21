@@ -60,7 +60,7 @@ class Uploader(object):
 
         return send_from_directory(path, filename)
 
-    def upload(self, subfolder=None):
+    def upload(self, subfolder=None, force=False):
 
         if 'file' not in request.files:
             return self.force_response(errors={
@@ -88,20 +88,24 @@ class Uploader(object):
         abs_file = self.absolute_upload_file(filename, subfolder)
         logger.info("File request for [%s](%s)" % (myfile, abs_file))
 
-        # ## IMPORTANT note:
+        # ## IMPORTANT NOTE TO SELF:
         # If you are going to receive chunks here there could be problems.
         # In fact a chunk will truncate the connection
         # and make a second request.
         # You will end up with having already the file
         # But corrupted...
         if os.path.exists(abs_file):
-            # os.remove(abs_file)  # an option to force removal?
+
             logger.warn("Already exists")
-            return self.force_response(
-                errors={
-                    "File '" + filename + "' already exists.":
-                    "Please change its name and retry.",
-                }, code=hcodes.HTTP_BAD_REQUEST)
+            if force:
+                os.remove(abs_file)
+                logger.debug("Forced removal")
+            else:
+                return self.force_response(
+                    errors={
+                        "File '" + filename + "' already exists.":
+                        "Change file name or use the force parameter",
+                    }, code=hcodes.HTTP_BAD_REQUEST)
 
         # Save the file
         try:
