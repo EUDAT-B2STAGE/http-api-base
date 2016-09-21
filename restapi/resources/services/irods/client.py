@@ -31,7 +31,8 @@ IRODS_USER_ALIAS = 'clientUserName'
 CERTIFICATES_DIR = '/opt/certificates'
 
 IRODS_DEFAULT_USER = 'guest'
-IRODS_DEFAULT_ADMIN = 'rods'
+IRODS_DEFAULT_ADMIN = os.environ.get('IRODS_DEFAULT_ADMIN_USER', 'rodsminer')
+
 if not IRODS_EXTERNAL:
     IRODS_DEFAULT_USER = os.environ.get('RODSERVER_ENV_GSI_USER')
     IRODS_DEFAULT_ADMIN = os.environ.get('RODSERVER_ENV_GSI_ADMIN')
@@ -184,7 +185,7 @@ class ICommands(BashCommands):
 
     #######################
     # ABOUT CONFIGURATION
-    def become_admin(self):
+    def become_admin(self, user=None):
         """
         Try to check if you're on Docker and have variables set
         to become iRODS administrator.
@@ -194,12 +195,17 @@ class ICommands(BashCommands):
 
         Possible schemes: 'credentials', 'GSI', 'PAM'
         """
+
+        # Authorization scheme
         authscheme = os.environ.get('IRODS_AUTHSCHEME', 'credentials')
 
-        user = os.environ.get('IRODS_USER', None)
+        # Admin user
         if user is None:
-            raise BaseException(
-                "Cannot become admin without env var 'IRODS_USER' set!")
+## // TO FIX:
+# to be discussed
+            # raise BaseException(
+            #     "Cannot become admin without env var 'IRODS_USER' set!")
+            user = IRODS_DEFAULT_ADMIN
 
         if authscheme == 'credentials' or authscheme == 'PAM':
 
@@ -249,14 +255,46 @@ class ICommands(BashCommands):
         os.remove(tmpfile)
         logger.debug("Pushed credentials")
 
-    def get_user_home(self, user):
-        return os.path.join(
-            '/' + self._init_data['irods_zone_name'],
-            'home',
-            user)
+    def get_resources(self):
+        resources = []
+        out = self.admin(command='lr')
+        if isinstance(out, str):
+            resources = out.strip().split('\n')
+        return resources
 
-    def get_current_zone(self):
-        return self._current_environment['IRODS_ZONE']
+    def get_default_resource(self, skip=['bundleResc']):
+# // TO FIX:
+# find out the right way to get the default irods resource
+        resources = self.get_resources()
+        if len(resources) > 0:
+            # Remove strange resources
+            for element in skip:
+                if element in resources:
+                    resources.pop(resources.index(element))
+            return list(resources)[::-1].pop()
+        return None
+
+    def get_user_home(self, user):
+# // TO FIX:
+# don't we have an irods command for this?
+
+        return os.path.join(
+            self.get_current_zone(prepend_slash=True), 'home', user)
+
+    def get_current_zone(self, prepend_slash=False):
+# // TO FIX:
+# we have zone data in 'iuserinfo'
+
+        zone = None
+
+        if len(self._init_data) > 0:
+            zone = self._init_data['irods_zone_name']
+        elif len(self._current_environment) > 0:
+            zone = self._current_environment['IRODS_ZONE']
+
+        if prepend_slash:
+            zone = '/' + zone
+        return zone
 
     def handle_collection_path(self, ipath):
         """ iRODS specific pattern to handle paths """
@@ -329,6 +367,11 @@ class ICommands(BashCommands):
             logger.critical("PAM not IMPLEMENTED yet")
             return False
 
+        # if user == IRODS_DEFAULT_ADMIN:
+        #     for key, value in irods_env.items():
+        #         if key.startswith('IRODS_') or key.startswith('X509'):
+        #             print("export", key + '="' + str(value) + '"')
+
         self._current_environment = irods_env
         return irods_env
 
@@ -353,7 +396,7 @@ class ICommands(BashCommands):
             self.prepare_irods_environment(user)
 
         self._current_user = user
-        logger.info("Switched to user '%s'" % user)
+        logger.debug("Switched to user '%s'" % user)
 
         # If i want to check
         # return self.list(self.get_user_home(user))
@@ -502,7 +545,15 @@ class ICommands(BashCommands):
         # Execute
         return self.basic_icom(com, args)
 
-    def admin(self, command, user=None, extra=False):
+    def admin(self, command, user=None, extra=None):
+
+# // TO FIX
+        # This operation requires administration privileges
+        current_user = self.get_current_user()
+        # self.become_admin()
+        self.change_user(IRODS_DEFAULT_ADMIN)
+
+        # Do the command
         com = 'iadmin'
         args = [command]
         if user is not None:
@@ -510,8 +561,19 @@ class ICommands(BashCommands):
         if extra is not None:
             args.append(extra)
         logger.debug("iRODS admininistration command '%s'" % command)
-        # Execute
-        return self.basic_icom(com, args)
+        out = self.basic_icom(com, args)
+
+# // TO FIX
+        # Back to current user
+        self.change_user(current_user)
+
+        return out
+
+    def admin_list(self):
+        """
+        How to explore collections in a debug way
+        """
+        return self.admin('ls')
 
     def create_user(self, user, admin=False):
 
@@ -714,15 +776,6 @@ class ICommands(BashCommands):
             os.path.join(self._base_dir, ifile))
         return URL
 
-
-################################################
-################################################
-
-###### WE NEED TO CHECK ALL THIS ICOMMANDS BELOW
-
-################################################
-################################################
-
     def get_resource_from_dataobject(self, ifile):
         """ The attribute of resource from a data object """
         details = self.list(ifile, True)
@@ -731,6 +784,14 @@ class ICommands(BashCommands):
             # 2nd position is the resource in irods ils -l
             resources.append(element[2])
         return resources
+
+################################################
+################################################
+
+###### WE NEED TO CHECK ALL THIS ICOMMANDS BELOW
+
+################################################
+################################################
 
     def check(self, path, retcodes=(0, 4)):
         """
