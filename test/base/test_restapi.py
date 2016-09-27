@@ -14,10 +14,9 @@ from restapi.server import create_app
 from restapi.confs.config import USER, PWD, \
     TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
 
-from commons import myself
 from commons.logs import get_logger
 
-__author__ = myself
+__author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 logger = get_logger(__name__, True)
 
 API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
@@ -70,10 +69,14 @@ class TestRestAPI(unittest.TestCase):
         logger.debug('### Tearing down the Flask server ###')
         del self.app
 
+## TO FIX:
+# // this operation should be indipendent from the auth service
         # Tokens clean up
-        logger.debug("Cleaned up invalid tokens")
-        from restapi.resources.services.neo4j.graph import MyGraph
-        MyGraph().clean_pending_tokens()
+        # logger.debug("Cleaned up invalid tokens")
+        # from restapi.resources.services.neo4j.graph import MyGraph
+        # graph_instance = MyGraph()
+        # if graph_instance:
+        #     graph_instance.clean_pending_tokens()
 
     def test_01_get_status(self):
         """ Test that the flask server is running and reachable """

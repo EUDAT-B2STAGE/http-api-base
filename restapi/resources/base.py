@@ -474,14 +474,14 @@ class ExtendedApiResource(Resource):
             "id": id,
             "type": resource_type,
             "attributes": {},
-## // TO FIX:
-            # Very difficult for relationships
             "links": {"self": request.url + '/' + id},
         }
 
         if skip_missing_ids and id == '-':
             del data['id']
 
+## // TO FIX:
+        # Difficult task for now to compute links ID for relationships
         if relationship_depth > 0:
             del data['links']
 

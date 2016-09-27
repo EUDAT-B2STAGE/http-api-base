@@ -80,6 +80,10 @@ class IrodsException(RestApiException):
             self, utility, error_string, error_code, error_label, role='user'):
         return "This collection is a mount point, cannot delete it"
 
+    def parse_SYS_RESC_DOES_NOT_EXIST(
+            self, utility, error_string, error_code, error_label, role='user'):
+        return "Provided resource does not exist"
+
     def parseIrodsError(self, error):
         error = str(error)
         logger.debug("*%s*" % error)
@@ -141,7 +145,6 @@ class IrodsException(RestApiException):
                 return method(utility, error_string, error_code, error_label)
 
             return error_label
-
 
         return error
 
@@ -265,6 +268,7 @@ class ICommands(BashCommands):
     def get_default_resource(self, skip=['bundleResc']):
 # // TO FIX:
 # find out the right way to get the default irods resource
+# note: we could use ienv
         resources = self.get_resources()
         if len(resources) > 0:
             # Remove strange resources
@@ -277,6 +281,7 @@ class ICommands(BashCommands):
     def get_user_home(self, user):
 # // TO FIX:
 # don't we have an irods command for this?
+# note: we could use ienv
 
         return os.path.join(
             self.get_current_zone(prepend_slash=True), 'home', user)
@@ -284,6 +289,7 @@ class ICommands(BashCommands):
     def get_current_zone(self, prepend_slash=False):
 # // TO FIX:
 # we have zone data in 'iuserinfo'
+# note: we could ALSO use ienv
 
         zone = None
 
@@ -297,7 +303,9 @@ class ICommands(BashCommands):
         return zone
 
     def handle_collection_path(self, ipath):
-        """ iRODS specific pattern to handle paths """
+        """
+            iRODS specific pattern to handle paths
+        """
 
         home = self.get_base_dir()
 
@@ -307,16 +315,23 @@ class ICommands(BashCommands):
         elif ipath[0] != '/':
             ipath = home + '/' + ipath
         else:
-            # Add the zone
-            ipath = '/' + self.get_current_zone() + ipath
+            current_zone = self.get_current_zone()
+            if not ipath.startswith('/' + current_zone):
+                # Add the zone
+                ipath = '/' + current_zone + ipath
+
         # Append / if missing in the end
         if ipath[-1] != '/':
             ipath += '/'
 
         return ipath
 
-    def get_irods_path(self, collection, filename):
-        return self.handle_collection_path(collection) + filename
+    def get_irods_path(self, collection, filename=None):
+
+        path = self.handle_collection_path(collection)
+        if filename is not None:
+            path += filename
+        return path
 
     def prepare_irods_environment(self, user, schema='GSI'):
         """
@@ -465,7 +480,7 @@ class ICommands(BashCommands):
 
         return self.handle_collection_path(path)
 
-    def list(self, path=None, detailed=False, acl=False):
+    def list(self, path=None, recursive=False, detailed=False, acl=False):
         """ List the files inside an iRODS path/collection """
 
         # Prepare the command
@@ -475,6 +490,8 @@ class ICommands(BashCommands):
         args = [path]
         if detailed:
             args.append("-l")
+        if recursive:
+            args.append("-r")
         if acl:
             args.append("-A")
         # Do it
@@ -512,14 +529,23 @@ class ICommands(BashCommands):
         # Debug
         logger.debug("Copyied file: %s -> %s" % (sourcepath, destpath))
 
-    def remove(self, path, recursive=False, force=False):
+    def remove(self, path, recursive=False, force=False, resource=None):
         com = 'irm'
         args = []
         if force:
             args.append('-f')
+
+        if resource is not None:
+            com = 'itrim'
+            args = ['-S', resource]
+
         if recursive:
             args.append('-r')
+
         args.append(path)
+
+        print("TEST REMOVE", com, args)
+
         # Execute
         self.basic_icom(com, args)
         # Debug
@@ -535,13 +561,16 @@ class ICommands(BashCommands):
         logger.debug("Obtaining irods object: %s" % absolute_path)
         return iout
 
-    def save(self, path, destination=None, force=False):
+    def save(self, path, destination=None, force=False, resource=None):
         com = 'iput'
         args = [path]
         if force:
             args.append('-f')
         if destination is not None:
             args.append(destination)
+        if resource is not None:
+            args.append('-R')
+            args.append(resource)
         # Execute
         return self.basic_icom(com, args)
 
@@ -620,6 +649,18 @@ class ICommands(BashCommands):
         logger.debug("Set %s permission to %s for %s" %
                      (permission, path, userOrGroup))
 
+    def get_resources_from_file(self, filepath):
+        output = self.list(path=filepath, detailed=True)
+        resources = []
+        for elements in output:
+            # elements = line.split()
+            if len(elements) < 3:
+                continue
+            resources.append(elements[2])
+
+        logger.debug("%s: found resources %s" % (filepath, resources))
+        return resources
+
     def get_permissions(self, path):
         """
             Output example:
@@ -656,6 +697,121 @@ class ICommands(BashCommands):
 
         if popMe is not None:
             data["ACL"].pop(popMe)
+
+        return data
+
+# // TO FIX:
+    def get_current_user_environment(self):
+        com = 'ienv'
+        output = self.basic_icom(com)
+        print("ENV IS", output)
+        return output
+
+    def setInDict(self, dataDict, mapList, value):
+        for k in mapList[:-1]:
+            if k not in dataDict:
+                dataDict[k] = {}
+            dataDict = dataDict[k]
+        dataDict[mapList[-1]] = value
+
+    def get_list_as_json(self, root):
+
+        data = {}
+
+        if root is None:
+            root = ''
+
+        iout = self.list(path=root, detailed=True, recursive=True)
+        path = None
+        pathLen = 0
+        rootLen = len(root)
+        acl = None
+        inheritance = None
+
+        path_prefix = None
+        for d in iout:
+
+            if len(d) <= 1:
+                if path is None:
+                    path = d[0]
+                    if path.endswith(":"):
+                        path = path[:-1]
+                    if not path.endswith("/"):
+                        path += "/"
+
+                    pathLen = len(path)
+
+                path_prefix = d[0][pathLen:-1]
+                continue
+
+            # Unable to retrieve a path for this collection
+            # This collection may be empty
+            if path is None:
+                continue
+
+            if d[0] == "ACL":
+                acl = d
+                continue
+
+            if d[0] == "Inheritance":
+                inheritance = d
+                continue
+
+            row = {}
+
+            keys = []
+            if d[0] == "C-":
+
+                absname = d[1]
+
+                name = absname[pathLen:]
+                keys = name.split("/")
+
+                row["name"] = name
+                row["owner"] = "-"
+                row["acl"] = acl
+                row["acl_inheritance"] = inheritance
+                row["object_type"] = "collection"
+                row["content_length"] = 0
+                row["last_modified"] = 0
+                row["objects"] = {}
+                start = 0
+                if rootLen > 0:
+                    start = 1 + rootLen
+                row["path"] = path[start:]
+
+            else:
+
+                name = d[6]
+
+                if path_prefix is None or path_prefix == '':
+                    keys = [name]
+                else:
+                    keys = path_prefix.split("/")
+                    keys.append(name)
+
+                row["name"] = name
+                row["owner"] = d[0]
+                row["acl"] = acl
+                row["acl_inheritance"] = inheritance
+                row["object_type"] = "dataobject"
+                row["content_length"] = d[3]
+                row["last_modified"] = d[4]
+                start = 0
+                if rootLen > 0:
+                    start = 1 + rootLen
+                row["path"] = path[start:]
+
+            if len(keys) == 1:
+                self.setInDict(data, keys, row)
+            else:
+                new_keys = []
+                for index, k in enumerate(keys):
+                    new_keys.append(k)
+                    if index < len(keys) - 1:
+                        new_keys.append('objects')
+
+                self.setInDict(data, new_keys, row)
 
         return data
 
@@ -807,14 +963,10 @@ class ICommands(BashCommands):
             path += '%'
         logger.debug("iRODS search for %s" % path)
         # Execute
-        try:
-            out = self.execute_command(com, path)
-        except Exception:
-            logger.debug("No data found.")
-            exit(1)
-        if out:
-            return out.strip().split('\n')
-        return out
+        out = self.execute_command(com, path)
+        content = out.strip().split('\n')
+        print("TEST", content)
+        return content
 
     def replica(self, dataobj, replicas_num=1, resOri=None, resDest=None):
         """ Replica
@@ -839,7 +991,7 @@ class ICommands(BashCommands):
         args.append("-R")
         args.append(resDest)
 
-        return self.execute_command(com, args)
+        return self.basic_icom(com, args)
 
     def replica_list(self, dataobj):
         return self.get_resource_from_dataobject(dataobj)
