@@ -544,8 +544,6 @@ class ICommands(BashCommands):
 
         args.append(path)
 
-        print("TEST REMOVE", com, args)
-
         # Execute
         self.basic_icom(com, args)
         # Debug

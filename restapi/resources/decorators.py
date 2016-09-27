@@ -173,9 +173,10 @@ def apimethod(func):
         logger.info("[Class: %s] %s request" % (class_name, method_name))
 
         # Load the right parameters that were decorated
-        self.apply_parameters(method_name)
-        # Call the parse method
-        self.parse()
+        if self.apply_parameters(method_name):
+            # Call the parse method
+            self.parse()
+        # self.get_input()
 
         # Call the wrapped function
         try:

@@ -30,8 +30,6 @@ class ExtendedApiResource(Resource):
 
     myname = __name__
     _latest_headers = {}
-    _args = {}
-    _params = {}
     endpoint = None
     endkey = None
     endtype = None
@@ -55,6 +53,9 @@ class ExtendedApiResource(Resource):
         # Apply decision about the url of endpoint
         self.set_endpoint()
         # Make sure you can parse arguments at every call
+        self._args = {}
+        self._json_args = {}
+        self._params = {}
         self._parser = reqparse.RequestParser()
 
     @staticmethod
@@ -65,9 +66,23 @@ class ExtendedApiResource(Resource):
         return param.strip('"')
 
     def parse(self):
-        """ Parameters may be necessary at any method """
+        """
+        Parameters may be necessary at any method.
+        Parse args.
+        """
+
         self._args = self._parser.parse_args()
-        logger.debug("Received parameters: %s" % self._args)
+
+        # if len(self._args) < 1:
+        #     try:
+        #         self._args = request.get_json(force=forcing)
+        #     except Exception as e:
+        #         logger.warning("Fail: get JSON for current req: '%s'" % e)
+
+        if len(self._args) > 0:
+            logger.debug("Parsed parameters: %s" % self._args)
+
+        return self._args
 
     def set_endpoint(self):
         if self.endpoint is None:
@@ -77,15 +92,46 @@ class ExtendedApiResource(Resource):
     def get_endpoint(self):
         return (self.endpoint, self.endkey, self.endtype)
 
-    def get_input(self, forcing=True):
-        """ Get JSON. The power of having a real object in our hand. """
-        json = []
-        try:
-            json = request.get_json(force=forcing)
-        except Exception as e:
-            logger.warning("Failed to get JSON params for current req: '%s'"
-                           % e)
-        return json
+    def get_input(self, forcing=True, single_parameter=None):
+        """
+        Recover parameters from current requests.
+
+        Note that we talk about JSON only when having a PUT method,
+        while there is URL encoding for GET, DELETE
+        and Headers encoding with POST.
+
+        Non-JSON Parameters are already parsed at this point,
+        while JSON parameters may be already saved from another previous call
+        """
+
+        # count = 0
+        # for key, value in self._args.items():
+        #     if value is not None:
+        #         count += 1
+
+        # if count == 0:
+
+        if not len(self._json_args) > 0:
+            try:
+                self._json_args = request.get_json(force=forcing)
+                for key, value in self._json_args.items():
+                    if value is None:
+                        continue
+                    # if isinstance(value, str) and value == 'None':
+                    #     continue
+                    if key in self._args and self._args[key] is not None:
+                        print("Key", key, "Value", value, self._args[key])
+                        key += '_json'
+                    self._args[key] = value
+            except Exception as e:
+                logger.warning("Failed to get JSON for current req: '%s'" % e)
+
+        if single_parameter is not None:
+            return self._args.get(single_parameter)
+
+        if len(self._args) > 0:
+            logger.info("Parameters %s" % self._args)
+        return self._args
 
     def myname(self):
         return self.__class__.__name__
@@ -113,10 +159,8 @@ class ExtendedApiResource(Resource):
         key = self.myname()
         if key not in self._params:
             return False
-
         if method not in self._params[key]:
             return False
-
         p = self._params[key][method]
 
         ##############################
@@ -128,8 +172,11 @@ class ExtendedApiResource(Resource):
         trim = True
 
 # // TO FIX?
-        p[PERPAGE_KEY] = (int, DEFAULT_PERPAGE, False)
-        p[CURRENTPAGE_KEY] = (int, DEFAULT_CURRENTPAGE, False)
+# when should I apply parameters for paging?
+        # p[PERPAGE_KEY] = (int, DEFAULT_PERPAGE, False)
+        # p[CURRENTPAGE_KEY] = (int, DEFAULT_CURRENTPAGE, False)
+        if len(p.keys()) < 1:
+            return False
 
         for param, (param_type, param_default, param_required) in p.items():
 
