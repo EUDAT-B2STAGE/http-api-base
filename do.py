@@ -12,11 +12,20 @@ except Exception as e:
     from do_actions import ImplementedActions
     print("\nYou are using the base implementation for actions")
 
+#####################################
+# Configuration
 INFO = "\033[1;32mINFO\033[1;0m"
 WARNING = "\033[1;33mWARNING\033[1;0m"
 ERROR = "\033[1;31mERROR\033[1;0m"
 
+CONTAINER_DIR = "../containers"
+BASE_YAML = "containers.yml"
+backend_yaml_path = "docker-compose.yml"
+frontend_yaml_path = "../frontend/docker-compose.yml"
 
+compose_project = None
+
+#####################################
 def myprint(level, message):
     print("%s: %s" % (level, message))
 
@@ -58,22 +67,46 @@ def list_all_modes(project, project_path):
         myprint(WARNING, "\t- None")
 
 
-def list_all_services(yaml_file):
-    raise NotImplementedAction(
-        "Print list of service from %s and exit" % yaml_file)
+def read_services_from_compose_yaml(file):
+    from compose.config import config
+    out = config.load_yaml(file)
+    # from beeprint import pp
+    # pp(out)
+    return out
 
 
-# Configuration
+def load_frontend(file):
+    services = read_services_from_compose_yaml(file)
+    return 'frontend' in services
 
-CONTAINER_DIR = "../containers"
-BASE_YAML = "containers.yml"
 
-backend_yaml_path = "docker-compose.yml" 
-frontend_yaml_path = "../frontend/docker-compose.yml" 
+def read_compose_project(config):
+    from compose.cli.main import TopLevelCommand
+    from compose.cli.command import project_from_options
+    from compose.cli.docopt_command import DocoptDispatcher
+    # import compose.cli.errors as errors
+
+    dispatcher = DocoptDispatcher(
+        TopLevelCommand, {'options_first': True, 'version': '1.8.0'})
+    cli_options = config + ['config']
+    options, handler, command_options = dispatcher.parse(cli_options)
+    project = project_from_options('.', options)
+    return project
+
+
+def list_all_services():
+
+    print("")
+    myprint(INFO, "Services available:")
+    print("")
+
+    for service in compose_project.services:
+        # print(service, type(service), service.__dict__)
+        print(service.name)
+    print("")
 
 
 # ############################################ #
-
 
 # Arguments definition
 parser = argparse.ArgumentParser(
@@ -113,6 +146,8 @@ extra_arguments = args['extra_arguments']
 if extra_arguments is not None:
     extra_arguments = ' '.join(extra_arguments)
 
+# Set prefix for docker volumes
+os.environ['VOLUMES_PREFIX'] = project + '_'
 
 # Implemented actions are automatically parsed by the ImplementedActions class
 # all do_something methods are interpreted as 'something' actions
@@ -144,12 +179,22 @@ try:
     mode_path = os.path.join(project_path, mode) + ".yml"
     if not os.path.isfile(mode_path):
         raise InvalidArgument("Mode not found (%s)" % mode_path)
-
     myprint(INFO, "You selected mode: \t%s" % mode)
+
+    # Load project from docker-compose
+    command_prefix = []
+    command_prefix.append('-f')
+    command_prefix.append(backend_yaml_path)
+    if load_frontend(mode_path):
+        command_prefix.append('-f')
+        command_prefix.append(frontend_yaml_path)
+    command_prefix.append('-f')
+    command_prefix.append(mode_path)
+    compose_project = read_compose_project(command_prefix)
 
     # List of available services obtained from the specified /project/mode.yml
     if list_services:
-        list_all_services(mode_path)
+        list_all_services()
         sys.exit(0)
 
     if action == 'scale':
@@ -172,8 +217,6 @@ try:
                 (action, extra_arguments))
     else:
         myprint(INFO, "You selected action: \t%s" % action)
-
-    command_prefix = "-f %s -f %s -f %s" % (backend_yaml_path, frontend_yaml_path, mode_path)
 
     try:
         import inspect
