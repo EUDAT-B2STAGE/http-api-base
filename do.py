@@ -25,6 +25,7 @@ frontend_yaml_path = "../frontend/docker-compose.yml"
 
 compose_project = None
 
+
 #####################################
 def myprint(level, message):
     print("%s: %s" % (level, message))
@@ -219,27 +220,24 @@ try:
         myprint(INFO, "You selected action: \t%s" % action)
 
     try:
-        import inspect
+        implemented = ImplementedActions(
+            compose_project,
+            read_services_from_compose_yaml(mode_path)
+        )
         func = getattr(ImplementedActions, 'do_%s' % action)
-        argspec = inspect.getargspec(func)
-        func_args = []
-        for a in argspec.args:
-            if a == 'command':
-                func_args.append(command_prefix)
-            if a == 'project':
-                func_args.append(project)
-            if a == 'mode':
-                func_args.append(mode)
-            if a == 'action':
-                func_args.append(action)
-            if a == 'service':
-                func_args.append(service)
-            if a == 'num':
-                func_args.append(num_workers)
-            if a == 'arguments':
-                func_args.append(extra_arguments)
-
-        func(*func_args)
+        # import inspect
+        # argspec = inspect.getargspec(func)
+        func_args = {
+            'self': implemented,
+            'command': command_prefix,
+            'project': project,
+            'mode': mode,
+            'action': action,
+            'service': service,
+            'num': num_workers,
+            'arguments': extra_arguments,
+        }
+        func(**func_args)
 
     except AttributeError as e:
         raise InvalidArgument('Method do_%s() not found' % action)
