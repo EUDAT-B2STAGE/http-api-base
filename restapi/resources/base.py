@@ -120,7 +120,7 @@ class ExtendedApiResource(Resource):
                     # if isinstance(value, str) and value == 'None':
                     #     continue
                     if key in self._args and self._args[key] is not None:
-                        print("Key", key, "Value", value, self._args[key])
+                        # print("Key", key, "Value", value, self._args[key])
                         key += '_json'
                     self._args[key] = value
             except Exception as e:
@@ -316,6 +316,7 @@ class ExtendedApiResource(Resource):
         # In this situation probably we already called this same response
         # somewhere else
         if defined_content is not None:
+            print("RESPONSE: TEST", defined_content, type(defined_content))
             if RESPONSE_CONTENT in defined_content:
                 if RESPONSE_META in defined_content:
                     # (code > 0 and code < 600):

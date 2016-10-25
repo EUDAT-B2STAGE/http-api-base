@@ -1,6 +1,18 @@
 # -*- coding: utf-8 -*-
 
-""" Upload data to APIs """
+"""
+Upload data to APIs.
+
+Interesting reading:
+http://flask.pocoo.org/docs/0.11/patterns/fileuploads/
+https://philsturgeon.uk/api/2016/01/04/http-rest-api-file-uploads/
+
+Note:
+originally developed for POST,
+should/could be used also for PUT
+http://stackoverflow.com/a/9533843/2114395
+
+"""
 
 import os
 # import shutil
@@ -122,19 +134,6 @@ class Uploader(object):
                 "Server file system": "Unable to recover the uploaded file"},
                 code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
 
-        # ########################
-        # # Let the user decide about zoomify inside the JSON configuration
-        # # This variable can be modified in the child endpoint
-
-        # if self.ZOOMIFY_ENABLE:
-        #     if self.process_zoom(abs_file):
-        #         logger.info("Zoomified the image")
-        #     else:
-        #         os.unlink(abs_file)     # Remove the file!
-        #         return self.force_response(errors=
-        #            {"Image operation": "Image pre-scaling for zoom failed"},
-        #            code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
-
         # Extra info
         ftype = None
         fcharset = None
@@ -171,16 +170,6 @@ class Uploader(object):
             return self.force_response(errors={
                 "File missing": "File requested does not exists"},
                 code=hcodes.HTTP_BAD_NOTFOUND)
-
-        # # Remove zoomified directory
-        # filebase, fileext = os.path.splitext(abs_file)
-        # if self.ZOOMIFY_ENABLE and os.path.exists(filebase):
-        #     try:
-        #         shutil.rmtree(filebase)
-        #         logger.warn("Removed dir '%s' " %
-        #                     filebase + " [extension '" + fileext + "']")
-        #     except Exception as e:
-        #         logger.critical("Cannot remove zoomified:\n '%s'" % str(e))
 
         # Remove the real file
         try:
