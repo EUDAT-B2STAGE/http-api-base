@@ -76,6 +76,10 @@ class IrodsException(RestApiException):
             self, utility, error_string, error_code, error_label, role='user'):
         return "The requested collection does not exist"
 
+    def parse_SYS_INVALID_INPUT_PARAM(
+            self, utility, error_string, error_code, error_label, role='user'):
+        return "Invalid system path"
+
     def parse_SYS_LINK_CNT_EXCEEDED_ERR(
             self, utility, error_string, error_code, error_label, role='user'):
         return "This collection is a mount point, cannot delete it"
