@@ -411,9 +411,9 @@ class ICommands(BashCommands):
         return IRODS_DEFAULT_USER
 
     def get_current_user(self):
-## TO FIX
-# use self.get_user_info
-        return self._current_user
+        # return self._current_user
+        userdata = self.get_user_info()
+        return userdata['name']
 
     @staticmethod
     def get_translated_user(user):
