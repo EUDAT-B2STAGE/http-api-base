@@ -281,23 +281,13 @@ class ICommands(BashCommands):
     def get_user_home(self, user):
 # // TO FIX:
 # don't we have an irods command for this?
-# note: we could use ienv
-
         return os.path.join(
             self.get_current_zone(prepend_slash=True), 'home', user)
 
     def get_current_zone(self, prepend_slash=False):
-# // TO FIX:
-# we have zone data in 'iuserinfo'
-# note: we could ALSO use ienv
-
-        zone = None
-
-        if len(self._init_data) > 0:
-            zone = self._init_data['irods_zone_name']
-        elif len(self._current_environment) > 0:
-            zone = self._current_environment['IRODS_ZONE']
-
+# note: we could also use ienv (as admin?)
+        userdata = self.get_user_info()
+        zone = userdata['zone']
         if prepend_slash:
             zone = '/' + zone
         return zone
@@ -421,6 +411,8 @@ class ICommands(BashCommands):
         return IRODS_DEFAULT_USER
 
     def get_current_user(self):
+## TO FIX
+# use self.get_user_info
         return self._current_user
 
     @staticmethod
@@ -898,24 +890,40 @@ class ICommands(BashCommands):
 
         return data
 
-    def check_user_exists(self, username, checkGroup=None):
+    def get_user_info(self, username=None):
+## // TO FIX:
+# should we cache this method?
         com = 'iuserinfo'
         args = []
-        args.append(username)
+        if username is not None:
+            args.append(username)
         output = self.basic_icom(com, args)
 
-        regExpr = "User %s does not exist\." % username
-        m = re.search(regExpr, output)
-        if m:
+        if username is not None:
+            reg_exp = "User %s does not exist\." % username
+            if re.search(reg_exp, output):
+                return None
+
+        # parse if info is about current user
+        data = {}
+        groups = []
+        reg_exp = r"([^\s]+)\s*:\s+([^\s]+)\n"
+        for key, value in re.findall(reg_exp, output):
+            if key == 'group':
+                groups.append(value)
+            else:
+                data[key] = value
+        data['groups'] = groups
+        # from beeprint import pp
+        # pp(data)
+        return data
+
+    def check_user_exists(self, username, checkGroup=None):
+        userdata = self.get_user_info(username)
+        if userdata is None:
             return False, "User %s does not exist" % username
-
-        if checkGroup is not None:
-            regExpr = "member of group: %s\n" % checkGroup
-            m = re.search(regExpr, output)
-
-            if not m:
-                return False, "User %s is not in group %s" % (username, checkGroup)
-
+        if checkGroup not in userdata['groups']:
+            return False, "User %s is not in group %s" % (username, checkGroup)
         return True, "OK"
 
     def current_location(self, ifile):
@@ -941,19 +949,25 @@ class ICommands(BashCommands):
 
 ################################################
 ################################################
-
-###### WE NEED TO CHECK ALL THIS ICOMMANDS BELOW
-
+##  NEED TO CHECK ALL THIS ICOMMANDS BELOW!
 ################################################
 ################################################
 
-    def check(self, path, retcodes=(0, 4)):
+    def is_collection(self, path):
         """
-        Retcodes for this particular case, skip also error 4, no file found
+# irods check if collection or data object:
+# ils -A path
+# if first line ends with ':' it's a collection...
         """
-        (status, stdin, stdout) = self.list(path, False, retcodes)
-        logger.debug("Check %s with %s " % (path, status))
-        return status == 0
+        raise NotImplementedError("To do")
+
+    # def check(self, path, retcodes=(0, 4)):
+    #     """
+    #     Retcodes for this particular case, skip also error 4, no file found
+    #     """
+    #     (status, stdin, stdout) = self.list(path, False, retcodes)
+    #     logger.debug("Check %s with %s " % (path, status))
+    #     return status == 0
 
     def search(self, path, like=True):
         com = "ilocate"

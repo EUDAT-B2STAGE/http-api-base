@@ -44,6 +44,8 @@ class ExtendedApiResource(Resource):
             'application/json': output_json,
         }
 
+## // TO FIX:
+# WHAT IF CUSTOM?
         # Init for DEFAULT latest response
         self._latest_response = {
             RESPONSE_CONTENT: None,
