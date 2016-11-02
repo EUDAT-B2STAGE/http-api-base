@@ -119,3 +119,15 @@ def obscure_passwords(original_parameters_string):
             value = '****'
         parameters[key] = value
     return parameters
+
+
+def pretty_print(myobject, prefix_line=None):
+    """
+    Make object(s) and structure(s) clearer to debug
+    """
+
+    if prefix_line is not None:
+        print("PRETTY PRINT [%s]" % prefix_line)
+    from beeprint import pp
+    pp(myobject)
+    return
