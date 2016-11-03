@@ -951,19 +951,35 @@ class ICommands(BashCommands):
             resources.append(element[2])
         return resources
 
+    def is_collection(self, path):
+        """
+        iRods check if collection or data object:
+        ils -A path
+        if first line ends with ':' it's a collection
+        """
+        try:
+            lines = self.list(path, recursive=False, detailed=False, acl=True)
+        # Skip error 'element does not exist'
+        except IrodsException as e:
+            if "does not exist" not in str(e):
+                raise e
+            else:
+                return False
+
+        if len(lines) < 0:
+            raise KeyError("Unexpected empty response from irods listing")
+        first_lines = lines[::-1].pop()
+        # print(first_lines)
+
+        if first_lines.pop().endswith(':'):
+            return True
+        return False
+
 ################################################
 ################################################
 ##  NEED TO CHECK ALL THIS ICOMMANDS BELOW!
 ################################################
 ################################################
-
-    def is_collection(self, path):
-        """
-# irods check if collection or data object:
-# ils -A path
-# if first line ends with ':' it's a collection...
-        """
-        raise NotImplementedError("To do")
 
     # def check(self, path, retcodes=(0, 4)):
     #     """
