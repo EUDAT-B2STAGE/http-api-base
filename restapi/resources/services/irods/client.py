@@ -952,15 +952,19 @@ class ICommands(BashCommands):
         return resources
 
     def is_collection(self, path):
+
         """
         iRods check if collection or data object:
         ils -A path
         if first line ends with ':' it's a collection
         """
+
         try:
             lines = self.list(path, recursive=False, detailed=False, acl=True)
         # Skip error 'element does not exist'
         except IrodsException as e:
+            # Note: ils does not distinguish between
+            # permission denied or object non existing...
             if "does not exist" not in str(e):
                 raise e
             else:
@@ -972,6 +976,7 @@ class ICommands(BashCommands):
         # print(first_lines)
 
         if first_lines.pop().endswith(':'):
+            logger.debug("Collection: %s" % path)
             return True
         return False
 
