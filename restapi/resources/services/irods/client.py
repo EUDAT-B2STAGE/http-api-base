@@ -72,6 +72,10 @@ class IrodsException(RestApiException):
             self, utility, error_string, error_code, error_label, role='user'):
         return "The requested object does not exist on the specified path"
 
+    def parse_CAT_NAME_EXISTS_AS_DATAOBJ(
+            self, utility, error_string, error_code, error_label, role='user'):
+        return "Directory requested already exist as a file/object"
+
     def parse_CAT_UNKNOWN_COLLECTION(
             self, utility, error_string, error_code, error_label, role='user'):
         return "The requested collection does not exist"
