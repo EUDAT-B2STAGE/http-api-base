@@ -286,7 +286,10 @@ class ICommands(BashCommands):
             return list(resources)[::-1].pop()
         return None
 
-    def get_user_home(self, user):
+    def get_user_home(self, user=None):
+
+        if user is None:
+            user = self.get_current_user()
 # // TO FIX:
 # don't we have an irods command for this?
         return os.path.join(
