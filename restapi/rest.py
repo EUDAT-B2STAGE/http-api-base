@@ -31,7 +31,8 @@ class Api(RestFulApi):
         so I am overriding it to just avoid the decorator
         """
 
-        return resource
+        ##################################
+        # What we are skipping
 
         # from functools import wraps
         # from werkzeug.wrappers import Response as ResponseBase
@@ -54,6 +55,9 @@ class Api(RestFulApi):
         #     data, code, headers = unpack(resp)
         #     return self.make_response(data, code, headers=headers)
         # return wrapper
+        ##################################
+
+        return resource
 
 
 ####################################
