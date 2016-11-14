@@ -7,7 +7,7 @@ App specifications
 from __future__ import division
 from . import myself, lic
 from commons.logs import get_logger
-from flask_restful import Api
+from flask_restful import Api as RestFulApi
 from .resources.farm import EndpointsFarmer
 from .config import MyConfigs
 
@@ -16,6 +16,45 @@ __copyright__ = myself
 __license__ = lic
 
 logger = get_logger(__name__)
+
+
+# Hack the original class to remove the response making...
+class Api(RestFulApi):
+
+    def output(self, resource):
+        """
+        The original method here was trying to intercept the Response before
+        Flask could build it, by writing a decorator on the resource and force
+        'make_response' on unpacked elements.
+
+        This ruins our plan of creating our standard response,
+        so I am overriding it to just avoid the decorator
+        """
+
+        return resource
+
+        # from functools import wraps
+        # from werkzeug.wrappers import Response as ResponseBase
+        # from flask_restful.utils import unpack
+
+        # @wraps(resource)
+        # def wrapper(*args, **kwargs):
+
+        #     print("REST IN")
+        #     resp = resource(*args, **kwargs)
+        #     print("REST OUT")
+
+        #     from .response import ResponseElements
+        #     if isinstance(resp, ResponseElements):
+        #         return resp
+
+        #     # There may be a better way to test
+        #     if isinstance(resp, ResponseBase):
+        #         return resp
+        #     data, code, headers = unpack(resp)
+        #     return self.make_response(data, code, headers=headers)
+        # return wrapper
+
 
 ####################################
 # REST to be activated inside the app factory
