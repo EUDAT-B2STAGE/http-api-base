@@ -23,13 +23,14 @@ farm_queue = []
 SQL_AVAILABLE = False
 
 #// TO FIX:
-# If we have postgres/mysql, you must detect them
+# If we have postgres/mysql,
+# you must detect them and distinguish from the simple sqllite base
 
 if 'BACKEND_AUTH_SERVICE' in os.environ:
     if os.environ['BACKEND_AUTH_SERVICE'] == 'relationaldb':
         SQL_AVAILABLE = True
         from .sql.alchemy import SQLFarm as service
-        # logger.debug("Created SQLAlchemy relational DB objet")
+        # logger.debug("Created SQLAlchemy relational DB object")
         farm_queue.append(service)
         # services['sql'] = service
 
