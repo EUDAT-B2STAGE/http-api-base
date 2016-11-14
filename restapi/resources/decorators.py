@@ -34,20 +34,18 @@ __license__ = lic
 
 logger = get_logger(__name__)
 
+## TO REMOVE
 RESPONSE_CONTENT_KEY = 'defined_content'
 
 
 #################################
 # Identity is usefull to some (very) extreme decorators cases
-
 def identity(*args, **kwargs):
     """
     Expecting no keywords arguments
-
-# // TO CHECK
-
     """
     kwargs['content'] = args
+## TO CHECK AGAIN
     return kwargs
 
 
@@ -66,15 +64,15 @@ def set_response(original=False, custom_method=None, first_call=False):
 
         # Debug when response is injected and if custom
         if not first_call:
-            logger.debug("Response method: %s" % custom_method)
-
-
-def get_response():
-    return mem.current_response
+            logger.debug("Response method set to: %s" % custom_method)
 
 
 def custom_response(func=None, original=False):
     set_response(original=original, custom_method=func)
+
+
+def get_response():
+    return mem.current_response
 
 
 #################################
@@ -119,12 +117,15 @@ def add_endpoint_parameter(name, ptype=str, default=None, required=False):
 
     GET /api/myendpoint?param1=string&param2=42
 
-    Note: it could become specific to the method with using subarrays
-    Another note: you could/should use JSON instead...
     """
+
     def decorator(func):
+        logger.warning("Deprecated 'add_endpoint_parameter', " +
+                       "use JSON config in %s" % func)
+
         @wraps(func)
         def wrapper(self, *args, **kwargs):
+
             # Debug
             class_name = self.__class__.__name__
             method_name = func.__name__.upper()
@@ -165,12 +166,20 @@ def apimethod(func):
     Decorate methods to return the most standard json data
     and also to parse available args before using them in the function
     """
+
+    logger.warning("Deprecated 'apimethod', to add parameters" +
+                   "use JSON config in %s" % func)
+
     @wraps(func)
     def wrapper(self, *args, **kwargs):
+
         # Debug
         class_name = self.__class__.__name__
         method_name = func.__name__.upper()
         logger.info("[Class: %s] %s request" % (class_name, method_name))
+
+        #######################
+        # PARAMETERS INPUT
 
         # Load the right parameters that were decorated
         if self.apply_parameters(method_name):
@@ -178,48 +187,33 @@ def apimethod(func):
             self.parse()
         # self.get_input()
 
+        #######################
         # Call the wrapped function
+        out = None
         try:
             out = func(self, *args, **kwargs)
-        except TypeError as e:
-            logger.warning(e)
-            error = str(e).strip("'")
-            logger.critical("Type error: %s" % error)
+        # Handle any error to avoid Flask using the HTML web page for errors
+        except BaseException as e:
+            logger.warning("To dig more change the decorator output call")
+            return self.report_generic_error("Exception\n%s" % e)
 
-            # This error can be possible only if using the default response
-            if "required positional argument" in error:
-                return self.report_generic_error(
-                    "Custom response defined is not compliant",
-                    current_response_available=False)
-            raise e
+# #######################
+# # TO CHECK AND PROBABLY REMOVE
+#         except TypeError as e:
+#             logger.warning(e)
+#             error = str(e).strip("'")
+#             logger.critical("Type error: %s" % error)
 
-        # Do not intercept if it's already a Flask Response:
-        # Avoids doubles and doesn't interfere with Flask plugins
-        if self.check_response(out):
-            return out
-        # Make sure it has the content key if it's a dictionary
-        if isinstance(out, dict):
-            if RESPONSE_CONTENT_KEY not in out:
-                out = {RESPONSE_CONTENT_KEY: out}
-        else:
-            out = {RESPONSE_CONTENT_KEY: out}
+#             # This error can be possible only if using the default response
+#             if "required positional argument" in error:
+#                 return self.report_generic_error(
+#                     "Custom response defined is not compliant",
+#                     current_response_available=False)
+#             raise e
+        finally:
+            logger.debug("Called %s", func)
 
-        ########################################
-        # Make a Flask Response
-
-        # Set standards for my response as specified in base.py
-        make_response = get_response()
-
-        # Convert output
-        response = make_response(**out)
-
-        # Verify if a custom function broke the Flask rules
-        if not self.check_response(response):
-            return self.report_generic_error(
-                "Custom response did not return a Flask Response!",
-                current_response_available=False)
-
-        return response
+        return out
 
     return wrapper
 
@@ -227,22 +221,36 @@ def apimethod(func):
 ##############################
 # A decorator for the whole class
 
-def all_rest_methods(decorator):
-    """ Decorate all the api methods inside one class """
+"""
+def time_all_class_methods(Cls):
+    class NewCls(object):
+        def __init__(self,*args,**kwargs):
+            self.oInstance = Cls(*args,**kwargs)
 
-# ADD OTHER METHODS HERE, IF SOME ARE MISSING
+"""
+
+
+def all_rest_methods(Cls):
+    """
+    Decorate all the rest methods inside the custom restful class,
+    with the previously created 'apimethod'
+    """
+
     api_methods = ['get', 'post', 'put', 'patch', 'delete']  # , 'search']
 
-    def decorate(cls):
-        # there's propably a better way to do this
-        for attr in cls.__dict__:
-            # Check if method and in it's in my list
-            if attr in api_methods and callable(getattr(cls, attr)):
-                logger.debug("Decorating %s as api method"
-                             % (cls.__name__ + "." + attr))
-                setattr(cls, attr, decorator(getattr(cls, attr)))
-        return cls
-    return decorate
+    for attr in Cls.__dict__:
+
+        # Check if it's a method and if in it's in my list
+        if attr not in api_methods or not callable(getattr(Cls, attr)):
+            continue
+
+        # Get the method, and set the decorated version
+        original_method = getattr(Cls, attr)
+        setattr(Cls, attr, apimethod(original_method))
+
+        logger.debug("Decorated %s.%s as api method" % (Cls.__name__, attr))
+
+    return Cls
 
 
 #####################################################################

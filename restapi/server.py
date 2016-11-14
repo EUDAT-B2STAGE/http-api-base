@@ -2,17 +2,18 @@
 
 """
 Main server factory.
-We create all the components here!
+We create all the internal flask  components here!
 """
 
 from __future__ import absolute_import
 
 import os
 from json.decoder import JSONDecodeError
-from flask import Flask, request, g, Response, json
+from flask import Flask as OriginalFlask, request, g
+from .response import ResponseMaker
 from commons.meta import Meta
 from commons.logs import get_logger
-from .resources.base import ExtendedApiResource
+
 from . import myself, lic
 
 __author__ = myself
@@ -22,58 +23,51 @@ __license__ = lic
 logger = get_logger(__name__)
 
 
-########################
-# Configure Secret Key #
-########################
-def install_secret_key(app, filename='secret_key'):
-    """
+class Flask(OriginalFlask):
 
-Found at
-https://github.com/pallets/flask/wiki/Large-app-how-to
+    def make_response(self, rv):
+        """
+        Hack original flask response generator to read our internal response
+        and build what is needed:
+        the tuple (data, status, headers) to be eaten by make_response()
+        """
 
-    Configure the SECRET_KEY from a file
-    in the instance directory.
+        logger.debug("Overridden Flask: 'make_response' on\n%s" % rv)
+        responder = ResponseMaker(rv)
 
-    If the file does not exist, print instructions
-    to create it from a shell with a random key,
-    then exit.
-    """
-    filename = os.path.join(app.instance_path, filename)
-
-    try:
-        app.config['SECRET_KEY'] = open(filename, 'rb').read()
-    except IOError:
-        logger.critical('No secret key!\n\nYou must create it with:')
-        full_path = os.path.dirname(filename)
-        if not os.path.isdir(full_path):
-            print('mkdir -p {filename}'.format(filename=full_path))
-        print('head -c 24 /dev/urandom > {filename}'.format(filename=filename))
-        import sys
-        sys.exit(1)
+        # Note: jsonify gets done when calling the make_response,
+        # so make sure that the data is of the right format!
+        return super().make_response(responder.generate_response())
 
 
-########################
-# Flask custom response
-########################
+# ########################
+# # Configure Secret Key #
+# ########################
+# def install_secret_key(app, filename='secret_key'):
+#     """
 
-class MyResponse(Response):
+# Found at
+# https://github.com/pallets/flask/wiki/Large-app-how-to
 
-    def __init__(self, response, **kwargs):
+#     Configure the SECRET_KEY from a file
+#     in the instance directory.
 
-        # Get the status
-        code = kwargs.get('status', 0)
-        # Convert back the response
-        if isinstance(response, bytes):
-            response = response.decode()
-        if isinstance(response, str):
-            response = json.loads(response)
+#     If the file does not exist, print instructions
+#     to create it from a shell with a random key,
+#     then exit.
+#     """
+#     filename = os.path.join(app.instance_path, filename)
 
-        # Apply the custom response
-        tmp = ExtendedApiResource.make_custom_response(
-            errors=response, code=code)
-        response = json.dumps(tmp)
-
-        return super(MyResponse, self).__init__(response, **kwargs)
+#     try:
+#         app.config['SECRET_KEY'] = open(filename, 'rb').read()
+#     except IOError:
+#         logger.critical('No secret key!\n\nYou must create it with:')
+#         full_path = os.path.dirname(filename)
+#         if not os.path.isdir(full_path):
+#             print('mkdir -p {filename}'.format(filename=full_path))
+#         print('head -c 24 /dev/urandom > {filename}'.format(filename=filename))
+#         import sys
+#         sys.exit(1)
 
 
 ########################
@@ -92,15 +86,29 @@ def create_app(name=__name__, debug=False,
     from .confs import config
     microservice = Flask(name, **kwargs)
 
+    ##############################
+    # @microservice.before_request
+    # def before():
+    #     print("BEFORE EVERY REQUEST...")
+
+    # @microservice.after_request
+    # def after(response):
+    #     print("AFTER EVERY REQUEST...")
+    #     return response
+
+    ##############################
+    # Disable security if launching celery workers
     if worker_mode:
         enable_security = False
 
+    # Set app internal testing mode if create_app received the parameter
     if testing_mode:
         microservice.config['TESTING'] = testing_mode
-    # else:
-#         # Check and use a random file a secret key.
+    else:
 # # // TO FIX:
 # # Maybe only in production?
+        pass
+#         # Check and use a random file a secret key.
 #         install_secret_key(microservice)
 
     ##############################
@@ -127,6 +135,11 @@ def create_app(name=__name__, debug=False,
     for service, myclass in internal_services.items():
         logger.info("Available service %s" % service)
         myclass(check_connection=True, app=microservice)
+
+    ##############################
+    # Enabling our internal Flask customized response
+    from .response import InternalResponse
+    microservice.response_class = InternalResponse
 
     ##############################
     # Flask security
@@ -162,9 +175,6 @@ def create_app(name=__name__, debug=False,
         def enable_global_authentication():
             """ Save auth object """
             g._custom_auth = custom_auth
-
-## // TO FIX
-        # microservice.response_class = MyResponse
 
         # Enabling also OAUTH library
         from .oauth import oauth

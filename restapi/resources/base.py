@@ -2,14 +2,14 @@
 
 """ The most standard Basic Resource i could """
 
-import json
+from ..config import json
+# import json
 import pytz
 from datetime import datetime
-from flask import g, make_response, jsonify, Response
+from flask import g
 from flask_restful import request, Resource, reqparse
-from .decorators import get_response, set_response
 from ..confs.config import API_URL  # , STACKTRACE
-from ..jsonify import output_json  # , RESTError
+from ..response import ResponseElements
 from commons import htmlcodes as hcodes
 from commons.logs import get_logger
 
@@ -22,6 +22,8 @@ DEFAULT_PERPAGE = 10
 
 RESPONSE_CONTENT = "Response"
 RESPONSE_META = "Meta"
+
+
 
 
 # Extending the concept of rest generic resource
@@ -38,19 +40,6 @@ class ExtendedApiResource(Resource):
 
     def __init__(self):
         super(ExtendedApiResource, self).__init__()
-# NOTE: you can add as many representation as you want!
-        self.representations = {
-            # Be sure of handling JSON
-            'application/json': output_json,
-        }
-
-## // TO FIX:
-# WHAT IF CUSTOM?
-        # Init for DEFAULT latest response
-        self._latest_response = {
-            RESPONSE_CONTENT: None,
-            RESPONSE_META: None,
-        }
 
         # Apply decision about the url of endpoint
         self.set_endpoint()
@@ -106,13 +95,6 @@ class ExtendedApiResource(Resource):
         while JSON parameters may be already saved from another previous call
         """
 
-        # count = 0
-        # for key, value in self._args.items():
-        #     if value is not None:
-        #         count += 1
-
-        # if count == 0:
-
         if not len(self._json_args) > 0:
             try:
                 self._json_args = request.get_json(force=forcing)
@@ -125,8 +107,9 @@ class ExtendedApiResource(Resource):
                         # print("Key", key, "Value", value, self._args[key])
                         key += '_json'
                     self._args[key] = value
-            except Exception as e:
-                logger.warning("Failed to get JSON for current req: '%s'" % e)
+            except Exception:  # as e:
+                # logger.debug("Failed to get JSON for current req: '%s'" % e)
+                pass
 
         if single_parameter is not None:
             return self._args.get(single_parameter)
@@ -140,30 +123,35 @@ class ExtendedApiResource(Resource):
 
     def add_parameter(self, name, method,
                       mytype=str, default=None, required=False):
-        """ Save a parameter inside the class """
+        """
+        Save a parameter inside the class
+
+        Note: parameters are specific to the method
+        (and not to the whole class as before) using subarrays
+        """
 
         # Class name as a key
-        key = self.myname()
+        classname = self.myname()
 
-        if key not in self._params:
-            self._params[key] = {}
+        if classname not in self._params:
+            self._params[classname] = {}
 
-        if method not in self._params[key]:
-            self._params[key][method] = {}
+        if method not in self._params[classname]:
+            self._params[classname][method] = {}
 
         # Avoid if already exists?
-        if name not in self._params[key][method]:
-            self._params[key][method][name] = [mytype, default, required]
+        if name not in self._params[classname][method]:
+            self._params[classname][method][name] = [mytype, default, required]
 
     def apply_parameters(self, method):
         """ Use parameters received via decoration """
 
-        key = self.myname()
-        if key not in self._params:
+        classname = self.myname()
+        if classname not in self._params:
             return False
-        if method not in self._params[key]:
+        if method not in self._params[classname]:
             return False
-        p = self._params[key][method]
+        p = self._params[classname][method]
 
         ##############################
         # Basic options
@@ -173,10 +161,12 @@ class ExtendedApiResource(Resource):
         loc = ['headers', 'values']  # multiple locations
         trim = True
 
-# // TO FIX?
-# when should I apply parameters for paging?
+## // TO FIX?
+# when should I apply parameters for paging?
+# let the developer specify with a dedicated decorator?
         # p[PERPAGE_KEY] = (int, DEFAULT_PERPAGE, False)
         # p[CURRENTPAGE_KEY] = (int, DEFAULT_CURRENTPAGE, False)
+
         if len(p.keys()) < 1:
             return False
 
@@ -196,7 +186,7 @@ class ExtendedApiResource(Resource):
                 param, type=param_type,
                 default=param_default, required=param_required,
                 trim=trim, action=act, location=loc)
-            logger.info("Accept param '%s', type %s" % (param, param_type))
+            logger.debug("Accept param '%s', type %s" % (param, param_type))
 
         return True
 
@@ -209,12 +199,10 @@ class ExtendedApiResource(Resource):
         current_page = self._args.get(CURRENTPAGE_KEY, DEFAULT_CURRENTPAGE)
         return (current_page, limit)
 
-    def get_content_from_response(
-            self, http_out=None,
-            get_all=False, get_error=False, get_status=False, get_meta=False):
-
-        if http_out is None:
-            http_out = self._latest_response
+    def get_content_from_response(self, http_out,
+                                  get_all=False, get_error=False,
+                                  get_status=False, get_meta=False):
+## TO BE MOVED
 
         try:
             response = json.loads(http_out.get_data().decode())
@@ -249,6 +237,8 @@ class ExtendedApiResource(Resource):
 ## // TO FIX:
 # The token should be saved into SESSION
 # or this will be a global token across different users
+
+# or use attrs!
         self.global_get('custom_auth')._latest_token = token
 
     def get_latest_token(self):
@@ -290,6 +280,7 @@ class ExtendedApiResource(Resource):
             **kwargs)
 
     def method_not_allowed(self, methods=['GET']):
+## IS IT USED?
 
         methods.append('HEAD')
         methods.append('OPTIONS')
@@ -304,107 +295,40 @@ class ExtendedApiResource(Resource):
             code=hcodes.HTTP_BAD_METHOD_NOT_ALLOWED)
 
     def force_response(self, *args, **kwargs):
-        method = get_response()
-        return method(*args, **kwargs)
-
-    def default_response(self, defined_content=None, elements=None,
-                         code=hcodes.HTTP_OK_BASIC, errors=None, headers={}):
         """
-        Handle OUR standard response following criteria described in
-        https://github.com/EUDAT-B2STAGE/http-api-base/issues/7
+        Helper function to let the developer define
+        how to respond with the REST and HTTP protocol
+
+        Build a ResponseElements instance.
         """
+        logger.debug("Forcing response:\nargs[%s] kwargs[%s]" % (args, kwargs))
 
-        # Avoid adding content and meta if it's already inside the data
-        # In this situation probably we already called this same response
-        # somewhere else
-        if defined_content is not None:
-            print("RESPONSE: TEST", defined_content, type(defined_content))
-            if RESPONSE_CONTENT in defined_content:
-                if RESPONSE_META in defined_content:
-                    # (code > 0 and code < 600):
-                    return defined_content, code
+        # If args has something, it should be one simple element
+        # That element is the content and nothing else
+        if isinstance(args, tuple) and len(args) > 0:
+            kwargs['defined_content'] = args[0]
+        elif 'defined_content' not in kwargs:
+            kwargs['defined_content'] = None
 
-        #########################
-        # Compute the elements
-
-        # Convert errors in a list, always
-        if errors is not None:
-            if not isinstance(errors, list):
-                if not isinstance(errors, dict):
-                    errors = {'Generic error': errors}
-                errors = [errors]
-
-        # Decide code range
-        if errors is None and defined_content is None:
-            logger.warning("RESPONSE: Warning, no data and no errors")
-            code = hcodes.HTTP_OK_NORESPONSE
-        elif errors is None:
-            if code not in range(0, hcodes.HTTP_MULTIPLE_CHOICES):
-                code = hcodes.HTTP_OK_BASIC
-        elif defined_content is None:
-            if code < hcodes.HTTP_BAD_REQUEST:
-                # code = hcodes.HTTP_BAD_REQUEST
-                code = hcodes.HTTP_SERVER_ERROR
-        # else:
-        #     #warnings
-        #     range 300 < 400
-
-        self._latest_response = self.make_custom_response(
-            defined_content, errors, code, elements)
-
-        return self.flask_response(
-            data=self._latest_response, status=code, headers=headers)
-
-    @staticmethod
-    def make_custom_response(
-            defined_content=None, errors=None, code=None, elements=None):
-        """
-        Try conversions and compute types and length
-        """
+        # try to push keywords arguments directly to the attrs class
+        response = None
         try:
-            data_type = str(type(defined_content))
-            if elements is None:
-                if defined_content is None:
-                    elements = 0
-                elif isinstance(defined_content, str):
-                    elements = 1
-                else:
-                    elements = len(defined_content)
-
-            if errors is None:
-                total_errors = 0
-            else:
-                total_errors = len(errors)
-
-            code = int(code)
+            response = ResponseElements(**kwargs)
         except Exception as e:
-            logger.critical("Could not build response!\n%s" % e)
-            # Revert to defaults
-            defined_content = None,
-            data_type = str(type(defined_content))
-            elements = 0
-            # Also set the error
-            code = hcodes.HTTP_SERVICE_UNAVAILABLE
-            errors = [{'Failed to build response': str(e)}]
-            total_errors = len(errors)
-
-        # Note: latest_response is an attribute
-        # of an object instance created per request
-        return {
-            RESPONSE_CONTENT: {
-                'data': defined_content,
-                'errors': errors,
-            },
-            RESPONSE_META: {
-                'data_type': data_type,
-                'elements': elements,
-                'errors': total_errors,
-                'status': code
-            }
-        }
+            response = ResponseElements(errors=str(e))
+        return response
 
     def empty_response(self):
+        """ Empty response as defined by the protocol """
         return self.force_response("", code=hcodes.HTTP_OK_NORESPONSE)
+
+    def send_warnings(self, errors, code=None):
+## to fix
+        pass
+
+    def send_errors(self, errors, code=None):
+## to fix
+        pass
 
     def report_generic_error(self,
                              message=None, current_response_available=True):
@@ -416,42 +340,10 @@ class ExtendedApiResource(Resource):
         user_message = "Server unable to respond."
         code = hcodes.HTTP_SERVER_ERROR
         if current_response_available:
-            return self.force_response(user_message, code=code)
+            return self.force_response(errors=user_message, code=code)
         else:
-            return self.flask_response(user_message, status=code)
-
-    @staticmethod
-    def check_response(response):
-        return isinstance(response, Response)
-
-    @staticmethod
-    def flask_response(data, status=hcodes.HTTP_OK_BASIC, headers={}):
-        """
-        Inspired by
-        http://blog.miguelgrinberg.com/
-            post/customizing-the-flask-response-class
-
-        Every default/custom response should use this in the end
-        """
-
-        # Handle normal response (not Flaskified)
-        if isinstance(data, tuple) and len(data) == 2:
-            subdata, substatus = data
-            data = subdata
-            if isinstance(substatus, int):
-                status = substatus
-
-        # Create the Flask original response
-        response = make_response((jsonify(data), status))
-
-        # Handle headers if specified by the user
-        response_headers = response.headers.keys()
-        for header, header_content in headers.items():
-            # Only headers that are missing
-            if header not in response_headers:
-                response.headers[header] = header_content
-
-        return response
+            # flask-like
+            return (user_message, code)
 
     @staticmethod
     def timestamp_from_string(timestamp_string):
@@ -470,8 +362,8 @@ class ExtendedApiResource(Resource):
 
     def formatJsonResponse(self, instances, resource_type=None):
         """
-            Format specifications can be found here:
-            http://jsonapi.org
+        Format specifications can be found here:
+        http://jsonapi.org
         """
 
         json_data = {}
@@ -549,7 +441,7 @@ class ExtendedApiResource(Resource):
                 # datetime is not json serializable,
                 # converting it to string
 ## // TO FIX:
-# use flask.jsonify
+# use flask.jsonify?
                 if isinstance(attribute, datetime):
                     data["attributes"][key] = attribute.strftime('%s')
                 else:
@@ -580,8 +472,3 @@ class ExtendedApiResource(Resource):
                 data['relationships'] = linked
 
         return data
-
-# Set default response
-set_response(
-    original=False,  # first_call=True,
-    custom_method=ExtendedApiResource().default_response)
