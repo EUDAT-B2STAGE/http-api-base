@@ -14,19 +14,21 @@ from __future__ import division, absolute_import
 from . import myself, lic
 from commons.logs import get_logger
 
-from flask import jsonify, make_response
-from werkzeug.exceptions import HTTPException
+# from flask import jsonify, make_response
+# from werkzeug.exceptions import HTTPException
 from commons import htmlcodes as hcodes
 
-## // TO FIX: json should be imported from anyone from this class
 # Look for the best chance for json lib
 try:
-    import simplejson as json
+    import commentjson as json
 except:
     try:
-        import commentjson as json
+        import simplejson as json
+        # import commentjson as json
     except:
         import json
+## // TO FIX:
+# this 'json' should be imported from anyone from this class
 
 __author__ = myself
 __copyright__ = myself
@@ -35,47 +37,35 @@ __license__ = lic
 logger = get_logger(__name__)
 
 
-##############################
-# Json Serialization for more than simple returns
+def test_json(message):
+    return json(message)
 
-# // TO FIX:
+
+##############################
+
+# def make_json_error(ex):
+
 # Could this be moved/improved?
 # see http://flask.pocoo.org/snippets/20/
 
-def make_json_error(ex):
-    response = jsonify(message=str(ex))
-    response.status_code = (ex.code if isinstance(ex, HTTPException)
-                            else hcodes.HTTP_SERVER_ERROR)
-    return response
-
-
-##############################
-# Json Serialization as written in restful docs
-def output_json(data, code, headers=None):
-
-    """Makes a Flask response with a JSON encoded body"""
-
-    # Skip this method if the whole data
-    # is already a Flask Response
-    from werkzeug.wrappers import Response
-    if isinstance(data, Response):
-        return data
-
-    # Build a flask JSON response
-    resp = make_response(json.dumps(data), code)
-    resp.headers.extend(headers or {})
-    return resp
+#     response = jsonify(message=str(ex))
+#     response.status_code = \
+#         (ex.code
+#             if isinstance(ex, HTTPException)
+#             else hcodes.HTTP_SERVER_ERROR)
+#     return response
 
 
 ####################################
 # Custom error handling: SAVE TO LOG
 # http://flask-restful.readthedocs.org/en/latest/
 # extending.html#custom-error-handlers
-def log_exception(sender, exception, **extra):
-    """ Log an exception to our logging framework """
-    sender.logger.error(
-        'Got exception during processing:' +
-        '\nSender "%s"\nException "%s"' % (sender, exception))
+
+# def log_exception(sender, exception, **extra):
+#     """ Log an exception to our logging framework """
+#     sender.logger.error(
+#         'Got exception during processing:' +
+#         '\nSender "%s"\nException "%s"' % (sender, exception))
 
 
 ##############################

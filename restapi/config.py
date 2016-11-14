@@ -13,10 +13,8 @@ try:
 except:
     # python2
     import ConfigParser as configparser
-try:
-    import commentjson as json
-except:
-    import json
+
+from .jsonify import json
 
 logger = get_logger(__name__)
 
@@ -71,7 +69,8 @@ class MyConfigs(object):
         # JSON CASE
         try:
             sections = self.read_complex_config(config_file)
-        except:  # json.commentjson.JSONLibraryException:
+        except BaseException as e:  # json.commentjson.JSONLibraryException:
+            logger.error(e)
             logger.critical("Format error!\n" +
                             "'%s' file is not in JSON format" % config_file)
             exit(1)
@@ -90,6 +89,7 @@ class MyConfigs(object):
                 continue
 
             for classname, endpoints in iteritems(items):
+                # Note: does not work on decorated classes
                 myclass = meta.get_class_from_string(classname, module)
                 # Again skip
                 if myclass is None:
@@ -97,6 +97,8 @@ class MyConfigs(object):
                 else:
                     logger.debug("REST! Found resource: " +
                                  section + '.' + classname)
+
+                # print("TEST CLASS:", myclass)
 
                 # Get the best endpoint comparing inside against configuration
                 instance = myclass()
@@ -120,7 +122,6 @@ class MyConfigs(object):
 
         files = []
         if os.path.exists(REST_INIT):
-            import commentjson as json
             with open(REST_INIT) as f:
                 mydict = json.load(f)
                 for name, jfile in iteritems(mydict):
