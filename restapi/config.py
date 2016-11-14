@@ -81,8 +81,9 @@ class MyConfigs(object):
 
             logger.debug("Configuration read: {Section: " + section + "}")
 
-            module = meta.get_module_from_string(
-                __package__ + '.resources.' + section)
+            module_name = __package__ + '.resources.' + section
+            module = meta.get_module_from_string(module_name)
+
             # Skip what you cannot use
             if module is None:
                 logger.warning("Could not find module '%s'..." % section)
@@ -98,7 +99,12 @@ class MyConfigs(object):
                     logger.debug("REST! Found resource: " +
                                  section + '.' + classname)
 
-                # print("TEST CLASS:", myclass)
+                # # Test all rest methods decorator on the class
+                # # it does not work...
+                # from .resources.decorators import all_rest_methods
+                # test = all_rest_methods(myclass)
+                # print("TEST CLASS:", myclass, test)
+                # instance = test()
 
                 # Get the best endpoint comparing inside against configuration
                 instance = myclass()
