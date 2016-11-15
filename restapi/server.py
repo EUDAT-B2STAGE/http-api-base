@@ -45,7 +45,11 @@ class Flask(OriginalFlask):
         # This happens with Flask exceptions
         if responder.already_converted():
             logger.debug("Response was already converted")
-            return rv
+            # # Note: this response could be a class ResponseElements
+            # return rv
+
+            # The responder instead would have already found the right element
+            return responder.get_original_response()
 
         # Note: jsonify gets done when calling the make_response,
         # so make sure that the data is of the right format!

@@ -34,7 +34,7 @@ from attr import (
 from .jsonify import json
 from flask import Response, jsonify
 from werkzeug import exceptions as wsgi_exceptions
-from werkzeug.wrappers import Response as werkzeug_response
+from werkzeug.wrappers import Response as WerkzeugResponse
 from commons import htmlcodes as hcodes
 from .resources.decorators import get_response, set_response
 # from .resources.base import ExtendedApiResource
@@ -111,21 +111,19 @@ class ResponseElements(object):
 class ResponseMaker(object):
 
     def __init__(self, response):
+        """
+        We would receive almost certainly a ResponseElements class
+        which we have to parse.
+        The parser will find out if inside there is either:
+        - an original Flask/Werkzeug Response
+        - A Flask Exception (e.g. NotFound)
+        """
         # logger.debug("Making a response")
         self._response = self.parse_elements(response)
 
-    @staticmethod
-    def is_internal_response(response):
-        return isinstance(response, InternalResponse)
-
-    @staticmethod
-    def is_internal_exception(response):
-        if isinstance(response, wsgi_exceptions.NotFound):
-            return True
-        return False
-
     def parse_elements(self, response):
 
+        # PRE-CHECK: is it a flask response?
         if self.is_internal_response(response):
             return response
 
@@ -152,14 +150,34 @@ class ResponseMaker(object):
             else:
                 elements['defined_content'] = response
 
+        # POST-CHECK: is it a flask response?
+        if self.is_internal_response(elements['defined_content']):
+            return elements['defined_content']
+
         return elements
+
+    def get_original_response(self):
+        return self._response
+
+    @staticmethod
+    def is_internal_response(response):
+        """ damn you hierarchy! """
+        # return isinstance(response, InternalResponse)
+        # return isinstance(response, Response)
+        return isinstance(response, WerkzeugResponse)
+
+    @staticmethod
+    def is_internal_exception(response):
+        if isinstance(response, wsgi_exceptions.NotFound):
+            return True
+        return False
 
     @staticmethod
     def default_response(content):
         """
         Our default for response content
         """
-##Follow jsonapi.org?
+## Follow jsonapi.org?
         return content
 
     def already_converted(self):
@@ -324,7 +342,7 @@ class ResponseMaker(object):
 
 #         # Based on hierarchy: flask response extends werkezeug
 #         # So I can be more flexible
-#         if isinstance(data, werkzeug_response):
+#         if isinstance(data, WerkzeugResponse):
 #             return data
 
 #         # Handle normal response (not Flaskified)
@@ -372,7 +390,7 @@ def get_content_from_response(http_out):
     response = None
 
     # Read a real flask response
-    if isinstance(http_out, werkzeug_response):
+    if isinstance(http_out, WerkzeugResponse):
         try:
             response = json.loads(http_out.get_data().decode())
         except Exception as e:
