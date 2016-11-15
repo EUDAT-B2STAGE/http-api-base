@@ -65,16 +65,16 @@ class Login(ExtendedApiResource):
             password = jargs['pwd']
 
         if username is None or password is None:
-            return self.force_response(
-                errors={"Credentials": "Missing 'username' and/or 'password'"},
+            return self.send_errors(
+                "Credentials", "Missing 'username' and/or 'password'",
                 code=bad_code)
 
         # auth instance from the global namespace
         auth = self.global_get('custom_auth')
         token, jti = auth.make_login(username, password)
         if token is None:
-            return self.force_response(
-                errors={"Credentials": "Invalid username and/or password"},
+            return self.send_errors(
+                "Credentials", "Invalid username and/or password",
                 code=bad_code)
 
         auth.save_token(auth._user, token, jti)
@@ -125,9 +125,8 @@ class Tokens(ExtendedApiResource):
 
         errorMessage = "This token has not emitted to your account " + \
                        "or does not exist"
-        return self.force_response(
-            errors=[{"Token not found": errorMessage}],
-            code=hcodes.HTTP_BAD_NOTFOUND)
+        return self.send_errors(
+            "Token not found", errorMessage, code=hcodes.HTTP_BAD_NOTFOUND)
 
     @authentication.authorization_required
     @decorate.apimethod
@@ -153,9 +152,8 @@ class Tokens(ExtendedApiResource):
 
             errorMessage = "This token has not emitted to your account " + \
                            "or does not exist"
-            return self.force_response(
-                errors=[{"Token not found": errorMessage}],
-                code=hcodes.HTTP_BAD_NOTFOUND)
+            return self.send_errors(
+                "Token not found", errorMessage, code=hcodes.HTTP_BAD_NOTFOUND)
 
 
 class TokensAdminOnly(ExtendedApiResource):
@@ -172,9 +170,8 @@ class TokensAdminOnly(ExtendedApiResource):
         auth = self.global_get('custom_auth')
         token = auth.get_tokens(token_jti=token_id)
         if len(token) == 0:
-            return self.force_response(
-                errors={"Token not found": token_id},
-                code=hcodes.HTTP_BAD_NOTFOUND)
+            return self.send_errors(
+                "Token not found", token_id, code=hcodes.HTTP_BAD_NOTFOUND)
         return token
 
     @authentication.authorization_required
@@ -183,9 +180,8 @@ class TokensAdminOnly(ExtendedApiResource):
         logger.critical("This endpoint should be restricted to admin only!")
         auth = self.global_get('custom_auth')
         if not auth.destroy_token(token_id):
-            return self.force_response(
-                errors={"Token not found": token_id},
-                code=hcodes.HTTP_BAD_NOTFOUND)
+            return self.send_errors(
+                "Token not found", token_id, code=hcodes.HTTP_BAD_NOTFOUND)
 
         return self.empty_response()
 
