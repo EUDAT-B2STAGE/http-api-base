@@ -120,8 +120,8 @@ def add_endpoint_parameter(name, ptype=str, default=None, required=False):
     """
 
     def decorator(func):
-        logger.warning("Deprecated 'add_endpoint_parameter', " +
-                       "use JSON config in %s" % func)
+        # logger.warning("Deprecated 'add_endpoint_parameter', " +
+        #                "use JSON config in %s" % func)
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
@@ -152,16 +152,14 @@ def add_endpoint_parameter(name, ptype=str, default=None, required=False):
 # It will assure to have all necessary things up:
 
 # 1. standard json data returns
-# N.B. may change it: read here to be sure
-# http://mattupstate.com/python/2013/06/26/
-#   how-i-structure-my-flask-applications.html#s2g
+# MOVED INTO response.py/server.py
 
 # 2. also to have my requested parameters configured and parsed
-# right before the function call
-# this is necessary for the plugin Restful
+# right before the function call (necessary for flask_restful)
 # http://flask-restful.readthedocs.org/en/latest/reqparse.html
 
 def apimethod(func):
+## TO BE DEPRECATED
     """ 
     Decorate methods to return the most standard json data
     and also to parse available args before using them in the function

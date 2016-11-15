@@ -32,6 +32,11 @@ class Flask(OriginalFlask):
         the tuple (data, status, headers) to be eaten by make_response()
         """
 
+## TO FIX:
+# use some global variable to enable/disable the usual response
+        # # In case you want to get back to normal
+        # return super().make_response(rv)
+
         logger.info("MAKE_RESPONSE: %s" % rv)
         responder = ResponseMaker(rv)
 

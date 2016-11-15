@@ -58,21 +58,25 @@ RESPONSE_META = "Meta"
 ########################
 
 class InternalResponse(Response):
+    """
+    Note: basically the response cannot be modified anymore at this point
+    """
 
-    def __init__(self, response, **kwargs):
-        """
-        Note: basically the response cannot be modified anymore at this point
-        """
+    # def __init__(self, response, **kwargs):
+    def __init__(self, *args, **kwargs):
+
+        # print("TEST", args, kwargs)
 
         if 'mimetype' not in kwargs and 'contenttype' not in kwargs:
-
             # our default
             kwargs['mimetype'] = 'application/json'
 
             # if response.startswith('<?xml'):
             #     kwargs['mimetype'] = 'application/xml'
 
-        self._latest_response = super().__init__(response, **kwargs)
+        self._latest_response = \
+            super().__init__(*args, **kwargs)
+        #    super().__init__(response, **kwargs)  # THIS WAS A HUGE BUG :/
 
     @classmethod
     def force_type(cls, rv, environ=None):
