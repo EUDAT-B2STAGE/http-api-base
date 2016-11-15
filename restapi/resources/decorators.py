@@ -258,7 +258,7 @@ def all_rest_methods(Cls):
 def exceptionError(self, label, e, code=hcodes.HTTP_BAD_REQUEST):
     error = str(e)
     logger.error(error)
-    return self.force_response(errors={label: error}, code=code)
+    return self.send_errors(label, error, code=code)
 
 
 def error_handler(func, self, exception, label, catch_generic, args, kwargs):

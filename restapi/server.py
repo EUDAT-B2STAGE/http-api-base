@@ -32,8 +32,15 @@ class Flask(OriginalFlask):
         the tuple (data, status, headers) to be eaten by make_response()
         """
 
-        logger.debug("Overridden Flask: 'make_response' on\n%s" % rv)
+        logger.info("MAKE_RESPONSE: %s" % rv)
         responder = ResponseMaker(rv)
+
+        # Avoid duplicating the response generation
+        # or the make_response replica.
+        # This happens with Flask exceptions
+        if responder.already_converted():
+            logger.debug("Response was already converted")
+            return rv
 
         # Note: jsonify gets done when calling the make_response,
         # so make sure that the data is of the right format!

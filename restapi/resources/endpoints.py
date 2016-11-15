@@ -38,9 +38,8 @@ class Login(ExtendedApiResource):
 
     # @decorate.apimethod
     # def get(self):
-    #     return self.force_response(
-    #         errors={"Wrong method":
-    #                 "Please login with the POST method"},
+    #     return self.send_errors(
+    #         "Wrong method", "Please login with the POST method",
     #         code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
     @decorate.apimethod

@@ -31,11 +31,11 @@ from attr import (
     s as AttributedModel,
     ib as attribute,
 )
+from .jsonify import json
+from flask import Response, jsonify
+from werkzeug import exceptions as wsgi_exceptions
 from werkzeug.wrappers import Response as werkzeug_response
-from flask import Response, make_response, jsonify  # , json
 from commons import htmlcodes as hcodes
-# from .config import json
-# from .jsonify import json
 from .resources.decorators import get_response, set_response
 # from .resources.base import ExtendedApiResource
 from commons.logs import get_logger
@@ -110,7 +110,20 @@ class ResponseMaker(object):
         # logger.debug("Making a response")
         self._response = self.parse_elements(response)
 
+    @staticmethod
+    def is_internal_response(response):
+        return isinstance(response, InternalResponse)
+
+    @staticmethod
+    def is_internal_exception(response):
+        if isinstance(response, wsgi_exceptions.NotFound):
+            return True
+        return False
+
     def parse_elements(self, response):
+
+        if self.is_internal_response(response):
+            return response
 
         # Initialize the array of data
         elements = {}
@@ -145,12 +158,18 @@ class ResponseMaker(object):
 ##Follow jsonapi.org?
         return content
 
+    def already_converted(self):
+        return self.is_internal_response(self._response)
+
     def generate_response(self):
         """
         Generating from our user/custom/internal response
         the data necessary for a Flask response (make_response() method):
         a tuple (content, status, headers)
         """
+
+        if self.already_converted():
+            return self._response
 
         # 1. Use response elements
         r = self._response
@@ -170,11 +189,14 @@ class ResponseMaker(object):
         final_content = self.standard_response_content(
             r['defined_content'], r['errors'], r['code'], r['elements'])
 
-        print("What to do with extra", r['extra'])
+        if r['extra'] is not None:
+            logger.warning("What to do with extra?\n%s" % r['extra'])
 
         # 5. Return what is necessary to build a standard flask response
         # from all that was gathered so far
-        return (final_content, r['code'], r['headers'])
+        response = (final_content, r['code'], r['headers'])
+
+        return response
 
     def get_errors_and_status(
             self, defined_content=None, code=None, errors=None):
@@ -184,7 +206,13 @@ class ResponseMaker(object):
         """
 
         if code is None:
-            code = hcodes.HTTP_OK_BASIC
+            # flask exception?
+            if self.is_internal_exception(defined_content):
+                exception = defined_content
+                code = exception.code
+                errors = exception.name
+            else:
+                code = hcodes.HTTP_OK_BASIC
 
         #########################
         # errors and conseguent status code range
@@ -221,15 +249,15 @@ class ResponseMaker(object):
         Try conversions and compute types and length
         """
 
-## TO CHECK AND REMOVE
-        # # In this situation probably we already called the force_response
-        # if defined_content is not None \
-        #    and (errors is None and code is None and elements is None):
-        #     # print("RESPONSE: TEST", defined_content, type(defined_content))
-        #     if RESPONSE_CONTENT in defined_content:
-        #         if RESPONSE_META in defined_content:
-        #             return defined_content
+        ###################
+        # Handle original Flask wsgi_exceptions
+        if ResponseMaker.is_internal_exception(defined_content):
+            # Up to here the exception should be already parsed
+            # for error and code in the previous step, so clean the content
+            defined_content = None
 
+        ###################
+        # Our normal content
         try:
             data_type = str(type(defined_content))
             if elements is None:
@@ -324,9 +352,46 @@ class ResponseMaker(object):
 #         return response
 
 
+########################
 # Set default response
 set_response(
     # Note: original here means the Flask simple response
     original=False,
     # first_call=True,
     custom_method=ResponseMaker.default_response)
+
+
+########################
+# Explode the normal response content?
+def get_content_from_response(http_out):
+
+    response = None
+
+    # Read a real flask response
+    if isinstance(http_out, werkzeug_response):
+        try:
+            response = json.loads(http_out.get_data().decode())
+        except Exception as e:
+            logger.critical("Failed to load response:\n%s" % e)
+            raise ValueError(
+                "Trying to recover informations" +
+                " from a malformed response:\n%s" % http_out)
+    # Or convert an half-way made response
+    elif isinstance(http_out, ResponseElements):
+        tmp = ResponseMaker(http_out).generate_response()
+        response = tmp[0]
+
+    # Check what we have so far
+    # Should be {Response: DATA, Meta: RESPONSE_METADATA}
+    if not isinstance(response, dict) or len(response) != 2:
+        raise ValueError(
+            "Trying to recover informations" +
+            " from a malformed response:\n%s" % response)
+
+    # Split
+    content = response[RESPONSE_CONTENT]['data']
+    err = response[RESPONSE_CONTENT]['errors']
+    meta = response[RESPONSE_META]
+    code = meta['status']
+
+    return content, err, meta, code

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 
-""" The most standard Basic Resource i could """
+"""
+The most basic (and standard) Rest Resource
+we could provide back then
+"""
 
-from ..config import json
-# import json
 import pytz
 from datetime import datetime
 from flask import g
@@ -199,28 +200,12 @@ class ExtendedApiResource(Resource):
         current_page = self._args.get(CURRENTPAGE_KEY, DEFAULT_CURRENTPAGE)
         return (current_page, limit)
 
-    def get_content_from_response(self, http_out,
-                                  get_all=False, get_error=False,
-                                  get_status=False, get_meta=False):
-## TO BE MOVED
+    def explode_response(self,
+                         api_output, get_all=False,
+                         get_error=False, get_status=False, get_meta=False):
 
-        try:
-            response = json.loads(http_out.get_data().decode())
-        except Exception as e:
-            logger.critical("Failed to load response:\n%s" % e)
-            raise ValueError(
-                "Trying to recover informations" +
-                " from a malformed response:\n%s" % http_out)
-
-        if not isinstance(response, dict) or len(response) != 2:
-            raise ValueError(
-                "Trying to recover informations" +
-                " from a malformed response:\n%s" % response)
-
-        content = response[RESPONSE_CONTENT]['data']
-        err = response[RESPONSE_CONTENT]['errors']
-        meta = response[RESPONSE_META]
-        code = meta['status']
+        from ..response import get_content_from_response
+        content, err, meta, code = get_content_from_response(api_output)
 
         if get_error:
             return err
@@ -322,13 +307,37 @@ class ExtendedApiResource(Resource):
         """ Empty response as defined by the protocol """
         return self.force_response("", code=hcodes.HTTP_OK_NORESPONSE)
 
-    def send_warnings(self, errors, code=None):
-## to fix
-        pass
+    def send_warnings(self, defined_content, errors, code=None):
+        """
+        Warnings when there is both data and errors in response.
+        So 'defined_content' and 'errors' are required,
+        while the code has to be between below 400
+        """
+        if code is None or code >= hcodes.HTTP_BAD_REQUEST:
+            code = hcodes.HTTP_MULTIPLE_CHOICES
 
-    def send_errors(self, errors, code=None):
-## to fix
-        pass
+        return self.force_response(
+            defined_content=defined_content, errors=errors, code=code)
+
+    def send_errors(self, label="Error", message=None, errors={}, code=None):
+        """
+        Setup an error message and
+        """
+
+        # See if we have the main message
+        error = {}
+        if message is not None:
+            error = {label: message}
+
+        # Extend existing errors
+        if isinstance(errors, dict) and len(error) > 0:
+            errors.update(error)
+
+        if code is None or code < hcodes.HTTP_BAD_REQUEST:
+            # default error
+            code = hcodes.HTTP_SERVER_ERROR
+
+        return self.force_response(errors=errors, code=code)
 
     def report_generic_error(self,
                              message=None, current_response_available=True):
