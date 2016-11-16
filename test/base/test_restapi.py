@@ -8,9 +8,7 @@ Tests for http api base
 from __future__ import absolute_import
 
 import json
-import commons.htmlcodes as hcodes
 from .. import RestTestsBase
-from restapi.confs.config import USER, PWD
 from commons.logs import get_logger
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
@@ -38,12 +36,12 @@ class BaseTests(RestTestsBase):
         endpoint = self._api_uri + '/status'
         logger.info("*** VERIFY if API is online")
         r = self.app.get(endpoint)
-        self.assertEqual(r.status_code, hcodes.HTTP_OK_BASIC)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
 
         # Check failure
         logger.info("*** VERIFY if invalid endpoint gives Not Found")
         r = self.app.get(self._api_uri)
-        self.assertEqual(r.status_code, hcodes.HTTP_BAD_NOTFOUND)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_NOTFOUND)
 
     def test_02_get_login(self):
         """ Check that you can login and receive back your token """
@@ -52,9 +50,10 @@ class BaseTests(RestTestsBase):
 
         # Check success
         logger.info("*** VERIFY valid credentials")
-        r = self.app.post(endpoint,
-                          data=json.dumps({'username': USER, 'password': PWD}))
-        self.assertEqual(r.status_code, hcodes.HTTP_OK_BASIC)
+        credentials = json.dumps(
+            {'username': self._username, 'password': self._password})
+        r = self.app.post(endpoint, data=credentials)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
         content = self.get_content(r)
 
         # Note: self.auth_header does not work
@@ -63,10 +62,12 @@ class BaseTests(RestTestsBase):
 
         # Check failure
         logger.info("*** VERIFY invalid credentials")
-        r = self.app.post(
-            endpoint,
-            data=json.dumps({'username': USER + 'x', 'password': PWD + 'y'}))
-        self.assertEqual(r.status_code, hcodes.HTTP_BAD_UNAUTHORIZED)
+        credentials = json.dumps({
+            'username': self._username + 'X',
+            'password': self._password + 'Y'
+        })
+        r = self.app.post(endpoint, data=credentials)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_UNAUTHORIZED)
 
     def test_03_get_profile(self):
         """ Check if you can use your token for protected endpoints """
@@ -76,12 +77,12 @@ class BaseTests(RestTestsBase):
         # Check success
         logger.info("*** VERIFY valid token")
         r = self.app.get(endpoint, headers=self.__class__.auth_header)
-        self.assertEqual(r.status_code, hcodes.HTTP_OK_BASIC)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
 
         # Check failure
         logger.info("*** VERIFY invalid token")
         r = self.app.get(endpoint)
-        self.assertEqual(r.status_code, hcodes.HTTP_BAD_UNAUTHORIZED)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_UNAUTHORIZED)
 
     def test_04_get_logout(self):
         """ Check that you can logout with a valid token """
@@ -91,12 +92,12 @@ class BaseTests(RestTestsBase):
         # Check success
         logger.info("*** VERIFY valid token")
         r = self.app.get(endpoint, headers=self.__class__.auth_header)
-        self.assertEqual(r.status_code, hcodes.HTTP_OK_NORESPONSE)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_OK_NORESPONSE)
 
         # Check failure
         logger.info("*** VERIFY invalid token")
         r = self.app.get(endpoint)
-        self.assertEqual(r.status_code, hcodes.HTTP_BAD_UNAUTHORIZED)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_UNAUTHORIZED)
 
     def test_05_get_tokens(self):
 
@@ -105,11 +106,11 @@ class BaseTests(RestTestsBase):
         # CREATING 3 TOKENS
         tokens = []
         num_tokens = 3
+        credentials = json.dumps(
+            {'username': self._username, 'password': self._password})
 
         for i in range(num_tokens):
-            r = self.app.post(
-                endpoint,
-                data=json.dumps({'username': USER, 'password': PWD}))
+            r = self.app.post(endpoint, data=credentials)
             content = self.get_content(r)
             token = content['token']
             tokens.append(token)
@@ -122,7 +123,7 @@ class BaseTests(RestTestsBase):
         # TEST GET ALL TOKENS (expected at least num_tokens)
         r = self.app.get(endpoint, headers=self.__class__.tokens_header)
         content = self.get_content(r)
-        self.assertEqual(r.status_code, hcodes.HTTP_OK_BASIC)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
         self.assertGreaterEqual(len(content), num_tokens)
 
         # save the second token to be used for further tests
@@ -131,12 +132,12 @@ class BaseTests(RestTestsBase):
         # TEST GET SINGLE TOKEN
         r = self.app.get(endpoint + "/" + self.__class__.token_id,
                          headers=self.__class__.tokens_header)
-        self.assertEqual(r.status_code, hcodes.HTTP_OK_BASIC)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
 
         # TEST GET INVALID SINGLE TOKEN
         r = self.app.get(endpoint + "/0",
                          headers=self.__class__.tokens_header)
-        self.assertEqual(r.status_code, hcodes.HTTP_BAD_NOTFOUND)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_NOTFOUND)
 
     def test_06_delete_tokens(self):
 
@@ -145,26 +146,26 @@ class BaseTests(RestTestsBase):
         # TEST DELETE OF A SINGLE TOKEN
         r = self.app.delete(endpoint + "/" + self.__class__.token_id,
                             headers=self.__class__.tokens_header)
-        self.assertEqual(r.status_code, hcodes.HTTP_OK_NORESPONSE)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_OK_NORESPONSE)
 
         # TEST AN ALREADY DELETED TOKEN
         r = self.app.delete(endpoint + "/" + self.__class__.token_id,
                             headers=self.__class__.tokens_header)
-        self.assertEqual(r.status_code, hcodes.HTTP_BAD_NOTFOUND)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_NOTFOUND)
 
         # TEST INVALID DELETE OF A SINGLE TOKEN
         r = self.app.delete(endpoint + "/0",
                             headers=self.__class__.tokens_header)
 
-        self.assertEqual(r.status_code, hcodes.HTTP_BAD_NOTFOUND)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_NOTFOUND)
 
         # TEST DELETE OF ALL TOKENS
         r = self.app.delete(endpoint,
                             headers=self.__class__.tokens_header)
-        self.assertEqual(r.status_code, hcodes.HTTP_OK_NORESPONSE)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_OK_NORESPONSE)
 
         # TEST TOKEN IS NOW INVALID
         r = self.app.get(endpoint,
                          headers=self.__class__.tokens_header)
 
-        self.assertEqual(r.status_code, hcodes.HTTP_BAD_UNAUTHORIZED)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_UNAUTHORIZED)
