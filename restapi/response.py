@@ -49,8 +49,6 @@ PERPAGE_KEY = 'perpage'
 DEFAULT_PERPAGE = 10
 
 # response elements
-RESPONSE_CONTENT = "Response"
-RESPONSE_META = "Meta"
 
 
 ########################
@@ -109,6 +107,9 @@ class ResponseElements(object):
 # Flask response internal builder
 ########################
 class ResponseMaker(object):
+
+    _content_key = "Response"
+    _content_meta = "Meta"
 
     def __init__(self, response):
         """
@@ -310,11 +311,11 @@ class ResponseMaker(object):
         # Note: latest_response is an attribute
         # of an object instance created per request
         return {
-            RESPONSE_CONTENT: {
+            ResponseMaker._content_key: {
                 'data': defined_content,
                 'errors': errors,
             },
-            RESPONSE_META: {
+            ResponseMaker._content_meta: {
                 'data_type': data_type,
                 'elements': elements,
                 'errors': total_errors,
@@ -411,9 +412,9 @@ def get_content_from_response(http_out):
             " from a malformed response:\n%s" % response)
 
     # Split
-    content = response[RESPONSE_CONTENT]['data']
-    err = response[RESPONSE_CONTENT]['errors']
-    meta = response[RESPONSE_META]
+    content = response[ResponseMaker._content_key]['data']
+    err = response[ResponseMaker._content_key]['errors']
+    meta = response[ResponseMaker._content_meta]
     code = meta['status']
 
     return content, err, meta, code

@@ -16,20 +16,21 @@ from commons.logs import get_logger
 
 logger = get_logger(__name__)
 
+###################
+# Paging costants
 CURRENTPAGE_KEY = 'currentpage'
 DEFAULT_CURRENTPAGE = 1
 PERPAGE_KEY = 'perpage'
 DEFAULT_PERPAGE = 10
 
-RESPONSE_CONTENT = "Response"
-RESPONSE_META = "Meta"
 
-
-
-
+###################
 # Extending the concept of rest generic resource
+
 class ExtendedApiResource(Resource):
-    """ Implement a generic Resource for Restful model """
+    """
+    Implements a generic Resource for our Restful APIs model
+    """
 
     myname = __name__
     _latest_headers = {}

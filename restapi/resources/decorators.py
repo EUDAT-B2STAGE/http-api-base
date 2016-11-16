@@ -34,9 +34,6 @@ __license__ = lic
 
 logger = get_logger(__name__)
 
-## TO REMOVE
-RESPONSE_CONTENT_KEY = 'defined_content'
-
 
 #################################
 # Identity is usefull to some (very) extreme decorators cases
