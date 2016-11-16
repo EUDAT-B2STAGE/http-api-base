@@ -55,7 +55,10 @@ class Certificates(object):
         response = ca.post('ca/o/delegateduser', data=self.encode_csr(req),
                            headers={'Accept-Encoding': 'identity'})
         if response.status != hcodes.HTTP_OK_BASIC:
-            return {'errors': [{'Certificates': 'Failed to create proxy'}]}
+            # from beeprint import pp as prettyprint
+            # prettyprint(response)
+            logger.error("Proxy from CA failed with %s" % response.data)
+            return None
 
         # write proxy certificate to a random file name
         proxyfile = self.write_key_and_cert(key, response.data)

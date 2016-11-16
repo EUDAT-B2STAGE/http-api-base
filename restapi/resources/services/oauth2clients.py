@@ -23,6 +23,10 @@ B2ACCESS_DEV_BASEURL = "https://unity.eudat-aai.fz-juelich.de"
 B2ACCESS_DEV_URL = B2ACCESS_DEV_BASEURL + ":8443"
 B2ACCESS_DEV_CA_URL = B2ACCESS_DEV_BASEURL + ":8445"
 
+B2ACCESS_PROD_BASEURL = "   https://b2access.eudat.eu"
+B2ACCESS_PROD_URL = B2ACCESS_PROD_BASEURL + ":8443"
+B2ACCESS_PROD_CA_URL = B2ACCESS_PROD_BASEURL + ":8445"
+
 
 class ExternalServicesLogin(object):
 
@@ -30,9 +34,12 @@ class ExternalServicesLogin(object):
 
     def __init__(self, testing=False):
 
+###################
 ## // TO FIX?
+# provide some tests for oauth2 calls?
         if testing:
             return None
+###################
 
         # For each defined internal service
         for key, func in Meta().get_methods_inside_instance(self).items():
@@ -57,8 +64,7 @@ class ExternalServicesLogin(object):
                     logger.info("Created Oauth2 service %s" % name)
             except Exception as e:
                 logger.critical(
-                    "Could not request oauth2 service %s:\n%s" %
-                    (key, str(e)))
+                    "Could not request oauth2 service %s:\n%s" % (key, e))
 
     def github(self):
         """ This APIs are very useful for testing purpose """
@@ -77,40 +83,48 @@ class ExternalServicesLogin(object):
 
     def b2access(self, testing=False):
 
-        # print("TEST *%s*" % os.environ.get('B2ACCESS_APPKEY'))
-        b2access_oauth = oauth.remote_app(
-            'b2access',
-            consumer_key=os.environ.get('B2ACCESS_APPNAME', 'yourappusername'),
-            consumer_secret=os.environ.get('B2ACCESS_APPKEY', 'yourapppw'),
-            base_url=B2ACCESS_DEV_URL + '/oauth2/',
-            # LOAD CREDENTIALS FROM DOCKER ENVIRONMENT
-            request_token_params={'scope':
-                                  'USER_PROFILE GENERATE_USER_CERTIFICATE'},
-            request_token_url=None,
-            access_token_method='POST',
-            access_token_url=B2ACCESS_DEV_URL + '/oauth2/token',
-            authorize_url=B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
-        )
+        # LOAD CREDENTIALS FROM DOCKER ENVIRONMENT
+        key = os.environ.get('B2ACCESS_APPNAME', 'yourappusername')
+        secret = os.environ.get('B2ACCESS_APPKEY', 'yourapppw')
 
-        b2accessCA = oauth.remote_app(
-            'b2accessCA',
-            consumer_key=os.environ.get('B2ACCESS_APPNAME', 'yourappusername'),
-            consumer_secret=os.environ.get('B2ACCESS_APPKEY', 'yourapppw'),
-            base_url=B2ACCESS_DEV_CA_URL,
-            request_token_params={'scope':
-                                  'USER_PROFILE GENERATE_USER_CERTIFICATE'},
-            request_token_url=None,
-            access_token_method='POST',
-            access_token_url=B2ACCESS_DEV_URL + '/oauth2/token',
-            authorize_url=B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
-        )
+        # SET OTHER URLS
+        token_url = B2ACCESS_DEV_URL + '/oauth2/token'
+        authorize_url = B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
+        # token_url = B2ACCESS_PROD_URL + '/oauth2/token'
+        # authorize_url = B2ACCESS_PROD_URL + '/oauth2-as/oauth2-authz'
 
+        # COMMON ARGUMENTS
+        arguments = {
+            'consumer_key': key,
+            'consumer_secret': secret,
+            'access_token_url': token_url,
+            'authorize_url': authorize_url,
+            'request_token_params': {'scope': 'GENERATE_USER_CERTIFICATE'},
+            'request_token_url': None,
+            'access_token_method': 'POST'
+        }
+
+        #####################
+        # B2ACCESS
+        arguments['base_url'] = B2ACCESS_DEV_URL + '/oauth2/'
+        # arguments['base_url'] = B2ACCESS_PROD_URL + '/oauth2/'
+        b2access_oauth = oauth.remote_app('b2access', **arguments)
+
+        #####################
+        # B2ACCESS CERTIFICATION AUTHORITY
+        arguments['base_url'] = B2ACCESS_DEV_CA_URL
+        # arguments['base_url'] = B2ACCESS_PROD_CA_URL
+        b2accessCA = oauth.remote_app('b2accessCA', **arguments)
+
+        #####################
+        # Decorated session save of the token
         @b2access_oauth.tokengetter
         @b2accessCA.tokengetter
         def get_b2access_oauth_token():
             from flask import session
             return session.get('b2access_token')
 
+    ## could have used nametuple or attrs
         return {'b2access': b2access_oauth, 'b2accessCA': b2accessCA}
 
 
