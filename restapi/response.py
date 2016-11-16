@@ -169,8 +169,22 @@ class ResponseMaker(object):
 
     @staticmethod
     def is_internal_exception(response):
-        if isinstance(response, wsgi_exceptions.NotFound):
-            return True
+        """
+        See if this is an exception inside the list of wsgi exceptions
+        """
+        try:
+            response_name = str(response.__class__.__name__)
+            if response_name in dir(wsgi_exceptions):
+                return True
+        except:
+            pass
+
+        ## Otherwise we could:
+        # if isinstance(response, wsgi_exceptions.MethodNotAllowed):
+        #     return True
+        # if isinstance(response, wsgi_exceptions.NotFound):
+        #     return True
+
         return False
 
     @staticmethod
@@ -233,7 +247,7 @@ class ResponseMaker(object):
             if self.is_internal_exception(defined_content):
                 exception = defined_content
                 code = exception.code
-                errors = exception.name
+                errors = {exception.name: exception.description}
             else:
                 code = hcodes.HTTP_OK_BASIC
 
