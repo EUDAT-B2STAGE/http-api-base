@@ -7,14 +7,14 @@ And a Farm: How to create endpoints into REST service.
 
 from __future__ import absolute_import
 from .. import myself, lic
-from commons.logs import get_logger
 
 from ..confs.config import AUTH_URL
 from .base import ExtendedApiResource
 from commons import htmlcodes as hcodes
-from . import decorators as decorate
 from ..auth import authentication
 from ..confs import config
+# from . import decorators as decorate
+from commons.logs import get_logger
 
 __author__ = myself
 __copyright__ = myself
@@ -26,7 +26,6 @@ logger = get_logger(__name__)
 class Status(ExtendedApiResource):
     """ API online test """
 
-    @decorate.apimethod
     def get(self):
         return 'Server is alive!'
 
@@ -42,7 +41,6 @@ class Login(ExtendedApiResource):
     #         "Wrong method", "Please login with the POST method",
     #         code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
-    @decorate.apimethod
     def post(self):
         """ Using a service-dependent callback """
 
@@ -97,7 +95,6 @@ class Logout(ExtendedApiResource):
     base_url = AUTH_URL
 
     @authentication.authorization_required
-    @decorate.apimethod
     def get(self):
         auth = self.global_get('custom_auth')
         auth.invalidate_token()
@@ -112,7 +109,6 @@ class Tokens(ExtendedApiResource):
     endtype = "string"
 
     @authentication.authorization_required
-    @decorate.apimethod
     def get(self, token_id=None):
         auth = self.global_get('custom_auth')
         tokens = auth.get_tokens(user=auth._user)
@@ -129,7 +125,6 @@ class Tokens(ExtendedApiResource):
             "Token not found", errorMessage, code=hcodes.HTTP_BAD_NOTFOUND)
 
     @authentication.authorization_required
-    @decorate.apimethod
     def delete(self, token_id=None):
         auth = self.global_get('custom_auth')
         tokens = auth.get_tokens(user=auth._user)
@@ -164,7 +159,6 @@ class TokensAdminOnly(ExtendedApiResource):
     endtype = "string"
 
     @authentication.authorization_required
-    @decorate.apimethod
     def get(self, token_id):
         logger.critical("This endpoint should be restricted to admin only!")
         auth = self.global_get('custom_auth')
@@ -175,7 +169,6 @@ class TokensAdminOnly(ExtendedApiResource):
         return token
 
     @authentication.authorization_required
-    @decorate.apimethod
     def delete(self, token_id):
         logger.critical("This endpoint should be restricted to admin only!")
         auth = self.global_get('custom_auth')
@@ -192,7 +185,6 @@ class Profile(ExtendedApiResource):
     base_url = AUTH_URL
 
     @authentication.authorization_required
-    @decorate.apimethod
     def get(self):
         """
         Token authentication tester. Example of working call is: 
@@ -228,7 +220,6 @@ class Internal(ExtendedApiResource):
     base_url = AUTH_URL
 
     @authentication.authorization_required(roles=[config.ROLE_INTERNAL])
-    @decorate.apimethod
     def get(self):
         return self.force_response("I am internal")
 
@@ -239,6 +230,5 @@ class Admin(ExtendedApiResource):
     base_url = AUTH_URL
 
     @authentication.authorization_required(roles=[config.ROLE_ADMIN])
-    @decorate.apimethod
     def get(self):
         return self.force_response("I am admin!")
