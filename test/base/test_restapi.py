@@ -8,107 +8,58 @@ Tests for http api base
 from __future__ import absolute_import
 
 import json
-import unittest
 import commons.htmlcodes as hcodes
-from restapi.server import create_app
-from restapi.confs.config import USER, PWD, \
-    TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
-
+from .. import RestTestsBase
+from restapi.confs.config import USER, PWD
 from commons.logs import get_logger
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 logger = get_logger(__name__, True)
 
-API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
-AUTH_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
 
-## TO FIX:
-# skip login tests if no_security requested on Flask server create_app
-
-
-class TestRestAPI(unittest.TestCase):
+class BaseTests(RestTestsBase):
 
     """
-    HOW TO
+    Unittests perpared for the core basic functionalities.
 
-    # initialization logic for the test suite declared in the test module
-    # code that is executed before all tests in one test run
-    @classmethod
-    def setUpClass(cls):
-        pass
+    - service is alive
+    - login/logout
+    - profile
+    - tokens
 
-    # clean up logic for the test suite declared in the test module
-    # code that is executed after all tests in one test run
-    @classmethod
-    def tearDownClass(cls):
-        pass
+    Note: security part should be checked even if it will not be enabled
 
-    # initialization logic
-    # code that is executed before each test
-    def setUp(self):
-        pass
-
-    # clean up logic
-    # code that is executed after each test
-    def tearDown(self):
-        pass
     """
-
-    def setUp(self):
-        """
-        Note: in this base tests,
-        I also want to check if i can run multiple Flask applications.
-
-        Thi is why i prefer setUp on setUpClass
-        """
-        logger.debug('### Setting up the Flask server ###')
-        app = create_app(testing_mode=True)
-        self.app = app.test_client()
-
-    def tearDown(self):
-        logger.debug('### Tearing down the Flask server ###')
-        del self.app
-
-## TO FIX:
-# // this operation should be indipendent from the auth service
-        # Tokens clean up
-        # logger.debug("Cleaned up invalid tokens")
-        # from restapi.resources.services.neo4j.graph import MyGraph
-        # graph_instance = MyGraph()
-        # if graph_instance:
-        #     graph_instance.clean_pending_tokens()
 
     def test_01_get_status(self):
         """ Test that the flask server is running and reachable """
 
         # Check success
-        endpoint = API_URI + '/status'
+        endpoint = self._api_uri + '/status'
         logger.info("*** VERIFY if API is online")
         r = self.app.get(endpoint)
         self.assertEqual(r.status_code, hcodes.HTTP_OK_BASIC)
 
         # Check failure
         logger.info("*** VERIFY if invalid endpoint gives Not Found")
-        r = self.app.get(API_URI)
+        r = self.app.get(self._api_uri)
         self.assertEqual(r.status_code, hcodes.HTTP_BAD_NOTFOUND)
 
     def test_02_get_login(self):
         """ Check that you can login and receive back your token """
 
-        endpoint = AUTH_URI + '/login'
+        endpoint = self._auth_uri + '/login'
 
         # Check success
         logger.info("*** VERIFY valid credentials")
         r = self.app.post(endpoint,
                           data=json.dumps({'username': USER, 'password': PWD}))
         self.assertEqual(r.status_code, hcodes.HTTP_OK_BASIC)
+        content = self.get_content(r)
 
-        content = json.loads(r.data.decode('utf-8'))
-        # Since unittests use class object and not instances
-        # This is the only workaround to set a persistent variable
-        # self.auth_header does not work
+        # Note: self.auth_header does not work
         self.__class__.auth_header = {
-            'Authorization': 'Bearer ' + content['Response']['data']['token']}
+            'Authorization': 'Bearer ' + content['token']}
 
         # Check failure
         logger.info("*** VERIFY invalid credentials")
@@ -120,7 +71,7 @@ class TestRestAPI(unittest.TestCase):
     def test_03_get_profile(self):
         """ Check if you can use your token for protected endpoints """
 
-        endpoint = AUTH_URI + '/profile'
+        endpoint = self._auth_uri + '/profile'
 
         # Check success
         logger.info("*** VERIFY valid token")
@@ -135,7 +86,7 @@ class TestRestAPI(unittest.TestCase):
     def test_04_get_logout(self):
         """ Check that you can logout with a valid token """
 
-        endpoint = AUTH_URI + '/logout'
+        endpoint = self._auth_uri + '/logout'
 
         # Check success
         logger.info("*** VERIFY valid token")
@@ -149,35 +100,33 @@ class TestRestAPI(unittest.TestCase):
 
     def test_05_get_tokens(self):
 
-        endpoint = AUTH_URI + '/login'
+        endpoint = self._auth_uri + '/login'
 
         # CREATING 3 TOKENS
         tokens = []
         num_tokens = 3
 
         for i in range(num_tokens):
-            r = self.app.post(endpoint, data=json.dumps({
-                                                        'username': USER,
-                                                        'password': PWD
-                                                        }))
-            content = json.loads(r.data.decode('utf-8'))
-            token = content['Response']['data']['token']
+            r = self.app.post(
+                endpoint,
+                data=json.dumps({'username': USER, 'password': PWD}))
+            content = self.get_content(r)
+            token = content['token']
             tokens.append(token)
 
-        endpoint = AUTH_URI + '/tokens'
+        endpoint = self._auth_uri + '/tokens'
 
         self.__class__.tokens_header = {
             'Authorization': 'Bearer ' + tokens[0]}
 
         # TEST GET ALL TOKENS (expected at least num_tokens)
         r = self.app.get(endpoint, headers=self.__class__.tokens_header)
-        content = json.loads(r.data.decode('utf-8'))
+        content = self.get_content(r)
         self.assertEqual(r.status_code, hcodes.HTTP_OK_BASIC)
-        self.assertGreaterEqual(len(content['Response']['data']), num_tokens)
+        self.assertGreaterEqual(len(content), num_tokens)
 
         # save the second token to be used for further tests
-        data = content['Response']['data']
-        self.__class__.token_id = str(data.pop(1)["id"])
+        self.__class__.token_id = str(content.pop(1)["id"])
 
         # TEST GET SINGLE TOKEN
         r = self.app.get(endpoint + "/" + self.__class__.token_id,
@@ -191,7 +140,7 @@ class TestRestAPI(unittest.TestCase):
 
     def test_06_delete_tokens(self):
 
-        endpoint = AUTH_URI + '/tokens'
+        endpoint = self._auth_uri + '/tokens'
 
         # TEST DELETE OF A SINGLE TOKEN
         r = self.app.delete(endpoint + "/" + self.__class__.token_id,
