@@ -247,6 +247,21 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return
 
     @abc.abstractmethod
+    def store_oauth2_user(self, current_user, token):
+        """
+        Allow external accounts (oauth2 credentials)
+        to be connected to internal local user.
+
+        (requires an ExternalAccounts model defined for current service)
+        """
+        return ('internal_user', 'external_user')
+
+    @abc.abstractmethod
+    def store_proxy_cert(self, external_user, proxy):
+        """ Save the proxy certificate name into oauth2 account """
+        return
+
+    @abc.abstractmethod
     def get_user_object(self, username=None, payload=None):
         """
         How to retrieve the user from the current service,

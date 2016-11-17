@@ -216,3 +216,46 @@ instead of here
         self._db.session.delete(token)
         self._db.session.commit()
         return True
+
+    def store_oauth2_user(self, current_user, token):
+        """
+        Allow external accounts (oauth2 credentials)
+        to be connected to internal local user
+        """
+
+        email = current_user.data.get('email')
+        cn = current_user.data.get('cn')
+
+        # Check if a user already exists with this email
+        tmp = self._db.User.query.filter(self._db.User.email == email).all()
+        print("SQLLITE", email, cn, tmp)
+
+        # if yes return None (error)
+        if len(tmp) > 0:
+            return None
+        # if not create a new one
+        else:
+            print("CREATE!")
+
+        # # Create an ExternalAccount for the oauth2 data
+        # # or get it if exists
+
+        # # then
+        # oauth2_external.email = email
+        # oauth2_external.token = token
+        # oauth2_external.certificate_cn = cn
+
+# Note: for pre-production release
+# we allow only one external account per local user
+        # Connect the external account to the current user
+
+        internal_user = None
+        external_user = None
+
+        raise NotImplementedError("to do!")
+        return internal_user, external_user
+
+    def store_proxy_cert(self, external_user, proxy):
+## TO CHECK
+        external_user.proxyfile = proxy
+        external_user.save()

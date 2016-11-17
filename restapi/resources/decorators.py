@@ -189,8 +189,16 @@ def apimethod(func):
             out = func(self, *args, **kwargs)
         # Handle any error to avoid Flask using the HTML web page for errors
         except BaseException as e:
-            logger.warning("To dig more change the decorator output call")
-            return self.report_generic_error("Exception\n%s" % e)
+            logger.warning("nb: dig more changing the decorator 'except'")
+            # import sys
+            # error = sys.exc_info()[0]
+
+            # If we raise NotImpleted ...
+            if isinstance(e, NotImplementedError):
+                message = "Missing functionality"
+            else:
+                message = "Unexpected error"
+            return self.report_generic_error("%s\n[%s]" % (message, e))
 
 # #######################
 # # TO CHECK AND PROBABLY REMOVE

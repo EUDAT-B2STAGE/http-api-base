@@ -241,40 +241,45 @@ instead of here
         except self._graph.Token.DoesNotExist:
             return False
 
-    def save_oauth2_info_to_user(self, graph, current_user, token):
+    def store_oauth2_user(self, current_user, token):
         """
         Allow external accounts (oauth2 credentials)
         to be connected to internal local user
         """
 
         email = current_user.data.get('email')
+        cn = current_user.data.get('cn')
 
         # A graph node for internal accounts associated to oauth2
         try:
-            user_node = graph.User.nodes.get(email=email)
+            user_node = self._graph.User.nodes.get(email=email)
             if user_node.authmethod != 'oauth2':
-                return {'errors': [{
-                    'invalid email':
-                    'Account already exists with other credentials'}]}
-        except graph.User.DoesNotExist:
-## // TO FIX:
-# TO BE VERIFIED
+                # The user already exist with another type of authentication
+                return None
+        except self._graph.User.DoesNotExist:
+## TO BE VERIFIED
             user_node = self.create_user(userdata={
                 'uuid': getUUID(),
                 'email': email,
                 'authmethod': 'oauth2'
             })
 
-        # A graph node for external oauth2 account
+        # A self._graph node for external oauth2 account
         try:
-            oauth2_external = graph.ExternalAccounts.nodes.get(username=email)
-        except graph.ExternalAccounts.DoesNotExist:
-            oauth2_external = graph.ExternalAccounts(username=email)
-        oauth2_external.email = current_user.data.get('email')
+            oauth2_external = \
+                self._graph.ExternalAccounts.nodes.get(username=email)
+        except self._graph.ExternalAccounts.DoesNotExist:
+            oauth2_external = self._graph.ExternalAccounts(username=email)
+        oauth2_external.email = email
         oauth2_external.token = token
-        oauth2_external.certificate_cn = current_user.data.get('cn')
+        oauth2_external.certificate_cn = cn
         oauth2_external.save()
 
         user_node.externals.connect(oauth2_external)
 
-        return user_node
+        return user_node, oauth2_external
+
+    def store_proxy_cert(self, external_user, proxy):
+        # external_user = user_node.externals.all().pop()
+        external_user.proxyfile = proxy
+        external_user.save()

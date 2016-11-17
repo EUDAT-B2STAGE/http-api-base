@@ -87,11 +87,16 @@ class ExternalServicesLogin(object):
         key = os.environ.get('B2ACCESS_APPNAME', 'yourappusername')
         secret = os.environ.get('B2ACCESS_APPKEY', 'yourapppw')
 
+## // TO FIX
+## detect if production and use the other urls
+        production = False
+
         # SET OTHER URLS
         token_url = B2ACCESS_DEV_URL + '/oauth2/token'
         authorize_url = B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
-        # token_url = B2ACCESS_PROD_URL + '/oauth2/token'
-        # authorize_url = B2ACCESS_PROD_URL + '/oauth2-as/oauth2-authz'
+        if production:
+            token_url = B2ACCESS_PROD_URL + '/oauth2/token'
+            authorize_url = B2ACCESS_PROD_URL + '/oauth2-as/oauth2-authz'
 
         # COMMON ARGUMENTS
         arguments = {
@@ -99,7 +104,9 @@ class ExternalServicesLogin(object):
             'consumer_secret': secret,
             'access_token_url': token_url,
             'authorize_url': authorize_url,
-            'request_token_params': {'scope': 'GENERATE_USER_CERTIFICATE'},
+            'request_token_params':
+                {'scope': ['USER_PROFILE', 'GENERATE_USER_CERTIFICATE']},
+            # 'request_token_params': {'scope': 'GENERATE_USER_CERTIFICATE'},
             'request_token_url': None,
             'access_token_method': 'POST'
         }
@@ -107,13 +114,17 @@ class ExternalServicesLogin(object):
         #####################
         # B2ACCESS
         arguments['base_url'] = B2ACCESS_DEV_URL + '/oauth2/'
-        # arguments['base_url'] = B2ACCESS_PROD_URL + '/oauth2/'
+        if production:
+            arguments['base_url'] = B2ACCESS_PROD_URL + '/oauth2/'
+        from beeprint import pp
+        pp(arguments)
         b2access_oauth = oauth.remote_app('b2access', **arguments)
 
         #####################
         # B2ACCESS CERTIFICATION AUTHORITY
         arguments['base_url'] = B2ACCESS_DEV_CA_URL
-        # arguments['base_url'] = B2ACCESS_PROD_CA_URL
+        if production:
+            arguments['base_url'] = B2ACCESS_PROD_CA_URL
         b2accessCA = oauth.remote_app('b2accessCA', **arguments)
 
         #####################
@@ -124,7 +135,7 @@ class ExternalServicesLogin(object):
             from flask import session
             return session.get('b2access_token')
 
-    ## could have used nametuple or attrs
+    ## could have used nametuple or attrs?
         return {'b2access': b2access_oauth, 'b2accessCA': b2accessCA}
 
 

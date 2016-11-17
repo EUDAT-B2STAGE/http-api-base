@@ -179,12 +179,6 @@ class ResponseMaker(object):
         except:
             pass
 
-        ## Otherwise we could:
-        # if isinstance(response, wsgi_exceptions.MethodNotAllowed):
-        #     return True
-        # if isinstance(response, wsgi_exceptions.NotFound):
-        #     return True
-
         return False
 
     @staticmethod
