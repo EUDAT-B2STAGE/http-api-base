@@ -226,6 +226,15 @@ instead of here
         email = current_user.data.get('email')
         cn = current_user.data.get('cn')
 
+        # the current key is 'urn:oid:2.5.4.49'
+        # is it going to change?
+        dn = None
+        for key, value in current_user.data.items():
+            if 'urn:oid' in key:
+                dn = current_user.data.get(key)
+        if dn is None:
+            return None
+
         # Check if a user already exists with this email
         internal_user = None
         internal_users = self._db.User.query.filter(
@@ -270,6 +279,7 @@ instead of here
         external_user.email = email
         external_user.token = token
         external_user.certificate_cn = cn
+        external_user.certificate_dn = dn
 
         self._db.session.add(external_user)
         self._db.session.commit()
@@ -283,15 +293,28 @@ instead of here
         external_user.proxyfile = proxy
 ## // TO FIX
 ## Convert into dedicated method?
-        self._db.session.add(external_user)
+        self._db.session.add(external_user)  # can be commented
         self._db.session.commit()
         return True
 
-## // TO FIX
-## make this abstract for graphdb too?
     def oauth_from_token(self, token):
-
+## // TO FIX ## make this abstract for graphdb too?
         extus = self._db.ExternalAccounts.query.filter_by(token=token).first()
         intus = extus.main_user
         # print(token, intus, extus)
         return intus, extus
+
+    def associate_object_to_attribute(self, obj, key, value):
+## // TO FIX ## make this abstract for graphdb too?
+
+        setattr(obj, key, value)
+        self._db.session.commit()
+        return
+
+    def oauth_from_local(self, internal_user):
+## // TO FIX ## make this abstract for graphdb too?
+
+        accounts = self._db.ExternalAccounts
+        external_user = accounts.query.filter(
+            accounts.main_user.has(id=internal_user.id)).first()
+        return internal_user, external_user

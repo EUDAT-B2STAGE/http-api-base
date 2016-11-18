@@ -285,3 +285,22 @@ instead of here
         # external_user = user_node.externals.all().pop()
         external_user.proxyfile = proxy
         external_user.save()
+
+    # def associate_object_to_attribute(self, obj, key, value):
+
+    #     # ##################################
+    #     # # Create irods user inside the database
+
+    #     # graph_irods_user = None
+    #     # graph = self.global_get_service('neo4j')
+    #     # try:
+    #     #     graph_irods_user = graph.IrodsUser.nodes.get(username=irods_user)
+    #     # except graph.IrodsUser.DoesNotExist:
+    #     #     # Save into the graph
+    #     #     graph_irods_user = graph.IrodsUser(username=irods_user)
+    #     #     graph_irods_user.save()
+
+    #     # # Connect the user to graph If not already
+    #     # user_node.associated.connect(graph_irods_user)
+
+    #     pass

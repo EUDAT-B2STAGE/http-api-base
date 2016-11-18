@@ -67,6 +67,7 @@ class ExternalAccounts(db.Model):
     token = db.Column(db.Text())
     email = db.Column(db.String(255))
     certificate_cn = db.Column(db.String(255))
+    certificate_dn = db.Column(db.Text())
     proxyfile = db.Column(db.Text())
     description = db.Column(db.String(255))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))

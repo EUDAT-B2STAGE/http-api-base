@@ -37,7 +37,10 @@ class Flask(OriginalFlask):
         # # In case you want to get back to normal
         # return super().make_response(rv)
 
-        logger.info("MAKE_RESPONSE: %s" % rv)
+        try:
+            logger.info("MAKE_RESPONSE: %s" % rv)
+        except:
+            logger.info("MAKE_RESPONSE: [UNREADABLE OBJ]")
         responder = ResponseMaker(rv)
 
         # Avoid duplicating the response generation

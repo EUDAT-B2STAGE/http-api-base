@@ -18,6 +18,25 @@ logger = get_logger(__name__)
 
 class Certificates(object):
 
+    _dir = '/opt/certificates'
+    _proxyfile = 'userproxy.crt'
+
+    @classmethod
+    def get_proxy_filename(cls, user):
+        return "%s/%s/%s" % (cls._dir, user, cls._proxyfile)
+
+    def save_proxy_cert(self, tmpproxy, user='guest'):
+
+        dst = self.get_proxy_filename(user)
+
+        from shutil import copyfile
+        copyfile(tmpproxy, dst)
+
+        import os
+        os.chmod(dst, 0o600)  # note: you need the octave of the unix mode
+
+        return dst
+
     def encode_csr(self, req):
         enc = crypto.dump_certificate_request(crypto.FILETYPE_PEM, req)
         data = {'certificate_request': enc}
@@ -84,10 +103,10 @@ class Certificates(object):
             # print("\nCertificate:"); prettyprint(response)
             logger.error("Proxy from CA failed with %s" % response.data)
             return None
+        # prettyprint(response)
 
         #######################
         # write proxy certificate to a random file name
-        prettyprint(response)
         proxyfile = self.write_key_and_cert(key, response.data)
         logger.debug('Wrote certificate to %s' % proxyfile)
 

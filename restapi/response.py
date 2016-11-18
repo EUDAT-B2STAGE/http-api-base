@@ -141,11 +141,13 @@ class ResponseMaker(object):
             # A Flask tuple. Possibilities:
             # obj / (content,status) / (content,status,headers)
             if isinstance(response, tuple):
-                if len(tuple) > 0:
+                if len(response) > 0:
                     elements['defined_content'] = response[0]
-                if len(tuple) > 1:
+## // TO FIX: add more checks to second and third element?
+# should I make sure that second is integer and headers is a dictionary?
+                if len(response) > 1:
                     elements['code'] = response[1]
-                if len(tuple) > 2:
+                if len(response) > 2:
                     elements['headers'] = response[2]
             # Anything that remains is just a content
             else:

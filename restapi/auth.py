@@ -131,7 +131,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                     # Mimic the response from a normal endpoint
                     # To use the same standards
                     return decorated_self.force_response(
-                        errors={"Invalid token": "Received '%s'" % token},
+                        errors={"Invalid or expired token": "%s" % token},
                         headers=headers,
                         code=hcodes.HTTP_BAD_UNAUTHORIZED
                     )

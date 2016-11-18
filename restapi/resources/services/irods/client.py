@@ -21,6 +21,7 @@ from ...exceptions import RestApiException
 from ....confs.config import IRODS_ENV
 from ..detect import IRODS_EXTERNAL
 from commons.services import ServiceFarm
+from commons.certificates import Certificates
 # from ..templating import Templa
 # from . import string_generator
 from commons.logs import get_logger
@@ -28,7 +29,7 @@ from commons.logs import get_logger
 logger = get_logger(__name__)
 
 IRODS_USER_ALIAS = 'clientUserName'
-CERTIFICATES_DIR = '/opt/certificates'
+CERTIFICATES_DIR = Certificates._dir
 
 IRODS_DEFAULT_USER = 'guest'
 IRODS_DEFAULT_ADMIN = os.environ.get('IRODS_DEFAULT_ADMIN_USER', 'rodsminer')
@@ -174,7 +175,7 @@ class ICommands(BashCommands):
     first_resource = 'demoResc'
     second_resource = 'replicaResc'
 
-    def __init__(self, user=None, irodsenv=IRODS_ENV):
+    def __init__(self, user=None, irodsenv=IRODS_ENV, proxy=False):
 
         # Recover plumbum shell enviroment
         super(ICommands, self).__init__()
@@ -192,7 +193,7 @@ class ICommands(BashCommands):
             self.list()
         # A much common use case: a request from another user
         else:
-            self.change_user(user)
+            self.change_user(user, proxy=proxy)
 
     #######################
     # ABOUT CONFIGURATION
@@ -334,7 +335,7 @@ class ICommands(BashCommands):
             path += filename
         return path
 
-    def prepare_irods_environment(self, user, schema='GSI'):
+    def prepare_irods_environment(self, user, schema='GSI', proxy=False):
         """
         Prepare the OS variables environment
         which allows to become another user using the GSI protocol.
@@ -361,16 +362,24 @@ class ICommands(BashCommands):
 
         if schema == 'GSI':
 
+# could be fixed changing the dir rodsminer from docker image
+            if user == 'rods':
+                user = 'rodsminer'
+
             # ## X509 certificates variables
             # CA Authority
             irods_env['X509_CERT_DIR'] = CERTIFICATES_DIR + '/caauth'
-            # ## USER PEMs: Private (key) and Public (Cert)
-            irods_env['X509_USER_CERT'] = \
-                CERTIFICATES_DIR + '/' + user + '/usercert.pem'
-            irods_env['X509_USER_KEY'] = \
-                CERTIFICATES_DIR + '/' + user + '/userkey.pem'
 
-            # PROXY ?
+            # PROXY
+            if proxy:
+                irods_env['X509_USER_PROXY'] = \
+                    CERTIFICATES_DIR + '/' + user + '/userproxy.crt'
+            # USER PEMs: Private (key) and Public (Cert)
+            else:
+                irods_env['X509_USER_CERT'] = \
+                    CERTIFICATES_DIR + '/' + user + '/usercert.pem'
+                irods_env['X509_USER_KEY'] = \
+                    CERTIFICATES_DIR + '/' + user + '/userkey.pem'
 
         # # DEBUG
         # for key, item in irods_env.items():
@@ -391,7 +400,7 @@ class ICommands(BashCommands):
         self._current_environment = irods_env
         return irods_env
 
-    def change_user(self, user=None):
+    def change_user(self, user=None, proxy=False):
         """ Impersonification of another user because you're an admin """
 
 # Where to change with:
@@ -409,7 +418,7 @@ class ICommands(BashCommands):
 
             #########
             # # NEW: use the certificate
-            self.prepare_irods_environment(user)
+            self.prepare_irods_environment(user, proxy=proxy)
 
         self._current_user = user
         logger.debug("Switched to user '%s'" % user)
@@ -427,10 +436,12 @@ class ICommands(BashCommands):
         return userdata['name']
 
     @staticmethod
-    def get_translated_user(user):
-        return "pippo"
-        # from .translations import AccountsToIrodsUsers
-        # return AccountsToIrodsUsers.email2iuser(user)
+    def get_translated_user(self, user):
+        """
+## // TO BE DEPRECATED
+        """
+        from .translations import AccountsToIrodsUsers
+        return AccountsToIrodsUsers.email2iuser(user)
 
     def translate_graph_user(self, graph, graph_user):
         from .translations import Irods2Graph
@@ -991,18 +1002,24 @@ class ICommands(BashCommands):
             return True
         return False
 
-    def query_icat(self, query):
+    def query_icat(self, query, key):
         com = 'iquest'
         args = ["%s" % query]
         output = self.basic_icom(com, args)
         logger.debug("%s query: [%s]\n%s" % (com, query, output))
         if 'CAT_NO_ROWS_FOUND' in output:
             return None
-        return output
+        return output.split('\n')[0].lstrip("%s = " % key)
+
+    def query_user(self, select="USER_NAME", where="USER_NAME", field=None):
+        query = "SELECT %s WHERE %s = '%s'" % (select, where, field)
+        return self.query_icat(query, select)
+
+    def get_user_from_dn(self, dn):
+        return self.query_user(where='USER_DN', field=dn)
 
     def user_exists(self, user):
-        query = "SELECT USER_NAME WHERE USER_NAME = '%s'" % user
-        return self.query_icat(query)
+        return self.query_user(field=user)
 
 ################################################
 ################################################
@@ -1362,7 +1379,7 @@ class IrodsFarm(ServiceFarm):
         logger.debug("iRODS seems online")
 
     @classmethod
-    def get_instance(cls, user=None):
+    def get_instance(cls, user=None, proxy=False):
 
         # Default or Admin
         if user is None:
@@ -1378,4 +1395,4 @@ class IrodsFarm(ServiceFarm):
         # cls._irods = IMetaCommands(user)
         # return cls._irods
 
-        return IMetaCommands(user)
+        return IMetaCommands(user, proxy=proxy)

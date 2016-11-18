@@ -86,6 +86,17 @@ class Login(ExtendedApiResource):
         #     'access_token': token,
         #     'token_type': auth.token_type
         # })
+
+        """
+{
+  "scope": "https://b2stage.cineca.it/.*",
+  "access_token": "EEwJ6tF9x5WCIZDYzyZGaz6Khbw7raYRIBV_WxVvgmsG",
+  "token_type": "Bearer",
+  "user": "pippo",
+  "expires_in": 28800
+}
+        """
+
         return {'token': token}
 
 
@@ -113,7 +124,7 @@ class Tokens(ExtendedApiResource):
         auth = self.global_get('custom_auth')
         tokens = auth.get_tokens(user=auth._user)
         if token_id is None:
-            return self.force_response(tokens)
+            return tokens
 
         for token in tokens:
             if token["id"] == token_id:
@@ -221,7 +232,7 @@ class Internal(ExtendedApiResource):
 
     @authentication.authorization_required(roles=[config.ROLE_INTERNAL])
     def get(self):
-        return self.force_response("I am internal")
+        return "I am internal"
 
 
 class Admin(ExtendedApiResource):
@@ -231,4 +242,4 @@ class Admin(ExtendedApiResource):
 
     @authentication.authorization_required(roles=[config.ROLE_ADMIN])
     def get(self):
-        return self.force_response("I am admin!")
+        return "I am admin!"

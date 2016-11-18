@@ -162,8 +162,8 @@ def apimethod(func):
     and also to parse available args before using them in the function
     """
 
-    logger.warning("Deprecated 'apimethod', to add parameters" +
-                   "use JSON config in %s" % func)
+    # logger.warning("Deprecated 'apimethod', to add parameters" +
+    #                "use JSON config in %s" % func)
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
