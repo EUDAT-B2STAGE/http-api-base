@@ -106,7 +106,6 @@ class ExternalServicesLogin(object):
             'authorize_url': authorize_url,
             'request_token_params':
                 {'scope': ['USER_PROFILE', 'GENERATE_USER_CERTIFICATE']},
-            # 'request_token_params': {'scope': 'GENERATE_USER_CERTIFICATE'},
             'request_token_url': None,
             'access_token_method': 'POST'
         }

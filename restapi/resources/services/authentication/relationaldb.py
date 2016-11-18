@@ -233,7 +233,7 @@ instead of here
         # if yes return None (error)
         if len(tmp) > 0:
             return None
-        # if not create a new one
+        # if not create a new one
         else:
             print("CREATE!")
 

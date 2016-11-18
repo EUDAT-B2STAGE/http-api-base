@@ -81,7 +81,7 @@ class Certificates(object):
             data=self.encode_csr(req),
             headers={'Accept-Encoding': 'identity'})
         if response.status != hcodes.HTTP_OK_BASIC:
-            print("\nCertificate:"); prettyprint(response)
+            # print("\nCertificate:"); prettyprint(response)
             logger.error("Proxy from CA failed with %s" % response.data)
             return None
 
