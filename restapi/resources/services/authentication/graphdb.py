@@ -263,6 +263,7 @@ instead of here
                 'email': email,
                 'authmethod': 'oauth2'
             })
+        ## NOTE: missing roles for this user?
 
         # A self._graph node for external oauth2 account
         try:
@@ -270,6 +271,7 @@ instead of here
                 self._graph.ExternalAccounts.nodes.get(username=email)
         except self._graph.ExternalAccounts.DoesNotExist:
             oauth2_external = self._graph.ExternalAccounts(username=email)
+        # update main info for this user
         oauth2_external.email = email
         oauth2_external.token = token
         oauth2_external.certificate_cn = cn

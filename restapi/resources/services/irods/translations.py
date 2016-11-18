@@ -20,7 +20,11 @@ class AccountsToIrodsUsers(object):
 
     @staticmethod
     def email2iuser(username):
-        """ Get first 8 chars of the first part of email (with no dots) """
+        """
+        Note: this was a first proposal and is going to become deprecated.
+
+        Get first 8 chars of the first part of email (with no dots)
+        """
         return username.split('@')[0].replace('.', '')[:8]
 
 

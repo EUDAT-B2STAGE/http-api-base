@@ -428,8 +428,9 @@ class ICommands(BashCommands):
 
     @staticmethod
     def get_translated_user(user):
-        from .translations import AccountsToIrodsUsers
-        return AccountsToIrodsUsers.email2iuser(user)
+        return "pippo"
+        # from .translations import AccountsToIrodsUsers
+        # return AccountsToIrodsUsers.email2iuser(user)
 
     def translate_graph_user(self, graph, graph_user):
         from .translations import Irods2Graph
@@ -612,9 +613,12 @@ class ICommands(BashCommands):
             user_type = 'rodsadmin'
 
         try:
+## UHM
             self.admin('mkuser', user, user_type)
+            return True
         except:
             logger.warning("User %s already exists in iRODS" % user)
+            return False
 
     def set_inheritance(self, path, inheritance=True, recursive=False):
         com = 'ichmod'
@@ -987,9 +991,22 @@ class ICommands(BashCommands):
             return True
         return False
 
+    def query_icat(self, query):
+        com = 'iquest'
+        args = ["%s" % query]
+        output = self.basic_icom(com, args)
+        logger.debug("%s query: [%s]\n%s" % (com, query, output))
+        if 'CAT_NO_ROWS_FOUND' in output:
+            return None
+        return output
+
+    def user_exists(self, user):
+        query = "SELECT USER_NAME WHERE USER_NAME = '%s'" % user
+        return self.query_icat(query)
+
 ################################################
 ################################################
-##  NEED TO CHECK ALL THIS ICOMMANDS BELOW!
+##  NEED TO CHECK ALL OF THIS ICOMMANDS BELOW
 ################################################
 ################################################
 

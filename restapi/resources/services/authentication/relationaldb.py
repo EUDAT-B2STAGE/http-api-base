@@ -227,35 +227,71 @@ instead of here
         cn = current_user.data.get('cn')
 
         # Check if a user already exists with this email
-        tmp = self._db.User.query.filter(self._db.User.email == email).all()
-        print("SQLLITE", email, cn, tmp)
-
-        # if yes return None (error)
-        if len(tmp) > 0:
-            return None
-        # if not create a new one
-        else:
-            print("CREATE!")
-
-        # # Create an ExternalAccount for the oauth2 data
-        # # or get it if exists
-
-        # # then
-        # oauth2_external.email = email
-        # oauth2_external.token = token
-        # oauth2_external.certificate_cn = cn
-
-# Note: for pre-production release
-# we allow only one external account per local user
-        # Connect the external account to the current user
-
         internal_user = None
-        external_user = None
+        internal_users = self._db.User.query.filter(
+            self._db.User.email == email).all()
 
-        raise NotImplementedError("to do!")
+        # If something found
+        if len(internal_users) > 0:
+            # Should never happen, please
+            if len(internal_users) > 1:
+                return None
+            internal_user = internal_users.pop()
+            logger.debug("Existing internal user %s" % internal_user)
+            # A user already locally exists with another authmethod. Not good.
+            if internal_user.authmethod != 'oauth2':
+                return None
+        # If missing, add it locally
+        else:
+            # Create new one
+            internal_user = self._db.User(
+                uuid=getUUID(), email=email, authmethod='oauth2')
+            # link default role into users
+            internal_user.roles.append(
+                self._db.Role.query.filter_by(name=self.DEFAULT_ROLE).first())
+            self._db.session.add(internal_user)
+            self._db.session.commit()
+            logger.info("Created internal user %s" % internal_user)
+
+        # Get ExternalAccount for the oauth2 data if exists
+        external_user = self._db.ExternalAccounts \
+            .query.filter_by(username=email).first()
+        # or create it otherwise
+        if external_user is None:
+            external_user = self._db.ExternalAccounts(username=email)
+
+            # Connect the external account to the current user
+            external_user.main_user = internal_user
+            # Note: for pre-production release
+            # we allow only one external account per local user
+            logger.info("Created external user %s" % external_user)
+
+        # Update external user data to latest info received
+        external_user.email = email
+        external_user.token = token
+        external_user.certificate_cn = cn
+
+        self._db.session.add(external_user)
+        self._db.session.commit()
+        logger.debug("Updated external user %s" % external_user)
+
         return internal_user, external_user
 
     def store_proxy_cert(self, external_user, proxy):
-## TO CHECK
+        if external_user is None:
+            return False
         external_user.proxyfile = proxy
-        external_user.save()
+## // TO FIX
+## Convert into dedicated method?
+        self._db.session.add(external_user)
+        self._db.session.commit()
+        return True
+
+## // TO FIX
+## make this abstract for graphdb too?
+    def oauth_from_token(self, token):
+
+        extus = self._db.ExternalAccounts.query.filter_by(token=token).first()
+        intus = extus.main_user
+        # print(token, intus, extus)
+        return intus, extus

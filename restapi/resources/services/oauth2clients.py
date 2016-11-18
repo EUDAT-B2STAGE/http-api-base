@@ -115,8 +115,8 @@ class ExternalServicesLogin(object):
         arguments['base_url'] = B2ACCESS_DEV_URL + '/oauth2/'
         if production:
             arguments['base_url'] = B2ACCESS_PROD_URL + '/oauth2/'
-        from beeprint import pp
-        pp(arguments)
+        # from beeprint import pp
+        # pp(arguments)
         b2access_oauth = oauth.remote_app('b2access', **arguments)
 
         #####################

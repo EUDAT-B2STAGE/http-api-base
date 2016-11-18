@@ -64,12 +64,10 @@ class Token(db.Model):
 
 class ExternalAccounts(db.Model):
     username = db.Column(db.String(60), primary_key=True)
-# TEXT
-    token = db.Column(db.String(255))
+    token = db.Column(db.Text())
     email = db.Column(db.String(255))
     certificate_cn = db.Column(db.String(255))
-# TEXT
-    proxyfile = db.Column(db.String(255))
+    proxyfile = db.Column(db.Text())
     description = db.Column(db.String(255))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 # Note: for pre-production release
