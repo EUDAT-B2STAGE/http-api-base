@@ -304,7 +304,7 @@ instead of here
         # print(token, intus, extus)
         return intus, extus
 
-    def associate_object_to_attribute(self, obj, key, value):
+    def associate_object_to_attr(self, obj, key, value):
 ## // TO FIX ## make this abstract for graphdb too?
 
         setattr(obj, key, value)

@@ -55,8 +55,10 @@ class Flask(OriginalFlask):
             return responder.get_original_response()
 
         # Note: jsonify gets done when calling the make_response,
-        # so make sure that the data is of the right format!
-        return super().make_response(responder.generate_response())
+        # so make sure that the data is written in  the right format!
+        response = responder.generate_response()
+        # print("DEBUG server.py", response)
+        return super().make_response(response)
 
 
 # ########################

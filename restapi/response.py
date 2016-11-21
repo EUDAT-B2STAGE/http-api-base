@@ -38,7 +38,7 @@ from werkzeug.wrappers import Response as WerkzeugResponse
 from commons import htmlcodes as hcodes
 from .resources.decorators import get_response, set_response
 # from .resources.base import ExtendedApiResource
-from commons.logs import get_logger
+from commons.logs import get_logger, pretty_print
 
 logger = get_logger(__name__)
 
@@ -62,8 +62,6 @@ class InternalResponse(Response):
 
     # def __init__(self, response, **kwargs):
     def __init__(self, *args, **kwargs):
-
-        # print("TEST", args, kwargs)
 
         if 'mimetype' not in kwargs and 'contenttype' not in kwargs:
             # our default
@@ -141,11 +139,22 @@ class ResponseMaker(object):
             # A Flask tuple. Possibilities:
             # obj / (content,status) / (content,status,headers)
             if isinstance(response, tuple):
+
+                # try to unjsonify response, if Flask did it already
+                main = None
+                try:
+                    main = json.loads(response[0])
+                except:
+                    main = response[0]
+
                 if len(response) > 0:
-                    elements['defined_content'] = response[0]
+                    elements['defined_content'] = main
 ## // TO FIX: add more checks to second and third element?
 # should I make sure that second is integer and headers is a dictionary?
                 if len(response) > 1:
+                    if response[1] > hcodes.HTTP_TRESHOLD:
+                        elements['defined_content'] = None
+                        elements['errors'] = main
                     elements['code'] = response[1]
                 if len(response) > 2:
                     elements['headers'] = response[2]
@@ -165,6 +174,8 @@ class ResponseMaker(object):
     @staticmethod
     def is_internal_response(response):
         """ damn you hierarchy! """
+        # print("DEBUG", response, isinstance(response, WerkzeugResponse))
+
         # return isinstance(response, InternalResponse)
         # return isinstance(response, Response)
         return isinstance(response, WerkzeugResponse)
@@ -206,6 +217,7 @@ class ResponseMaker(object):
 
         # 1. Use response elements
         r = self._response
+        # pretty_print(r)
 
         # 2. Apply DEFAULT or CUSTOM manipulation
         # (strictly to the sole content)
@@ -344,7 +356,6 @@ class ResponseMaker(object):
 # # THIS IS NOW DEPRECATED, DON'T USE IT!!
 #         """
 
-#         print("TEST_10: flask response inside base")
 #         # print(data, status, headers)
 
 #         #######################################

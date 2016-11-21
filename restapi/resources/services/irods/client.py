@@ -474,6 +474,13 @@ class ICommands(BashCommands):
         logger.debug("Base dir is %s" % iout)
         return iout
 
+    # def go_home(self):
+    #     """
+    #     For debugging/testing certificates
+    #     """
+    #     com = "icd"
+    #     return self.basic_icom(com).strip()
+
     def create_empty(self, path, directory=False, ignore_existing=False):
         args = [path]
         if directory:

@@ -264,28 +264,33 @@ def exceptionError(self, label, e, code=hcodes.HTTP_BAD_REQUEST):
     return self.send_errors(label, error, code=code)
 
 
-def error_handler(func, self, exception, label, catch_generic, args, kwargs):
+def error_handler(func, self, some_exception,
+                  label, catch_generic, args, kwargs):
 
     out = None
-    # print(func, self, exception, label, args, kwargs)
+    # print(func, self, some_exception, label, args, kwargs)
     default_label = 'Server error'
     if label is None:
         label = default_label
     try:
         out = func(self, *args, **kwargs)
-    except exception as e:
+    # Catch the single exception that the user requested
+    except some_exception as e:
         return exceptionError(self, label, e)
-    except Exception as e:
-        logger.warning(
-            "Unexpected exception inside error handler:\n%s" % str(e))
+## TO CHECK WITH MATTIA
+    # except Exception as e:
+    #     logger.warning(
+    #         "Unexpected exception inside error handler:\n%s" % str(e))
 
-        if not catch_generic:
-            raise e
-        else:
-            traceback.print_exc()
-            return exceptionError(
-                self, default_label, 'Please contact service administrators',
-                code=hcodes.HTTP_SERVER_ERROR)
+    #     if not catch_generic:
+    #         raise e
+    #     else:
+    #         traceback.print_exc()
+    #         return exceptionError(
+    #             self, default_label, 'Please contact service administrators',
+    #             code=hcodes.HTTP_SERVER_ERROR)
+    else:
+        pass
 
     return out
 
