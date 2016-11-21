@@ -132,7 +132,7 @@ instead of here
         self._db.session.add(token_entry)
         self._db.session.commit()
 
-        logger.debug("Token stored in graphDB")
+        logger.debug("Token stored inside the DB")
 
     def refresh_token(self, jti):
         now = datetime.now()
@@ -291,8 +291,6 @@ instead of here
         if external_user is None:
             return False
         external_user.proxyfile = proxy
-## // TO FIX
-## Convert into dedicated method?
         self._db.session.add(external_user)  # can be commented
         self._db.session.commit()
         return True

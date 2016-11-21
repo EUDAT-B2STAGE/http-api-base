@@ -68,7 +68,7 @@ class Certificates(object):
             f.write(proxycertcontent)
         return tempfile
 
-    def make_proxy_from_ca(self, ca):
+    def make_proxy_from_ca(self, ca_client):
         """
         Request for certificate and save it into a file
         """
@@ -89,19 +89,28 @@ class Certificates(object):
 
         #######################
         key, req = self.generate_csr_and_key()
+        logger.debug("Key and Req:\n%s\n%s" % (key, req))
 
-        # Certificates should be trusted as i injected them
-        # inside the docker image
+        # Certificates should be trusted:
+        # they are injected them inside the docker image at init time.
+        # So this is not necessary:
         # #b2accessCA.http_request = http_request_no_verify_host
 
         #######################
-        response = ca.post(
-            'ca/o/delegateduser',
-            data=self.encode_csr(req),
-            headers={'Accept-Encoding': 'identity'})
+        response = None
+        try:
+            response = ca_client.post(
+                'ca/o/delegateduser',
+                data=self.encode_csr(req),
+                headers={'Accept-Encoding': 'identity'})
+            # Note: token is applied from oauth2 lib using the session content
+        except ValueError as e:
+            logger.error("Proxy call CA error: %s" % e)
+            return None
+
         if response.status != hcodes.HTTP_OK_BASIC:
             # print("\nCertificate:"); prettyprint(response)
-            logger.error("Proxy from CA failed with %s" % response.data)
+            logger.error("Proxy from CA failed: %s" % response.data)
             return None
         # prettyprint(response)
 

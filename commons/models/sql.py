@@ -3,6 +3,8 @@
 """ Models for the relational database """
 
 from __future__ import absolute_import
+
+import datetime
 from ..services.alchemy import db
 from ..logs import get_logger
 
@@ -65,6 +67,7 @@ class Token(db.Model):
 class ExternalAccounts(db.Model):
     username = db.Column(db.String(60), primary_key=True)
     token = db.Column(db.Text())
+    token_expiration = db.Column(db.DateTime)
     email = db.Column(db.String(255))
     certificate_cn = db.Column(db.String(255))
     certificate_dn = db.Column(db.Text())

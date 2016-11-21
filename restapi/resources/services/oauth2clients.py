@@ -7,11 +7,11 @@ Add auth checks called /checklogged and /testadmin
 
 from __future__ import absolute_import
 import os
-from commons.logs import get_logger
 from ...oauth import oauth
 from commons.meta import Meta
 from base64 import b64encode
 from ... import myself, lic
+from commons.logs import get_logger, pretty_print
 
 __author__ = myself
 __copyright__ = myself
@@ -115,8 +115,7 @@ class ExternalServicesLogin(object):
         arguments['base_url'] = B2ACCESS_DEV_URL + '/oauth2/'
         if production:
             arguments['base_url'] = B2ACCESS_PROD_URL + '/oauth2/'
-        # from beeprint import pp
-        # pp(arguments)
+        # pretty_print(arguments)
         b2access_oauth = oauth.remote_app('b2access', **arguments)
 
         #####################
@@ -124,6 +123,7 @@ class ExternalServicesLogin(object):
         arguments['base_url'] = B2ACCESS_DEV_CA_URL
         if production:
             arguments['base_url'] = B2ACCESS_PROD_CA_URL
+        # pretty_print(arguments)
         b2accessCA = oauth.remote_app('b2accessCA', **arguments)
 
         #####################
@@ -134,6 +134,7 @@ class ExternalServicesLogin(object):
             from flask import session
             return session.get('b2access_token')
 
+## // TO CHECK:
     ## could have used nametuple or attrs?
         return {'b2access': b2access_oauth, 'b2accessCA': b2accessCA}
 
