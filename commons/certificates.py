@@ -111,12 +111,14 @@ class Certificates(object):
                 headers={'Accept-Encoding': 'identity'})
             # Note: token is applied from oauth2 lib using the session content
         except ValueError as e:
-            logger.error("Proxy call CA error: %s" % e)
+            logger.error("Oauthlib call with CA: %s" % e)
             return None
-
+        except:
+            logger.error("CA is probably down...")
+            return None
         if response.status != hcodes.HTTP_OK_BASIC:
             # print("\nCertificate:"); prettyprint(response)
-            logger.error("Proxy from CA failed: %s" % response.data)
+            logger.error("Could not get proxy from CA: %s" % response.data)
             return None
         # prettyprint(response)
 

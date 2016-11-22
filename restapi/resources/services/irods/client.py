@@ -96,6 +96,8 @@ class IrodsException(RestApiException):
     def parseIrodsError(self, error):
         error = str(error)
         logger.debug("*%s*" % error)
+# // TO FIX:
+# this gets called twice
 
         # Error example:
         # ERROR: mkdirUtil: mkColl of /abs/path/to/resource error.
@@ -626,17 +628,22 @@ class ICommands(BashCommands):
 
     def create_user(self, user, admin=False):
 
+        if user is None:
+            logger.error("Asking for NULL user...")
+            return False
+
         user_type = 'rodsuser'
         if admin:
             user_type = 'rodsadmin'
 
         try:
-## UHM
             self.admin('mkuser', user, user_type)
             return True
-        except:
-            logger.warning("User %s already exists in iRODS" % user)
-            return False
+        except IrodsException as e:
+            if 'CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME' in str(e):
+                logger.warning("User %s already exists in iRODS" % user)
+                return False
+            raise e
 
     def set_inheritance(self, path, inheritance=True, recursive=False):
         com = 'ichmod'
