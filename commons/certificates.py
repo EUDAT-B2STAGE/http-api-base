@@ -22,17 +22,23 @@ class Certificates(object):
     _proxyfile = 'userproxy.crt'
 
     @classmethod
-    def get_proxy_filename(cls, user):
+    def get_proxy_filename(cls, user, dir=False):
+        if dir:
+            return "%s/%s" % (cls._dir, user)
         return "%s/%s/%s" % (cls._dir, user, cls._proxyfile)
 
     def save_proxy_cert(self, tmpproxy, user='guest'):
+
+        import os
+        directory = self.get_proxy_filename(user, dir=True)
+        if not os.path.exists(directory):
+            os.mkdir(directory)
 
         dst = self.get_proxy_filename(user)
 
         from shutil import copyfile
         copyfile(tmpproxy, dst)
 
-        import os
         os.chmod(dst, 0o600)  # note: you need the octave of the unix mode
 
         return dst

@@ -225,6 +225,7 @@ instead of here
 
         email = current_user.data.get('email')
         cn = current_user.data.get('cn')
+        ui = current_user.data.get('unity:persistent')
 
         # the current key is 'urn:oid:2.5.4.49'
         # is it going to change?
@@ -267,7 +268,7 @@ instead of here
             .query.filter_by(username=email).first()
         # or create it otherwise
         if external_user is None:
-            external_user = self._db.ExternalAccounts(username=email)
+            external_user = self._db.ExternalAccounts(username=email, unity=ui)
 
             # Connect the external account to the current user
             external_user.main_user = internal_user
