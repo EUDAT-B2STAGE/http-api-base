@@ -95,7 +95,7 @@ class Certificates(object):
 
         #######################
         key, req = self.generate_csr_and_key()
-        logger.debug("Key and Req:\n%s\n%s" % (key, req))
+        # logger.debug("Key and Req:\n%s\n%s" % (key, req))
 
         # Certificates should be trusted:
         # they are injected them inside the docker image at init time.

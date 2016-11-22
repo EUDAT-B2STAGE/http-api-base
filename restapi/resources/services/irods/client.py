@@ -12,9 +12,11 @@ we based this wrapper on plumbum package handling shell commands.
 """
 
 from __future__ import absolute_import
+
 import os
 import inspect
 import re
+from functools import lru_cache
 from collections import OrderedDict
 from ...basher import BashCommands
 from ...exceptions import RestApiException
@@ -172,102 +174,28 @@ class ICommands(BashCommands):
     _init_data = {}
     _current_environment = None
     _base_dir = ''
-    _current_user = None
+
 
     first_resource = 'demoResc'
     second_resource = 'replicaResc'
 
-    def __init__(self, user=None, irodsenv=IRODS_ENV, proxy=False):
+    def __init__(self, user=None, proxy=False, become_admin=False):
 
         # Recover plumbum shell enviroment
         super(ICommands, self).__init__()
+        self._current_user = None
 
-        # How to add a new user
-        # $ iadmin mkuser guest rodsuser
-
-        # In case i am the admin
-        if user is None:
-            # Use the physical file for the irods environment
-            self.irodsenv = irodsenv
+        if become_admin or user is None:
             self.become_admin()
-            # Verify if connected
-# // TO FIX: change it to ilsresc
             self.list()
-        # A much common use case: a request from another user
         else:
+            # Common use case: a request from another user
             self.change_user(user, proxy=proxy)
 
-    #######################
-    # ABOUT CONFIGURATION
     def become_admin(self, user=None):
-        """
-        Try to check if you're on Docker and have variables set
-        to become iRODS administrator.
-
-        It can also be used without docker by setting the same
-        environment variables.
-
-        Possible schemes: 'credentials', 'GSI', 'PAM'
-        """
-
-        # Authorization scheme
-        authscheme = os.environ.get('IRODS_AUTHSCHEME', 'credentials')
-
-        # Admin user
-        if user is None:
-## // TO FIX:
-# to be discussed
-            # raise BaseException(
-            #     "Cannot become admin without env var 'IRODS_USER' set!")
-            user = IRODS_DEFAULT_ADMIN
-
-        if authscheme == 'credentials' or authscheme == 'PAM':
-
-## // TO FIX:
-# use the method prepare_irods_environment...
-            self._init_data = OrderedDict({
-                "irods_host": os.environ['ICAT_1_ENV_IRODS_HOST'],
-                "irods_port":
-                    int(os.environ['ICAT_1_PORT'].split(':')[::-1][0]),
-                "irods_user_name": user,
-                "irods_zone_name": os.environ['IRODS_ZONE'],
-                # "irods_password": os.environ['ICAT_1_ENV_IRODS_PASS']
-            })
-
-            # Set external auth scheme if requested
-            if authscheme is not 'credentials':
-                self._init_data["irods_authentication_scheme"] = authscheme
-
-            with open(self.irodsenv, 'w') as fw:
-                import json
-                json.dump(self._init_data, fw)
-
-            self.set_password()
-            logger.debug("iRODS admin environment found\n%s" % self._init_data)
-
-        elif authscheme == 'GSI':
-            self.prepare_irods_environment(user, authscheme)
-
-        self._current_user = user
-
-    def set_password(self, tmpfile='/tmp/temppw'):
-        """
-        Interact with iinit to set the password.
-        This is the case i am not using certificates.
-        """
-
-        passw = os.environ.get('ICAT_1_ENV_IRODS_PASS', None)
-        if passw is None:
-            raise BaseException(
-                "Missing password: Use env var 'ICAT_1_ENV_IRODS_PASS'")
-
-        from plumbum.cmd import iinit
-        with open(tmpfile, 'w') as fw:
-            fw.write(passw)
-        com = iinit < tmpfile
-        com()
-        os.remove(tmpfile)
-        logger.debug("Pushed credentials")
+        if IRODS_EXTERNAL:
+            raise ValueError("Cannot raise privileges in external service")
+        return self.change_user(IRODS_DEFAULT_ADMIN)
 
     def get_resources(self):
         resources = []
@@ -424,6 +352,8 @@ class ICommands(BashCommands):
 
         self._current_user = user
         logger.debug("Switched to user '%s'" % user)
+        # clean lru_cache because we changed user
+        self.get_user_info.cache_clear()
 
         # If i want to check
         # return self.list(self.get_user_home(user))
@@ -433,7 +363,6 @@ class ICommands(BashCommands):
         return IRODS_DEFAULT_USER
 
     def get_current_user(self):
-        # return self._current_user
         userdata = self.get_user_info()
         return userdata['name']
 
@@ -597,14 +526,11 @@ class ICommands(BashCommands):
         return self.basic_icom(com, args)
 
     def admin(self, command, user=None, extra=None):
+        """
+        Admin commands to manage users and stuff like that.
+        Note: it will give irods errors if current user has not privileges.
+        """
 
-# // TO FIX
-        # This operation requires administration privileges
-        current_user = self.get_current_user()
-        # self.become_admin()
-        self.change_user(IRODS_DEFAULT_ADMIN)
-
-        # Do the command
         com = 'iadmin'
         args = [command]
         if user is not None:
@@ -612,13 +538,7 @@ class ICommands(BashCommands):
         if extra is not None:
             args.append(extra)
         logger.debug("iRODS admininistration command '%s'" % command)
-        out = self.basic_icom(com, args)
-
-# // TO FIX
-        # Back to current user
-        self.change_user(current_user)
-
-        return out
+        return self.basic_icom(com, args)
 
     def admin_list(self):
         """
@@ -930,6 +850,7 @@ class ICommands(BashCommands):
 
         return data
 
+    @lru_cache(maxsize=4)
     def get_user_info(self, username=None):
 ## // TO FIX:
 # should we cache this method?
@@ -1393,7 +1314,7 @@ class IrodsFarm(ServiceFarm):
         logger.debug("iRODS seems online")
 
     @classmethod
-    def get_instance(cls, user=None, proxy=False):
+    def get_instance(cls, user=None, proxy=False, become_admin=False):
 
         # Default or Admin
         if user is None:
@@ -1409,4 +1330,4 @@ class IrodsFarm(ServiceFarm):
         # cls._irods = IMetaCommands(user)
         # return cls._irods
 
-        return IMetaCommands(user, proxy=proxy)
+        return IMetaCommands(user, proxy=proxy, become_admin=become_admin)
