@@ -88,13 +88,15 @@ class ExternalServicesLogin(object):
         secret = os.environ.get('B2ACCESS_APPKEY', 'yourapppw')
 
 ## // TO FIX
-## detect if production and use the other urls
-        production = False
+## move this into configuration load?
+        PRODUCTION = False
+        if os.environ.get('APP_MODE', '') == 'production':
+            PRODUCTION = True
 
         # SET OTHER URLS
         token_url = B2ACCESS_DEV_URL + '/oauth2/token'
         authorize_url = B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
-        if production:
+        if PRODUCTION:
             token_url = B2ACCESS_PROD_URL + '/oauth2/token'
             authorize_url = B2ACCESS_PROD_URL + '/oauth2-as/oauth2-authz'
 
@@ -113,7 +115,7 @@ class ExternalServicesLogin(object):
         #####################
         # B2ACCESS
         arguments['base_url'] = B2ACCESS_DEV_URL + '/oauth2/'
-        if production:
+        if PRODUCTION:
             arguments['base_url'] = B2ACCESS_PROD_URL + '/oauth2/'
         # pretty_print(arguments)
         b2access_oauth = oauth.remote_app('b2access', **arguments)
@@ -121,7 +123,7 @@ class ExternalServicesLogin(object):
         #####################
         # B2ACCESS CERTIFICATION AUTHORITY
         arguments['base_url'] = B2ACCESS_DEV_CA_URL
-        if production:
+        if PRODUCTION:
             arguments['base_url'] = B2ACCESS_PROD_CA_URL
         # pretty_print(arguments)
         b2accessCA = oauth.remote_app('b2accessCA', **arguments)
