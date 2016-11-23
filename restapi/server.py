@@ -11,6 +11,7 @@ import os
 from json.decoder import JSONDecodeError
 from flask import Flask as OriginalFlask, request, g
 from .response import ResponseMaker
+from .confs.config import PRODUCTION
 from commons.meta import Meta
 from commons.logs import get_logger
 
@@ -125,12 +126,16 @@ def create_app(name=__name__, debug=False,
     # Set app internal testing mode if create_app received the parameter
     if testing_mode:
         microservice.config['TESTING'] = testing_mode
-    else:
-# # // TO FIX:
-# # Maybe only in production?
-        pass
+
+    ##############################
+    if PRODUCTION:
+# // TO FIX
 #         # Check and use a random file a secret key.
 #         install_secret_key(microservice)
+
+        microservice.config.update(
+            dict(PREFERRED_URL_SCHEME = 'https')
+        )
 
     ##############################
     # Flask configuration from config file

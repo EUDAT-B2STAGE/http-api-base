@@ -121,3 +121,9 @@ if not os.path.exists(IRODS_HOME):
     os.mkdir(IRODS_HOME)
 IRODS_ENV = os.path.join(IRODS_HOME, "irods_environment.json")
 # IRODS_ENV = USER_HOME + "/.irods/.irodsEnv"
+
+#################################
+# THE APP
+PRODUCTION = False
+if os.environ.get('APP_MODE', '') == 'production':
+    PRODUCTION = True

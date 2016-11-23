@@ -10,6 +10,7 @@ import os
 from ...oauth import oauth
 from commons.meta import Meta
 from base64 import b64encode
+from ....confs.config import PRODUCTION
 from ... import myself, lic
 from commons.logs import get_logger, pretty_print
 
@@ -86,12 +87,6 @@ class ExternalServicesLogin(object):
         # LOAD CREDENTIALS FROM DOCKER ENVIRONMENT
         key = os.environ.get('B2ACCESS_APPNAME', 'yourappusername')
         secret = os.environ.get('B2ACCESS_APPKEY', 'yourapppw')
-
-## // TO FIX
-## move this into configuration load?
-        PRODUCTION = False
-        if os.environ.get('APP_MODE', '') == 'production':
-            PRODUCTION = True
 
         # SET OTHER URLS
         token_url = B2ACCESS_DEV_URL + '/oauth2/token'
