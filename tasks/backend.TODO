@@ -1,14 +1,18 @@
 
-GUIDELINES:
+### GUIDELINES ####
+- Python 3.5
+- PEP compliant
+- Unittest: nose2
+- Test driven
+- Based on docker environment
+- Swagger
+-  Configuration via aggregated JSON file?
 
-- Based on Docker
-
--  Python 3.5
-
--  Configuration via aggregated JSON file
-
--  Extending a list of initial services:
+ LIST OF SERVICES:
    - Neo4j graphdb
    - Elasticsearch
    - Irods virtual resources
+   - Irods GSI plugin (certificates for authentication)
+   - Celery
+   - Redis
    - Rethinkdb?
