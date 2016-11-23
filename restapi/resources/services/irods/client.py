@@ -525,6 +525,16 @@ class ICommands(BashCommands):
         # Execute
         return self.basic_icom(com, args)
 
+    def move(self, absolute_path, destination):
+        com = 'imv'
+        args = [absolute_path]
+        args.append(destination)
+        # Execute
+        iout = self.basic_icom(com, args)
+        # Debug
+        logger.debug("Obtaining irods object: %s" % absolute_path)
+        return iout
+
     def admin(self, command, user=None, extra=None):
         """
         Admin commands to manage users and stuff like that.

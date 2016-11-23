@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
 """
-SECURITY ENDPOINTS CHECK
-Add auth checks called /checklogged and /testadmin
+Take care of authenticatin with External Service with Oauth2 protocol.
+
+Testend against GitHub, then worked off B2ACCESS (EUDAT oauth service)
 """
 
 from __future__ import absolute_import
+
 import os
 from ...oauth import oauth
 from commons.meta import Meta
