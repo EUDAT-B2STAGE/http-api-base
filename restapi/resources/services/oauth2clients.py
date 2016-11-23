@@ -10,7 +10,7 @@ import os
 from ...oauth import oauth
 from commons.meta import Meta
 from base64 import b64encode
-from ....confs.config import PRODUCTION
+from ...confs.config import PRODUCTION
 from ... import myself, lic
 from commons.logs import get_logger, pretty_print
 
