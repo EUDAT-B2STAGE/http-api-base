@@ -161,7 +161,6 @@ def create_app(name=__name__, debug=False,
         # from werkzeug.debug import DebuggedApplication
         # app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
-
     #################################################
     # Other components
     #################################################

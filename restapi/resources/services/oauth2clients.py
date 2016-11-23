@@ -12,7 +12,7 @@ import os
 from ...oauth import oauth
 from commons.meta import Meta
 from base64 import b64encode
-from ...confs.config import PRODUCTION
+from ...confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from ... import myself, lic
 from commons.logs import get_logger, pretty_print
 
@@ -95,8 +95,11 @@ class ExternalServicesLogin(object):
         authorize_url = B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
 
         if PRODUCTION:
-            token_url = B2ACCESS_PROD_URL + '/oauth2/token'
-            authorize_url = B2ACCESS_PROD_URL + '/oauth2-as/oauth2-authz'
+            if ENVVAR_DEBUG is None:
+                token_url = B2ACCESS_PROD_URL + '/oauth2/token'
+                authorize_url = B2ACCESS_PROD_URL + '/oauth2-as/oauth2-authz'
+            else:
+                logger.warning("Switching to b2access dev in production")
 
         # COMMON ARGUMENTS
         arguments = {

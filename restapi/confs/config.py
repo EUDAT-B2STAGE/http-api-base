@@ -32,8 +32,10 @@ def my_cli_arguments():
     arg.set_defaults(security=True, debug=False)
     return arg.parse_args()
 
+
 args = None
 default_debug = False
+
 
 is_gunicorn = "gunicorn" in os.environ.get("SERVER_SOFTWARE", "")
 is_nose = "nose" in sys.modules.keys()
