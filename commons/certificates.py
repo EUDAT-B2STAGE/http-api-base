@@ -9,9 +9,8 @@ import os
 from .services.uuid import getUUID
 from OpenSSL import crypto
 from commons import htmlcodes as hcodes
-from beeprint import pp as prettyprint
 
-from .logs import get_logger
+from .logs import get_logger, pretty_print
 
 logger = get_logger(__name__)
 
@@ -74,25 +73,24 @@ class Certificates(object):
             f.write(proxycertcontent)
         return tempfile
 
-    def make_proxy_from_ca(self, ca_client):
+    def make_proxy_from_ca(self, ca_client, prod=False):
         """
         Request for certificate and save it into a file
         """
 
         #######################
         # INSECURE SSL CONTEXT. IMPORTANT: to use only if not in production
-        from flask import current_app
-        if current_app.config['DEBUG']:
+        if prod:
+            # raise NotImplementedError(
+            #     "Please real signed certificates " +
+            #     "to connect to B2ACCESS Certification Authority")
+            pass
+        else:
             # See more here:
             # http://stackoverflow.com/a/28052583/2114395
             import ssl
             ssl._create_default_https_context = \
                 ssl._create_unverified_context
-        else:
-            # raise NotImplementedError(
-            #     "Please real signed certificates " +
-            #     "to connect to B2ACCESS Certification Authority")
-            pass
 
         #######################
         key, req = self.generate_csr_and_key()
@@ -118,10 +116,10 @@ class Certificates(object):
             logger.error("CA is probably down...")
             return None
         if response.status != hcodes.HTTP_OK_BASIC:
-            # print("\nCertificate:"); prettyprint(response)
+            # print("\nCertificate:"); pretty_print(response)
             logger.error("Could not get proxy from CA: %s" % response.data)
             return None
-        # prettyprint(response)
+        # pretty_print(response)
 
         #######################
         # write proxy certificate to a random file name
