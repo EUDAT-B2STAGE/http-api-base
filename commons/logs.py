@@ -20,20 +20,29 @@ OBSCURED_FIELDS = ['password', 'pwd', 'token']
 # LOGGING
 
 class LogMe(object):
-
     """ A common logger to be used all around development packages """
 
-    _log_level = logging.INFO
-    _colors_enabled = True
+    def __init__(self, debug=None):
 
-    def __init__(self, debug=True):
-
+        #####################
+        self._log_level = logging.INFO
+        self._colors_enabled = True
         super(LogMe, self).__init__()
-        self.set_debug(debug)
 
+        # became useless:
+
+        # #####################
+        # # Set debug
+        # if debug is None:
+        #     debug = int(os.environ.get('API_DEBUG', False))
+        #     print("PEPPE", debug, type(debug))
+        # self.set_debug(debug)
+
+        #####################
         if AVOID_COLORS_ENV_LABEL in os.environ:
             self._colors_enabled = False
 
+        #####################
         # Set default logging handler to avoid "No handler found" warnings.
         try:  # Python 2.7+
             from logging import NullHandler
@@ -42,12 +51,13 @@ class LogMe(object):
                 def emit(self, record):
                     pass
 
+        #####################
         # Make sure there is at least one logger
         logging.getLogger(__name__).addHandler(NullHandler())
         # Format
         fileConfig(LOG_CONFIG)
 
-        ################
+        #####################
         # modify logging labels colors
         if self._colors_enabled:
             logging.addLevelName(
@@ -66,20 +76,28 @@ class LogMe(object):
                 logging.DEBUG, "\033[1;35m%s\033[1;0m"
                 % logging.getLevelName(logging.DEBUG))
 
-    def set_debug(self, debug):
+    def set_debug(self, debug=True):
+        # print("DEBUG IS", debug)
+        # if debug is None:
+        #     return
+
         self.debug = debug
         if self.debug:
             self._log_level = logging.DEBUG
         else:
             self._log_level = logging.INFO
 
+        return self._log_level
+
     def get_new_logger(self, name):
         """ Recover the right logger + set a proper specific level """
         if self._colors_enabled:
             name = "\033[1;90m%s\033[1;0m" % name
         logger = logging.getLogger(name)
+        # print("LOGGER LEVEL", self._log_level, logging.DEBUG)
         logger.setLevel(self._log_level)
         return logger
+
 
 please_logme = LogMe()
 
@@ -88,7 +106,6 @@ def get_logger(name, debug_setter=None):
     """ Recover the right logger + set a proper specific level """
     if debug_setter is not None:
         please_logme.set_debug(debug_setter)
-
     return please_logme.get_new_logger(name)
 
 

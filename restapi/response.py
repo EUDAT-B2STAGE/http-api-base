@@ -401,7 +401,7 @@ class ResponseMaker(object):
 set_response(
     # Note: original here means the Flask simple response
     original=False,
-    # first_call=True,
+    first_call=True,
     custom_method=ResponseMaker.default_response)
 
 

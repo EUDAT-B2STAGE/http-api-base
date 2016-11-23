@@ -219,16 +219,13 @@ class ExtendedApiResource(Resource):
 
         return content
 
-    def set_latest_token(self, token):
-## // TO FIX:
-# The token should be saved into SESSION
-# or this will be a global token across different users
+# BAD PRACTICE
+    # def set_latest_token(self, token):
+    #     self.global_get('custom_auth')._latest_token = token
 
-# or use attrs!
-        self.global_get('custom_auth')._latest_token = token
-
-    def get_latest_token(self):
-        return self.global_get('custom_auth')._latest_token
+    # def get_latest_token(self):
+    #     return self.global_get('custom_auth')._latest_token
+# BAD PRACTICE
 
     def get_current_token(self):
         from ..auth import HTTPTokenAuth
@@ -320,10 +317,14 @@ class ExtendedApiResource(Resource):
         return self.force_response(
             defined_content=defined_content, errors=errors, code=code)
 
-    def send_errors(self, label="Error", message=None, errors={}, code=None):
+    def send_errors(self, label="Error", message=None, errors=None, code=None):
         """
         Setup an error message and
         """
+
+        # Bug fix: if errors was initialized above, I received old errors...
+        if errors is None:
+            errors = {}
 
         # See if we have the main message
         error = {}

@@ -18,6 +18,8 @@ if [ "$APP_MODE" == "debug" ]; then
     echo "[=== DEBUG MODE ===]"
     sleep infinity
 elif [ "$APP_MODE" == "production" ]; then
+
+# NOTE: in production we use /init which calls uWSGI + nginx
     echo "Production !"
     # GUNICORN
     $gserver

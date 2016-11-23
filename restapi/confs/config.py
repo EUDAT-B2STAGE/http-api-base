@@ -44,7 +44,8 @@ if not is_gunicorn and not is_nose and not is_nose2 and not is_celery:
     args = my_cli_arguments()
     default_debug = args.debug
 
-DEBUG = os.environ.get('API_DEBUG', default_debug)
+# DEBUG = os.environ.get('API_DEBUG', default_debug)
+DEBUG = os.environ.get('API_DEBUG', None)
 #DEBUG = True
 
 ###################################################

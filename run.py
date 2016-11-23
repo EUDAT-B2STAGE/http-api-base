@@ -8,10 +8,11 @@ RESTful API Python 3 Flask server
 """
 
 import time
+import os
 from commons import myself, lic
 from commons.logs import get_logger
 from restapi.server import create_app
-from restapi.confs.config import SERVER_HOSTS, SERVER_PORT, args
+from restapi.confs.config import PRODUCTION, SERVER_HOSTS, SERVER_PORT, args
 
 __author__ = myself
 __copyright__ = myself
@@ -32,6 +33,14 @@ if args is not None:
         enable_security = False
         logger.warning("No security enabled! Are you really sure?")
         time.sleep(1)
+
+# The connection is HTTP internally to containers
+# The proxy will handle HTTPS calls
+# We can safely disable HTTPS on OAUTHLIB requests
+# http://stackoverflow.com/a/27785830/2114395
+if PRODUCTION:
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
+
 
 #############################
 # BE FLASK

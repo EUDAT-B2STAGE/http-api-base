@@ -11,7 +11,7 @@ import os
 from json.decoder import JSONDecodeError
 from flask import Flask as OriginalFlask, request, g
 from .response import ResponseMaker
-from .confs.config import PRODUCTION
+from .confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from commons.meta import Meta
 from commons.logs import get_logger
 
@@ -126,6 +126,21 @@ def create_app(name=__name__, debug=False,
     # Set app internal testing mode if create_app received the parameter
     if testing_mode:
         microservice.config['TESTING'] = testing_mode
+    ##############################
+    # Flask configuration from config file
+    microservice.config.from_object(config)
+
+    if ENVVAR_DEBUG is not None:
+        try:
+            tmp = int(ENVVAR_DEBUG) == 1
+        except:
+            tmp = str(ENVVAR_DEBUG).lower() == 'true'
+        debug = tmp  # bool(tmp)
+    microservice.config['DEBUG'] = debug
+
+    # Set the new level of debugging
+    logger = get_logger(__name__, debug)
+    logger.info("FLASKING! Created application")
 
     ##############################
     if PRODUCTION:
@@ -133,17 +148,19 @@ def create_app(name=__name__, debug=False,
 #         # Check and use a random file a secret key.
 #         install_secret_key(microservice)
 
-        microservice.config.update(
-            dict(PREFERRED_URL_SCHEME = 'https')
-        )
+        logger.info("Production server ON")
 
-    ##############################
-    # Flask configuration from config file
-    microservice.config.from_object(config)
-    microservice.config['DEBUG'] = debug
-    # Set the new level of debugging
-    logger = get_logger(__name__, debug)
-    logger.info("FLASKING! Created application")
+        # probably useless
+        # # http://stackoverflow.com/a/26636880/2114395
+        # microservice.config.update(
+        #     dict(PREFERRED_URL_SCHEME = 'https')
+        # )
+
+        # # To enable exceptions printing inside uWSGI
+        # # http://stackoverflow.com/a/17839750/2114395
+        # from werkzeug.debug import DebuggedApplication
+        # app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
+
 
     #################################################
     # Other components

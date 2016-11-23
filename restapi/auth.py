@@ -145,11 +145,10 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                         code=hcodes.HTTP_BAD_UNAUTHORIZED
                     )
 
-            # Save token
-            if decorated_self is not None:
-## // TO FIX
-# the token should be saved into session
-                decorated_self.set_latest_token(token)
+            # Save token ?
+            # note: token will be available inside the db select for auth
+            # sessions do not work with rest api calls
+            # and class attributes are not good too
 
             return f(*args, **kwargs)
         return decorated

@@ -89,9 +89,10 @@ class Certificates(object):
             ssl._create_default_https_context = \
                 ssl._create_unverified_context
         else:
-            raise NotImplementedError(
-                "Please real signed certificates " +
-                "to connect to B2ACCESS Certification Authority")
+            # raise NotImplementedError(
+            #     "Please real signed certificates " +
+            #     "to connect to B2ACCESS Certification Authority")
+            pass
 
         #######################
         key, req = self.generate_csr_and_key()

@@ -26,7 +26,7 @@ B2ACCESS_DEV_BASEURL = "https://unity.eudat-aai.fz-juelich.de"
 B2ACCESS_DEV_URL = B2ACCESS_DEV_BASEURL + ":8443"
 B2ACCESS_DEV_CA_URL = B2ACCESS_DEV_BASEURL + ":8445"
 
-B2ACCESS_PROD_BASEURL = "   https://b2access.eudat.eu"
+B2ACCESS_PROD_BASEURL = "https://b2access.eudat.eu"
 B2ACCESS_PROD_URL = B2ACCESS_PROD_BASEURL + ":8443"
 B2ACCESS_PROD_CA_URL = B2ACCESS_PROD_BASEURL + ":8445"
 
@@ -93,6 +93,7 @@ class ExternalServicesLogin(object):
         # SET OTHER URLS
         token_url = B2ACCESS_DEV_URL + '/oauth2/token'
         authorize_url = B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
+
         if PRODUCTION:
             token_url = B2ACCESS_PROD_URL + '/oauth2/token'
             authorize_url = B2ACCESS_PROD_URL + '/oauth2-as/oauth2-authz'
