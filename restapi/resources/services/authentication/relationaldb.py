@@ -223,18 +223,27 @@ instead of here
         to be connected to internal local user
         """
 
-        email = current_user.data.get('email')
-        cn = current_user.data.get('cn')
-        ui = current_user.data.get('unity:persistent')
+        try:
+            values = current_user.data
+        except:
+            return None, "Authorized response is invalid"
 
-        # the current key is 'urn:oid:2.5.4.49'
+        # print("TEST", values, type(values))
+        if not isinstance(values, dict) or len(values) < 1:
+            return None, "Authorized response is empty"
+
+        email = values.get('email')
+        cn = values.get('cn')
+        ui = values.get('unity:persistent')
+
+        # DN very strange: the current key is something like 'urn:oid:2.5.4.49'
         # is it going to change?
         dn = None
-        for key, value in current_user.data.items():
+        for key, value in values.items():
             if 'urn:oid' in key:
-                dn = current_user.data.get(key)
+                dn = values.get(key)
         if dn is None:
-            return None
+            return None, "Missing DN from authorized response..."
 
         # Check if a user already exists with this email
         internal_user = None
@@ -245,12 +254,13 @@ instead of here
         if len(internal_users) > 0:
             # Should never happen, please
             if len(internal_users) > 1:
-                return None
+                logger.critical("Multiple users?")
+                return None, "Server misconfiguration"
             internal_user = internal_users.pop()
-            logger.debug("Existing internal user %s" % internal_user)
+            logger.debug("Existing internal user: %s" % internal_user)
             # A user already locally exists with another authmethod. Not good.
             if internal_user.authmethod != 'oauth2':
-                return None
+                return None, "Creating a user which locally already exists"
         # If missing, add it locally
         else:
             # Create new one
