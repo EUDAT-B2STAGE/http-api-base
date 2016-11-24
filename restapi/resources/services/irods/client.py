@@ -95,6 +95,10 @@ class IrodsException(RestApiException):
             self, utility, error_string, error_code, error_label, role='user'):
         return "Provided resource does not exist"
 
+    def parse_SAME_SRC_DEST_PATHS_ERR(
+            self, utility, error_string, error_code, error_label, role='user'):
+        return "Destination and source having the same name"
+
     def parseIrodsError(self, error):
         error = str(error)
         logger.debug("*%s*" % error)
@@ -524,6 +528,16 @@ class ICommands(BashCommands):
             args.append(resource)
         # Execute
         return self.basic_icom(com, args)
+
+    def get_collection_from_path(self, absolute_path):
+        return os.path.dirname(absolute_path)
+
+    def get_absolute_path(self, *args, root=None):
+        if len(args) < 1:
+            return root
+        if root is None and not args[0].startswith('/'):
+            root = '/'
+        return os.path.join(root, *args)
 
     def move(self, absolute_path, destination):
         com = 'imv'
