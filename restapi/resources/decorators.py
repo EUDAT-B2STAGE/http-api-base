@@ -258,14 +258,14 @@ def all_rest_methods(Cls):
 
 #####################################################################
 # Error handling with custom methods
-def exceptionError(self, label, e, code=hcodes.HTTP_BAD_REQUEST):
+def exceptionError(self, label, e, code):
     error = str(e)
     logger.error(error)
     return self.send_errors(label, error, code=code)
 
 
 def error_handler(func, self, some_exception,
-                  label, catch_generic, args, kwargs):
+                  label, catch_generic, error_code, args, kwargs):
 
     out = None
     # print(func, self, some_exception, label, args, kwargs)
@@ -276,7 +276,7 @@ def error_handler(func, self, some_exception,
         out = func(self, *args, **kwargs)
     # Catch the single exception that the user requested
     except some_exception as e:
-        return exceptionError(self, label, e)
+        return exceptionError(self, label, e, error_code)
 ## TO CHECK WITH MATTIA
     # except Exception as e:
     #     logger.warning(
@@ -296,7 +296,8 @@ def error_handler(func, self, some_exception,
 
 
 def catch_error(
-        exception=None, exception_label=None, catch_generic=True):
+        exception=None, exception_label=None,
+        catch_generic=True, error_code=hcodes.HTTP_BAD_REQUEST):
     """
     A decorator to preprocess an API class method,
     and catch a specific error.
@@ -306,6 +307,7 @@ def catch_error(
         def wrapper(self, *args, **kwargs):
             return error_handler(
                 func, self,
-                exception, exception_label, catch_generic, args, kwargs)
+                exception, exception_label, catch_generic, error_code,
+                args, kwargs)
         return wrapper
     return decorator
