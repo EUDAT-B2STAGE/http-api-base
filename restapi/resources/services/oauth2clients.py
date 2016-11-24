@@ -95,7 +95,7 @@ class ExternalServicesLogin(object):
         authorize_url = B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
 
         if PRODUCTION:
-            if ENVVAR_DEBUG is None:
+            if ENVVAR_DEBUG is None or not ENVVAR_DEBUG:
                 token_url = B2ACCESS_PROD_URL + '/oauth2/token'
                 authorize_url = B2ACCESS_PROD_URL + '/oauth2-as/oauth2-authz'
             else:
@@ -116,16 +116,18 @@ class ExternalServicesLogin(object):
         #####################
         # B2ACCESS
         arguments['base_url'] = B2ACCESS_DEV_URL + '/oauth2/'
-        if PRODUCTION and ENVVAR_DEBUG is None:
-            arguments['base_url'] = B2ACCESS_PROD_URL + '/oauth2/'
+        if PRODUCTION:
+            if ENVVAR_DEBUG is None or not ENVVAR_DEBUG:
+                arguments['base_url'] = B2ACCESS_PROD_URL + '/oauth2/'
         # pretty_print(arguments)
         b2access_oauth = oauth.remote_app('b2access', **arguments)
 
         #####################
         # B2ACCESS CERTIFICATION AUTHORITY
         arguments['base_url'] = B2ACCESS_DEV_CA_URL
-        if PRODUCTION and ENVVAR_DEBUG is None:
-            arguments['base_url'] = B2ACCESS_PROD_CA_URL
+        if PRODUCTION:
+            if ENVVAR_DEBUG is None or not ENVVAR_DEBUG:
+                arguments['base_url'] = B2ACCESS_PROD_CA_URL
         # pretty_print(arguments)
         b2accessCA = oauth.remote_app('b2accessCA', **arguments)
 
