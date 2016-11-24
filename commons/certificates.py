@@ -112,8 +112,8 @@ class Certificates(object):
         except ValueError as e:
             logger.error("Oauthlib call with CA: %s" % e)
             return None
-        except:
-            logger.error("CA is probably down...")
+        except Exception as e:
+            logger.error("CA is probably down... [%s]" % e)
             return None
         if response.status != hcodes.HTTP_OK_BASIC:
             # print("\nCertificate:"); pretty_print(response)

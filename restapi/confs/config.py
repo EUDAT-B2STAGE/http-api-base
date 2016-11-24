@@ -46,10 +46,6 @@ if not is_gunicorn and not is_nose and not is_nose2 and not is_celery:
     args = my_cli_arguments()
     default_debug = args.debug
 
-# DEBUG = os.environ.get('API_DEBUG', default_debug)
-DEBUG = os.environ.get('API_DEBUG', None)
-#DEBUG = True
-
 ###################################################
 ###################################################
 SERVER_HOSTS = '0.0.0.0'
@@ -127,6 +123,11 @@ IRODS_ENV = os.path.join(IRODS_HOME, "irods_environment.json")
 
 #################################
 # THE APP
+
+# DEBUG = os.environ.get('API_DEBUG', default_debug)
+DEBUG = os.environ.get('API_DEBUG', None)
+#DEBUG = True
+
 PRODUCTION = False
 if os.environ.get('APP_MODE', '') == 'production':
     PRODUCTION = True
