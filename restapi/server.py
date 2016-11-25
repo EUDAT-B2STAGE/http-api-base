@@ -26,7 +26,7 @@ logger = get_logger(__name__)
 
 class Flask(OriginalFlask):
 
-    def make_response(self, rv):
+    def make_response(self, rv, response_log_max_len=200):
         """
         Hack original flask response generator to read our internal response
         and build what is needed:
@@ -34,14 +34,19 @@ class Flask(OriginalFlask):
         """
 
 ## TO FIX:
-# use some global variable to enable/disable the usual response
+# use some global variable to enable/disable the usual response?
         # # In case you want to get back to normal
         # return super().make_response(rv)
 
         try:
-            logger.info("MAKE_RESPONSE: %s" % rv)
+            # Limit the output, sometimes it's too big
+            out = str(rv)
+            if len(out) > response_log_max_len:
+                out = out[:response_log_max_len] + ' ...'
+
+            logger.debug("MAKE_RESPONSE: %s" % out)
         except:
-            logger.info("MAKE_RESPONSE: [UNREADABLE OBJ]")
+            logger.debug("MAKE_RESPONSE: [UNREADABLE OBJ]")
         responder = ResponseMaker(rv)
 
         # Avoid duplicating the response generation
