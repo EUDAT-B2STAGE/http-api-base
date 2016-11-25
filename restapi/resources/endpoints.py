@@ -137,29 +137,38 @@ class Tokens(ExtendedApiResource):
 
     @authentication.authorization_required
     def delete(self, token_id=None):
+        """
+            For additional security, tokens are invalidated both
+            by chanding the user UUID and by removing single tokens
+        """
         auth = self.global_get('custom_auth')
-        tokens = auth.get_tokens(user=auth._user)
+        user = self.get_current_user()
+        tokens = auth.get_tokens(user=user)
+        invalidated = False
 
+        for token in tokens:
+            # all or specific
+            if token_id is None or token["id"] == token_id:
+                done = auth.invalidate_token(token=token["token"], user=user)
+                if not done:
+                    return self.send_errors("Failed", "token: '%s'" % token)
+                else:
+                    logger.debug("Invalidated %s" % token['id'])
+                    invalidated = True
+
+        # Check
+
+        # ALL
         if token_id is None:
-            """
-                For additional security, tokens are invalidated both
-                by chanding the user UUID and by removing single tokens
-            """
-            for token in tokens:
-                auth.invalidate_token(token=token["token"])
-            auth.invalidate_all_tokens()
-
-            return self.empty_response()
+            auth.invalidate_all_tokens(user=user)
+        # SPECIFIC
         else:
-            for token in tokens:
-                if token["id"] == token_id:
-                    auth.invalidate_token(token=token["token"])
-                    return self.empty_response()
+            if not invalidated:
+                message = "Not emitted for your account or does not exist"
+                return self.send_errors(
+                    "Token not found", message, code=hcodes.HTTP_BAD_NOTFOUND)
 
-            errorMessage = "This token has not emitted to your account " + \
-                           "or does not exist"
-            return self.send_errors(
-                "Token not found", errorMessage, code=hcodes.HTTP_BAD_NOTFOUND)
+        return self.empty_response()
 
 
 class TokensAdminOnly(ExtendedApiResource):

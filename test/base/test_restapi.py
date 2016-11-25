@@ -29,7 +29,7 @@ class BaseTests(RestTestsBase):
 
     """
 
-    def test_01_get_status(self):
+    def test_01_GET_status(self):
         """ Test that the flask server is running and reachable """
 
         # Check success
@@ -43,7 +43,7 @@ class BaseTests(RestTestsBase):
         r = self.app.get(self._api_uri)
         self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_NOTFOUND)
 
-    def test_02_get_login(self):
+    def test_02_GET_login(self):
         """ Check that you can login and receive back your token """
 
         endpoint = self._auth_uri + '/login'
@@ -69,7 +69,7 @@ class BaseTests(RestTestsBase):
         r = self.app.post(endpoint, data=credentials)
         self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_UNAUTHORIZED)
 
-    def test_03_get_profile(self):
+    def test_03_GET_profile(self):
         """ Check if you can use your token for protected endpoints """
 
         endpoint = self._auth_uri + '/profile'
@@ -84,7 +84,7 @@ class BaseTests(RestTestsBase):
         r = self.app.get(endpoint)
         self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_UNAUTHORIZED)
 
-    def test_04_get_logout(self):
+    def test_04_GET_logout(self):
         """ Check that you can logout with a valid token """
 
         endpoint = self._auth_uri + '/logout'
@@ -99,7 +99,7 @@ class BaseTests(RestTestsBase):
         r = self.app.get(endpoint)
         self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_UNAUTHORIZED)
 
-    def test_05_get_tokens(self):
+    def test_05_GET_tokens(self):
 
         endpoint = self._auth_uri + '/login'
 
@@ -139,7 +139,7 @@ class BaseTests(RestTestsBase):
                          headers=self.__class__.tokens_header)
         self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_NOTFOUND)
 
-    def test_06_delete_tokens(self):
+    def test_06_DELETE_tokens(self):
 
         endpoint = self._auth_uri + '/tokens'
 

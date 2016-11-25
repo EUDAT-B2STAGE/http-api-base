@@ -184,18 +184,28 @@ instead of here
         return list
 
     def invalidate_all_tokens(self, user=None):
+        """
+            To invalidate all tokens the user uuid is changed
+        """
         if user is None:
             user = self._user
-
         user.uuid = getUUID()
         self._db.session.add(user)
         self._db.session.commit()
+        logger.warning("User uuid changed to: %s" % user.uuid)
+        return True
 
     def invalidate_token(self, user=None, token=None):
+
+################
+## // TO FIX
         if token is None:
-## // TO FIX:
-## WARNING: this is a global token across different users!
-            token = self._latest_token
+            logger.critical("No token specified to invalidate")
+            return False
+# ## WARNING: this is a global token across different users!
+#             token = self._latest_token
+################
+
         if user is None:
             user = self._user
 
@@ -205,6 +215,8 @@ instead of here
             self._db.session.commit()
         else:
             logger.warning("Could not invalidate token")
+
+        return True
 
     def destroy_token(self, token_id):
         token = self._db.Token.query.filter_by(jti=token_id).first()
@@ -320,6 +332,7 @@ instead of here
         self._db.session.commit()
         return
 
+## // TO FIX ## to be cached
     def oauth_from_local(self, internal_user):
 ## // TO FIX ## make this abstract for graphdb too?
 

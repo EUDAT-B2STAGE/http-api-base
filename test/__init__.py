@@ -96,33 +96,35 @@ class RestTestsAuthenticatedBase(RestTestsBase):
         # Call father's method
         super().setUp()
 
-        logger.info("CREATING A TOKEN")
+        logger.info("### Creating a test token ###")
         endpoint = self._auth_uri + '/login'
         credentials = json.dumps(
             {'username': self._username, 'password': self._password})
         r = self.app.post(endpoint, data=credentials)
         self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
         content = self.get_content(r)
+        self.__class__.bearer_token = content['token']
         self.__class__.auth_header = {
-            'Authorization': 'Bearer ' + content['token']}
+            'Authorization': 'Bearer %s' % self.__class__.bearer_token
+        }
 
     def tearDown(self):
-        logger.info('### Cleaning all and tearing down the flask server###')
 
-        # Clean all test data
-        endpoint = self._api_uri + self._main_endpoint
-        r = self.app.delete(endpoint, data=dict(debugclean='True'),
-                            headers=self.__class__.auth_header)
-        # Check if it was ok
+        # Token clean up
+        logger.debug('### Cleaning token ###')
+        ep = self._auth_uri + '/tokens'
+        # Recover current token id
+        r = self.app.get(ep, headers=self.__class__.auth_header)
         self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
+        content = self.get_content(r)
+        for element in content:
+            if element['token'] == self.__class__.bearer_token:
+                # delete only current token
+                ep += '/' + element['id']
+                rdel = self.app.delete(ep, headers=self.__class__.auth_header)
+                self.assertEqual(
+                    rdel.status_code, self._hcodes.HTTP_OK_NORESPONSE)
 
-        # Tokens clean up?
-## TO FIX:
-# // this operation should be indipendent from the auth service
-        # logger.debug("Cleaned up invalid tokens")
-        # from restapi.resources.services.neo4j.graph import MyGraph
-        # graph_instance = MyGraph()
-        # if graph_instance:
-        #     graph_instance.clean_pending_tokens()
-
+        # The end
         super().tearDown()
+        logger.info("Completed one method to test\n\n")

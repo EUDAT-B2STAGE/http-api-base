@@ -43,7 +43,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     DEFAULT_ROLE = ROLE_USER
     DEFAULT_ROLES = [ROLE_USER, ROLE_INTERNAL, ROLE_ADMIN]
     _oauth2 = {}
-    _latest_token = None
     _payload = {}
     _user = None
 
