@@ -21,12 +21,14 @@ __author__ = myself
 __copyright__ = myself
 __license__ = lic
 
+MAX_CHAR_LEN = 200
+
 logger = get_logger(__name__)
 
 
 class Flask(OriginalFlask):
 
-    def make_response(self, rv, response_log_max_len=200):
+    def make_response(self, rv, response_log_max_len=MAX_CHAR_LEN):
         """
         Hack original flask response generator to read our internal response
         and build what is needed:
@@ -40,6 +42,7 @@ class Flask(OriginalFlask):
 
         try:
             # Limit the output, sometimes it's too big
+# UHM 1
             out = str(rv)
             if len(out) > response_log_max_len:
                 out = out[:response_log_max_len] + ' ...'
@@ -280,6 +283,8 @@ def create_app(name=__name__, debug=False,
 
         from commons.logs import obscure_passwords
 
+## // TO CHECK:
+# if request data is long we will go through it...
         try:
             data = obscure_passwords(request.data)
         except JSONDecodeError:
@@ -291,8 +296,9 @@ def create_app(name=__name__, debug=False,
             try:
                 if not isinstance(data[k], str):
                     continue
-                if len(data[k]) > 255:
-                    data[k] = data[k][:255] + "..."
+# UHM 2
+                if len(data[k]) > MAX_CHAR_LEN:
+                    data[k] = data[k][:MAX_CHAR_LEN] + "..."
             except IndexError:
                 pass
 

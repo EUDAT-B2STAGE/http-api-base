@@ -35,7 +35,6 @@ class LogMe(object):
         # # Set debug
         # if debug is None:
         #     debug = int(os.environ.get('API_DEBUG', False))
-        #     print("PEPPE", debug, type(debug))
         # self.set_debug(debug)
 
         #####################
@@ -126,7 +125,7 @@ def obscure_passwords(original_parameters_string):
     if (original_parameters_string is None):
         return {}
 
-    mystr = original_parameters_string.decode("ascii")
+    mystr = original_parameters_string.decode("utf-8")
     if mystr.strip() == '':
         return {}
 

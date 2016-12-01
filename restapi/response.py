@@ -98,6 +98,7 @@ class ResponseElements(object):
     code = attribute(default=None)
     errors = attribute(default=None)
     headers = attribute(default={})
+    meta = attribute(default=None)
     extra = attribute(default=None)
 
 
@@ -232,10 +233,12 @@ class ResponseMaker(object):
         # 4. Encapsulate response and other things in a standard json obj:
         # {Response: DEFINED_CONTENT, Meta: HEADERS_AND_STATUS}
         final_content = self.standard_response_content(
-            r['defined_content'], r['errors'], r['code'], r['elements'])
+            r['defined_content'], r['elements'],
+            r['code'], r['errors'], r['meta'])
 
         if r['extra'] is not None:
-            logger.warning("What to do with extra?\n%s" % r['extra'])
+            logger.warning("NOT IMPLEMENTED YET: " +
+                           "what to do with extra field?\n%s" % r['extra'])
 
         # 5. Return what is necessary to build a standard flask response
         # from all that was gathered so far
@@ -288,8 +291,8 @@ class ResponseMaker(object):
         return code, errors
 
     @staticmethod
-    def standard_response_content(
-            defined_content=None, errors=None, code=None, elements=None):
+    def standard_response_content(defined_content=None, elements=None,
+                                  code=None, errors=None, custom_metas=None):
         """
         Try conversions and compute types and length
         """
@@ -330,19 +333,25 @@ class ResponseMaker(object):
             errors = [{'Failed to build response': str(e)}]
             total_errors = len(errors)
 
-        # Note: latest_response is an attribute
-        # of an object instance created per request
+        contents = {
+            'data': defined_content,
+            'errors': errors,
+        }
+
+        metas = {
+            'data_type': data_type,
+            'elements': elements,
+            'errors': total_errors,
+            'status': code
+        }
+
+        if custom_metas is not None:
+            # sugar syntax for merging dictionaries
+            metas = {**metas, **custom_metas}
+
         return {
-            ResponseMaker._content_key: {
-                'data': defined_content,
-                'errors': errors,
-            },
-            ResponseMaker._content_meta: {
-                'data_type': data_type,
-                'elements': elements,
-                'errors': total_errors,
-                'status': code
-            }
+            ResponseMaker._content_key: contents,
+            ResponseMaker._content_meta: metas
         }
 
     @staticmethod
