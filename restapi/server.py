@@ -8,20 +8,18 @@ We create all the internal flask  components here!
 from __future__ import absolute_import
 
 import os
-from json.decoder import JSONDecodeError
+# from json.decoder import JSONDecodeError
 from flask import Flask as OriginalFlask, request, g
 from .response import ResponseMaker
 from .confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from commons.meta import Meta
-from commons.logs import get_logger
+from commons.logs import get_logger, handle_log_output, MAX_CHAR_LEN
 
 from . import myself, lic
 
 __author__ = myself
 __copyright__ = myself
 __license__ = lic
-
-MAX_CHAR_LEN = 200
 
 logger = get_logger(__name__)
 
@@ -35,14 +33,8 @@ class Flask(OriginalFlask):
         the tuple (data, status, headers) to be eaten by make_response()
         """
 
-## TO FIX:
-# use some global variable to enable/disable the usual response?
-        # # In case you want to get back to normal
-        # return super().make_response(rv)
-
         try:
             # Limit the output, sometimes it's too big
-# UHM 1
             out = str(rv)
             if len(out) > response_log_max_len:
                 out = out[:response_log_max_len] + ' ...'
@@ -152,11 +144,12 @@ def create_app(name=__name__, debug=False,
 
     ##############################
     if PRODUCTION:
-# // TO FIX
-#         # Check and use a random file a secret key.
-#         install_secret_key(microservice)
 
         logger.info("Production server ON")
+
+## // TO FIX or CHECK
+        # # Check and use a random file a secret key.
+        # install_secret_key(microservice)
 
         # probably useless
         # # http://stackoverflow.com/a/26636880/2114395
@@ -281,30 +274,21 @@ def create_app(name=__name__, debug=False,
     @microservice.after_request
     def log_response(response):
 
-        from commons.logs import obscure_passwords
+        data = handle_log_output(request.data)
 
-## // TO CHECK:
-# if request data is long we will go through it...
-        try:
-            data = obscure_passwords(request.data)
-        except JSONDecodeError:
-            data = request.data
-
-        # Shrink too long data in log output
+        # Limit the parameters string size, sometimes it's too big
         for k in data:
             # print("K", k, "DATA", data)
             try:
                 if not isinstance(data[k], str):
                     continue
-# UHM 2
                 if len(data[k]) > MAX_CHAR_LEN:
                     data[k] = data[k][:MAX_CHAR_LEN] + "..."
             except IndexError:
                 pass
 
         logger.info("{} {} {} {}".format(
-                    request.method, request.url,
-                    data, response))
+                    request.method, request.url, data, response))
         return response
 
     ##############################

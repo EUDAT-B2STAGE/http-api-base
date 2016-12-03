@@ -69,7 +69,8 @@ class IrodsException(RestApiException):
 
     def parse_OVERWRITE_WITHOUT_FORCE_FLAG(
             self, utility, error_string, error_code, error_label, role='user'):
-        return "Trying to overwrite the object. Please add the force option"
+        return "Trying to overwrite existing object. " \
+            + "You must set the force parameter to 'true'."
 
     def parse_USER_INPUT_PATH_ERR(
             self, utility, error_string, error_code, error_label, role='user'):

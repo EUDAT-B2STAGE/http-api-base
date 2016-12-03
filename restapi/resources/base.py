@@ -97,7 +97,7 @@ class ExtendedApiResource(Resource):
         while JSON parameters may be already saved from another previous call
         """
 
-        if not len(self._json_args) > 0:
+        if len(self._json_args) < 1:
             try:
                 self._json_args = request.get_json(force=forcing)
                 for key, value in self._json_args.items():
@@ -110,7 +110,7 @@ class ExtendedApiResource(Resource):
                         key += '_json'
                     self._args[key] = value
             except Exception:  # as e:
-                # logger.debug("Failed to get JSON for current req: '%s'" % e)
+                # logger.critical("Cannot get JSON for req: '%s'" % e)
                 pass
 
         if single_parameter is not None:

@@ -11,9 +11,12 @@ import os
 import json
 import logging
 from logging.config import fileConfig
+from json.decoder import JSONDecodeError
 from . import AVOID_COLORS_ENV_LABEL, LOG_CONFIG
 
-OBSCURED_FIELDS = ['password', 'pwd', 'token']
+MAX_CHAR_LEN = 200
+OBSCURE_VALUE = '****'
+OBSCURED_FIELDS = ['password', 'pwd', 'token', 'file', 'filename']
 
 
 ################
@@ -119,22 +122,46 @@ def silence_loggers():
         # handler.close()
 
 
-def obscure_passwords(original_parameters_string):
+def handle_log_output(original_parameters_string):
 
     """ Avoid printing passwords! """
     if (original_parameters_string is None):
         return {}
 
     mystr = original_parameters_string.decode("utf-8")
+    # mystr = original_parameters_string.decode("ascii")
     if mystr.strip() == '':
         return {}
 
-    parameters = json.loads(mystr)
+    try:
+        parameters = json.loads(mystr)
+    except JSONDecodeError:
+        return original_parameters_string
+
+    # # PEP 274 -- Dict Comprehensions (Python 3)
+    # # and clarification on conditionals:
+    # # http://stackoverflow.com/a/9442777/2114395
+    # return {
+    #     key: (OBSCURE_VALUE if key in OBSCURED_FIELDS else value)
+    #     for key, value in parameters.items()
+    # }
+    #
+
+    output = {}
     for key, value in parameters.items():
         if key in OBSCURED_FIELDS:
-            value = '****'
-        parameters[key] = value
-    return parameters
+            value = OBSCURE_VALUE
+        elif not isinstance(value, str):
+            continue
+        else:
+            try:
+                if len(value) > MAX_CHAR_LEN:
+                    value = value[:MAX_CHAR_LEN] + "..."
+            except IndexError:
+                pass
+        output[key] = value
+
+    return output
 
 
 def pretty_print(myobject, prefix_line=None):
