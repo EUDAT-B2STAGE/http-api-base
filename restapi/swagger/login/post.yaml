@@ -1,0 +1,61 @@
+
+Login with basic credentials (username and password)
+
+---
+
+## Note used here, because of the plugin behaviour
+
+# definitions:
+#   - schema:
+#     id: Credentials
+#     properties:
+#       username:
+#         type: string
+
+tags:
+  - login
+consumes:
+  - application/json
+produces:
+  - application/json
+
+parameters:
+  - in: body
+    name: body
+    # Note: this definition has to be nested in the object...
+    schema:
+      id: Credentials
+      required:
+        - username
+      properties:
+        username:
+          type: string
+          examples:
+            - user@nomail.org
+          description: your registered username
+        password:
+          type: string
+          description: password coupling in credentials for your username
+      # $ref: "#/definitions/Credentials"
+
+responses:
+  '200':
+    description: Credentials are valid
+    # Note: this definition has to be nested in the object...
+    schema:
+      id: Token
+      type: array
+    examples:
+# HEADERS?
+      Meta:
+        data_type: string
+        elements: 1
+        errors: 0
+        status: 200
+      Response:
+        data:
+          token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9
+        errors:
+          null
+  '401':
+    description: Credentials are wrong

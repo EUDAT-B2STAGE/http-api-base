@@ -26,7 +26,7 @@ conf:
 backend:
     extends:
         service: conf
-    image: eudatb2safe/apiserver 
+    image: eudatb2stage/apiserver
     hostname: restapi
     working_dir: /code
     volumes:
@@ -61,7 +61,7 @@ redqueue:
 worker:
   extends:
     file: docker-compose.yml
-    service: backend 
+    service: backend
   hostname: celworker
   command: celery worker -A restapi.resources.services.celery.worker.celery_app
 

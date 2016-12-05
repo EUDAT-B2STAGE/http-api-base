@@ -24,9 +24,22 @@ logger = get_logger(__name__)
 
 
 class Status(ExtendedApiResource):
-    """ API online test """
+    """
+        API online test
+    """
 
     def get(self):
+        """
+        Check if the API server is currently reachable
+
+        You may use this URI to monitor network or server problems.
+        ---
+        tags:
+          - status
+        responses:
+          200:
+            description: Server is alive!
+        """
         return 'Server is alive!'
 
 
@@ -42,7 +55,11 @@ class Login(ExtendedApiResource):
     #         code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
     def post(self):
-        """ Using a service-dependent callback """
+        """
+        Using a service-dependent callback
+
+        swagger_from_file: restapi/swagger/login/post.yaml
+        """
 
         # # In case you need different behaviour when using unittest:
         # if current_app.config['TESTING']:
@@ -88,8 +105,9 @@ class Login(ExtendedApiResource):
         # })
 
         """
+        e.g.
 {
-  "scope": "https://b2stage.cineca.it/.*",
+  "scope": "https://b2stage.cineca.it/api/.*",
   "access_token": "EEwJ6tF9x5WCIZDYzyZGaz6Khbw7raYRIBV_WxVvgmsG",
   "token_type": "Bearer",
   "user": "pippo",
