@@ -58,7 +58,7 @@ class Login(ExtendedApiResource):
         """
         Using a service-dependent callback
 
-        swagger_from_file: restapi/swagger/login/post.yaml
+        swagger_from_file: restapi/swagger/base/login/post.yaml
         """
 
         # # In case you need different behaviour when using unittest:
