@@ -1,0 +1,95 @@
+{
+  "definitions": {
+    "Credentials": {
+      "properties": {
+        "password": {
+          "description": "password coupling in credentials for your username", 
+          "type": "string"
+        }, 
+        "username": {
+          "description": "your registered username", 
+          "examples": [
+            "user@nomail.org"
+          ], 
+          "type": "string"
+        }
+      }, 
+      "required": [
+        "username"
+      ]
+    }, 
+    "Token": {
+      "type": "array"
+    }
+  }, 
+  "info": {
+    "title": "Python3 REST API", 
+    "version": "1.0"
+  }, 
+  "paths": {
+    "/api/status": {
+      "get": {
+        "description": "<br/>You may use this URI to monitor network or server problems.", 
+        "responses": {
+          "200": {
+            "description": "Server is alive!"
+          }
+        }, 
+        "summary": "Check if the API server is currently reachable", 
+        "tags": [
+          "status"
+        ]
+      }
+    }, 
+    "/auth/login": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ], 
+        "description": "Login with basic credentials (username and password)<br/>", 
+        "parameters": [
+          {
+            "in": "body", 
+            "name": "body", 
+            "schema": {
+              "$ref": "#/definitions/Credentials"
+            }
+          }
+        ], 
+        "produces": [
+          "application/json"
+        ], 
+        "responses": {
+          "200": {
+            "description": "Credentials are valid", 
+            "examples": {
+              "Meta": {
+                "data_type": "string", 
+                "elements": 1, 
+                "errors": 0, 
+                "status": 200
+              }, 
+              "Response": {
+                "data": {
+                  "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9"
+                }, 
+                "errors": null
+              }
+            }, 
+            "schema": {
+              "$ref": "#/definitions/Token"
+            }
+          }, 
+          "401": {
+            "description": "Credentials are wrong"
+          }
+        }, 
+        "summary": "", 
+        "tags": [
+          "login"
+        ]
+      }
+    }
+  }, 
+  "swagger": "2.0"
+}
