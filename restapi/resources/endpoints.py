@@ -10,10 +10,11 @@ from .. import myself, lic
 
 from ..confs.config import AUTH_URL
 from .base import ExtendedApiResource
-from commons import htmlcodes as hcodes
 from ..auth import authentication
 from ..confs import config
 # from . import decorators as decorate
+from flask import jsonify, current_app
+from commons import htmlcodes as hcodes
 from commons.logs import get_logger
 
 __author__ = myself
@@ -41,6 +42,34 @@ class Status(ExtendedApiResource):
             description: Server is alive!
         """
         return 'Server is alive!'
+
+
+class Spec(ExtendedApiResource):
+    """
+    Specifications output throught Swagger (open API) standards
+    """
+
+    def get(self):
+        """
+        Request current API server swagger specifications
+        ---
+
+        tags:
+            - swagger
+        responses:
+          200:
+            description: Specifications in a JSON standard format
+        """
+
+        ##############################
+        # Enable swagger
+        from flask_swagger import swagger
+        swag = swagger(current_app, from_file_keyword='swagger_from_file')
+        swag['info']['version'] = "1.0"
+## // TO FIX:
+# make it dynamic from configuration
+        swag['info']['title'] = "Python3 REST API"
+        return jsonify(swag)
 
 
 class Login(ExtendedApiResource):

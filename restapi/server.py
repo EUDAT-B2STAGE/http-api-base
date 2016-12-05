@@ -300,18 +300,5 @@ def create_app(name=__name__, debug=False,
         return response
 
     ##############################
-    # Enable swagger
-    from flask import jsonify
-    from flask_swagger import swagger
-
-    @microservice.route("/api/spec")
-    def spec():
-        swag = swagger(microservice, from_file_keyword='swagger_from_file')
-        swag['info']['version'] = "1.0"
-## // TO FIX:
-        swag['info']['title'] = "Python3 REST API"
-        return jsonify(swag)
-
-    ##############################
     # App is ready
     return microservice
