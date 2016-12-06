@@ -62,7 +62,7 @@ class ExternalServicesLogin(object):
         # For each defined internal service
         for key, func in Meta().get_methods_inside_instance(self).items():
 
-            logger.info("META %s-%s" % (key, func))
+            # logger.info("META %s-%s" % (key, func))
 
             # Check if credentials are enabled inside docker env
             var1 = key.upper() + '_APPNAME'
@@ -72,15 +72,9 @@ class ExternalServicesLogin(object):
                 logger.debug("Skipping Oauth2 service %s" % key)
                 continue
 
-            # # obj = func(testing)
-            # if name in mem._services:
-            #     self._available_services[name] = mem._services
-
             # Call the service and save it
             try:
-                # print("PIPPO", func)
                 obj = func(testing)
-                # print("PEPPE")
 
                 # Make sure it's always a dictionary of objects
                 if not isinstance(obj, dict):

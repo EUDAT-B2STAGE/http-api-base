@@ -65,8 +65,8 @@ class Spec(ExtendedApiResource):
 
         ##############################
         # Enable swagger
-        from flask_swagger import swagger
-        swag = swagger(current_app, from_file_keyword='swagger_from_file')
+        from commons.swagger import swagger
+        swag = swagger(current_app, from_file_keyword='swag_file')
         swag['info']['version'] = "1.0"
 ## // TO FIX:
 # make it dynamic from configuration
@@ -89,7 +89,7 @@ class Login(ExtendedApiResource):
         """
         Using a service-dependent callback
 
-        swagger_from_file: restapi/swagger/base/login/post.yaml
+        swag_file: restapi/swagger/base/login/post.yaml
         """
 
         # # In case you need different behaviour when using unittest:

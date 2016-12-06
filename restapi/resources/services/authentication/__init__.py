@@ -90,6 +90,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     def check_passwords(hashed_password, password):
         proposed_password = BaseAuthentication.hash_password(password)
         return hashed_password == proposed_password
+
     def get_user(self):
         return self._user
 

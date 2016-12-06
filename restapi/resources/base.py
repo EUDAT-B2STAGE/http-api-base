@@ -357,6 +357,14 @@ class ExtendedApiResource(Resource):
             # flask-like
             return (user_message, code)
 
+    def send_crentials(self, token, extra=None, meta=None):
+        """
+        Define a standard response to give a Bearer token back.
+        Also considering headers.
+        """
+## // TO FIX
+        return NotImplementedError("To be written")
+
     @staticmethod
     def timestamp_from_string(timestamp_string):
         """
