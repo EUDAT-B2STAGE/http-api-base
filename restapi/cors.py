@@ -20,8 +20,9 @@ logger = get_logger(__name__)
 # ####################################
 # Allow cross-domain requests
 # e.g. for JS and Upload
+
 cors = CORS(
-    allow_headers=['Content-Type'],  # TO BE CHECKED
+    headers=['Content-Type'],
     methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])
 logger.debug("Flask: creating CORS")
 
