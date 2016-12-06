@@ -285,7 +285,7 @@ class ExtendedApiResource(Resource):
 
         Build a ResponseElements instance.
         """
-        logger.debug("Forcing response:\nargs[%s] kwargs[%s]" % (args, kwargs))
+        # logger.debug("Force response:\nargs[%s] kwargs[%s]" % (args, kwargs))
 
         # If args has something, it should be one simple element
         # That element is the content and nothing else
