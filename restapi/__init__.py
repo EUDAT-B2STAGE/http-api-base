@@ -6,8 +6,7 @@ try:
     __version__ = pkg_resources.get_distribution(__name__).version
 except:
     __version__ = 'unknown'
-# from logging.config import fileConfig
-from .confs.config import REST_CONFIG_DIR, REST_CONFIG_INIT  # , DEBUG
+from .confs.config import REST_CONFIG_DIR, BLUEPRINT_INIT
 
 myself = "Paolo D'Onorio De Meo <p.donoriodemeo@gmail.com>"
 lic = "MIT"
@@ -17,5 +16,5 @@ lic = "MIT"
 PROJECT_DIR = __package__
 CONFIG_DIR = 'confs'
 REST_CONFIG = os.path.join(PROJECT_DIR, CONFIG_DIR, REST_CONFIG_DIR)
-REST_INIT = os.path.join(REST_CONFIG, REST_CONFIG_INIT)
+BLUEPRINT_FILE = os.path.join(REST_CONFIG, BLUEPRINT_INIT)
 DEFAULT_REST_CONFIG = 'example'

@@ -16,12 +16,14 @@ from __future__ import absolute_import
 import os
 import inspect
 import re
+import pytz
+import dateutil.parser
+from datetime import datetime, timedelta
 from functools import lru_cache
 from collections import OrderedDict
 from ...basher import BashCommands
 from ...exceptions import RestApiException
-from ....confs.config import IRODS_ENV
-from ..detect import IRODS_EXTERNAL
+from ..detect import IRODS_ENV, IRODS_EXTERNAL
 from commons.services import ServiceFarm
 from commons.certificates import Certificates
 # from ..templating import Templa
@@ -297,7 +299,7 @@ class ICommands(BashCommands):
 
         if schema == 'GSI':
 
-# could be fixed changing the dir rodsminer from docker image
+# could be fixed changing the dir rodsminer inside the docker image...
             if user == 'rods':
                 user = 'rodsminer'
 
@@ -305,21 +307,75 @@ class ICommands(BashCommands):
             # CA Authority
             irods_env['X509_CERT_DIR'] = CERTIFICATES_DIR + '/caauth'
 
-            # PROXY
+            ###############################
+            # PROXY CERTIFICATE (EUDAT)
             if proxy:
                 irods_env['X509_USER_PROXY'] = \
                     CERTIFICATES_DIR + '/' + user + '/userproxy.crt'
+            ###############################
             # USER PEMs: Private (key) and Public (Cert)
-            else:
+            elif os.path.isdir(CERTIFICATES_DIR + '/' + user):
+                logger.debug("Using standard x509 certificates")
                 irods_env['X509_USER_CERT'] = \
                     CERTIFICATES_DIR + '/' + user + '/usercert.pem'
                 irods_env['X509_USER_KEY'] = \
                     CERTIFICATES_DIR + '/' + user + '/userkey.pem'
+            ###############################
+            # PROXY CERTIFICATE (myproxy)
+# NOTE: this is way too long, it should be splitted in subfunctions
+            else:
+                logger.debug("Using proxy certificates")
 
-        # # DEBUG
-        # for key, item in irods_env.items():
-        #     if 'irods' == key[0:5].lower() or 'x509_' == key[0:5].lower():
-        #         print("ITEM", key, item)
+                if not os.path.isfile(proxy_cert_file):
+                    # Proxy file does not exist
+                    valid = False
+                else:
+                    # Proxy exists, verify validity
+                    args = ["x509", "-in", proxy_cert_file, "-text"]
+                    output = self.execute_command("openssl", args)
+
+                    pattern = re.compile(
+                        r"Validity.*\n\s*Not Before: (.*)\n" +
+                        r"\s*Not After *: (.*)")
+                    validity = pattern.search(output).groups()
+
+                    # not_before = dateutil.parser.parse(validity[0])
+                    not_after = dateutil.parser.parse(validity[1])
+                    # NOW - 1 hour
+                    now = datetime.now(pytz.utc) - timedelta(hours=1)
+
+                    valid = not_after > now
+
+                ##################
+                # Proxy file does not exist or expired
+                if not valid:
+                    logger.warning("Invalid proxy for %s refres" % user)
+                    try:
+                        from restapi.resources.custom.proxy_certificates \
+                            import get_proxy_certificate
+
+                        parameters = {}
+                        parameters["user"] = user
+                        parameters["proxy_cert_file"] = proxy_cert_file
+                        parameters["env"] = irods_env
+                        valid = get_proxy_certificate(**parameters)
+                        if valid:
+                            logger.info(
+                                "Proxy refreshed for %s" % user)
+                        else:
+                            logger.error(
+                                "Cannot refresh proxy for user %s" % user)
+                    except Exception as e:
+                        logger.critical(
+                            "Cannot refresh proxy for user %s" % user)
+                        logger.critical(e)
+
+                ##################
+                if valid:
+                    irods_env['X509_USER_CERT'] = proxy_cert_file
+                    irods_env['X509_USER_KEY'] = proxy_cert_file
+                else:
+                    logger.critical("Cannot find a valid certificate file")
 
         if schema == 'PAM':
             # irodsSSLCACertificateFile PATH/TO/chain.pem

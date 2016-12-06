@@ -12,6 +12,8 @@ from ..confs.config import AUTH_URL
 from .base import ExtendedApiResource
 from ..auth import authentication
 from ..confs import config
+from .services.detect import CELERY_AVAILABLE
+from .services.authentication import BaseAuthentication
 # from . import decorators as decorate
 from flask import jsonify, current_app
 from commons import htmlcodes as hcodes
@@ -155,7 +157,7 @@ class Logout(ExtendedApiResource):
     @authentication.authorization_required
     def get(self):
         auth = self.global_get('custom_auth')
-        auth.invalidate_token()
+        auth.invalidate_token(auth.get_token())
         return self.empty_response()
 
 
@@ -166,7 +168,7 @@ class Tokens(ExtendedApiResource):
     endkey = "token_id"
     endtype = "string"
 
-    @authentication.authorization_required
+    @authentication.authorization_required(roles=[config.ROLE_ADMIN])
     def get(self, token_id=None):
         auth = self.global_get('custom_auth')
         tokens = auth.get_tokens(user=auth._user)
@@ -280,6 +282,39 @@ class Profile(ExtendedApiResource):
 
         return data
 
+    @authentication.authorization_required
+    def put(self):
+
+        from flask_restful import request
+        try:
+            data = request.get_json(force=True)
+
+            if "newpassword" not in data:
+                return self.send_errors(
+                    "Error",
+                    "Invalid request, this operation cannot be completed",
+                    code=hcodes.HTTP_BAD_REQUEST
+                )
+            user = self.get_current_user()
+            pwd = BaseAuthentication.hash_password(data["newpassword"])
+            user.password = pwd
+            user.save()
+            auth = self.global_get('custom_auth')
+            tokens = auth.get_tokens(user=auth._user)
+
+            for token in tokens:
+                auth.invalidate_token(token=token["token"])
+            auth.invalidate_all_tokens()
+
+        except:
+            return self.send_errors(
+                "Error",
+                "Unknown error, please contact system administrators",
+                code=hcodes.HTTP_BAD_REQUEST
+            )
+
+        return self.empty_response()
+
 
 class Internal(ExtendedApiResource):
     """ Token and Role authentication test """
@@ -299,3 +334,138 @@ class Admin(ExtendedApiResource):
     @authentication.authorization_required(roles=[config.ROLE_ADMIN])
     def get(self):
         return "I am admin!"
+
+
+# In case you have celery queue,
+# you get a queue endpoint for free
+if CELERY_AVAILABLE:
+    from commons.services.celery import celery_app
+
+    class Queue(ExtendedApiResource):
+
+        endkey = "task_id"
+        endtype = "string"
+
+        @authentication.authorization_required(roles=[config.ROLE_ADMIN])
+        def get(self, task_id=None):
+
+            # Inspect all worker nodes
+            workers = celery_app.control.inspect()
+
+            data = []
+
+            active_tasks = workers.active()
+            revoked_tasks = workers.revoked()
+            scheduled_tasks = workers.scheduled()
+
+            for worker in active_tasks:
+                tasks = active_tasks[worker]
+                for task in tasks:
+                    if task_id is not None and task["id"] != task_id:
+                        continue
+
+                    row = {}
+                    row['status'] = 'ACTIVE'
+                    row['worker'] = worker
+                    row['ETA'] = task["time_start"]
+                    row['task_id'] = task["id"]
+                    row['task'] = task["name"]
+                    row['args'] = task["args"]
+
+                    if task_id is not None:
+                        task_result = celery_app.AsyncResult(task_id)
+                        row['task_status'] = task_result.status
+                        row['info'] = task_result.info
+                    data.append(row)
+
+            for worker in revoked_tasks:
+                tasks = revoked_tasks[worker]
+                for task in tasks:
+                    if task_id is not None and task != task_id:
+                        continue
+                    row = {}
+                    row['status'] = 'REVOKED'
+                    row['task_id'] = task
+                    data.append(row)
+
+            for worker in scheduled_tasks:
+                tasks = scheduled_tasks[worker]
+                for task in tasks:
+                    if task_id is not None and \
+                       task["request"]["id"] != task_id:
+                        continue
+
+                    row = {}
+                    row['status'] = 'SCHEDULED'
+                    row['worker'] = worker
+                    row['ETA'] = task["eta"]
+                    row['task_id'] = task["request"]["id"]
+                    row['priority'] = task["priority"]
+                    row['task'] = task["request"]["name"]
+                    row['args'] = task["request"]["args"]
+                    data.append(row)
+
+            # from celery.task.control import inspect
+            # tasks = inspect()
+
+            return self.force_response(data)
+
+        # @authentication.authorization_required(roles=[config.ROLE_ADMIN])
+        # def put(self, task_id):
+        #     from celery.task.control import revoke
+        #     revoke(task_id, terminate=True)
+        #     return self.force_response("!")
+
+        @authentication.authorization_required(roles=[config.ROLE_ADMIN])
+        def put(self, task_id):
+            celery_app.control.revoke(task_id)
+            return self.empty_response()
+
+        @authentication.authorization_required(roles=[config.ROLE_ADMIN])
+        def delete(self, task_id):
+            celery_app.control.revoke(task_id, terminate=True)
+            return self.empty_response()
+
+    # task = celery_app.AsyncResult(queue_id)
+    # logger.critical(task.status)
+
+    # if task.failed():
+    #     output = task.get()
+    #     return self.force_response(
+    #         "THIS TASK IS FAILED!!! %s" % output,
+    #         code=hcodes.HTTP_SERVER_ERROR)
+
+    # if task.successful():
+    #     output = task.get()
+    #     # Forget about (and possibly remove the result of) this task.
+    #     """
+    #     The task back to the pending status, because:
+
+    #     Task is waiting for execution or unknown.
+    #     Any task id that is not known is implied
+    #     to be in the pending state.
+    #     """
+    #     task.forget()
+
+    #     return self.force_response(
+    #         "THIS TASK IS COMPLETE. Output is: %s" % output,
+    #         code=hcodes.HTTP_OK_CREATED)
+
+    # if task.status == "SENT":
+    #     return self.force_response(
+    #         "THIS TASK IS STILL PENDING",
+    #         code=hcodes.HTTP_OK_BASIC)
+
+    # if task.status == "PROGRESS":
+    #     current = task.info['current']
+    #     total = task.info['total']
+
+    #     perc = 100 * current / total
+
+    #     return self.force_response(
+    #         "THIS TASK IS RUNNING (%s %s)" % (perc, '%'),
+    #         code=hcodes.HTTP_OK_BASIC)
+
+    # return self.force_response(
+    #     "This task does not exist",
+    #     code=hcodes.HTTP_BAD_NOTFOUND)

@@ -6,6 +6,7 @@ we could provide back then
 """
 
 import pytz
+import dateutil.parser
 from datetime import datetime
 from flask import g
 from flask_restful import request, Resource, reqparse
@@ -243,7 +244,7 @@ class ExtendedApiResource(Resource):
         authentication/__init__.py@verify_token method
         """
 
-        return self.global_get('custom_auth')._user
+        return self.global_get('custom_auth').get_user()
 
     def global_get(self, object_name):
 
@@ -402,9 +403,33 @@ class ExtendedApiResource(Resource):
         #     endpoint + '?currentpage=' + str(len(instances)) + '&perpage=1',
 
         return json_data
+    @staticmethod
+    def dateFromString(date, format="%d/%m/%Y"):
+
+        if date == "":
+            return ""
+        # datetime.now(pytz.utc)
+        try:
+            return datetime.strptime(date, format)
+        except:
+            return dateutil.parser.parse(date)
+
+    @staticmethod
+# To mattia: can we stop using java-like camelCase? XD
+    def stringFromTimestamp(timestamp):
+        if timestamp == "":
+            return ""
+        try:
+            date = datetime.fromtimestamp(float(timestamp))
+            return date.isoformat()
+        except:
+            logger.warning(
+                "Errors parsing %s" % timestamp)
+            return ""
 
     def getJsonResponse(self, instance,
                         fields=[], resource_type=None, skip_missing_ids=False,
+                        only_public=False,
                         relationship_depth=0, max_relationship_depth=1):
         """
         Lots of meta introspection to guess the JSON specifications
@@ -417,10 +442,15 @@ class ExtendedApiResource(Resource):
         verify_attribute = hasattr
         if isinstance(instance, dict):
             verify_attribute = dict.get
-        if verify_attribute(instance, "id"):
+        if verify_attribute(instance, "uuid"):
+            id = instance.uuid
+        elif verify_attribute(instance, "id"):
             id = instance.id
         else:
             # Do not show internal id. Only UUID if available.
+            id = "-"
+
+        if id is None:
             id = "-"
 
         data = {
@@ -439,8 +469,15 @@ class ExtendedApiResource(Resource):
             del data['links']
 
         # Attributes
-        if len(fields) < 1 and hasattr(instance, '_fields_to_show'):
-            fields = getattr(instance, '_fields_to_show')
+        if len(fields) < 1:
+
+            if only_public:
+                field_name = '_public_fields_to_show'
+            else:
+                field_name = '_fields_to_show'
+
+            if hasattr(instance, field_name):
+                fields = getattr(instance, field_name)
 
         for key in fields:
             if verify_attribute(instance, key):
@@ -452,9 +489,12 @@ class ExtendedApiResource(Resource):
                 # datetime is not json serializable,
                 # converting it to string
 ## // TO FIX:
-# use flask.jsonify?
-                if isinstance(attribute, datetime):
-                    data["attributes"][key] = attribute.strftime('%s')
+# use flask.jsonify
+                if attribute is None:
+                    data["attributes"][key] = ""
+                elif isinstance(attribute, datetime):
+                    dval = self.stringFromTimestamp(attribute.strftime('%s'))
+                    data["attributes"][key] = dval
                 else:
                     data["attributes"][key] = attribute
 
@@ -462,8 +502,13 @@ class ExtendedApiResource(Resource):
         if relationship_depth < max_relationship_depth:
             linked = {}
             relationships = []
-            if hasattr(instance, '_relationships_to_follow'):
-                relationships = getattr(instance, '_relationships_to_follow')
+            if only_public:
+                field_name = '_public_relationships_to_follow'
+            else:
+                field_name = '_relationships_to_follow'
+            if hasattr(instance, field_name):
+                relationships = getattr(instance, field_name)
+
             for relationship in relationships:
                 subrelationship = []
                 # logger.debug("Investigate relationship %s" % relationship)
@@ -473,6 +518,7 @@ class ExtendedApiResource(Resource):
                         subrelationship.append(
                             self.getJsonResponse(
                                 node,
+                                only_public=only_public,
                                 skip_missing_ids=skip_missing_ids,
                                 relationship_depth=relationship_depth + 1,
                                 max_relationship_depth=max_relationship_depth))
@@ -483,3 +529,8 @@ class ExtendedApiResource(Resource):
                 data['relationships'] = linked
 
         return data
+
+# # Set default response
+# set_response(
+#     original=False,  # first_call=True,
+#     custom_method=ExtendedApiResource().default_response)

@@ -52,6 +52,14 @@ IRODS_AVAILABLE = 'RODSERVER_NAME' in os.environ or \
 
 if IRODS_AVAILABLE:
 
+    # IRODS 4
+    USER_HOME = os.environ['HOME']
+    IRODS_HOME = os.path.join(USER_HOME, ".irods")
+    if not os.path.exists(IRODS_HOME):
+        os.mkdir(IRODS_HOME)
+    IRODS_ENV = os.path.join(IRODS_HOME, "irods_environment.json")
+    # IRODS_ENV = USER_HOME + "/.irods/.irodsEnv"
+
     # We may check if iRODS is an external service
     # by verifying if this linked container is provided
     if os.environ.get('RODSERVER_NAME', None) is None:

@@ -5,7 +5,7 @@
 from __future__ import absolute_import
 import os
 from jinja2._compat import iteritems
-from . import REST_CONFIG, REST_INIT, DEFAULT_REST_CONFIG
+from . import REST_CONFIG, BLUEPRINT_FILE
 from commons.logs import get_logger
 from commons.meta import Meta
 try:
@@ -69,28 +69,31 @@ class MyConfigs(object):
         # JSON CASE
         try:
             sections = self.read_complex_config(config_file)
-        except BaseException as e:  # json.commentjson.JSONLibraryException:
-            logger.error(e)
+        except:  # json.commentjson.JSONLibraryException:
             logger.critical("Format error!\n" +
                             "'%s' file is not in JSON format" % config_file)
             exit(1)
 
+        if 'apis' not in sections:
+            logger.critical(
+                "Section 'apis' not found in '%s' file" % config_file
+            )
+            exit(1)
+
         #########################
         # Use sections found
-        for section, items in iteritems(sections):
+        for section, items in iteritems(sections['apis']):
 
             logger.debug("Configuration read: {Section: " + section + "}")
 
-            module_name = __package__ + '.resources.' + section
-            module = meta.get_module_from_string(module_name)
-
+            module = meta.get_module_from_string(
+                __package__ + '.resources.custom.' + section)
             # Skip what you cannot use
             if module is None:
                 logger.warning("Could not find module '%s'..." % section)
                 continue
 
             for classname, endpoints in iteritems(items):
-                # Note: does not work on decorated classes
                 myclass = meta.get_class_from_string(classname, module)
                 # Again skip
                 if myclass is None:
@@ -98,13 +101,6 @@ class MyConfigs(object):
                 else:
                     logger.debug("REST! Found resource: " +
                                  section + '.' + classname)
-
-                # # Test all rest methods decorator on the class
-                # # it does not work...
-                # from .resources.decorators import all_rest_methods
-                # test = all_rest_methods(myclass)
-                # print("TEST CLASS:", myclass, test)
-                # instance = test()
 
                 # Get the best endpoint comparing inside against configuration
                 instance = myclass()
@@ -121,26 +117,46 @@ class MyConfigs(object):
 
         return resources
 
+    @staticmethod
+    def load_and_handle_json_exception(file_handler):
+        """
+        Trying to avoid all the verbose error from commentjson
+        """
+
+        # Use also the original library
+        import json as ojson
+
+        error = None
+        try:
+            mydict = json.load(file_handler)
+            return mydict
+        except json.commentjson.JSONLibraryException as e:
+            error = e
+        except ojson.decoder.JSONDecodeError as e:
+            error = e
+
+        for line in str(error).split('\n')[::-1]:
+            if line.strip() != '':
+                error = line
+                break
+        logger.error("Failed to read JSON from '%s':\n%s"
+                     % (file_handler.name, error))
+        exit(1)
+
     def rest(self):
         """ REST endpoints from '.ini' files """
 
         logger.debug("Trying configurations from '%s' dir" % REST_CONFIG)
 
         files = []
-        if os.path.exists(REST_INIT):
-            with open(REST_INIT) as f:
-                mydict = json.load(f)
-                for name, jfile in iteritems(mydict):
-                    files.append(os.path.join(REST_CONFIG, jfile))
-        # What if the user does not specify anything?
+        if os.path.exists(BLUEPRINT_FILE):
+            with open(BLUEPRINT_FILE) as f:
+                mydict = self.load_and_handle_json_exception(f)
+                blueprint = mydict['blueprint']
+                files.append(os.path.join(REST_CONFIG, blueprint + '.json'))
         else:
-            # # ALL ?
-            # logger.debug("Reading all resources config files")
-            # import glob
-            # files = glob.glob(os.path.join(REST_CONFIG, "*") + ".ini")
+            logger.critical("Missing a blueprint file: %s" % BLUEPRINT_FILE)
 
-            # # ONLY THE EXAMPLE
-            files.append(os.path.join(REST_CONFIG, DEFAULT_REST_CONFIG))
         logger.debug("Resources files: '%s'" % files)
 
         resources = []

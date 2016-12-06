@@ -92,6 +92,23 @@ class Flask(OriginalFlask):
 #         sys.exit(1)
 
 
+def create_auth_instance(module, internal_services, microservice):
+    # This is the main object that drives authentication
+    # inside our Flask server.
+    # Note: to be stored inside the flask global context
+    custom_auth = module.Authentication(internal_services)
+
+    # Verify if we can inject oauth2 services into this module
+    from .resources.services.oauth2clients import ExternalServicesLogin
+    oauth2 = ExternalServicesLogin(microservice.config['TESTING'])
+    custom_auth.set_oauth2_services(oauth2._available_services)
+
+    # SECRET_KEY??
+    # custom_auth.setup_secret(microservice.config['SECRET_KEY'])
+
+    return custom_auth
+
+
 ########################
 # Flask App factory    #
 ########################
@@ -196,28 +213,22 @@ def create_app(name=__name__, debug=False,
         logger.debug("Trying to load the module %s" % module_name)
         module = meta.get_module_from_string(module_name)
 
-        # This is the main object that drives authentication
-        # inside our Flask server.
-        # Note: to be stored inside the flask global context
-        custom_auth = module.Authentication(internal_services)
-
-        # Verify if we can inject oauth2 services into this module
-        from .resources.services.oauth2clients import ExternalServicesLogin
-        oauth2 = ExternalServicesLogin(microservice.config['TESTING'])
-        custom_auth.set_oauth2_services(oauth2._available_services)
-
-        # Instead of using the decorator
-        # Applying Flask_httpauth lib to the current instance
-        from .auth import authentication
-        authentication.callbacks(
-            verify_token_f=custom_auth.verify_token,
-            verify_roles_f=custom_auth.verify_roles)
+        # Authentication the right (per-instance) way
+        init_auth = create_auth_instance(
+            module, internal_services, microservice)
 
         # Global namespace inside the Flask server
         @microservice.before_request
-        def enable_global_authentication():
+        def enable_authentication_per_request():
             """ Save auth object """
+            custom_auth = create_auth_instance(
+                module, internal_services, microservice)
             g._custom_auth = custom_auth
+
+        # OLD BAD
+        # def enable_global_authentication():
+        #     """ Save auth object """
+        #     g._custom_auth = custom_auth
 
         # Enabling also OAUTH library
         from .oauth import oauth
@@ -259,8 +270,9 @@ def create_app(name=__name__, debug=False,
 
             # Init users/roles for Security
             if enable_security:
-                custom_auth.setup_secret(microservice.config['SECRET_KEY'])
-                custom_auth.init_users_and_roles()
+                # custom_auth.setup_secret(microservice.config['SECRET_KEY'])
+                # custom_auth.init_users_and_roles()
+                init_auth.init_users_and_roles()
 
             # Allow a custom method for mixed services init
             try:

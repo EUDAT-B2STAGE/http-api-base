@@ -53,8 +53,10 @@ class MyGraph(ServiceObject):
             os.environ["NEO4J_REST_URL"] = \
                 PROTOCOL + "://" + USER + ":" + PW + "@" + \
                 HOST + ":" + PORT + "/db/data"
+
+            # os.environ["NEO4J_BOLT_URL"] = "bolt://%s:%s@%s" % \
+            #     (USER, PW, HOST)
             logger.debug("Neo4j connection socket is set")
-            # print(os.environ["NEO4J_REST_URL"])
         except:
             raise EnvironmentError("Missing URL to connect to graph")
         # Set debug for cypher queries
@@ -66,10 +68,10 @@ class MyGraph(ServiceObject):
         try:
             results, meta = db.cypher_query(query)
         except Exception as e:
-            raise BaseException(
+            raise Exception(
                 "Failed to execute Cypher Query: %s\n%s" % (query, str(e)))
             return False
-        logger.debug("Graph query.\nResults: %s\nMeta: %s" % (results, meta))
+        # logger.debug("Graph query.\nResults: %s\nMeta: %s" % (results, meta))
         return results
 
     def clean_pending_tokens(self):

@@ -54,11 +54,23 @@ instead of here
                 uuid=payload['user_id']).first()
         return user
 
+    def get_roles_from_user(self, userobj=None):
+
+        roles = []
+        if userobj is None:
+            try:
+                userobj = self.get_user()
+            except Exception as e:
+                logger.warning("Roles check: invalid current user.\n%s" % e)
+                return roles
+
+        for role in userobj.roles:
+            roles.append(role.name)
+        return roles
+
 ###############
 ## TO FIX
-    def get_roles_from_user(self, userobj=None):
-        return NotImplementedError("To do")
-
+# see the same method in graphdb.py
     def create_user(self, userdata, roles=[]):
         if self.DEFAULT_ROLE not in roles:
             roles.append(self.DEFAULT_ROLE)
@@ -115,6 +127,8 @@ instead of here
             hostname = ""
 
         now = datetime.now()
+# // TO FIX:
+# How to generate a token that never expires for admin tests?
         exp = now + timedelta(seconds=self.shortTTL)
 
         token_entry = self._db.Token(
@@ -195,19 +209,9 @@ instead of here
         logger.warning("User uuid changed to: %s" % user.uuid)
         return True
 
-    def invalidate_token(self, user=None, token=None):
-
-################
-## // TO FIX
-        if token is None:
-            logger.critical("No token specified to invalidate")
-            return False
-# ## WARNING: this is a global token across different users!
-#             token = self._latest_token
-################
-
+    def invalidate_token(self, token, user=None):
         if user is None:
-            user = self._user
+            user = self.get_user()
 
         token_entry = self._db.Token.query.filter_by(token=token).first()
         if token_entry is not None:

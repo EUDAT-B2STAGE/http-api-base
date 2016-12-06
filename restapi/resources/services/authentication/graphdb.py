@@ -54,7 +54,7 @@ class Authentication(BaseAuthentication):
         roles = []
         if userobj is None:
             try:
-                userobj = self._user
+                userobj = self.get_user()
             except Exception as e:
                 logger.warning("Roles check: invalid current user.\n%s" % e)
                 return roles
@@ -213,19 +213,14 @@ instead of here
 
     def invalidate_all_tokens(self, user=None):
         if user is None:
-            user = self._user
+            user = self.get_user()
 
         user.uuid = getUUID()
         user.save()
 
-    def invalidate_token(self, user=None, token=None):
-        if token is None:
-## // TO FIX:
-## WARNING: this is a global token across different users!
-            token = self._latest_token
+    def invalidate_token(self, token, user=None):
         if user is None:
-            user = self._user
-
+            user = self.get_user()
         try:
             token_node = self._graph.Token.nodes.get(token=token)
             token_node.emitted_for.disconnect(user)

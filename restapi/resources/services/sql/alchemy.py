@@ -28,17 +28,37 @@ class SQLFarm(ServiceFarm):
         return 'sql'
 
     def init_connection(self, app):
+
+        uri = app.config.get('SQLALCHEMY_DATABASE_URI')
         self.get_instance()
+
+        ## Create the sqllite file if missing?
+        # if uri.startswith('sqlite'):
+        #     import re
+        #     db_file = re.sub("sqlite.*:///", "", uri)
+        #     open(db_file, 'a').close()
+
         try:
             self._db.init_app(app)
         except Exception as e:
             logger.critical("Invalid SQLalchemy instance!\n%s" % str(e))
+
 # // TO FIX:
 # CHECK IF PASSWORD IS INSIDE THE STRING AND CENSOR IT
         logger.debug(
-            "App attached to '%s'" % app.config.get('SQLALCHEMY_DATABASE_URI'))
+            "App attached to '%s'" % uri)
+
         # Create database and tables if they don't exist yet
         with app.app_context():
+            from ....confs import config
+
+# // TO FIX:
+# this option should go inside the configuration file
+            if config.REMOVE_DATA_AT_INIT_TIME:
+                logger.warning("Removing old data")
+                self._db.drop_all()
+
+            logger.info("Created database and tables")
             self._db.create_all()
 
     @classmethod

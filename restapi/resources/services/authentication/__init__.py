@@ -45,6 +45,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     _oauth2 = {}
     _payload = {}
     _user = None
+    _token = None
 
     longTTL = 2592000     # 1 month in seconds
     shortTTL = 604800     # 1 week in seconds
@@ -89,6 +90,11 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     def check_passwords(hashed_password, password):
         proposed_password = BaseAuthentication.hash_password(password)
         return hashed_password == proposed_password
+    def get_user(self):
+        return self._user
+
+    def get_token(self):
+        return self._token
 
     @staticmethod
     def get_host_info():
@@ -204,6 +210,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             return False
 
         logger.info("User authorized")
+        self._token = token
         return True
 
     def save_token(self, user, token, jti):
@@ -284,7 +291,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return
 
     @abc.abstractmethod
-    def invalidate_token(self, user=None, token=None):
+    def invalidate_token(self, token, user=None):
         """
             With this method the specified token must be invalidated
             as expected after a user logout

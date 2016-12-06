@@ -129,7 +129,6 @@ def handle_log_output(original_parameters_string):
         return {}
 
     mystr = original_parameters_string.decode("utf-8")
-    # mystr = original_parameters_string.decode("ascii")
     if mystr.strip() == '':
         return {}
 

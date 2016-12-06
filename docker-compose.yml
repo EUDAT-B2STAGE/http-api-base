@@ -5,20 +5,9 @@ conf:
     image: busybox
     command: ./boot
     environment:
+        APP_MODE: ${SELECTED_APP_MODE}
         # Decide which service should handle users inside the backend server
         BACKEND_AUTH_SERVICE: relationaldb
-
-        ## If you are still developing
-        ## (flask wsgi restartable on edit + sqllite dbs + print DEBUG level)
-        # APP_MODE: development
-
-        ## If you need to get serious
-        ## (gunicorn/nginx servers + postgres dbs + print INFO level)
-        # APP_MODE: production
-
-        ## If you are testing something that does not work
-        ## (containers that do not start anything)
-        APP_MODE: debug
 ###############################
 
 
@@ -28,6 +17,10 @@ backend:
         service: conf
     image: eudatb2stage/apiserver
     hostname: restapi
+    # user may be overriden from project config
+    # note: if you change the user, you should also
+    # fix permissions (e.g. sqllite directory)
+    user: root
     working_dir: /code
     volumes:
         # # Sql lite database
@@ -40,7 +33,7 @@ backend:
         - ../apis:/code/restapi/resources/custom
         # Rest API services models
         - ../models:/code/commons/models/custom
-        # Other libs	--- WHY BOWER is mounted on backend???
+        # Other libs  --- WHY BOWER is mounted on backend???
         # - ../libs:/code/libs
         # Tests
         - ../tests/backend:/code/test/custom
@@ -63,7 +56,7 @@ worker:
     file: docker-compose.yml
     service: backend
   hostname: celworker
-  command: celery worker -A restapi.resources.services.celery.worker.celery_app
+  command: celery worker -c 1 -A restapi.resources.services.celery.worker.celery_app
 
 #################################
 # Database administration
@@ -78,3 +71,54 @@ sqladmin:
     #     - sql:db
     ports:
         - 8888:80
+
+#######################
+# Define here your services
+
+# searchindex:
+#   image: elasticsearch
+#   hostname: elastic
+#   volumes:
+#       - restangulask_graphbased_elasticdata:/usr/share/elasticsearch/data
+
+gdb:
+  # image: neo4j  # 3.0 to be tested
+  image: neo4j:2.3.3
+  volumes:
+    - ${VOLUMES_PREFIX}_graphdata:/data
+  environment:
+    NEO4J_AUTH: neo4j/chooseapassword
+
+##############################
+htmlfiles:
+  image: alpine
+  command: echo 'launched'
+  volumes:
+    # js/css libraries installed via bower
+    - ../libs/bower_components:/data/frontend/felask/static/bower
+    # custom css files
+    - ../css:/data/frontend/felask/static/css/custom
+    # All the angular blueprints (&& templates)
+    - ../frontend/js/angular:/data/frontend/felask/static/app/commons
+    - ../frontend/css:/data/frontend/felask/static/css/base
+    - ../frontend/fonts:/data/frontend/felask/static/fonts
+    - ../js:/data/frontend/felask/static/app/custom
+    - ../frontend/templates:/data/frontend/felask/static/app/templates/common
+    - ../templates:/data/frontend/felask/static/app/templates/custom
+
+##############################
+# The proxy which decides to redirect requests
+# based on URLs received.
+# Redirects /api to backend
+# Listens on port 80
+# Should implements SSL on 443
+
+proxy:
+  image: nginx
+  hostname: iamaproxy
+  volumes_from:
+    - htmlfiles
+  volumes:
+    - ../containers/nginx_proxy:/etc/nginx/conf.d
+    - ../frontend/felask/static:/static
+

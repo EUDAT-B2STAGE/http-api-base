@@ -3,7 +3,7 @@
 from __future__ import division, absolute_import
 
 from functools import wraps
-from flask import request
+from flask import request, g
 from werkzeug.datastructures import Authorization
 from commons import htmlcodes as hcodes
 from commons.meta import Meta
@@ -44,27 +44,20 @@ class HTTPTokenAuth(object):
     authentication. Some copy/paste from:
 https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
     """
-
     def __init__(self, scheme=None, realm=None):
         self._scheme = scheme or HTTPAUTH_DEFAULT_SCHEME
         self._realm = realm or HTTPAUTH_DEFAULT_REALM
-        self.verify_token_callback = None
-        self.verify_roles_callback = None
 
     def authenticate_header(self):
         return '{0} realm="{1}"'.format(self._scheme, self._realm)
 
-    def callbacks(self, verify_token_f=None, verify_roles_f=None):
-        self.verify_token_callback = verify_token_f
-        self.verify_roles_callback = verify_roles_f
-
-    def authenticate(self, auth, stored_password):
+    def authenticate(self, verify_token_callback, auth, stored_password):
         if auth:
             token = auth[HTTPAUTH_TOKEN_KEY]
         else:
             token = ""
-        if self.verify_token_callback:
-            return self.verify_token_callback(token)
+        if verify_token_callback:
+            return verify_token_callback(token)
         return False
 
     @staticmethod
@@ -74,9 +67,9 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
         """
         return request.headers.get(HTTPAUTH_AUTH_FIELD).split(None, 1)
 
-    def authenticate_roles(self, roles):
-        if self.verify_roles_callback:
-            return self.verify_roles_callback(roles)
+    def authenticate_roles(self, verify_roles_callback, roles):
+        if verify_roles_callback:
+            return verify_roles_callback(roles)
         return False
 
     def get_auth_from_header(self):
@@ -123,7 +116,8 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                     # case for a header token
                     password = None
                 # Check authentication
-                if not self.authenticate(auth, password):
+                token_fn = g._custom_auth.verify_token
+                if not self.authenticate(token_fn, auth, password):
                     # Clear TCP receive buffer of any pending data
                     request.data
                     headers = {
@@ -131,26 +125,23 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                     # Mimic the response from a normal endpoint
                     # To use the same standards
                     return decorated_self.force_response(
-                        errors={"Invalid or expired token": "%s" % token},
+                        errors={"Invalid token": "Received '%s'" % token},
                         headers=headers,
                         code=hcodes.HTTP_BAD_UNAUTHORIZED
                     )
 
             # Check roles
             if len(roles) > 0:
-                if not self.authenticate_roles(roles):
+                roles_fn = g._custom_auth.verify_roles
+                if not self.authenticate_roles(roles_fn, roles):
                     return decorated_self.force_response(
                         errors={"Missing privileges":
                                 "One or more role required"},
                         code=hcodes.HTTP_BAD_UNAUTHORIZED
                     )
 
-            # Save token ?
-            # note: token will be available inside the db select for auth
-            # sessions do not work with rest api calls
-            # and class attributes are not good too
-
             return f(*args, **kwargs)
+
         return decorated
 
 
