@@ -350,7 +350,7 @@ class ICommands(BashCommands):
                 ##################
                 # Proxy file does not exist or expired
                 if not valid:
-                    logger.warning("Invalid proxy for %s refres" % user)
+                    logger.warning("Invalid proxy for %s refresh" % user)
                     try:
                         from restapi.resources.custom.proxy_certificates \
                             import get_proxy_certificate
