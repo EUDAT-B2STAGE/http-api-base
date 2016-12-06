@@ -9,12 +9,13 @@ Testend against GitHub, then worked off B2ACCESS (EUDAT oauth service)
 from __future__ import absolute_import
 
 import os
-from ...oauth import oauth
-from commons.meta import Meta
 from base64 import b64encode
+from ...oauth import oauth
 from ...confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from ... import myself, lic
+from commons.globals import mem
 from commons.logs import get_logger, pretty_print
+from commons.meta import Meta
 
 __author__ = myself
 __copyright__ = myself
@@ -37,15 +38,32 @@ class ExternalServicesLogin(object):
 
     def __init__(self, testing=False):
 
-###################
+        if testing:
 ## // TO FIX?
 # provide some tests for oauth2 calls?
-        if testing:
+            logger.warning("Skipping oauth2 init for TESTING")
             return None
-###################
+
+        # Global memory of oauth2 services across the whole server instance
+        if getattr(mem, '_services', None) is None:
+            # Note: this gets called only at INIT time
+            mem._services = self._get_oauth2_instances(testing)
+
+        # Recover services for current instance
+        self._available_services = mem._services
+
+    def _get_oauth2_instances(self, testing=False):
+        """
+        Setup every oauth2 instance available through configuration
+        """
+
+        services = {}
 
         # For each defined internal service
         for key, func in Meta().get_methods_inside_instance(self).items():
+
+            logger.info("META %s-%s" % (key, func))
+
             # Check if credentials are enabled inside docker env
             var1 = key.upper() + '_APPNAME'
             var2 = key.upper() + '_APPKEY'
@@ -54,20 +72,31 @@ class ExternalServicesLogin(object):
                 logger.debug("Skipping Oauth2 service %s" % key)
                 continue
 
+            # # obj = func(testing)
+            # if name in mem._services:
+            #     self._available_services[name] = mem._services
+
             # Call the service and save it
             try:
-                obj = func()
+                # print("PIPPO", func)
+                obj = func(testing)
+                # print("PEPPE")
 
                 # Make sure it's always a dictionary of objects
                 if not isinstance(obj, dict):
                     obj = {key: obj}
 
+                # Cycle all the Oauth2 group services
                 for name, oauth2 in obj.items():
-                    self._available_services[name] = oauth2
+                    # self._available_services[name] = oauth2
+                    services[name] = oauth2
                     logger.info("Created Oauth2 service %s" % name)
+
             except Exception as e:
                 logger.critical(
                     "Could not request oauth2 service %s:\n%s" % (key, e))
+
+        return services
 
     def github(self):
         """ This APIs are very useful for testing purpose """
@@ -172,7 +201,8 @@ def decorate_http_request(remote):
             headers.update({'Authorization': 'Basic %s' % (userpass,)})
         response = old_http_request(
             uri, headers=headers, data=data, method=method)
-## // TO FIX: may we handle failed B2ACCESS response here?
+## // TO FIX:
+# may we handle failed B2ACCESS response here?
         return response
 
     remote.http_request = new_http_request

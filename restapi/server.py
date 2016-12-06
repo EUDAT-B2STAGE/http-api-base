@@ -126,6 +126,10 @@ def create_app(name=__name__, debug=False,
     microservice = Flask(name, **kwargs)
 
     ##############################
+    # @microservice.before_first_request
+    # def first():
+    #     print("BEFORE THE VERY FIRST REQUEST", g)
+
     # @microservice.before_request
     # def before():
     #     print("BEFORE EVERY REQUEST...")
@@ -213,7 +217,6 @@ def create_app(name=__name__, debug=False,
         logger.debug("Trying to load the module %s" % module_name)
         module = meta.get_module_from_string(module_name)
 
-        # Authentication the right (per-instance) way
         init_auth = create_auth_instance(
             module, internal_services, microservice)
 
@@ -221,8 +224,12 @@ def create_app(name=__name__, debug=False,
         @microservice.before_request
         def enable_authentication_per_request():
             """ Save auth object """
+
+            # Authentication the right (per-instance) way
             custom_auth = create_auth_instance(
                 module, internal_services, microservice)
+
+            # Save globally across the code
             g._custom_auth = custom_auth
 
         # OLD BAD
