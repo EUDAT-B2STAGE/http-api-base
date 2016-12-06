@@ -325,6 +325,7 @@ class ICommands(BashCommands):
 # NOTE: this is way too long, it should be splitted in subfunctions
             else:
                 logger.debug("Using proxy certificates")
+                proxy_cert_file = CERTIFICATES_DIR + '/' + user + '.pem'
 
                 if not os.path.isfile(proxy_cert_file):
                     # Proxy file does not exist
