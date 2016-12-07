@@ -9,8 +9,12 @@ https://raw.githubusercontent.com/gangverk/flask-swagger/master/flask_swagger.py
 import inspect
 import yaml
 import re
+import os
 
 from collections import defaultdict
+from commons.logs import get_logger
+
+logger = get_logger(__name__)
 
 
 def _sanitize(comment):
@@ -124,7 +128,8 @@ def _extract_definitions(alist, level=None):
     return defs
 
 
-def swagger(app, prefix=None, process_doc=_sanitize,
+def swagger(app, package_root='',
+            prefix=None, process_doc=_sanitize,
             from_file_keyword=None, template=None):
     """
     Call this from an @app.route method like this
@@ -166,8 +171,10 @@ def swagger(app, prefix=None, process_doc=_sanitize,
 
     ignore_verbs = {"HEAD", "OPTIONS"}
     # technically only responses is non-optional
-    optional_fields = ['tags', 'consumes', 'produces', 'schemes', 'security',
-                       'deprecated', 'operationId', 'externalDocs']
+    optional_fields = [
+        'tags', 'consumes', 'produces', 'schemes', 'security', 'deprecated',
+        'operationId', 'externalDocs'
+    ]
 
     for rule in app.url_map.iter_rules():
         if prefix and rule.rule[:len(prefix)] != prefix:
@@ -184,9 +191,37 @@ def swagger(app, prefix=None, process_doc=_sanitize,
             else:
                 methods[verb] = endpoint
 
+        # clean rule
+        myrule = str(rule)
+        prefixes = ['/api', '/auth']
+        for prefix in prefixes:
+            if myrule.startswith(prefix):
+                myrule = myrule.replace(prefix, '', 1)
+
         operations = dict()
         for verb, method in methods.items():
-            print("Method", rule, method)
+
+#####################################
+# TO DO
+            basedir = 'swagger'
+            subdir = 'custom'
+            if getattr(endpoint.view_class, '_is_base', False):
+                subdir = 'base'
+            folder = myrule.strip('/')
+
+            if folder.endswith('>'):
+                print("TO THINK OF IT", folder)
+                continue
+
+            path = os.path.join(
+                package_root, basedir, subdir, folder,
+                method.__name__ + '.yaml')
+
+            logger.debug("Looking for %s" % path)
+            if os.path.exists(path):
+                print("YES")
+#####################################
+
             summary, description, swag = \
                 _parse_docstring(method, process_doc, from_file_keyword)
 

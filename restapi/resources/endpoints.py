@@ -17,6 +17,7 @@ from .services.authentication import BaseAuthentication
 # from . import decorators as decorate
 from flask import jsonify, current_app
 from commons import htmlcodes as hcodes
+from commons.swagger import swagger
 from commons.logs import get_logger
 
 __author__ = myself
@@ -65,8 +66,10 @@ class Spec(ExtendedApiResource):
 
         ##############################
         # Enable swagger
-        from commons.swagger import swagger
-        swag = swagger(current_app, from_file_keyword='swag_file')
+
+        root = __package__.split('.')[0]
+        swag = swagger(current_app,
+                       package_root=root, from_file_keyword='swag_file')
         swag['info']['version'] = "1.0"
 ## // TO FIX:
 # make it dynamic from configuration
@@ -227,7 +230,7 @@ class TokensAdminOnly(ExtendedApiResource):
     endkey = "token_id"
     endtype = "string"
 
-    @authentication.authorization_required
+    @authentication.authorization_required(roles=[config.ROLE_ADMIN])
     def get(self, token_id):
         logger.critical("This endpoint should be restricted to admin only!")
         auth = self.global_get('custom_auth')
@@ -237,7 +240,7 @@ class TokensAdminOnly(ExtendedApiResource):
                 "Token not found", token_id, code=hcodes.HTTP_BAD_NOTFOUND)
         return token
 
-    @authentication.authorization_required
+    @authentication.authorization_required(roles=[config.ROLE_ADMIN])
     def delete(self, token_id):
         logger.critical("This endpoint should be restricted to admin only!")
         auth = self.global_get('custom_auth')

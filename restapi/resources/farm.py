@@ -47,7 +47,7 @@ class EndpointsFarmer(object):
         # Create the restful resource with it
         self.rest_api.add_resource(resource, *urls)
 
-    def create_many(self, resources):
+    def create_many(self, resources, custom_attributes=None):
         """ Automatic creation from an array of resources """
 
         # For each RESTful resource i receive
@@ -58,12 +58,16 @@ class EndpointsFarmer(object):
             if endkey is not None and endtype is not None:
                 endpoint_id = endtype + ':' + endkey
 
+            if custom_attributes is not None:
+                for key, value in custom_attributes.items():
+                    setattr(resource, key, value)
+
             self.create_single(resource, [endpoint], endpoint_id)
 
-    def many_from_module(self, module):
+    def many_from_module(self, module, custom_attributes=None):
         """ Automatic creation of endpoint from specified resources """
 
         resources = Meta().get_new_classes_from_module(module)
         # Init restful plugin
         if len(resources) > 0:
-            self.create_many(resources)
+            self.create_many(resources, custom_attributes=custom_attributes)

@@ -98,13 +98,17 @@ def create_endpoints(custom_epo, security=False, debug=False):
             custom_epo.create_single(myclass, endpoint, endkey)
 
     ####################################
-    # Verify functions on the API server
+    # Define the base endpoints by injecting into the service
+
+    # Give me something to distinguish these endpoints classes from custom
+    extrattrs = {'_is_base': True}
+
     if security:
         from .resources import endpoints
-        custom_epo.many_from_module(endpoints)
+        custom_epo.many_from_module(endpoints, custom_attributes=extrattrs)
     else:
         from .resources.endpoints import Status
-        custom_epo.create_many({'status': Status})
+        custom_epo.create_many({'status': Status}, custom_attributes=extrattrs)
 
     ####################################
     # Extra endpoints?
