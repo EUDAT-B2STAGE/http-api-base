@@ -39,18 +39,22 @@ class ExternalServicesLogin(object):
     def __init__(self, testing=False):
 
         if testing:
+            logger.critical("TO FIX: currently skipping oauth2 in tests")
 ## // TO FIX?
 # provide some tests for oauth2 calls?
-            logger.warning("Skipping oauth2 init for TESTING")
-            return None
+            return
 
         # Global memory of oauth2 services across the whole server instance
-        if getattr(mem, '_services', None) is None:
+        if not self._check_if_services_exist():
             # Note: this gets called only at INIT time
             mem._services = self._get_oauth2_instances(testing)
 
         # Recover services for current instance
         self._available_services = mem._services
+
+    @staticmethod
+    def _check_if_services_exist():
+        return getattr(mem, '_services', None) is not None
 
     def _get_oauth2_instances(self, testing=False):
         """

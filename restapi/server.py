@@ -11,6 +11,7 @@ import os
 # from json.decoder import JSONDecodeError
 from flask import Flask as OriginalFlask, request, g
 from .response import ResponseMaker
+from .resources.services.oauth2clients import ExternalServicesLogin as oauth2
 from .confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from commons.meta import Meta
 from commons.logs import get_logger, handle_log_output, MAX_CHAR_LEN
@@ -92,19 +93,21 @@ class Flask(OriginalFlask):
 #         sys.exit(1)
 
 
-def create_auth_instance(module, internal_services, microservice):
+def create_auth_instance(module, services, app, first_call=False):
+
     # This is the main object that drives authentication
     # inside our Flask server.
     # Note: to be stored inside the flask global context
-    custom_auth = module.Authentication(internal_services)
+    custom_auth = module.Authentication(services)
 
-    # Verify if we can inject oauth2 services into this module
-    from .resources.services.oauth2clients import ExternalServicesLogin
-    oauth2 = ExternalServicesLogin(microservice.config['TESTING'])
-    custom_auth.set_oauth2_services(oauth2._available_services)
+    # If oauth services are available, set them before every request
+    if first_call or oauth2._check_if_services_exist():
+        ext_auth = oauth2(app.config['TESTING'])
+        custom_auth.set_oauth2_services(ext_auth._available_services)
 
+## // TO FIX: in production
     # SECRET_KEY??
-    # custom_auth.setup_secret(microservice.config['SECRET_KEY'])
+    # custom_auth.setup_secret(app.config['SECRET_KEY'])
 
     return custom_auth
 
@@ -217,10 +220,14 @@ def create_app(name=__name__, debug=False,
         logger.debug("Trying to load the module %s" % module_name)
         module = meta.get_module_from_string(module_name)
 
+        # At init time, verify and build Oauth services if any
         init_auth = create_auth_instance(
-            module, internal_services, microservice)
+            module, internal_services, microservice, first_call=True)
 
-        # Global namespace inside the Flask server
+        # Enabling also OAUTH library
+        from .oauth import oauth
+        oauth.init_app(microservice)
+
         @microservice.before_request
         def enable_authentication_per_request():
             """ Save auth object """
@@ -231,15 +238,6 @@ def create_app(name=__name__, debug=False,
 
             # Save globally across the code
             g._custom_auth = custom_auth
-
-        # OLD BAD
-        # def enable_global_authentication():
-        #     """ Save auth object """
-        #     g._custom_auth = custom_auth
-
-        # Enabling also OAUTH library
-        from .oauth import oauth
-        oauth.init_app(microservice)
 
         logger.info("FLASKING! Injected security internal module")
 
