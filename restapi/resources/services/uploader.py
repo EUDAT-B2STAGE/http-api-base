@@ -72,6 +72,33 @@ class Uploader(object):
 
         return send_from_directory(path, filename)
 
+    def ngflow_upload(self, filename, destination, content,
+                      chunk_number, chunk_size, chunk_total,
+                      overwrite=True
+                      ):
+
+        chunk_number = int(chunk_number)
+        chunk_size = int(chunk_size)
+        chunk_total = int(chunk_total)
+        sec_filename = secure_filename(filename)
+        abs_fname = os.path.join(destination, sec_filename)
+
+# TO FIX: what happens if chunk 2 arrives before chunk 1?
+        if overwrite and chunk_number == 1:
+            if os.path.exists(abs_fname):
+                os.remove(abs_fname)
+
+# TO FIX: file is saved as data, not as ASCII/TEXT
+        # with open(abs_fname, "wb") as f:
+        with open(abs_fname, "ab") as f:
+            logger.critical("Copying chunk %d" % chunk_number)
+            logger.critical("Pos = %d" % ((chunk_number - 1) * chunk_size))
+            # f.seek((int(chunk_number) - 1) * int(chunk_size), 0)
+            content.save(f)
+            f.close()
+
+        return abs_fname
+
     def upload(self, subfolder=None, force=False):
 
         if 'file' not in request.files:
