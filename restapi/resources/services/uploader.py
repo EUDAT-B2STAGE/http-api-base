@@ -91,8 +91,8 @@ class Uploader(object):
 # TO FIX: file is saved as data, not as ASCII/TEXT
         # with open(abs_fname, "wb") as f:
         with open(abs_fname, "ab") as f:
-            logger.critical("Copying chunk %d" % chunk_number)
-            logger.critical("Pos = %d" % ((chunk_number - 1) * chunk_size))
+            # logger.critical("Copying chunk %d" % chunk_number)
+            # logger.critical("Pos = %d" % ((chunk_number - 1) * chunk_size))
             # f.seek((int(chunk_number) - 1) * int(chunk_size), 0)
             content.save(f)
             f.close()
