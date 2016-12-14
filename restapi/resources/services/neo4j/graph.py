@@ -89,7 +89,14 @@ class MyGraph(ServiceObject):
         """
 
         node = model()
-        node.id = getUUID()
+        uuid = getUUID()
+
+        if hasattr(node, 'id'):
+            setattr(node, 'id', uuid)
+
+        if hasattr(node, 'uuid'):
+            setattr(node, 'uuid', uuid)
+
         if hasattr(node, 'created'):
             setattr(node, 'created', datetime.now(pytz.utc))
 
