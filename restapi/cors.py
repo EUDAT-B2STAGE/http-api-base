@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 # e.g. for JS and Upload
 
 cors = CORS(
-    headers=['Content-Type'],
+    # allow_headers=['Content-Type'],
     methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])
 logger.debug("Flask: creating CORS")
 

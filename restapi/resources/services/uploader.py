@@ -59,7 +59,7 @@ class Uploader(object):
     def download(self, filename=None, subfolder=None, get=False):
 
         if not get:
-            return self.response(
+            return self.force_response(
                 "No flow chunks for now", code=hcodes.HTTP_OK_ACCEPTED)
 
         if filename is None:
@@ -72,7 +72,7 @@ class Uploader(object):
 
         return send_from_directory(path, filename)
 
-    def upload(self, subfolder=None, force=False):
+    def upload(self, subfolder=None, force=False, flow=False):
 
         if 'file' not in request.files:
             return self.force_response(errors={
@@ -80,15 +80,18 @@ class Uploader(object):
 
         myfile = request.files['file']
 
-        # ## IN CASE WE WANT TO CHUNK
-        # ##parser = reqparse.RequestParser()
-        # &flowChunkNumber=1
-        # &flowChunkSize=1048576&flowCurrentChunkSize=1367129
-        # &flowTotalSize=1367129
-        # &flowIdentifier=1367129-IMG_4364CR2jpg
-        # &flowFilename=IMG_4364.CR2.jpg
-        # &flowRelativePath=IMG_4364.CR2.jpg
-        # &flowTotalChunks=1
+        if flow:
+            # ## IN CASE WE WANT TO CHUNK
+            # ##parser = reqparse.RequestParser()
+            # &flowChunkNumber=1
+            # &flowChunkSize=1048576&flowCurrentChunkSize=1367129
+            # &flowTotalSize=1367129
+            # &flowIdentifier=1367129-IMG_4364CR2jpg
+            # &flowFilename=IMG_4364.CR2.jpg
+            # &flowRelativePath=IMG_4364.CR2.jpg
+            # &flowTotalChunks=1
+
+            return NotImplementedError("Chunks are not implemented YET")
 
         # Check file extension?
         if not self.allowed_file(myfile.filename):

@@ -11,6 +11,7 @@ from .. import myself, lic
 from ..confs.config import AUTH_URL
 from .base import ExtendedApiResource
 from ..auth import authentication
+# //TO FIX: something
 from ..confs import config
 from .services.detect import CELERY_AVAILABLE
 from .services.authentication import BaseAuthentication
@@ -71,8 +72,7 @@ class Spec(ExtendedApiResource):
         swag = swagger(current_app,
                        package_root=root, from_file_keyword='swag_file')
         swag['info']['version'] = "1.0"
-## // TO FIX:
-# make it dynamic from configuration
+## // TO FIX: # make it dynamic from configuration # <fixme>
         swag['info']['title'] = "Python3 REST API"
         return jsonify(swag)
 
@@ -223,7 +223,7 @@ class Tokens(ExtendedApiResource):
         return self.empty_response()
 
 
-class TokensAdminOnly(ExtendedApiResource):
+class AdminTokens(ExtendedApiResource):
     """ Admin operations on token list """
 
     base_url = AUTH_URL
