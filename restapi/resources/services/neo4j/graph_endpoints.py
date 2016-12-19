@@ -10,7 +10,7 @@ from py2neo.cypher.error.schema import ConstraintViolation
 from neomodel.exception import RequiredProperty
 from neomodel.exception import UniqueProperty
 from restapi.resources.exceptions import RestApiException
-from ..base import ExtendedApiResource
+from restapi.resources.base import ExtendedApiResource
 from commons import htmlcodes as hcodes
 
 from commons.logs import get_logger
