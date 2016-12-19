@@ -78,6 +78,12 @@ class GraphBaseOperations(ExtendedApiResource):
 
     # HANDLE INPUT PARAMETERS
 
+    @staticmethod
+    def createUniqueIndex(*var):
+
+        separator = "#_#"
+        return separator.join(var)
+
     def readProperty(self, schema, values, checkRequired=True):
 
         properties = {}
