@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import re
+from datetime import datetime
+import pytz
 from functools import wraps
 from neomodel import db as transaction
 from py2neo.error import GraphError
@@ -8,12 +10,51 @@ from py2neo.cypher.error.schema import ConstraintViolation
 from neomodel.exception import RequiredProperty
 from neomodel.exception import UniqueProperty
 from restapi.resources.exceptions import RestApiException
+from ..base import ExtendedApiResource
 from commons import htmlcodes as hcodes
 
 from commons.logs import get_logger
 logger = get_logger(__name__)
 
 __author__ = "Mattia D'Antonio (m.dantonio@cineca.it)"
+
+
+class GraphBaseOperations(ExtendedApiResource):
+
+    def initGraph(self):
+        self.graph = self.global_get_service('neo4j')
+        self._current_user = self.getLoggedUserInstance()
+
+    def getSingleLinkedNode(self, relation):
+
+        nodes = relation.all()
+        if len(nodes) <= 0:
+            return None
+        return nodes[0]
+
+    def getLoggedUserInstance(self):
+        user = self.get_current_user()
+        if user is None:
+            return None
+        try:
+            return self.graph.User.nodes.get(email=user.email)
+        except self.graph.User.DoesNotExist:
+            return None
+
+    def countNodes(self, type):
+        query = "MATCH (a: " + type + ") RETURN count(a) as count"
+
+        records = self.graph.cypher(query)
+        for record in records:
+            if (record is None):
+                return 0
+            if (record.count is None):
+                return 0
+
+        return record.count
+
+    def getCurrentDate(self):
+        return datetime.now(pytz.utc)
 
 
 class myGraphError(RestApiException):
