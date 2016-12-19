@@ -56,6 +56,34 @@ class GraphBaseOperations(ExtendedApiResource):
     def getCurrentDate(self):
         return datetime.now(pytz.utc)
 
+    def readProperty(self, schema, values, checkRequired=True):
+
+        properties = {}
+        for field in schema:
+            if 'islink' in field:
+                continue
+
+            k = field["key"]
+            if k in values:
+                properties[k] = values[k]
+
+            # this field is missing but required!
+            elif checkRequired and field["required"] == "true":
+                raise myGraphError(
+                    'Missing field: %s' % k,
+                    status_code=hcodes.HTTP_BAD_REQUEST)
+
+        return properties
+
+    def updateProperties(self, instance, schema, properties):
+
+        for field in schema:
+            if 'islink' in field:
+                continue
+            key = field["key"]
+            if key in properties:
+                instance.__dict__[key] = properties[key]
+
 
 class myGraphError(RestApiException):
     status_code = None
