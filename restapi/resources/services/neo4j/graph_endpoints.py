@@ -76,6 +76,8 @@ class GraphBaseOperations(ExtendedApiResource):
     def getCurrentDate(self):
         return datetime.now(pytz.utc)
 
+    # HANDLE INPUT PARAMETERS
+
     def readProperty(self, schema, values, checkRequired=True):
 
         properties = {}
@@ -103,6 +105,36 @@ class GraphBaseOperations(ExtendedApiResource):
             key = field["key"]
             if key in properties:
                 instance.__dict__[key] = properties[key]
+
+    def parseAutocomplete(
+            self, properties, key, id_key='value', split_char=None):
+        value = properties.get(key, None)
+
+        ids = []
+
+        if value is None:
+            return ids
+
+        # Multiple autocomplete
+        if type(value) is list:
+            for v in value:
+                if v is None:
+                    return None
+                if id_key in v:
+                    ids.append(v[id_key])
+                else:
+                    ids.append(v)
+            return ids
+
+        # Single autocomplete
+        if id_key in value:
+            return [value[id_key]]
+
+        # Command line input
+        if split_char is None:
+            return [value]
+
+        return value.split(split_char)
 
 
 class myGraphError(RestApiException):
