@@ -41,23 +41,24 @@ class GraphBaseOperations(ExtendedApiResource):
         except self.graph.User.DoesNotExist:
             return None
 
-    def getNode(self, Model, accession, field='accession'):
+    def getNode(self, Model, identifier, field='accession'):
 
         try:
 
             if field == 'accession':
-                return Model.nodes.get(accession=accession)
+                return Model.nodes.get(accession=identifier)
 
             if field == 'id':
-                return Model.nodes.get(id=accession)
+                return Model.nodes.get(id=identifier)
+
+            if field == 'uuid':
+                return Model.nodes.get(uuid=identifier)
 
             if field == 'taxon_id':
-                return Model.nodes.get(taxon_id=accession)
+                return Model.nodes.get(taxon_id=identifier)
 
-            # if Model == self.graph.Organism:
-            #     return Model.nodes.get(taxon_id=int(accession))
+            return Model.nodes.get(accession=identifier)
 
-            return Model.nodes.get(accession=accession)
         except Model.DoesNotExist:
             return None
 
