@@ -266,10 +266,13 @@ class Profile(ExtendedApiResource):
         data["status"] = "Valid user"
         data["email"] = auth._user.email
 
-        roles = []
+        # roles = []
+        roles = {}
         for role in auth._user.roles:
-            roles.append(role.name)
+            # roles.append(role.name)
+            roles[role.name] = role.name
         data["roles"] = roles
+        data["isAdmin"] = "admin_root" in roles
 
         if hasattr(auth._user, 'name'):
             data["name"] = auth._user.name
