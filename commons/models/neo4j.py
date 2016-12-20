@@ -39,6 +39,10 @@ class Role(StructuredNode):
     description = StringProperty(default='No description')
     privileged = RelationshipFrom(User, 'HAS_ROLE', cardinality=OneOrMore)
 
+    _fields_to_show = [
+        "name", "description"
+    ]
+
 
 class ExternalAccounts(StructuredNode):
     username = StringProperty(required=True, unique_index=True)
