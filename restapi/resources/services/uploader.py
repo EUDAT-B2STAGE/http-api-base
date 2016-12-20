@@ -97,7 +97,7 @@ class Uploader(object):
             content.save(f)
             f.close()
 
-        return abs_fname
+        return abs_fname, sec_filename
 
     def upload(self, subfolder=None, force=False):
 
