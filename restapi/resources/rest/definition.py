@@ -5,13 +5,16 @@ The most basic (and standard) Rest Resource
 we could provide back then
 """
 
+from __future__ import absolute_import
+
 import pytz
 import dateutil.parser
 from datetime import datetime
 from flask import g
 from flask_restful import request, Resource, reqparse
-from ..confs.config import API_URL  # , STACKTRACE
-from ..response import ResponseElements
+
+from ...confs.config import API_URL  # , STACKTRACE
+from ...response import ResponseElements
 from commons import htmlcodes as hcodes
 from commons.logs import get_logger
 
@@ -28,7 +31,7 @@ DEFAULT_PERPAGE = 10
 ###################
 # Extending the concept of rest generic resource
 
-class ExtendedApiResource(Resource):
+class EndpointResource(Resource):
     """
     Implements a generic Resource for our Restful APIs model
     """
@@ -42,7 +45,7 @@ class ExtendedApiResource(Resource):
     base_url = API_URL
 
     def __init__(self):
-        super(ExtendedApiResource, self).__init__()
+        super(EndpointResource, self).__init__()
 
         # Apply decision about the url of endpoint
         self.set_endpoint()
@@ -541,4 +544,4 @@ class ExtendedApiResource(Resource):
 # # Set default response
 # set_response(
 #     original=False,  # first_call=True,
-#     custom_method=ExtendedApiResource().default_response)
+#     custom_method=EndpointResource().default_response)

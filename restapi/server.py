@@ -171,15 +171,9 @@ def create_app(name=__name__, debug=False,
 
         logger.info("Production server ON")
 
-## // TO FIX or CHECK
+        # TO FIX: random secrety key in production
         # # Check and use a random file a secret key.
         # install_secret_key(microservice)
-
-        # probably useless
-        # # http://stackoverflow.com/a/26636880/2114395
-        # microservice.config.update(
-        #     dict(PREFERRED_URL_SCHEME = 'https')
-        # )
 
         # # To enable exceptions printing inside uWSGI
         # # http://stackoverflow.com/a/17839750/2114395
@@ -252,7 +246,7 @@ def create_app(name=__name__, debug=False,
     # Restful plugin
     if not skip_endpoint_mapping:
         from .rest import Api, EndpointsFarmer, create_endpoints
-        # Defining AUTOMATIC Resources
+        # Triggering automatic mapping of REST endpoints
         current_endpoints = \
             create_endpoints(EndpointsFarmer(Api), enable_security, debug)
         # Restful init of the app

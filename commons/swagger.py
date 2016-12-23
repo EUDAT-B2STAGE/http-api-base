@@ -12,6 +12,7 @@ import re
 import os
 
 from collections import defaultdict
+from commons import BASE_URLS, STATIC_URL, CORE_DIR, USER_CUSTOM_DIR
 from commons.logs import get_logger
 
 logger = get_logger(__name__)
@@ -48,16 +49,30 @@ def _doc_from_file(path):
     return doc
 
 
-def _parse_docstring(obj, process_doc, from_file_keyword):
+def _parse_docstring(obj, process_doc, from_file_keyword, path=None):
+
     first_line, other_lines, swag = None, None, None
     full_doc = inspect.getdoc(obj)
-    if full_doc:
+
+    if full_doc or path is not None:
+        # print("TEST", full_doc)
+
+        # FROM FILE
         if from_file_keyword is not None:
-            from_file = _find_from_file(full_doc, from_file_keyword)
+
+            # Forcing reading from file
+            # if having a path automatically generated
+            if path is None:
+                from_file = _find_from_file(full_doc, from_file_keyword)
+            else:
+                from_file = path
+
             if from_file:
+                # logger.debug("Reading from file %s" % from_file)
                 full_doc_from_file = _doc_from_file(from_file)
                 if full_doc_from_file:
                     full_doc = full_doc_from_file
+
         line_feed = full_doc.find('\n')
         if line_feed != -1:
             first_line = process_doc(full_doc[:line_feed])
@@ -70,6 +85,7 @@ def _parse_docstring(obj, process_doc, from_file_keyword):
                 other_lines = process_doc(full_doc[line_feed + 1:])
         else:
             first_line = full_doc
+
     return first_line, other_lines, swag
 
 
@@ -153,8 +169,8 @@ def swagger(app, package_root='',
     output = {
         "swagger": "2.0",
         "info": {
-            "version": "0.0.0",
-            "title": "Cool product name",
+            "version": "0.0.1",
+            "title": "Application name",
         }
     }
     paths = defaultdict(dict)
@@ -177,8 +193,7 @@ def swagger(app, package_root='',
     ]
 
     for rule in app.url_map.iter_rules():
-        if prefix and rule.rule[:len(prefix)] != prefix:
-            continue
+
         endpoint = app.view_functions[rule.endpoint]
         methods = dict()
 
@@ -193,10 +208,15 @@ def swagger(app, package_root='',
 
         # clean rule
         myrule = str(rule)
-        prefixes = ['/api', '/auth']
-        for prefix in prefixes:
+        if myrule.startswith(STATIC_URL):
+            continue
+        for prefix in BASE_URLS:
             if myrule.startswith(prefix):
                 myrule = myrule.replace(prefix, '', 1)
+
+        if 'view_class' not in dir(endpoint):
+            logger.warning("Un-Swaggable endpoint path %s" % rule)
+            continue
 
         operations = dict()
         for verb, method in methods.items():
@@ -204,13 +224,13 @@ def swagger(app, package_root='',
 #####################################
 # TO DO
             basedir = 'swagger'
-            subdir = 'custom'
+            subdir = USER_CUSTOM_DIR
             if getattr(endpoint.view_class, '_is_base', False):
-                subdir = 'base'
+                subdir = CORE_DIR
             folder = myrule.strip('/')
 
             if folder.endswith('>'):
-                print("TO THINK OF IT", folder)
+                # print("TO THINK OF IT", folder, method)
                 continue
 
             path = os.path.join(
@@ -218,14 +238,23 @@ def swagger(app, package_root='',
                 method.__name__ + '.yaml')
 
             logger.debug("Looking for %s" % path)
-            if os.path.exists(path):
-                print("YES")
 #####################################
-
-            summary, description, swag = \
-                _parse_docstring(method, process_doc, from_file_keyword)
+#
+            swag = None
+            # Note: using parse method only inside this conditional block
+            # WE AVOID documentation which is written inside the docstring
+            if os.path.exists(path):
+                summary, description, swag = \
+                    _parse_docstring(
+                        method, process_doc, from_file_keyword, path)
+                print("Found file", swag)
+            else:
+                # summary, description, swag = \
+                #     _parse_docstring(method, process_doc, from_file_keyword)
+                pass
 
             if swag is not None:
+                print("Found swag definitions")
                 # we only add endpoints with swagger data in the docstrings
                 defs = swag.get('definitions', [])
                 defs = _extract_definitions(defs)

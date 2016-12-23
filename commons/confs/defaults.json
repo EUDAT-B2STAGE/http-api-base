@@ -1,2 +1,11 @@
 // Defaults for all possible customizable variables!
-{}
+{
+    "project": {
+        "title": "Project title",
+        "version": "v1.0",
+        "description": "Not easy to explain"
+    },
+    "apis": {
+
+    }
+}

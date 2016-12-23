@@ -1,0 +1,11 @@
+
+Request current API server swagger specifications
+
+---
+
+tags:
+  - swagger definitions
+
+responses:
+  '200':
+    description: Specifications in a JSON standard format

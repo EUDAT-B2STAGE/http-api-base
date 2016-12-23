@@ -6,29 +6,23 @@ And a Farm: How to create endpoints into REST service.
 """
 
 from __future__ import absolute_import
-from .. import myself, lic
 
-from ..confs.config import AUTH_URL
-from .base import ExtendedApiResource
-from ..auth import authentication
-# //TO FIX: something
-from ..confs import config
-from .services.detect import CELERY_AVAILABLE
-from .services.authentication import BaseAuthentication
+from ..rest.definition import EndpointResource
+from ...confs.config import AUTH_URL
+from ...auth import authentication
+from ...confs import config
+from ..services.detect import CELERY_AVAILABLE
+from ..services.authentication import BaseAuthentication
 # from . import decorators as decorate
 from flask import jsonify, current_app
 from commons import htmlcodes as hcodes
 from commons.swagger import swagger
 from commons.logs import get_logger
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
 logger = get_logger(__name__)
 
 
-class Status(ExtendedApiResource):
+class Status(EndpointResource):
     """
         API online test
     """
@@ -48,36 +42,26 @@ class Status(ExtendedApiResource):
         return 'Server is alive!'
 
 
-class Spec(ExtendedApiResource):
+class Spec(EndpointResource):
     """
     Specifications output throught Swagger (open API) standards
     """
 
     def get(self):
-        """
-        Request current API server swagger specifications
-        ---
-
-        tags:
-            - swagger
-        responses:
-          200:
-            description: Specifications in a JSON standard format
-        """
-
-        ##############################
-        # Enable swagger
-
         root = __package__.split('.')[0]
+        # Enable swagger
         swag = swagger(current_app,
                        package_root=root, from_file_keyword='swag_file')
-        swag['info']['version'] = "1.0"
-## // TO FIX: # make it dynamic from configuration # <fixme>
-        swag['info']['title'] = "Python3 REST API"
+
+        from commons.globals import mem
+        swag['info']['version'] = mem.custom_config['project']['version']
+        swag['info']['title'] = mem.custom_config['project']['title']
+
+        # Build the output
         return jsonify(swag)
 
 
-class Login(ExtendedApiResource):
+class Login(EndpointResource):
     """ Let a user login with the developer chosen method """
 
     base_url = AUTH_URL
@@ -89,11 +73,6 @@ class Login(ExtendedApiResource):
     #         code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
     def post(self):
-        """
-        Using a service-dependent callback
-
-        swag_file: restapi/swagger/base/login/post.yaml
-        """
 
         # # In case you need different behaviour when using unittest:
         # if current_app.config['TESTING']:
@@ -152,7 +131,7 @@ class Login(ExtendedApiResource):
         return {'token': token}
 
 
-class Logout(ExtendedApiResource):
+class Logout(EndpointResource):
     """ Let the logged user escape from here """
 
     base_url = AUTH_URL
@@ -164,7 +143,7 @@ class Logout(ExtendedApiResource):
         return self.empty_response()
 
 
-class Tokens(ExtendedApiResource):
+class Tokens(EndpointResource):
     """ List all active tokens for a user """
 
     base_url = AUTH_URL
@@ -223,7 +202,7 @@ class Tokens(ExtendedApiResource):
         return self.empty_response()
 
 
-class AdminTokens(ExtendedApiResource):
+class AdminTokens(EndpointResource):
     """ Admin operations on token list """
 
     base_url = AUTH_URL
@@ -251,7 +230,7 @@ class AdminTokens(ExtendedApiResource):
         return self.empty_response()
 
 
-class Profile(ExtendedApiResource):
+class Profile(EndpointResource):
     """ Current user informations """
 
     base_url = AUTH_URL
@@ -319,7 +298,7 @@ class Profile(ExtendedApiResource):
         return self.empty_response()
 
 
-class Internal(ExtendedApiResource):
+class Internal(EndpointResource):
     """ Token and Role authentication test """
 
     base_url = AUTH_URL
@@ -329,7 +308,7 @@ class Internal(ExtendedApiResource):
         return "I am internal"
 
 
-class Admin(ExtendedApiResource):
+class Admin(EndpointResource):
     """ Token and Role authentication test """
 
     base_url = AUTH_URL
@@ -344,7 +323,7 @@ class Admin(ExtendedApiResource):
 if CELERY_AVAILABLE:
     from commons.services.celery import celery_app
 
-    class Queue(ExtendedApiResource):
+    class Queue(EndpointResource):
 
         endkey = "task_id"
         endtype = "string"

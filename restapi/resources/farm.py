@@ -47,6 +47,8 @@ class EndpointsFarmer(object):
         # Create the restful resource with it
         self.rest_api.add_resource(resource, *urls)
 
+###################################
+# THE CODE ABOVE MAY BECOME UNUSED WITH SWAGGER
     def create_many(self, resources, custom_attributes=None):
         """ Automatic creation from an array of resources """
 

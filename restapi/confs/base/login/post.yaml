@@ -13,7 +13,7 @@ Login with basic credentials (username and password)
 #         type: string
 
 tags:
-  - login
+  - credentials login
 consumes:
   - application/json
 produces:

@@ -17,18 +17,7 @@ from commons.logs import get_logger
 # from flask import jsonify, make_response
 # from werkzeug.exceptions import HTTPException
 from commons import htmlcodes as hcodes
-
-# Look for the best chance for json lib
-try:
-    import commentjson as json
-except:
-    try:
-        import simplejson as json
-        # import commentjson as json
-    except:
-        import json
-## // TO FIX:
-# this 'json' should be imported from anyone from this class
+from commons import json
 
 __author__ = myself
 __copyright__ = myself
