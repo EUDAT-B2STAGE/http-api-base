@@ -42,7 +42,7 @@ Here is the index for browsing it internally on GitHub:
 
 ## Creator
 
-* [Paolo D'Onorio De Meo](https://twitter.com/paolodonorio/)
+* [Paolo D'Onorio De Meo](https://twitter.com/paolodonorio/) - (Please [Say Thanks!](https://saythanks.io/to/pdonorio) if I helped you)
 
 ## Contributors
 
