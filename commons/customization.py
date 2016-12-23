@@ -10,7 +10,8 @@ from collections import OrderedDict
 # from jinja2._compat import iteritems
 from . import (
     JSON_EXT, json, CORE_DIR, USER_CUSTOM_DIR,
-    PATH, CONFIG_PATH, CONFIG_DIR, BLUEPRINT_KEY,
+    PATH, CONFIG_PATH, BLUEPRINT_KEY,
+    # CONFIG_DIR,
 )
 from attr import (
     s as AttributedModel,
@@ -28,8 +29,8 @@ logger = get_logger(__name__)
 @AttributedModel
 class EndpointElements(object):
     exists = attribute(default=False)  # bool
-    theclass = attribute(default=None)
-    theinstance = attribute(default=None)
+    cls = attribute(default=None)
+    instance = attribute(default=None)
     uri = attribute(default=None)
     key_name = attribute(default=None)
 
@@ -42,16 +43,9 @@ class Customizer(object):
     """
     CUSTOMIZE BACKEND: Read all of available configurations
     """
-    def __init__(self):
+    def __init__(self, package):
 
         self._meta = Meta()
-
-        ##################
-        # # DEFAULT configuration (NOT IMPLEMENTED YET)
-        # Add a value for all possibilities
-        defaults = self.load_json('defaults', CONFIG_DIR, __package__)
-        if len(defaults) > 0:
-            logger.debug("Defaults:\n%s" % defaults)
 
         ##################
         # # CUSTOM configuration
@@ -62,6 +56,18 @@ class Customizer(object):
         custom_config = self.load_json(blueprint, PATH, CONFIG_PATH)
         custom_config[BLUEPRINT_KEY] = blueprint
 
+        # ##################
+        # # # DEFAULT configuration (NOT IMPLEMENTED YET)
+        # # Add a value for all possibilities
+        # defaults = self.load_json('defaults', CONFIG_DIR, __package__)
+        # if len(defaults) > 0:
+        #     logger.debug("Defaults:\n%s" % defaults)
+
+        # ##################
+        # # # TODO: mix default and custom configuration
+
+        ##################
+        # DEBUG
         pretty_print(custom_config)
 
         ##################
@@ -71,7 +77,8 @@ class Customizer(object):
         # auth = custom_config['variables']['containers']['authentication']
 
         ##################
-# TODO: walk swagger directories custom and base
+        # Walk swagger directories custom and base
+        self._endpoints = []
 
         # CONFIG_PATH + whatever?
         for dir in [CORE_DIR, USER_CUSTOM_DIR]:
@@ -79,39 +86,161 @@ class Customizer(object):
             current_dir = os.path.join(CONFIG_PATH, dir)
             logger.debug("Looking into %s" % current_dir)
 
+            # TODO: move this block into a function/method
             for element in glob.glob(os.path.join(current_dir, '*')):
-                print("BASE or CUSTOM?", dir)
 
                 endpoint = element.replace(current_dir, '').strip('/')
                 logger.info("Found endpoint %s" % endpoint)
 
                 # load configuration and find file and class
                 endpoint_dir = os.path.join(dir, endpoint)
-                conf = self.load_json('specs', endpoint_dir, CONFIG_PATH)
-                pretty_print(conf)
+                conf = self.load_json(
+                    'specs', endpoint_dir, CONFIG_PATH, skip_error=True)
+                if conf is None:
+                    continue
+                if 'class' not in conf:
+                    raise ValueError(
+                        "Missing 'class' attribute in '%s' specs" % endpoint)
+                file = endpoint
+                if 'file' in conf:
+                    file = conf['file']
 
-                # myclass, instance, endpoint, endkey
-                self.load_endpoint(conf['file'], conf['class'], dir, 'restapi')
-                print("DEBUG")
-                exit(1)
+                depends = None
+                if 'depends_on' in conf:
+                    depends = conf['depends_on']
+
+                ###################
+                # TO FIX: missing functionalities
+                if 'id_name' in conf:
+                    # We should add the key into the endpoint
+                    print("DO SOMETHING WITH KEY", conf['id_name'])
+                # pretty_print(conf)
+
+                ###################
+                current = self.load_endpoint(
+                    endpoint, file, conf['class'],
+                    dir, package, depends
+                )
+                if current.exists:
+                    self._endpoints.append(current)
+                else:
+                    # raise AttributeError("Endpoint '%s' missing" % endpoint)
+                    pass
 
         ##################
+
+        # TODO: Write some swagger complete definitions
+
+        # TODO: Swagger endpoints read definition for the first time
+
         # TODO: add endpoints to custom configuration to be saved
 
         # Save in memory all of the configurations
         from commons.globals import mem
         mem.custom_config = custom_config
 
-        ##################
-        # Swagger endpoints
-        self._endpoints = []
-        return
+    def read_complex_config(self, configfile):
+        """ A more complex configuration is available in JSON format """
+        content = {}
+        with open(configfile) as fp:
+            content = json.load(fp)
+        return content
+
+    def load_endpoint(self, uri, file_name,
+                      class_name, dir_name, package_name, depends=None):
+
+        endpoint = EndpointElements()
+
+        module = self._meta.get_module_from_string(
+            '%s.%s.%s.%s' % (package_name, 'resources', dir_name, file_name)
+        )
+        if module is None:
+            logger.warning("Could not find python module '%s'..." % file_name)
+            return endpoint
+
+        if depends is not None:
+            if not getattr(module, depends, False):
+                logger.debug("Skipping %s" % uri)
+                return endpoint
+
+        endpoint.cls = self._meta.get_class_from_string(class_name, module)
+        if endpoint.cls is None:
+            logger.critical("Could not find python class '%s'..." % class_name)
+            return endpoint
+        else:
+            endpoint.exists = True
+
+        # Get the best endpoint comparing inside against configuration
+        endpoint.instance = endpoint.cls()
+
+        reference, endkey, endtype = endpoint.instance.get_endpoint()
+
+        # Decide URI between how the folder is and the one forced
+        if reference is not None:
+            # TO FIX: this mode should be remove
+            print("\n\n\nTEST URI %s\n\n\n" % reference)
+            endpoint.uri = reference
+        else:
+            endpoint.uri = uri
+
+        endpoint.key_name = None
+        if endkey is not None and endtype is not None:
+            endpoint.key_name = endtype + ':' + endkey
+
+        # pretty_print(endpoint)
+        return endpoint
+
+    @staticmethod
+    def load_json(file, path, config_root, skip_error=False):
+        """
+        Trying to avoid all the verbose error from commentjson
+        """
+
+        filepath = os.path.join(config_root, path, file + "." + JSON_EXT)
+        logger.debug("Reading file %s" % filepath)
+
+        # Use also the original library
+        import json as original_json
+        error = None
+
+        # JSON load from this file
+        if os.path.exists(filepath):
+            with open(filepath) as fh:
+                try:
+                    return json.load(fh, object_pairs_hook=OrderedDict)
+                except json.commentjson.JSONLibraryException as e:
+                    error = e
+                except original_json.decoder.JSONDecodeError as e:
+                    error = e
+                except Exception as e:
+                    error = e
+        else:
+            error = 'File does not exist'
+
+        if error is not None:
+            # Make sense of the JSON parser error...
+            for line in str(error).split('\n')[::-1]:
+                if line.strip() != '':
+                    error = line
+                    break
+            error = ':\n%s' % error
+        else:
+            error = ''
+        logger.error("Failed to read JSON from '%s'%s" % (filepath, error))
+
+        if skip_error:
+            return None
+        else:
+            exit(1)
+
+    def endpoints(self):
+        return self._endpoints
 
     # def read_config(self, configfile, case_sensitive=True):
 
     #     """
     #     A generic reader for 'ini' files via standard library
-# THIS METHOD IS UNUSED AT THE MOMENT
+# NOTE: this method is UNUSED at the moment
 # But it could become usefull for reading '.ini' files
     #     """
 
@@ -140,167 +269,3 @@ class Customizer(object):
     #         sections[str(section)] = elements
 
     #     return sections
-
-    def read_complex_config(self, configfile):
-        """ A more complex configuration is available in JSON format """
-        content = {}
-        with open(configfile) as fp:
-            content = json.load(fp)
-        return content
-
-    def load_endpoint(self, file_name, class_name, dir_name, package_name):
-
-        endpoint = EndpointElements()
-        module = self._meta.get_module_from_string(
-            '%s.%s.%s.%s' % (package_name, 'resources', dir_name, file_name)
-        )
-        print("TEST", file_name, class_name, module)
-        exit(1)
-
-        # Skip what you cannot use
-        if module is None:
-            logger.warning("Could not find python module '%s'..." % file_name)
-            return endpoint
-
-        myclass = self._meta.get_class_from_string(class_name, module)
-        # Again skip
-        if myclass is None:
-            return endpoint
-        else:
-            endpoint.exists = True
-            logger.debug("REST! Found resource")
-
-        # Get the best endpoint comparing inside against configuration
-        endpoint.instance = myclass()
-
-        reference, endkey, endtype = endpoint.instance.get_endpoint()
-        endpoint.reference = reference
-
-        endpoint.key_name = None
-        if endkey is not None and endtype is not None:
-            endpoint.key_name = endtype + ':' + endkey
-
-        pretty_print(endpoint)
-        exit(1)
-        return endpoint
-
-#     def single_rest(self, config_file):
-
-#         meta = self._meta
-#         resources = []
-#         sections = {}
-
-#         if not os.path.exists(config_file):
-#             logger.warning("File '%s' does not exist! Skipping." % config_file)
-#             return resources
-
-#         #########################
-#         # Read the configuration inside this init file
-
-#         # JSON CASE
-#         try:
-#             sections = self.read_complex_config(config_file)
-#         except:  # json.commentjson.JSONLibraryException:
-#             logger.critical("Format error!\n" +
-#                             "'%s' file is not in JSON format" % config_file)
-#             exit(1)
-
-#         if 'apis' not in sections:
-#             logger.critical(
-#                 "Section 'apis' not found in '%s' file" % config_file
-#             )
-#             exit(1)
-
-#         #########################
-#         # Use sections found: READING APIs MAPPING
-#         for section, items in iteritems(sections['apis']):
-
-#             logger.debug("Configuration read: {Section: " + section + "}")
-
-#             module = meta.get_module_from_string(
-# # TO FIX: PACKAGE should be a parameter from the server..
-#                 __package__ + '.resources.custom.' + section)
-#             # Skip what you cannot use
-#             if module is None:
-#                 logger.warning("Could not find module '%s'..." % section)
-#                 continue
-
-#             for classname, endpoints in iteritems(items):
-#                 myclass = meta.get_class_from_string(classname, module)
-#                 # Again skip
-#                 if myclass is None:
-#                     continue
-#                 else:
-#                     logger.debug("REST! Found resource: " +
-#                                  section + '.' + classname)
-
-#                 # Get the best endpoint comparing inside against configuration
-#                 instance = myclass()
-
-#                 oldendpoint, endkey, endtype = instance.get_endpoint()
-#                 if len(endpoints) < 1:
-#                     endpoints = [oldendpoint]
-
-#                 endpoint_id = None
-#                 if endkey is not None and endtype is not None:
-#                     endpoint_id = endtype + ':' + endkey
-
-#                 resources.append((myclass, instance, endpoints, endpoint_id))
-
-#         return resources
-
-    @staticmethod
-    def load_json(file, path, config_root):
-        """
-        Trying to avoid all the verbose error from commentjson
-        """
-
-        filepath = os.path.join(config_root, path, file + "." + JSON_EXT)
-        logger.debug("Reading file %s" % filepath)
-
-        # Use also the original library
-        import json as original_json
-        error = None
-
-        # JSON load from this file
-        if os.path.exists(filepath):
-            with open(filepath) as fh:
-                try:
-                    return json.load(fh, object_pairs_hook=OrderedDict)
-                except json.commentjson.JSONLibraryException as e:
-                    error = e
-                except original_json.decoder.JSONDecodeError as e:
-                    error = e
-
-        # Make sense of the JSON parser error...
-        for line in str(error).split('\n')[::-1]:
-            if line.strip() != '':
-                error = line
-                break
-        logger.error("Failed to read JSON from '%s':\n%s" % (filepath, error))
-        exit(1)
-
-    def endpoints(self):
-        return self._endpoints
-
-    # def rest(self):
-    #     """ REST endpoints as specified inside '.json' configuration file """
-
-    #     files = []
-    #     # logger.debug("Trying configurations from '%s' dir" % REST_CONFIG)
-    #     # if os.path.exists(BLUEPRINT_FILE):
-    #     #     with open(BLUEPRINT_FILE) as f:
-    #     #         mydict = self.load_and_handle_json_exception(f)
-    #     #         blueprint = mydict['blueprint']
-    #     #         files.append(os.path.join(REST_CONFIG, blueprint + '.json'))
-    #     # else:
-    #     #     logger.critical("Missing a blueprint file: %s" % BLUEPRINT_FILE)
-    #     logger.debug("Resources files: '%s'" % files)
-
-    #     resources = []
-    #     for config_file in files:
-    #         logger.info("REST configuration file '%s'" % config_file)
-    #         # Add all resources from this single JSON file
-    #         resources.extend(self.single_rest(config_file))
-
-    #     return resources

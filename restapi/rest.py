@@ -64,10 +64,10 @@ class Api(RestFulApi):
 ####################################
 # REST to be activated inside the app factory
 logger.debug(
-    "Restful classes to create endpoints: [%s, %s]" % (Api, EndpointsFarmer))
+    "Create endpoints w/ [%s, %s]" % (Api, EndpointsFarmer))
 
 
-def create_endpoints(custom_epo, security=False, debug=False):
+def create_endpoints(epo, security=False, debug=False):
     """ A single method to add all endpoints """
 
     # HELLO WORLD endpoint:
@@ -83,7 +83,7 @@ def create_endpoints(custom_epo, security=False, debug=False):
 
     ####################################
     # Verify configuration
-    customization = Customizer()
+    customization = Customizer(__package__)
     # resources = MyConfigs().rest()
 
     resources = customization.endpoints()
@@ -93,15 +93,16 @@ def create_endpoints(custom_epo, security=False, debug=False):
     if len(resources) < 1:
         logger.warning("No custom endpoints found!")
         from .resources import exampleservices as mymodule
-        custom_epo.many_from_module(mymodule)
+        epo.many_from_module(mymodule)
         logger.debug("Loaded example class instead")
     # Advanced configuration (cleaner): from swagger definition
     else:
-        logger.info("Using resources defined with Swagger")
-        for myclass, instance, endpoint, endkey in resources:
+        logger.info("Using resources defined within swagger")
+        for resource in resources:
             # Load each resource
-            custom_epo.create_single(myclass, endpoint, endkey)
+            epo.create_single(resource.cls, [resource.uri], resource.key_name)
 
+    print("DEBUG")
     exit(0)
 
     ####################################
@@ -113,11 +114,11 @@ def create_endpoints(custom_epo, security=False, debug=False):
 
     if security:
         from .resources import endpoints
-        custom_epo.many_from_module(endpoints, custom_attributes=extrattrs)
+        epo.many_from_module(endpoints, custom_attributes=extrattrs)
     else:
         from .resources.endpoints import Status
-        custom_epo.create_many({'status': Status}, custom_attributes=extrattrs)
+        epo.create_many({'status': Status}, custom_attributes=extrattrs)
 
     ####################################
     # The end
-    return custom_epo
+    return epo

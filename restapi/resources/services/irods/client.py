@@ -1036,7 +1036,7 @@ class ICommands(BashCommands):
         return self.query_user(where='USER_DN', field=dn)
 
     def user_exists(self, user):
-        return self.query_user(field=user)
+        return self.query_user(field=user) == user
 
 ################################################
 ################################################

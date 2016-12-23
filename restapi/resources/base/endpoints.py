@@ -29,6 +29,7 @@ class Status(EndpointResource):
 
     def get(self):
         """
+# TODO: remove inline swagger
         Check if the API server is currently reachable
 
         You may use this URI to monitor network or server problems.
@@ -42,12 +43,17 @@ class Status(EndpointResource):
         return 'Server is alive!'
 
 
-class Spec(EndpointResource):
+class SwaggerSpecifications(EndpointResource):
     """
     Specifications output throught Swagger (open API) standards
     """
 
     def get(self):
+
+        # TO FIX: make this static in production
+        # (by using config read the first time in mem class)
+
+        # find the package root to read swagger
         root = __package__.split('.')[0]
         # Enable swagger
         swag = swagger(current_app,
