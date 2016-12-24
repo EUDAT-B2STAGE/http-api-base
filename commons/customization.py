@@ -79,12 +79,13 @@ class Customizer(object):
         ##################
         # Walk swagger directories custom and base
         self._endpoints = []
+        swagger_endpoints = []
 
         # CONFIG_PATH + whatever?
         for dir in [CORE_DIR, USER_CUSTOM_DIR]:
 
             current_dir = os.path.join(CONFIG_PATH, dir)
-            logger.debug("Looking into %s" % current_dir)
+            # logger.debug("Looking into %s" % current_dir)
 
             # TODO: move this block into a function/method
             for element in glob.glob(os.path.join(current_dir, '*')):
@@ -102,7 +103,6 @@ class Customizer(object):
                     raise ValueError(
                         "Missing 'class' attribute in '%s' specs" % endpoint)
 
-                ###################
                 current = self.load_endpoint(
                     endpoint,
                     conf.get('file', endpoint),
@@ -114,7 +114,10 @@ class Customizer(object):
                     conf.get('id_type', 'string')
                 )
                 if current.exists:
+                    # Add endpoint
                     self._endpoints.append(current)
+                    # Add to list of yaml files
+                    swagger_endpoints.append(element)
                 else:
                     # raise AttributeError("Endpoint '%s' missing" % endpoint)
                     pass
@@ -124,6 +127,10 @@ class Customizer(object):
         # TODO: Write some swagger complete definitions
 
         # TODO: Swagger endpoints read definition for the first time
+        from .swagger import swaggerish
+        swaggerish(package, dirs=swagger_endpoints)
+        print("SWAGGER COMPLETED")
+        exit(1)
 
         # TODO: add endpoints to custom configuration to be saved
 
@@ -153,7 +160,7 @@ class Customizer(object):
 
         if depends is not None:
             if not getattr(module, depends, False):
-                logger.debug("Skipping %s" % uri)
+                logger.warning("Skipping %s" % uri)
                 return endpoint
 
         endpoint.cls = self._meta.get_class_from_string(class_name, module)
@@ -171,6 +178,7 @@ class Customizer(object):
         # Decide URI between how the folder is and the one forced
         if reference is not None:
             # TO FIX: this mode should be remove
+            logger.warning("Something to check here")
             print("\n\n\nTEST URI %s\n\n\n" % reference)
             endpoint.uri = reference
         else:
@@ -184,16 +192,18 @@ class Customizer(object):
                 logger.warning("Double configuration of endpoint key")
             endpoint.key_name = mytype + ':' + mykey
 
-        pretty_print(endpoint)
+        # pretty_print(endpoint)
         return endpoint
 
     @staticmethod
-    def load_json(file, path, config_root, skip_error=False):
+    def load_json(file, path, config_root, skip_error=False, retfile=False):
         """
         Trying to avoid all the verbose error from commentjson
         """
 
         filepath = os.path.join(config_root, path, file + "." + JSON_EXT)
+        if retfile:
+            return filepath
         logger.debug("Reading file %s" % filepath)
 
         # Use also the original library

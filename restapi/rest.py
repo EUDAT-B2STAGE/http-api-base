@@ -102,22 +102,22 @@ def create_endpoints(epo, security=False, debug=False):
             # Load each resource
             epo.create_single(resource.cls, [resource.uri], resource.key_name)
 
-    print("DEBUG")
-    exit(0)
+    print("TEST")
+    # exit(1)
 
-    ####################################
-# TODO: TO BE REMOVED (with the related code)
-    # Define the base endpoints by injecting into the service
+#     ####################################
+# # TODO: TO BE REMOVED (with the related code)
+#     # Define the base endpoints by injecting into the service
 
-    # Give me something to distinguish these endpoints classes from custom
-    extrattrs = {'_is_base': True}
+#     # Give me something to distinguish these endpoints classes from custom
+#     extrattrs = {'_is_base': True}
 
-    if security:
-        from .resources import endpoints
-        epo.many_from_module(endpoints, custom_attributes=extrattrs)
-    else:
-        from .resources.endpoints import Status
-        epo.create_many({'status': Status}, custom_attributes=extrattrs)
+#     if security:
+#         from .resources import endpoints
+#         epo.many_from_module(endpoints, custom_attributes=extrattrs)
+#     else:
+#         from .resources.endpoints import Status
+#         epo.create_many({'status': Status}, custom_attributes=extrattrs)
 
     ####################################
     # The end

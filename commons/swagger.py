@@ -8,6 +8,7 @@ https://raw.githubusercontent.com/gangverk/flask-swagger/master/flask_swagger.py
 
 import inspect
 import yaml
+import glob
 import re
 import os
 
@@ -60,11 +61,14 @@ def _parse_docstring(obj, process_doc, from_file_keyword, path=None):
         # FROM FILE
         if from_file_keyword is not None:
 
-            # Forcing reading from file
-            # if having a path automatically generated
             if path is None:
                 from_file = _find_from_file(full_doc, from_file_keyword)
             else:
+                ############################
+                # CUSTOM BY US
+                # Forcing reading from file
+                # if having a path automatically generated
+                ############################
                 from_file = path
 
             if from_file:
@@ -221,9 +225,9 @@ def swagger(app, package_root='',
         operations = dict()
         for verb, method in methods.items():
 
-#####################################
-# TO DO
-            basedir = 'swagger'
+            # ###########
+            # TODO: finish this up
+            from commons import CONFIG_DIR
             subdir = USER_CUSTOM_DIR
             if getattr(endpoint.view_class, '_is_base', False):
                 subdir = CORE_DIR
@@ -234,12 +238,12 @@ def swagger(app, package_root='',
                 continue
 
             path = os.path.join(
-                package_root, basedir, subdir, folder,
+                package_root, CONFIG_DIR, subdir, folder,
                 method.__name__ + '.yaml')
 
             logger.debug("Looking for %s" % path)
-#####################################
-#
+            # ###########
+
             swag = None
             # Note: using parse method only inside this conditional block
             # WE AVOID documentation which is written inside the docstring
@@ -290,4 +294,97 @@ def swagger(app, package_root='',
             for arg in re.findall('(<([^<>]*:)?([^<>]*)>)', rule):
                 rule = rule.replace(arg[0], '{%s}' % arg[2])
             paths[rule].update(operations)
+    return output
+
+
+def _parse_file(path):
+    """
+    Hand made from the original
+    with the main goal of reading a swagger file definition
+    """
+
+    logger.debug("Reading swagger in %s" % path)
+    first_line, other_lines, swag = None, None, None
+    full_doc = _doc_from_file(path)
+
+    line_feed = full_doc.find('\n')
+    if line_feed != -1:
+        first_line = _sanitize(full_doc[:line_feed])
+        yaml_sep = full_doc[line_feed + 1:].find('---')
+        if yaml_sep != -1:
+            other_lines = _sanitize(
+                full_doc[line_feed + 1:line_feed + yaml_sep])
+            swag = yaml.load(full_doc[line_feed + yaml_sep:])
+        else:
+            other_lines = _sanitize(full_doc[line_feed + 1:])
+    else:
+        first_line = full_doc
+
+    return first_line, other_lines, swag
+
+
+def swaggerish(package_root='', dirs=[], prefix=None):
+    """
+    We go through all endpoints of the app searching for swagger endpoints
+    We provide the minimum required data according to swagger specs
+    Callers can and should add and override at will
+    """
+
+    output = {
+        "swagger": "2.0",
+        "info": {
+            "version": "0.0.1",
+            "title": "Your application name",
+        }
+    }
+
+    definitions = defaultdict(dict)
+    operations = dict()
+
+    for current_dir in dirs:
+
+        # Find all files YAML inside the current endpoint directory
+        for path in glob.glob(os.path.join(current_dir, '*yaml')):
+
+            summary, desc, swag = _parse_file(path)
+            if swag is None:
+                raise AttributeError("Invalid swagger definition")
+
+            # we only add endpoints with swagger data in the docstrings
+            defs = swag.get('definitions', [])
+            defs = _extract_definitions(defs)
+            params = swag.get('parameters', [])
+            defs += _extract_definitions(params)
+            responses = swag.get('responses', {})
+            responses = {
+                str(key): value
+                for key, value in responses.items()
+            }
+            if responses is not None:
+                defs = defs + _extract_definitions(responses.values())
+            for definition in defs:
+                def_id = definition.pop('id')
+                if def_id is not None:
+                    definitions[def_id].update(definition)
+            operation = dict(
+                summary=summary,
+                description=desc,
+                responses=responses
+            )
+            # parameters - swagger ui dislikes empty parameter lists
+            if len(params) > 0:
+                operation['parameters'] = params
+            # # other optionals
+            # for key in optional_fields:
+            #     if key in swag:
+            #         operation[key] = swag.get(key)
+            # operations[method] = operation
+
+    if len(operations):
+        print("WHAT IS THIS?")
+        # rule = str(rule)
+        # for arg in re.findall('(<([^<>]*:)?([^<>]*)>)', rule):
+        #     rule = rule.replace(arg[0], '{%s}' % arg[2])
+        # paths[rule].update(operations)
+
     return output
