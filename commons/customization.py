@@ -101,25 +101,17 @@ class Customizer(object):
                 if 'class' not in conf:
                     raise ValueError(
                         "Missing 'class' attribute in '%s' specs" % endpoint)
-                file = endpoint
-                if 'file' in conf:
-                    file = conf['file']
-
-                depends = None
-                if 'depends_on' in conf:
-                    depends = conf['depends_on']
-
-                ###################
-                # TO FIX: missing functionalities
-                if 'id_name' in conf:
-                    # We should add the key into the endpoint
-                    print("DO SOMETHING WITH KEY", conf['id_name'])
-                # pretty_print(conf)
 
                 ###################
                 current = self.load_endpoint(
-                    endpoint, file, conf['class'],
-                    dir, package, depends
+                    endpoint,
+                    conf.get('file', endpoint),
+                    conf.get('class'),
+                    dir,
+                    package,
+                    conf.get('depends_on', None),
+                    conf.get('id_name', None),
+                    conf.get('id_type', 'string')
                 )
                 if current.exists:
                     self._endpoints.append(current)
@@ -146,8 +138,9 @@ class Customizer(object):
             content = json.load(fp)
         return content
 
-    def load_endpoint(self, uri, file_name,
-                      class_name, dir_name, package_name, depends=None):
+    def load_endpoint(self, uri, file_name, class_name,
+                      dir_name, package_name, depends=None,
+                      mykey=None, mytype=None):
 
         endpoint = EndpointElements()
 
@@ -186,8 +179,12 @@ class Customizer(object):
         endpoint.key_name = None
         if endkey is not None and endtype is not None:
             endpoint.key_name = endtype + ':' + endkey
+        if mykey is not None and mytype is not None:
+            if endpoint.key_name is not None:
+                logger.warning("Double configuration of endpoint key")
+            endpoint.key_name = mytype + ':' + mykey
 
-        # pretty_print(endpoint)
+        pretty_print(endpoint)
         return endpoint
 
     @staticmethod
