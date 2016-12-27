@@ -15,7 +15,7 @@ conf:
 backend:
     extends:
         service: conf
-    image: eudatb2stage/apiserver
+    image: eudatb2stage/apiserver:neo4j2
     hostname: restapi
     # user may be overriden from project config
     # note: if you change the user, you should also
