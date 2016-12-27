@@ -961,6 +961,14 @@ class ICommands(BashCommands):
         # pp(data)
         return data
 
+    def user_has_group(self, username, groupname):
+        info = self.get_user_info(username)
+        if info is None:
+            return False
+        if 'groups' not in info:
+            return False
+        return groupname in info['groups']
+
     def check_user_exists(self, username, checkGroup=None):
         userdata = self.get_user_info(username)
         if userdata is None:
