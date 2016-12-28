@@ -5,10 +5,13 @@ Customization based on configuration 'blueprint' files
 """
 
 import os
+import re
+import glob
 from collections import OrderedDict
 # from jinja2._compat import iteritems
 from . import (
-    JSON_EXT, json, CORE_DIR, USER_CUSTOM_DIR,
+    JSON_EXT, json, YAML_EXT, yaml,
+    CORE_DIR, USER_CUSTOM_DIR,
     PATH, CONFIG_PATH, BLUEPRINT_KEY,  # CONFIG_DIR,
     API_URL, BASE_URLS,
 )
@@ -32,6 +35,7 @@ class EndpointElements(object):
     cls = attribute(default=None)
     instance = attribute(default=None)
     uris = attribute(default=[])
+    files = attribute(default=[])
     tags = attribute(default=[])
 
 
@@ -79,7 +83,6 @@ class Customizer(object):
         ##################
         # Walk swagger directories custom and base
         self._endpoints = []
-        swagger_dirs = []
 
         for basedir in [CORE_DIR, USER_CUSTOM_DIR]:
 
@@ -88,39 +91,44 @@ class Customizer(object):
 
             # TODO: move this block into a function/method
             for endpoint in os.listdir(current_dir):
+
                 log.info("Found endpoint %s" % endpoint)
-
-                # FILE specs.json
-                # load configuration and find file and class
                 endpoint_dir = os.path.join(CONFIG_PATH, basedir, endpoint)
-                conf = self.load_json('specs', endpoint_dir, skip_error=True)
-                if conf is None:
-                    continue
-                elif 'class' not in conf:
-                    raise ValueError("No 'class' in '%s' specs" % endpoint)
 
-                # VERIFY IF AT LEAST ONE YAML FILE IS PRESENT
-                # glob(*yaml)
+                ########################
+                # Find yaml files
+                conf = None
+                yaml_files = {}
+                yaml_listing = os.path.join(endpoint_dir, "*.%s" % YAML_EXT)
+                for file in glob.glob(yaml_listing):
+                    if file.endswith('specs.%s' % YAML_EXT):
+                        # load configuration and find file and class
+                        conf = self.ymport(file)
+                    else:
+                        # add file to be loaded from swagger extension
+                        p = re.compile(r'\/([^\.\/]+)\.' + YAML_EXT + '$')
+                        match = p.search(file)
+                        method = match.groups()[0]
+                        yaml_files[method] = file
 
+                if len(yaml_files) < 1:
+                    raise Exception("%s: methods undefined" % endpoint)
+                if conf is None or 'class' not in conf:
+                    raise ValueError("No 'class' defined for '%s'" % endpoint)
+
+                ########################
                 current = self.load_endpoint(endpoint, basedir, package, conf)
+                current.files = yaml_files
                 if current.exists:
                     # Add endpoint to REST mapping
                     self._endpoints.append(current)
-                    # Add current directory to YAML search for swagger def
-                    swagger_dirs.append(endpoint_dir)
-                else:
-                    # raise AttributeError("Endpoint '%s' missing" % endpoint)
-                    pass
-
-        print("UHM", swagger_dirs, self._endpoints)
-        exit(1)
 
         ##################
 
-        # TODO: Write some swagger complete definitions
+        # TODO: Write swagger complete definitions in base
 
         # TODO: Swagger endpoints read definition for the first time
-        swaggerish(package, dirs=swagger_dirs)
+        swaggerish(endpoints=self._endpoints)
         print("SWAGGER COMPLETED")
         exit(1)
 
@@ -181,38 +189,64 @@ class Customizer(object):
         # Set default, if no mappings defined
         mappings = conf.get('mapping', [])
         if len(mappings) < 1:
-            mappings.append({'uri': default_uri})
+            mappings.append({'uri': [default_uri]})
 
         for mapping in mappings:
 
-            pretty_print(mapping)
-            uri = mapping.get('uri', None)
-            if uri is None:
-                raise AttributeError("Missing uri in mapping")
+            # pretty_print(mapping)
+            uris = mapping.get('uri', [])
 
-            # BUILD URI
-            base = mapping.get('base_uri', API_URL)
-            if base not in BASE_URLS:
-                log.warning("Invalid base %s" % base)
-                base = API_URL
-            base = base.strip('/')
+            for uri in uris:
 
-            # KEY NAME AND TYPE - for clarity
-            key_name = ''
-            mykey = mapping.get('id_name', None)
-            mytype = mapping.get('id_type', 'string')
-            if mykey is not None and mytype is not None:
-                key_name = '/<%s:%s>' % (mytype, mykey)
+                # BUILD URI
+                base = mapping.get('base_uri', API_URL)
+                if base not in BASE_URLS:
+                    log.warning("Invalid base %s" % base)
+                    base = API_URL
+                base = base.strip('/')
 
-            endpoint.uris.append('/%s/%s%s' % (base, uri, key_name))
+                # KEY NAME AND TYPE - for clarity
+                key_name = ''
+                mykey = mapping.get('id_name', None)
+                mytype = mapping.get('id_type', 'string')
+                if mykey is not None and mytype is not None:
+                    key_name = '/<%s:%s>' % (mytype, mykey)
 
-            # AUTHENTICATION
-            # ?
+                endpoint.uris.append('/%s/%s%s' % (base, uri, key_name))
 
         #####################
         endpoint.tags = conf.get('labels', [])
         # pretty_print(endpoint)
         return endpoint
+
+    @staticmethod
+    def ymport(file, path=None, skip_error=False):
+        """ Import data from a YAML file """
+
+        if path is None:
+            filepath = file
+        else:
+            filepath = os.path.join(path, file + "." + YAML_EXT)
+        log.debug("Reading file %s" % filepath)
+
+        # load from this file
+        error = None
+        if os.path.exists(filepath):
+            with open(filepath) as fh:
+                try:
+                    # return json.load(fh, object_pairs_hook=OrderedDict)
+                    return yaml.load(fh)
+                except Exception as e:
+                    error = e
+        else:
+            error = 'File does not exist'
+
+        message = "Failed to read YAML from '%s':\n%s" % (filepath, error)
+        if skip_error:
+            log.error(message)
+        else:
+            raise Exception(message)
+        return None
 
     @staticmethod
     def load_json(file, path, config_root='', skip_error=False, retfile=False):
@@ -252,12 +286,13 @@ class Customizer(object):
             error = ':\n%s' % error
         else:
             error = ''
-        log.error("Failed to read JSON from '%s'%s" % (filepath, error))
+        message = "Failed to read JSON from '%s'%s" % (filepath, error)
 
         if skip_error:
+            log.error(message)
             return None
         else:
-            exit(1)
+            raise Exception(message)
 
     def endpoints(self):
         return self._endpoints

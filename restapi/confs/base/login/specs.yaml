@@ -1,0 +1,3 @@
+file: endpoints
+# depends_on: SOME_VARIABLE
+class: Login

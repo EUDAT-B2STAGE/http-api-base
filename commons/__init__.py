@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import yaml
 import pkg_resources
 
 #######################
@@ -22,6 +23,9 @@ except:
 
 # Make a json test
 json.dumps({})
+yaml.dump({})
+JSON_EXT = 'json'
+YAML_EXT = 'yaml'
 
 #######################
 myself = "Paolo D'Onorio De Meo <p.donoriodemeo@gmail.com>"
@@ -53,7 +57,6 @@ BASE_URLS = [API_URL, AUTH_URL]
 # Directories for core code or user custom code
 CORE_DIR = 'base'
 USER_CUSTOM_DIR = 'custom'
-JSON_EXT = 'json'
 
 PATH = ""
 CONFIG_PATH = ""

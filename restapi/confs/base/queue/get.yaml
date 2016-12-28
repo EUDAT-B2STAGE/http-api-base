@@ -1,0 +1,14 @@
+Base implementation of a CELERY queue.
+
+Do not mess too much with tasks.
+
+---
+
+# # DEFINE IF AUTHENTICATION IS REQUIRED
+# authentication: true
+# authorized:
+#   - normal_user
+#   - admin # what if not matching? should be admin_root
+# OPTIONAL TAG
+tags:
+  - queue

@@ -323,11 +323,32 @@ def _parse_file(path):
     return first_line, other_lines, swag
 
 
-def swaggerish(package_root='', dirs=[], prefix=None):
+def read_my_swagger(file):
+
+    # content = ymport(file)
+
+    # "paths": {
+    #     "/api/status": {
+    #         "get": {
+    #             "description": "(HTML?) tmp",
+    #             "responses": { },
+    #             "summary":
+
+    # summary, desc, swag = _parse_file(path)
+    # if swag is None:
+    #     raise AttributeError("Invalid swagger definition")
+    # print("TEST SWAG", swag)
+
+    # AUTHENTICATION
+    # ?
+    pass
+
+
+def swaggerish(endpoints):
     """
-    We go through all endpoints of the app searching for swagger endpoints
-    We provide the minimum required data according to swagger specs
-    Callers can and should add and override at will
+    Go through all endpoints configured by the current development.
+
+    Provide the minimum required data according to swagger specs.
     """
 
     output = {
@@ -338,26 +359,14 @@ def swaggerish(package_root='', dirs=[], prefix=None):
         }
     }
 
-    # "paths": {
-    #     "/api/status": {
-    #         "get": {
-    #             "description": "(HTML?) tmp",
-    #             "responses": { },
-    #             "summary":
+    for endpoint in endpoints:
 
-    for current_dir in dirs:
+        for uri in endpoint.uris:
 
-        print("TEST", current_dir)
-        print("We should have the mappings already available here")
-        exit(1)
+            for method, file in endpoint.files.items():
 
-        # Find all files YAML inside the current endpoint directory
-        for path in glob.glob(os.path.join(current_dir, '*yaml')):
-
-            summary, desc, swag = _parse_file(path)
-            if swag is None:
-                raise AttributeError("Invalid swagger definition")
-            print("TEST SWAG", swag)
+                read_my_swagger(file)
+                print("swagger:", uri, method, file)
 
 # HOW TO MIX FROM DIFFERENT FILES?
 
