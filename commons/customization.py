@@ -5,22 +5,22 @@ Customization based on configuration 'blueprint' files
 """
 
 import os
-import glob
 from collections import OrderedDict
 # from jinja2._compat import iteritems
 from . import (
     JSON_EXT, json, CORE_DIR, USER_CUSTOM_DIR,
-    PATH, CONFIG_PATH, BLUEPRINT_KEY,
-    # CONFIG_DIR,
+    PATH, CONFIG_PATH, BLUEPRINT_KEY,  # CONFIG_DIR,
+    API_URL, BASE_URLS,
 )
 from attr import (
     s as AttributedModel,
     ib as attribute,
 )
 from .meta import Meta
+from .swagger import swaggerish
 from .logs import get_logger, pretty_print
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 ########################
@@ -31,8 +31,8 @@ class EndpointElements(object):
     exists = attribute(default=False)  # bool
     cls = attribute(default=None)
     instance = attribute(default=None)
-    uri = attribute(default=None)
-    key_name = attribute(default=None)
+    uris = attribute(default=[])
+    tags = attribute(default=[])
 
 
 ########################
@@ -61,7 +61,7 @@ class Customizer(object):
         # # Add a value for all possibilities
         # defaults = self.load_json('defaults', CONFIG_DIR, __package__)
         # if len(defaults) > 0:
-        #     logger.debug("Defaults:\n%s" % defaults)
+        #     log.debug("Defaults:\n%s" % defaults)
 
         # ##################
         # # # TODO: mix default and custom configuration
@@ -79,56 +79,48 @@ class Customizer(object):
         ##################
         # Walk swagger directories custom and base
         self._endpoints = []
-        swagger_endpoints = []
+        swagger_dirs = []
 
-        # CONFIG_PATH + whatever?
-        for dir in [CORE_DIR, USER_CUSTOM_DIR]:
+        for basedir in [CORE_DIR, USER_CUSTOM_DIR]:
 
-            current_dir = os.path.join(CONFIG_PATH, dir)
-            # logger.debug("Looking into %s" % current_dir)
+            current_dir = os.path.join(CONFIG_PATH, basedir)
+            # log.debug("Looking into %s" % current_dir)
 
             # TODO: move this block into a function/method
-            for element in glob.glob(os.path.join(current_dir, '*')):
+            for endpoint in os.listdir(current_dir):
+                log.info("Found endpoint %s" % endpoint)
 
-                endpoint = element.replace(current_dir, '').strip('/')
-                logger.info("Found endpoint %s" % endpoint)
-
+                # FILE specs.json
                 # load configuration and find file and class
-                endpoint_dir = os.path.join(dir, endpoint)
-                conf = self.load_json(
-                    'specs', endpoint_dir, CONFIG_PATH, skip_error=True)
+                endpoint_dir = os.path.join(CONFIG_PATH, basedir, endpoint)
+                conf = self.load_json('specs', endpoint_dir, skip_error=True)
                 if conf is None:
                     continue
-                if 'class' not in conf:
-                    raise ValueError(
-                        "Missing 'class' attribute in '%s' specs" % endpoint)
+                elif 'class' not in conf:
+                    raise ValueError("No 'class' in '%s' specs" % endpoint)
 
-                current = self.load_endpoint(
-                    endpoint,
-                    conf.get('file', endpoint),
-                    conf.get('class'),
-                    dir,
-                    package,
-                    conf.get('depends_on', None),
-                    conf.get('id_name', None),
-                    conf.get('id_type', 'string')
-                )
+                # VERIFY IF AT LEAST ONE YAML FILE IS PRESENT
+                # glob(*yaml)
+
+                current = self.load_endpoint(endpoint, basedir, package, conf)
                 if current.exists:
-                    # Add endpoint
+                    # Add endpoint to REST mapping
                     self._endpoints.append(current)
-                    # Add to list of yaml files
-                    swagger_endpoints.append(element)
+                    # Add current directory to YAML search for swagger def
+                    swagger_dirs.append(endpoint_dir)
                 else:
                     # raise AttributeError("Endpoint '%s' missing" % endpoint)
                     pass
+
+        print("UHM", swagger_dirs, self._endpoints)
+        exit(1)
 
         ##################
 
         # TODO: Write some swagger complete definitions
 
         # TODO: Swagger endpoints read definition for the first time
-        from .swagger import swaggerish
-        swaggerish(package, dirs=swagger_endpoints)
+        swaggerish(package, dirs=swagger_dirs)
         print("SWAGGER COMPLETED")
         exit(1)
 
@@ -145,58 +137,85 @@ class Customizer(object):
             content = json.load(fp)
         return content
 
-    def load_endpoint(self, uri, file_name, class_name,
-                      dir_name, package_name, depends=None,
-                      mykey=None, mytype=None):
+    def load_endpoint(self, default_uri, dir_name, package_name, conf):
 
         endpoint = EndpointElements()
+        file_name = conf.get('file', default_uri)
+        class_name = conf.get('class')
+        name = '%s.%s.%s.%s' % (package_name, 'resources', dir_name, file_name)
+        module = self._meta.get_module_from_string(name)
 
-        module = self._meta.get_module_from_string(
-            '%s.%s.%s.%s' % (package_name, 'resources', dir_name, file_name)
-        )
         if module is None:
-            logger.warning("Could not find python module '%s'..." % file_name)
+            log.warning("Could not find python module '%s'..." % file_name)
             return endpoint
 
-        if depends is not None:
-            if not getattr(module, depends, False):
-                logger.warning("Skipping %s" % uri)
+        #####################
+        for dependency in conf.get('depends_on', []):
+            if not getattr(module, dependency, False):
+                log.warning("Skip %s: unmet %s" % (default_uri, dependency))
                 return endpoint
 
         endpoint.cls = self._meta.get_class_from_string(class_name, module)
         if endpoint.cls is None:
-            logger.critical("Could not find python class '%s'..." % class_name)
+            log.critical("Could not extract python class '%s'" % class_name)
             return endpoint
         else:
             endpoint.exists = True
 
-        # Get the best endpoint comparing inside against configuration
+        # Create the instance to recover all elements inside
         endpoint.instance = endpoint.cls()
-
         reference, endkey, endtype = endpoint.instance.get_endpoint()
-
-        # Decide URI between how the folder is and the one forced
         if reference is not None:
-            # TO FIX: this mode should be remove
-            logger.warning("Something to check here")
-            print("\n\n\nTEST URI %s\n\n\n" % reference)
-            endpoint.uri = reference
-        else:
-            endpoint.uri = uri
+            # endpoint.default_uri = reference
+            raise ValueError("DEPRECATED: URI reference %s in class %s"
+                             % (reference, endpoint.cls))
+        # if endkey is not None and endtype is not None:
+        #     endpoint.key_name = endtype + ':' + endkey
+        if endkey is not None or endtype is not None:
+            raise ValueError("DEPRECATED: key/type in class %s" % endpoint.cls)
 
-        endpoint.key_name = None
-        if endkey is not None and endtype is not None:
-            endpoint.key_name = endtype + ':' + endkey
-        if mykey is not None and mytype is not None:
-            if endpoint.key_name is not None:
-                logger.warning("Double configuration of endpoint key")
-            endpoint.key_name = mytype + ':' + mykey
+        #####################
+        # MAPPING
+        endpoint.uris = []  # attrs bug?
 
+        # Set default, if no mappings defined
+        mappings = conf.get('mapping', [])
+        if len(mappings) < 1:
+            mappings.append({'uri': default_uri})
+
+        for mapping in mappings:
+
+            pretty_print(mapping)
+            uri = mapping.get('uri', None)
+            if uri is None:
+                raise AttributeError("Missing uri in mapping")
+
+            # BUILD URI
+            base = mapping.get('base_uri', API_URL)
+            if base not in BASE_URLS:
+                log.warning("Invalid base %s" % base)
+                base = API_URL
+            base = base.strip('/')
+
+            # KEY NAME AND TYPE - for clarity
+            key_name = ''
+            mykey = mapping.get('id_name', None)
+            mytype = mapping.get('id_type', 'string')
+            if mykey is not None and mytype is not None:
+                key_name = '/<%s:%s>' % (mytype, mykey)
+
+            endpoint.uris.append('/%s/%s%s' % (base, uri, key_name))
+
+            # AUTHENTICATION
+            # ?
+
+        #####################
+        endpoint.tags = conf.get('labels', [])
         # pretty_print(endpoint)
         return endpoint
 
     @staticmethod
-    def load_json(file, path, config_root, skip_error=False, retfile=False):
+    def load_json(file, path, config_root='', skip_error=False, retfile=False):
         """
         Trying to avoid all the verbose error from commentjson
         """
@@ -204,7 +223,7 @@ class Customizer(object):
         filepath = os.path.join(config_root, path, file + "." + JSON_EXT)
         if retfile:
             return filepath
-        logger.debug("Reading file %s" % filepath)
+        log.debug("Reading file %s" % filepath)
 
         # Use also the original library
         import json as original_json
@@ -233,7 +252,7 @@ class Customizer(object):
             error = ':\n%s' % error
         else:
             error = ''
-        logger.error("Failed to read JSON from '%s'%s" % (filepath, error))
+        log.error("Failed to read JSON from '%s'%s" % (filepath, error))
 
         if skip_error:
             return None

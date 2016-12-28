@@ -34,14 +34,19 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     that aims to store credentials of users and roles.
     """
 
-    SECRET = 'top secret!'
-    JWT_ALGO = 'HS256'
-# TO FIX: already defined in auth.py HTTPAUTH_DEFAULT_SCHEME
-    token_type = 'Bearer'
+    ##########################
+    # DEFAULTS
     DEFAULT_USER = USER
     DEFAULT_PASSWORD = PWD
     DEFAULT_ROLE = ROLE_USER
     DEFAULT_ROLES = [ROLE_USER, ROLE_INTERNAL, ROLE_ADMIN]
+
+    ##########################
+    SECRET = 'top secret!'
+    JWT_ALGO = 'HS256'
+# TO FIX: already defined in auth.py HTTPAUTH_DEFAULT_SCHEME
+    token_type = 'Bearer'
+
     _oauth2 = {}
     _payload = {}
     _user = None

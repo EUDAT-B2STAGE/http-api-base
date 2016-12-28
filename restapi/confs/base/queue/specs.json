@@ -1,5 +1,7 @@
 {
     "file": "endpoints",
-    "depends_on": "CELERY_AVAILABLE",
+    "depends_on": [
+        "CELERY_AVAILABLE"
+    ],
     "class": "Queue"
 }

@@ -338,10 +338,18 @@ def swaggerish(package_root='', dirs=[], prefix=None):
         }
     }
 
-    definitions = defaultdict(dict)
-    operations = dict()
+    # "paths": {
+    #     "/api/status": {
+    #         "get": {
+    #             "description": "(HTML?) tmp",
+    #             "responses": { },
+    #             "summary":
 
     for current_dir in dirs:
+
+        print("TEST", current_dir)
+        print("We should have the mappings already available here")
+        exit(1)
 
         # Find all files YAML inside the current endpoint directory
         for path in glob.glob(os.path.join(current_dir, '*yaml')):
@@ -349,42 +357,8 @@ def swaggerish(package_root='', dirs=[], prefix=None):
             summary, desc, swag = _parse_file(path)
             if swag is None:
                 raise AttributeError("Invalid swagger definition")
+            print("TEST SWAG", swag)
 
-            # we only add endpoints with swagger data in the docstrings
-            defs = swag.get('definitions', [])
-            defs = _extract_definitions(defs)
-            params = swag.get('parameters', [])
-            defs += _extract_definitions(params)
-            responses = swag.get('responses', {})
-            responses = {
-                str(key): value
-                for key, value in responses.items()
-            }
-            if responses is not None:
-                defs = defs + _extract_definitions(responses.values())
-            for definition in defs:
-                def_id = definition.pop('id')
-                if def_id is not None:
-                    definitions[def_id].update(definition)
-            operation = dict(
-                summary=summary,
-                description=desc,
-                responses=responses
-            )
-            # parameters - swagger ui dislikes empty parameter lists
-            if len(params) > 0:
-                operation['parameters'] = params
-            # # other optionals
-            # for key in optional_fields:
-            #     if key in swag:
-            #         operation[key] = swag.get(key)
-            # operations[method] = operation
-
-    if len(operations):
-        print("WHAT IS THIS?")
-        # rule = str(rule)
-        # for arg in re.findall('(<([^<>]*:)?([^<>]*)>)', rule):
-        #     rule = rule.replace(arg[0], '{%s}' % arg[2])
-        # paths[rule].update(operations)
+# HOW TO MIX FROM DIFFERENT FILES?
 
     return output

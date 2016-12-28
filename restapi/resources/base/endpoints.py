@@ -59,6 +59,7 @@ class SwaggerSpecifications(EndpointResource):
         swag = swagger(current_app,
                        package_root=root, from_file_keyword='swag_file')
 
+# TO FIX: MOVE ME INSIDE THE INIT PHASE in customization.py
         from commons.globals import mem
         swag['info']['version'] = mem.custom_config['project']['version']
         swag['info']['title'] = mem.custom_config['project']['title']
