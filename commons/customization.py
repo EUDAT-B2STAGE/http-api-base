@@ -132,7 +132,7 @@ class Customizer(object):
         for file in glob.glob(yaml_listing):
             if file.endswith('specs.%s' % YAML_EXT):
                 # load configuration and find file and class
-                conf = load_yaml_file(file)
+                conf = load_yaml_file(file, first_doc=True)
             else:
                 # add file to be loaded from swagger extension
                 p = re.compile(r'\/([^\.\/]+)\.' + YAML_EXT + '$')
@@ -159,8 +159,8 @@ class Customizer(object):
     def load_endpoint(self, default_uri, dir_name, package_name, conf):
 
         endpoint = EndpointElements()
-        file_name = conf.get('file', default_uri)
-        class_name = conf.get('class')
+        file_name = conf.pop('file', default_uri)
+        class_name = conf.pop('class')
         name = '%s.%s.%s.%s' % (package_name, 'resources', dir_name, file_name)
         module = self._meta.get_module_from_string(name)
 
@@ -169,7 +169,7 @@ class Customizer(object):
             return endpoint
 
         #####################
-        for dependency in conf.get('depends_on', []):
+        for dependency in conf.pop('depends_on', []):
             if not getattr(module, dependency, False):
                 log.warning("Skip '%s': unmet %s" % (default_uri, dependency))
                 return endpoint
@@ -193,42 +193,36 @@ class Customizer(object):
         if endkey is not None or endtype is not None:
             raise ValueError("DEPRECATED: key/type in class %s" % endpoint.cls)
 
+        # Global tags
+        # to be applied to all methods
+        endpoint.tags = conf.pop('labels', [])
+
+        # base URI
+        base = conf.pop('baseuri', API_URL)
+        if base not in BASE_URLS:
+            log.warning("Invalid base %s" % base)
+            base = API_URL
+        base = base.strip('/')
+
         #####################
         # MAPPING
-        endpoint.uris = {}  # attrs bug?
-
-        # Set default, a list with one element, if no mapping defined
-        mappings = conf.get('mapping', [])
+        mappings = conf.pop('mapping', [])
         if len(mappings) < 1:
-            mappings.append({'uri': [default_uri]})
+            raise KeyError("Missing 'mapping' section")
 
-        for mapping in mappings:
+        endpoint.uris = {}  # attrs bug?
+        for label, uri in mappings.items():
 
-            # pretty_print(mapping)
-            uris = mapping.get('uri', [])
+            # BUILD URI
+            total_uri = '/%s%s' % (base, uri)
+            endpoint.uris[label] = {'uri': total_uri}
 
-            for uri in uris:
+        # Check if something strange is still in configuration
+        if len(conf) > 0:
+            raise KeyError("Unwanted keys: %s" % list(conf.keys()))
 
-                # BUILD URI
-                base = mapping.get('base_uri', API_URL)
-                if base not in BASE_URLS:
-                    log.warning("Invalid base %s" % base)
-                    base = API_URL
-                base = base.strip('/')
-
-                # KEY NAME AND TYPE - for clarity
-                key_name = ''
-                mykey = mapping.get('id_name', None)
-                mytype = mapping.get('id_type', 'string')
-                if mykey is not None and mytype is not None:
-                    key_name = '/<%s:%s>' % (mytype, mykey)
-
-                total_uri = '/%s/%s%s' % (base, uri, key_name)
-                endpoint.uris[total_uri] = None
-
-        #####################
-        endpoint.tags = conf.get('labels', [])
         # pretty_print(endpoint)
+        # exit(1)
         return endpoint
 
     # TODO: move json things into commons/formats/json.py

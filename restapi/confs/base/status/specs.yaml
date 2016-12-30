@@ -1,0 +1,8 @@
+
+file: endpoints
+class: Status
+baseuri: "/api"
+mapping:
+  login: "/status"
+labels:
+  - base

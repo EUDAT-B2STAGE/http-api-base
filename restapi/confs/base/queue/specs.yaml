@@ -1,12 +1,9 @@
-# A possible description
-# ---
-class: Queue
+
 depends_on:
   - CELERY_AVAILABLE
+class: Queue
 file: endpoints
 mapping:
-  - id_name: task_id
-    # id_type: string
-    # base_uri: "/api"
-    uri:
-      - queue
+  queue: "/queue/<str:task_id>"
+labels:
+  - base

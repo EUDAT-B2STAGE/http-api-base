@@ -1,60 +1,43 @@
 
-summary: Login with basic credentials (username and password)
-# description:
-consumes:
-  - application/json
-produces:
-  - application/json
+login:
+  summary: Login with basic credentials
+  description: Normal credentials (username and password) login endpoint
 
-# parameters:
-#   - in: body
-#     name: body
-#     # Note: this definition has to be nested in the object...
-#     schema:
-#       id: Credentials
-#       required:
-#         - username
-#       properties:
-#         username:
-#           type: string
-#           examples:
-#             - user@nomail.org
-#           description: your registered username
-#         password:
-#           type: string
-#           description: password coupling in credentials for your username
-#       # $ref: "#/definitions/Credentials"
+  consumes:
+    - application/json
+  produces:
+    - application/json
 
-responses:
-  '200':
-    description: Credentials are valid
-    # Note: this definition has to be nested in the object...
-    # schema:
-    #   id: Token
-    #   type: array
-    examples:
-# HEADERS?
-      Meta:
-        data_type: string
-        elements: 1
-        errors: 0
-        status: 200
-      Response:
-        data:
-          token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9
-        errors:
-          null
-  '401':
-    description: Credentials are wrong
+  parameters:
+    required:
+      - username
+    properties:
+      username:
+        type: string
+        examples:
+          - user@nomail.org
+        description: your registered username
+      password:
+        type: string
+        description: password coupling in credentials for your username
 
-## Note: definitions is used here, because of the plugin behaviour
-# definitions:
-#   - schema:
-#     id: Credentials
-#     properties:
-#       username:
-#         type: string
+  responses:
+    '200':
+      description: Credentials are valid
+      examples:
+        Meta:
+          data_type: string
+          elements: 1
+          errors: 0
+          status: 200
+        Response:
+          data:
+            token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9
+          errors:
+            null
+    '401':
+      description: Credentials are wrong
 
-tags:
-  - credentials
-  - login
+  tags:
+    - credentials
+    - login

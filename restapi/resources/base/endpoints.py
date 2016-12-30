@@ -23,23 +23,9 @@ logger = get_logger(__name__)
 
 
 class Status(EndpointResource):
-    """
-        API online test
-    """
+    """ API online client testing """
 
     def get(self):
-        """
-# TODO: remove inline swagger
-        Check if the API server is currently reachable
-
-        You may use this URI to monitor network or server problems.
-        ---
-        tags:
-          - status
-        responses:
-          200:
-            description: Server is alive!
-        """
         return 'Server is alive!'
 
 
@@ -49,9 +35,7 @@ class SwaggerSpecifications(EndpointResource):
     """
 
     def get(self):
-
-        # TO FIX: make this static in production
-        # (by using config read the first time in mem class)
+        # TO FIX: should cache this call, at least in production
 
         # find the package root to read swagger
         root = __package__.split('.')[0]
@@ -59,25 +43,12 @@ class SwaggerSpecifications(EndpointResource):
         swag = swagger(current_app,
                        package_root=root, from_file_keyword='swag_file')
 
-# TO FIX: MOVE ME INSIDE THE INIT PHASE in customization.py
-        from commons.globals import mem
-        swag['info']['version'] = mem.custom_config['project']['version']
-        swag['info']['title'] = mem.custom_config['project']['title']
-
         # Build the output
         return jsonify(swag)
 
 
 class Login(EndpointResource):
     """ Let a user login with the developer chosen method """
-
-    base_url = AUTH_URL
-
-    # @decorate.apimethod
-    # def get(self):
-    #     return self.send_errors(
-    #         "Wrong method", "Please login with the POST method",
-    #         code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
     def post(self):
 
@@ -114,26 +85,21 @@ class Login(EndpointResource):
 
         auth.save_token(auth._user, token, jti)
 
-## // TO FIX
-# split response as above in access_token and token_type?
-# also set headers?
+        # TO FIX: split response as above in access_token and token_type?
         # # The right response should be the following
-        # # Just remove the simple response above
         # return self.force_response({
         #     'access_token': token,
         #     'token_type': auth.token_type
         # })
-
-        """
-        e.g.
-{
-  "scope": "https://b2stage.cineca.it/api/.*",
-  "access_token": "EEwJ6tF9x5WCIZDYzyZGaz6Khbw7raYRIBV_WxVvgmsG",
-  "token_type": "Bearer",
-  "user": "pippo",
-  "expires_in": 28800
-}
-        """
+        # OR
+        # {
+        #   "scope": "https://b2stage.cineca.it/api/.*",
+        #   "access_token": "EEwJ6tF9x5WCIZDYzyZGaz6Khbw7raYRIBV_WxVvgmsG",
+        #   "token_type": "Bearer",
+        #   "user": "pippo",
+        #   "expires_in": 28800
+        # }
+        # TO FIX: also set headers
 
         return {'token': token}
 
@@ -414,47 +380,3 @@ if CELERY_AVAILABLE:
         def delete(self, task_id):
             celery_app.control.revoke(task_id, terminate=True)
             return self.empty_response()
-
-    # task = celery_app.AsyncResult(queue_id)
-    # logger.critical(task.status)
-
-    # if task.failed():
-    #     output = task.get()
-    #     return self.force_response(
-    #         "THIS TASK IS FAILED!!! %s" % output,
-    #         code=hcodes.HTTP_SERVER_ERROR)
-
-    # if task.successful():
-    #     output = task.get()
-    #     # Forget about (and possibly remove the result of) this task.
-    #     """
-    #     The task back to the pending status, because:
-
-    #     Task is waiting for execution or unknown.
-    #     Any task id that is not known is implied
-    #     to be in the pending state.
-    #     """
-    #     task.forget()
-
-    #     return self.force_response(
-    #         "THIS TASK IS COMPLETE. Output is: %s" % output,
-    #         code=hcodes.HTTP_OK_CREATED)
-
-    # if task.status == "SENT":
-    #     return self.force_response(
-    #         "THIS TASK IS STILL PENDING",
-    #         code=hcodes.HTTP_OK_BASIC)
-
-    # if task.status == "PROGRESS":
-    #     current = task.info['current']
-    #     total = task.info['total']
-
-    #     perc = 100 * current / total
-
-    #     return self.force_response(
-    #         "THIS TASK IS RUNNING (%s %s)" % (perc, '%'),
-    #         code=hcodes.HTTP_OK_BASIC)
-
-    # return self.force_response(
-    #     "This task does not exist",
-    #     code=hcodes.HTTP_BAD_NOTFOUND)

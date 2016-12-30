@@ -327,6 +327,9 @@ def _parse_file(path):
 def read_my_swagger(file):
 
     content = load_yaml_file(file)
+    print("TEST")
+    pretty_print(content)
+    exit(1)
 
     # A way to save external attributes
     @AttributedModel

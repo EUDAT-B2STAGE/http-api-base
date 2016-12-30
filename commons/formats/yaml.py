@@ -16,9 +16,10 @@ YAML_EXT = 'yaml'
 yaml.dump({})
 
 
-def load_yaml_file(file, path=None, skip_error=False):
+def load_yaml_file(file, path=None, first_doc=False, skip_error=False):
     """ Import data from a YAML file """
 
+    error = None
     if path is None:
         filepath = file
     else:
@@ -29,15 +30,18 @@ def load_yaml_file(file, path=None, skip_error=False):
     if os.path.exists(filepath):
         with open(filepath) as fh:
             try:
-                return yaml.load(fh)
-            except yaml.composer.ComposerError as e:
-                try:
-                    fh.seek(0)
-# WHAT IF ALWAYS LOAD ALL?
-                    docs = yaml.load_all(fh)
-                    return list(docs)
-                except Exception as e:
-                    error = e
+                # LOAD fails if more than one document is there
+                # return yaml.load(fh)
+                # LOAD ALL gets more than one document inside the file
+                gen = yaml.load_all(fh)
+                docs = list(gen)
+                if first_doc:
+                    if len(docs) > 0:
+                        return docs[0]
+                    else:
+                        raise AttributeError("Missing YAML first document")
+                else:
+                    return docs
             except Exception as e:
                 error = e
     else:
