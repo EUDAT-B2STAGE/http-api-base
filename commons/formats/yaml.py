@@ -33,6 +33,7 @@ def load_yaml_file(file, path=None, skip_error=False):
             except yaml.composer.ComposerError as e:
                 try:
                     fh.seek(0)
+# WHAT IF ALWAYS LOAD ALL?
                     docs = yaml.load_all(fh)
                     return list(docs)
                 except Exception as e:

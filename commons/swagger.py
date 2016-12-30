@@ -6,15 +6,15 @@ Original source was:
 https://raw.githubusercontent.com/gangverk/flask-swagger/master/flask_swagger.py
 """
 
-import inspect
-import yaml
-import re
 import os
-
+import re
+import inspect
+from .formats.yaml import yaml, load_yaml_file
 from collections import defaultdict
+from attr import s as AttributedModel, ib as attribute
 from functools import lru_cache
 from commons import BASE_URLS, STATIC_URL, CORE_DIR, USER_CUSTOM_DIR
-from commons.logs import get_logger  # , pretty_print
+from commons.logs import get_logger, pretty_print
 
 log = get_logger(__name__)
 
@@ -326,23 +326,39 @@ def _parse_file(path):
 @lru_cache()
 def read_my_swagger(file):
 
-    from .formats.yaml import load_yaml_file
     content = load_yaml_file(file)
 
-    # summary, desc, swag = _parse_file(file)
-    # if swag is None:
-    #     raise AttributeError("Invalid swagger definition")
-    # print("TEST SWAG", swag)
+    # A way to save external attributes
+    @AttributedModel
+    class ExtraAttributes(object):
+        auth = attribute(default=[])  # bool
 
-    # AUTHENTICATION
-    # ?
+    extra = ExtraAttributes()
+    custom_key = 'custom'
 
-    # pretty_print(content)
-    # exit(0)
-    return content
+    # Separate external definitions
+    if custom_key in content:
+        custom = content.pop(custom_key)
+
+        # Authentication
+        if custom.get('authentication', False):
+
+            roles = custom.get('authorized', [])
+            for role in roles:
+                # check if this role makes sense?
+                # TODO: create a method inside 'auth' to check roles
+                pass
+
+            extra.auth = roles
+
+        # Other custom elements?
+        # pretty_print(custom)
+        # exit(1)
+
+    return content, extra
 
 
-def swaggerish(endpoints):
+def swaggerish(*endpoints):
     """
     Go through all endpoints configured by the current development.
 
@@ -369,7 +385,7 @@ def swaggerish(endpoints):
     paths = {}
     for endpoint in endpoints:
 
-        for uri in endpoint.uris:
+        for uri, _ in endpoint.uris.items():
 
             paths[uri] = {}
             for method, file in endpoint.files.items():
@@ -378,9 +394,22 @@ def swaggerish(endpoints):
 
                 # NOTE: the file reading is cached
                 # you can read it multiple times with no overload
-                paths[uri][method] = read_my_swagger(file)
+                definition, extra = read_my_swagger(file)
 
+                paths[uri][method] = definition
+                endpoint.uris[uri] = extra
+
+    # paths:
+    #   /persons:
+    #     get:
+    #     post:
+    #   /persons/{username}:
+    #     get:
+    #     put:
+    #     patch:
+    #     delete:
     output['paths'] = paths
+
     return output
 
 

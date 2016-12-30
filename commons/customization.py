@@ -20,7 +20,7 @@ from .meta import Meta
 from .formats.yaml import YAML_EXT, load_yaml_file
 from .swagger import swaggerish, validation
 from .globals import mem
-from .logs import get_logger  # , pretty_print
+from .logs import get_logger, pretty_print
 
 log = get_logger(__name__)
 
@@ -33,7 +33,7 @@ class EndpointElements(object):
     exists = attribute(default=False)  # bool
     cls = attribute(default=None)
     instance = attribute(default=None)
-    uris = attribute(default=[])
+    uris = attribute(default={})
     files = attribute(default=[])
     tags = attribute(default=[])
 
@@ -82,7 +82,7 @@ class Customizer(object):
 
         ##################
         # Walk swagger directories (both custom and base)
-        self._endpoints = []
+        endpoints = []
 
         for base_dir in [CORE_DIR, USER_CUSTOM_DIR]:
 
@@ -94,7 +94,7 @@ class Customizer(object):
                 current = self.lookup(ep, package, base_dir, endpoint_dir)
                 if current.exists:
                     # Add endpoint to REST mapping
-                    self._endpoints.append(current)
+                    endpoints.append(current)
 
         ##################
 
@@ -106,7 +106,7 @@ class Customizer(object):
         # TODO: Write swagger complete definitions in base
 
         # [SWAGGER]: read endpoints definition for the first time
-        swag_dict = swaggerish(endpoints=self._endpoints)
+        swag_dict = swaggerish(*endpoints)
 
         # [SWAGGER]: validation
         if not validation(swag_dict):
@@ -114,6 +114,9 @@ class Customizer(object):
 
         # TODO: update mem configuration with swagger definition
         # mem.custom_config = custom_config
+
+        pretty_print(endpoints)
+        self._endpoints = endpoints
 
         print("DEBUG")
         exit(1)
@@ -192,7 +195,7 @@ class Customizer(object):
 
         #####################
         # MAPPING
-        endpoint.uris = []  # attrs bug?
+        endpoint.uris = {}  # attrs bug?
 
         # Set default, a list with one element, if no mapping defined
         mappings = conf.get('mapping', [])
@@ -220,7 +223,8 @@ class Customizer(object):
                 if mykey is not None and mytype is not None:
                     key_name = '/<%s:%s>' % (mytype, mykey)
 
-                endpoint.uris.append('/%s/%s%s' % (base, uri, key_name))
+                total_uri = '/%s/%s%s' % (base, uri, key_name)
+                endpoint.uris[total_uri] = None
 
         #####################
         endpoint.tags = conf.get('labels', [])
