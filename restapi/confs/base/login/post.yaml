@@ -1,50 +1,37 @@
 
-Login with basic credentials (username and password)
-
----
-
-## Note: definitions is used here, because of the plugin behaviour
-
-# definitions:
-#   - schema:
-#     id: Credentials
-#     properties:
-#       username:
-#         type: string
-
-tags:
-  - credentials login
+summary: Login with basic credentials (username and password)
+# description:
 consumes:
   - application/json
 produces:
   - application/json
 
-parameters:
-  - in: body
-    name: body
-    # Note: this definition has to be nested in the object...
-    schema:
-      id: Credentials
-      required:
-        - username
-      properties:
-        username:
-          type: string
-          examples:
-            - user@nomail.org
-          description: your registered username
-        password:
-          type: string
-          description: password coupling in credentials for your username
-      # $ref: "#/definitions/Credentials"
+# parameters:
+#   - in: body
+#     name: body
+#     # Note: this definition has to be nested in the object...
+#     schema:
+#       id: Credentials
+#       required:
+#         - username
+#       properties:
+#         username:
+#           type: string
+#           examples:
+#             - user@nomail.org
+#           description: your registered username
+#         password:
+#           type: string
+#           description: password coupling in credentials for your username
+#       # $ref: "#/definitions/Credentials"
 
 responses:
   '200':
     description: Credentials are valid
     # Note: this definition has to be nested in the object...
-    schema:
-      id: Token
-      type: array
+    # schema:
+    #   id: Token
+    #   type: array
     examples:
 # HEADERS?
       Meta:
@@ -59,3 +46,15 @@ responses:
           null
   '401':
     description: Credentials are wrong
+
+## Note: definitions is used here, because of the plugin behaviour
+# definitions:
+#   - schema:
+#     id: Credentials
+#     properties:
+#       username:
+#         type: string
+
+tags:
+  - credentials
+  - login

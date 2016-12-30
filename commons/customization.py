@@ -4,24 +4,23 @@
 Customization based on configuration 'blueprint' files
 """
 
+from __future__ import absolute_import
+
 import os
 import re
 import glob
 from collections import OrderedDict
+from attr import s as AttributedModel, ib as attribute
 # from jinja2._compat import iteritems
 from . import (
-    JSON_EXT, json, YAML_EXT, yaml,
-    CORE_DIR, USER_CUSTOM_DIR,
-    PATH, CONFIG_PATH, BLUEPRINT_KEY,  # CONFIG_DIR,
-    API_URL, BASE_URLS,
-)
-from attr import (
-    s as AttributedModel,
-    ib as attribute,
+    JSON_EXT, json, CORE_DIR, USER_CUSTOM_DIR,
+    PATH, CONFIG_PATH, BLUEPRINT_KEY, API_URL, BASE_URLS,
 )
 from .meta import Meta
-from .swagger import swaggerish
-from .logs import get_logger, pretty_print
+from .formats.yaml import YAML_EXT, load_yaml_file
+from .swagger import swaggerish, validation
+from .globals import mem
+from .logs import get_logger  # , pretty_print
 
 log = get_logger(__name__)
 
@@ -45,7 +44,8 @@ class EndpointElements(object):
 
 class Customizer(object):
     """
-    CUSTOMIZE BACKEND: Read all of available configurations
+    Customize your BACKEND:
+    Read all of available configurations and definitions.
     """
     def __init__(self, package):
 
@@ -67,76 +67,84 @@ class Customizer(object):
         # if len(defaults) > 0:
         #     log.debug("Defaults:\n%s" % defaults)
 
-        # ##################
-        # # # TODO: mix default and custom configuration
+        # # TODO: mix default and custom configuration
 
-        ##################
-        # DEBUG
-        pretty_print(custom_config)
+        # ##################
+        # # DEBUG
+        # pretty_print(custom_config)
 
         ##################
         # # FRONTEND?
+        # TO FIX: see with @mdantonio how to fix here
         # custom_config['frameworks'] = \
         #     self.load_json(CONFIG_PATH, "", "frameworks")
         # auth = custom_config['variables']['containers']['authentication']
 
         ##################
-        # Walk swagger directories custom and base
+        # Walk swagger directories (both custom and base)
         self._endpoints = []
 
-        for basedir in [CORE_DIR, USER_CUSTOM_DIR]:
+        for base_dir in [CORE_DIR, USER_CUSTOM_DIR]:
 
-            current_dir = os.path.join(CONFIG_PATH, basedir)
-            # log.debug("Looking into %s" % current_dir)
+            current_dir = os.path.join(CONFIG_PATH, base_dir)
 
-            # TODO: move this block into a function/method
-            for endpoint in os.listdir(current_dir):
+            for ep in os.listdir(current_dir):
 
-                log.info("Found endpoint %s" % endpoint)
-                endpoint_dir = os.path.join(CONFIG_PATH, basedir, endpoint)
-
-                ########################
-                # Find yaml files
-                conf = None
-                yaml_files = {}
-                yaml_listing = os.path.join(endpoint_dir, "*.%s" % YAML_EXT)
-                for file in glob.glob(yaml_listing):
-                    if file.endswith('specs.%s' % YAML_EXT):
-                        # load configuration and find file and class
-                        conf = self.ymport(file)
-                    else:
-                        # add file to be loaded from swagger extension
-                        p = re.compile(r'\/([^\.\/]+)\.' + YAML_EXT + '$')
-                        match = p.search(file)
-                        method = match.groups()[0]
-                        yaml_files[method] = file
-
-                if len(yaml_files) < 1:
-                    raise Exception("%s: methods undefined" % endpoint)
-                if conf is None or 'class' not in conf:
-                    raise ValueError("No 'class' defined for '%s'" % endpoint)
-
-                ########################
-                current = self.load_endpoint(endpoint, basedir, package, conf)
-                current.files = yaml_files
+                endpoint_dir = os.path.join(CONFIG_PATH, base_dir, ep)
+                current = self.lookup(ep, package, base_dir, endpoint_dir)
                 if current.exists:
                     # Add endpoint to REST mapping
                     self._endpoints.append(current)
 
         ##################
 
-        # TODO: Write swagger complete definitions in base
-
-        # TODO: Swagger endpoints read definition for the first time
-        swaggerish(endpoints=self._endpoints)
-        print("SWAGGER COMPLETED")
-        exit(1)
-
         # TODO: add endpoints to custom configuration to be saved
 
-        # Save in memory all of the configurations
-        from commons.globals import mem
+        # Save in memory all of the configuration
         mem.custom_config = custom_config
+
+        # TODO: Write swagger complete definitions in base
+
+        # [SWAGGER]: read endpoints definition for the first time
+        swag_dict = swaggerish(endpoints=self._endpoints)
+
+        # [SWAGGER]: validation
+        if not validation(swag_dict):
+            raise AttributeError("Current swagger definition is invalid")
+
+        # TODO: update mem configuration with swagger definition
+        # mem.custom_config = custom_config
+
+        print("DEBUG")
+        exit(1)
+
+    def lookup(self, endpoint, package, base_dir, endpoint_dir):
+
+        log.info("Found endpoint dir: '%s'" % endpoint)
+
+        # Find yaml files
+        conf = None
+        yaml_files = {}
+        yaml_listing = os.path.join(endpoint_dir, "*.%s" % YAML_EXT)
+        for file in glob.glob(yaml_listing):
+            if file.endswith('specs.%s' % YAML_EXT):
+                # load configuration and find file and class
+                conf = load_yaml_file(file)
+            else:
+                # add file to be loaded from swagger extension
+                p = re.compile(r'\/([^\.\/]+)\.' + YAML_EXT + '$')
+                match = p.search(file)
+                method = match.groups()[0]
+                yaml_files[method] = file
+
+        if len(yaml_files) < 1:
+            raise Exception("%s: methods undefined" % endpoint)
+        if conf is None or 'class' not in conf:
+            raise ValueError("No 'class' defined for '%s'" % endpoint)
+
+        current = self.load_endpoint(endpoint, base_dir, package, conf)
+        current.files = yaml_files
+        return current
 
     def read_complex_config(self, configfile):
         """ A more complex configuration is available in JSON format """
@@ -160,7 +168,7 @@ class Customizer(object):
         #####################
         for dependency in conf.get('depends_on', []):
             if not getattr(module, dependency, False):
-                log.warning("Skip %s: unmet %s" % (default_uri, dependency))
+                log.warning("Skip '%s': unmet %s" % (default_uri, dependency))
                 return endpoint
 
         endpoint.cls = self._meta.get_class_from_string(class_name, module)
@@ -186,7 +194,7 @@ class Customizer(object):
         # MAPPING
         endpoint.uris = []  # attrs bug?
 
-        # Set default, if no mappings defined
+        # Set default, a list with one element, if no mapping defined
         mappings = conf.get('mapping', [])
         if len(mappings) < 1:
             mappings.append({'uri': [default_uri]})
@@ -219,35 +227,7 @@ class Customizer(object):
         # pretty_print(endpoint)
         return endpoint
 
-    @staticmethod
-    def ymport(file, path=None, skip_error=False):
-        """ Import data from a YAML file """
-
-        if path is None:
-            filepath = file
-        else:
-            filepath = os.path.join(path, file + "." + YAML_EXT)
-        log.debug("Reading file %s" % filepath)
-
-        # load from this file
-        error = None
-        if os.path.exists(filepath):
-            with open(filepath) as fh:
-                try:
-                    # return json.load(fh, object_pairs_hook=OrderedDict)
-                    return yaml.load(fh)
-                except Exception as e:
-                    error = e
-        else:
-            error = 'File does not exist'
-
-        message = "Failed to read YAML from '%s':\n%s" % (filepath, error)
-        if skip_error:
-            log.error(message)
-        else:
-            raise Exception(message)
-        return None
-
+    # TODO: move json things into commons/formats/json.py
     @staticmethod
     def load_json(file, path, config_root='', skip_error=False, retfile=False):
         """

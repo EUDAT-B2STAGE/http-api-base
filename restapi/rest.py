@@ -4,19 +4,19 @@
 App specifications
 """
 
-from __future__ import division
-from . import myself, lic
-from commons.logs import get_logger
+from __future__ import absolute_import
+
 from flask_restful import Api as RestFulApi
+from . import myself, lic
 from .resources.farm import EndpointsFarmer
-# from .config import MyConfigs
+from commons.logs import get_logger
 from commons.customization import Customizer
 
 __author__ = myself
 __copyright__ = myself
 __license__ = lic
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 # Hack the original class to remove the response making...
@@ -63,7 +63,7 @@ class Api(RestFulApi):
 
 ####################################
 # REST to be activated inside the app factory
-logger.debug(
+log.debug(
     "Create endpoints w/ [%s, %s]" % (Api, EndpointsFarmer))
 
 
@@ -79,7 +79,7 @@ def create_endpoints(epo, security=False, debug=False):
     #     """ Example with no authentication """
     #     def get(self):
     #         return "Hello world", 200
-    # logger.debug("Base endpoint: Hello world!")
+    # log.debug("Base endpoint: Hello world!")
 
     ####################################
     # Verify configuration
@@ -91,13 +91,13 @@ def create_endpoints(epo, security=False, debug=False):
     ####################################
     # Basic configuration (simple): from example class
     if len(resources) < 1:
-        logger.warning("No custom endpoints found!")
+        log.warning("No custom endpoints found!")
         from .resources import exampleservices as mymodule
         epo.many_from_module(mymodule)
-        logger.debug("Loaded example class instead")
+        log.debug("Loaded example class instead")
     # Advanced configuration (cleaner): from swagger definition
     else:
-        logger.info("Using resources defined within swagger")
+        log.info("Using resources defined within swagger")
         for resource in resources:
             # Load each resource
             epo.create_single(resource.cls, [resource.uri], resource.key_name)

@@ -8,15 +8,15 @@ https://raw.githubusercontent.com/gangverk/flask-swagger/master/flask_swagger.py
 
 import inspect
 import yaml
-import glob
 import re
 import os
 
 from collections import defaultdict
+from functools import lru_cache
 from commons import BASE_URLS, STATIC_URL, CORE_DIR, USER_CUSTOM_DIR
-from commons.logs import get_logger
+from commons.logs import get_logger  # , pretty_print
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 def _sanitize(comment):
@@ -72,7 +72,7 @@ def _parse_docstring(obj, process_doc, from_file_keyword, path=None):
                 from_file = path
 
             if from_file:
-                # logger.debug("Reading from file %s" % from_file)
+                # log.debug("Reading from file %s" % from_file)
                 full_doc_from_file = _doc_from_file(from_file)
                 if full_doc_from_file:
                     full_doc = full_doc_from_file
@@ -219,7 +219,7 @@ def swagger(app, package_root='',
                 myrule = myrule.replace(prefix, '', 1)
 
         if 'view_class' not in dir(endpoint):
-            logger.warning("Un-Swaggable endpoint path %s" % rule)
+            log.warning("Un-Swaggable endpoint path %s" % rule)
             continue
 
         operations = dict()
@@ -241,7 +241,7 @@ def swagger(app, package_root='',
                 package_root, CONFIG_DIR, subdir, folder,
                 method.__name__ + '.yaml')
 
-            logger.debug("Looking for %s" % path)
+            log.debug("Looking for %s" % path)
             # ###########
 
             swag = None
@@ -303,7 +303,7 @@ def _parse_file(path):
     with the main goal of reading a swagger file definition
     """
 
-    logger.debug("Reading swagger in %s" % path)
+    log.debug("Reading swagger in %s" % path)
     first_line, other_lines, swag = None, None, None
     full_doc = _doc_from_file(path)
 
@@ -323,25 +323,23 @@ def _parse_file(path):
     return first_line, other_lines, swag
 
 
+@lru_cache()
 def read_my_swagger(file):
 
-    # content = ymport(file)
+    from .formats.yaml import load_yaml_file
+    content = load_yaml_file(file)
 
-    # "paths": {
-    #     "/api/status": {
-    #         "get": {
-    #             "description": "(HTML?) tmp",
-    #             "responses": { },
-    #             "summary":
-
-    # summary, desc, swag = _parse_file(path)
+    # summary, desc, swag = _parse_file(file)
     # if swag is None:
     #     raise AttributeError("Invalid swagger definition")
     # print("TEST SWAG", swag)
 
     # AUTHENTICATION
     # ?
-    pass
+
+    # pretty_print(content)
+    # exit(0)
+    return content
 
 
 def swaggerish(endpoints):
@@ -351,6 +349,7 @@ def swaggerish(endpoints):
     Provide the minimum required data according to swagger specs.
     """
 
+    # A template base
     output = {
         "swagger": "2.0",
         "info": {
@@ -359,15 +358,53 @@ def swaggerish(endpoints):
         }
     }
 
+    # Set existing values
+    from commons.globals import mem
+    proj = mem.custom_config['project']
+    if 'version' in proj:
+        output['info']['version'] = proj['version']
+    if 'title' in proj:
+        output['info']['title'] = proj['title']
+
+    paths = {}
     for endpoint in endpoints:
 
         for uri in endpoint.uris:
 
+            paths[uri] = {}
             for method, file in endpoint.files.items():
 
-                read_my_swagger(file)
-                print("swagger:", uri, method, file)
+                # print("swagger:", uri, method, file)
 
-# HOW TO MIX FROM DIFFERENT FILES?
+                # NOTE: the file reading is cached
+                # you can read it multiple times with no overload
+                paths[uri][method] = read_my_swagger(file)
 
+    output['paths'] = paths
     return output
+
+
+def validation(swag_dict):
+    """
+    Based on YELP library,
+    verify the current definition on the open standard
+    """
+
+    from bravado_core.spec import Spec
+
+    bravado_config = {
+        'validate_swagger_spec': True,
+        'validate_requests': False,
+        'validate_responses': False,
+        'use_models': False,
+    }
+
+    try:
+        Spec.from_dict(swag_dict, config=bravado_config)
+        log.info("Validated")
+    except Exception as e:
+        error = str(e).split('\n')[0]
+        log.error("Failed to valide:\n%s\n" % error)
+        return False
+
+    return True

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
+from __future__ import division
+
 import os
-import yaml
 import pkg_resources
 
 #######################
@@ -11,6 +12,7 @@ except:
     __version__ = 'unknown'
 
 #######################
+# TODO: move json things into commons/formats/json.py
 # Look for the best chance for json lib
 try:
     import commentjson as json
@@ -21,11 +23,11 @@ except:
     except:
         import json
 
-# Make a json test
+
+#######################
+# Make a json and yaml test
 json.dumps({})
-yaml.dump({})
 JSON_EXT = 'json'
-YAML_EXT = 'yaml'
 
 #######################
 myself = "Paolo D'Onorio De Meo <p.donoriodemeo@gmail.com>"
