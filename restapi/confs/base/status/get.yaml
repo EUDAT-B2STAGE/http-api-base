@@ -1,10 +1,9 @@
 
-summary: Check if the API server is currently reachable
-description: You may use this URI to monitor network or server problems.
-
-responses:
-  200:
-    description: Server is alive!
-
-tags:
-  - status
+status:
+  summary: Check if the API server is currently reachable
+  description: You may use this URI to monitor network or server problems.
+  responses:
+    200:
+      description: Server is alive!
+  tags:
+    - status

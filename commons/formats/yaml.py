@@ -8,16 +8,22 @@ from __future__ import absolute_import
 
 import yaml
 import os
+from functools import lru_cache
 
 from ..logs import get_logger
 log = get_logger(__name__)
 
 YAML_EXT = 'yaml'
+# Test the library
 yaml.dump({})
 
 
-def load_yaml_file(file, path=None, first_doc=False, skip_error=False):
-    """ Import data from a YAML file """
+@lru_cache()
+def load_yaml_file(file, path=None, get_all=False, skip_error=False):
+    """
+    Import data from a YAML file.
+    Reading is cached.
+    """
 
     error = None
     if path is None:
@@ -35,13 +41,13 @@ def load_yaml_file(file, path=None, first_doc=False, skip_error=False):
                 # LOAD ALL gets more than one document inside the file
                 gen = yaml.load_all(fh)
                 docs = list(gen)
-                if first_doc:
+                if get_all:
+                    return docs
+                else:
                     if len(docs) > 0:
                         return docs[0]
                     else:
                         raise AttributeError("Missing YAML first document")
-                else:
-                    return docs
             except Exception as e:
                 error = e
     else:

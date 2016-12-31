@@ -2,42 +2,38 @@
 login:
   summary: Login with basic credentials
   description: Normal credentials (username and password) login endpoint
-
-  consumes:
-    - application/json
-  produces:
-    - application/json
-
-  parameters:
-    required:
-      - username
-    properties:
-      username:
-        type: string
-        examples:
-          - user@nomail.org
-        description: your registered username
-      password:
-        type: string
-        description: password coupling in credentials for your username
-
+  # consumes:
+  #   - application/json
+  # produces:
+  #   - application/json
+  # parameters:
+  #   # required:
+  #   #   - username
+  #   properties:
+  #     username:
+  #       type: string
+  #       examples:
+  #         - user@nomail.org
+  #       description: your registered username
+  #     password:
+  #       type: string
+  #       description: password coupling in credentials for your username
   responses:
     '200':
       description: Credentials are valid
-      examples:
-        Meta:
-          data_type: string
-          elements: 1
-          errors: 0
-          status: 200
-        Response:
-          data:
-            token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9
-          errors:
-            null
+      # examples:
+      #   Meta:
+      #     data_type: string
+      #     elements: 1
+      #     errors: 0
+      #     status: 200
+      #   Response:
+      #     data:
+      #       token: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9
+      #     errors:
+      #       null
     '401':
       description: Credentials are wrong
-
   tags:
     - credentials
     - login

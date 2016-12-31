@@ -4,17 +4,20 @@
 Integrating swagger in automatic ways.
 Original source was:
 https://raw.githubusercontent.com/gangverk/flask-swagger/master/flask_swagger.py
+
+# TODO: clean unused original method or refactor...
 """
+
+from __future__ import absolute_import
 
 import os
 import re
 import inspect
-from .formats.yaml import yaml, load_yaml_file
 from collections import defaultdict
 from attr import s as AttributedModel, ib as attribute
-from functools import lru_cache
-from commons import BASE_URLS, STATIC_URL, CORE_DIR, USER_CUSTOM_DIR
-from commons.logs import get_logger, pretty_print
+from . import BASE_URLS, STATIC_URL, CORE_DIR, USER_CUSTOM_DIR
+from .logs import get_logger, pretty_print
+from .formats.yaml import yaml, load_yaml_file
 
 log = get_logger(__name__)
 
@@ -297,146 +300,164 @@ def swagger(app, package_root='',
     return output
 
 
-def _parse_file(path):
-    """
-    Hand made from the original
-    with the main goal of reading a swagger file definition
-    """
+# def _parse_file(path):
+#     """
+#     Hand made from the original
+#     with the main goal of reading a swagger file definition
+#     """
 
-    log.debug("Reading swagger in %s" % path)
-    first_line, other_lines, swag = None, None, None
-    full_doc = _doc_from_file(path)
+#     log.debug("Reading swagger in %s" % path)
+#     first_line, other_lines, swag = None, None, None
+#     full_doc = _doc_from_file(path)
 
-    line_feed = full_doc.find('\n')
-    if line_feed != -1:
-        first_line = _sanitize(full_doc[:line_feed])
-        yaml_sep = full_doc[line_feed + 1:].find('---')
-        if yaml_sep != -1:
-            other_lines = _sanitize(
-                full_doc[line_feed + 1:line_feed + yaml_sep])
-            swag = yaml.load(full_doc[line_feed + yaml_sep:])
-        else:
-            other_lines = _sanitize(full_doc[line_feed + 1:])
-    else:
-        first_line = full_doc
+#     line_feed = full_doc.find('\n')
+#     if line_feed != -1:
+#         first_line = _sanitize(full_doc[:line_feed])
+#         yaml_sep = full_doc[line_feed + 1:].find('---')
+#         if yaml_sep != -1:
+#             other_lines = _sanitize(
+#                 full_doc[line_feed + 1:line_feed + yaml_sep])
+#             swag = yaml.load(full_doc[line_feed + yaml_sep:])
+#         else:
+#             other_lines = _sanitize(full_doc[line_feed + 1:])
+#     else:
+#         first_line = full_doc
 
-    return first_line, other_lines, swag
-
-
-@lru_cache()
-def read_my_swagger(file):
-
-    content = load_yaml_file(file)
-    print("TEST")
-    pretty_print(content)
-    exit(1)
-
-    # A way to save external attributes
-    @AttributedModel
-    class ExtraAttributes(object):
-        auth = attribute(default=[])  # bool
-
-    extra = ExtraAttributes()
-    custom_key = 'custom'
-
-    # Separate external definitions
-    if custom_key in content:
-        custom = content.pop(custom_key)
-
-        # Authentication
-        if custom.get('authentication', False):
-
-            roles = custom.get('authorized', [])
-            for role in roles:
-                # check if this role makes sense?
-                # TODO: create a method inside 'auth' to check roles
-                pass
-
-            extra.auth = roles
-
-        # Other custom elements?
-        # pretty_print(custom)
-        # exit(1)
-
-    return content, extra
+#     return first_line, other_lines, swag
 
 
-def swaggerish(*endpoints):
-    """
-    Go through all endpoints configured by the current development.
+# TODO: this should probably become a class...
+class BeSwagger(object):
 
-    Provide the minimum required data according to swagger specs.
-    """
+    def __init__(self, endpoints):
+        self._endpoints = endpoints
+        self._paths = {}
 
-    # A template base
-    output = {
-        "swagger": "2.0",
-        "info": {
-            "version": "0.0.1",
-            "title": "Your application name",
+    def read_my_swagger(self, file, method, uris={}):
+
+        ################################
+        # NOTE: the file reading here is cached
+        # you can read it multiple times with no overload
+        mapping = load_yaml_file(file)
+
+        # content has to be a dictionary
+        if not isinstance(mapping, dict):
+            raise TypeError("Wrong method ")
+
+        ################################
+        # A way to save external attributes
+        @AttributedModel
+        class ExtraAttributes(object):
+            auth = attribute(default=[])  # bool
+
+        extra = ExtraAttributes()
+
+        # read common
+        commons = mapping.pop('common', {})
+
+        ################################
+        # Specs should contain only labels written in spec before
+        for label, specs in mapping.items():
+            if label not in uris:
+                raise KeyError(
+                    "Invalid label '%s' found.\nAvailable labels: %s"
+                    % (label, list(uris.keys())))
+            uri = uris[label]
+            print("SWAGGERING", method, uri)
+            if uri not in self._paths:
+                self._paths[uri] = {}
+
+            ################################
+            # add common elements to all specs
+            for key, value in commons.items():
+                if key not in specs:
+                    specs[key] = value
+
+            ################################
+            # Separate external definitions
+
+            # Find the custom part
+            custom = specs.pop('custom', {})
+
+            # Authentication
+            if custom.get('authentication', False):
+
+                roles = custom.get('authorized', [])
+                for role in roles:
+                    # check if this role makes sense?
+                    # TODO: create a method inside 'auth' to check roles
+                    pass
+
+                    extra.auth = roles
+
+            # Other custom elements?
+            # NOTE: whatever is left will be parsed into Swagger Validator
+
+            ###########################
+            # pretty_print(specs)
+            self._paths[uri][method] = specs
+
+        return extra
+
+    def swaggerish(self):
+        """
+        Go through all endpoints configured by the current development.
+
+        Provide the minimum required data according to swagger specs.
+        """
+
+        # A template base
+        output = {
+            "swagger": "2.0",
+            "info": {
+                "version": "0.0.1",
+                "title": "Your application name",
+            }
         }
-    }
 
-    # Set existing values
-    from commons.globals import mem
-    proj = mem.custom_config['project']
-    if 'version' in proj:
-        output['info']['version'] = proj['version']
-    if 'title' in proj:
-        output['info']['title'] = proj['title']
+        # Set existing values
+        from commons.globals import mem
+        proj = mem.custom_config['project']
+        if 'version' in proj:
+            output['info']['version'] = proj['version']
+        if 'title' in proj:
+            output['info']['title'] = proj['title']
 
-    paths = {}
-    for endpoint in endpoints:
+        for endpoint in self._endpoints:
 
-        for uri, _ in endpoint.uris.items():
+            endpoint.custom = {}
 
-            paths[uri] = {}
-            for method, file in endpoint.files.items():
+            for method, file in endpoint.methods.items():
 
-                # print("swagger:", uri, method, file)
+                endpoint.custom[method] = \
+                    self.read_my_swagger(file, method, endpoint.uris)
 
-                # NOTE: the file reading is cached
-                # you can read it multiple times with no overload
-                definition, extra = read_my_swagger(file)
+        output['paths'] = self._paths
+        return output
 
-                paths[uri][method] = definition
-                endpoint.uris[uri] = extra
+    @staticmethod
+    def validation(swag_dict):
+        """
+        Based on YELP library,
+        verify the current definition on the open standard
+        """
 
-    # paths:
-    #   /persons:
-    #     get:
-    #     post:
-    #   /persons/{username}:
-    #     get:
-    #     put:
-    #     patch:
-    #     delete:
-    output['paths'] = paths
+        from bravado_core.spec import Spec
 
-    return output
+        bravado_config = {
+            'validate_swagger_spec': True,
+            'validate_requests': False,
+            'validate_responses': False,
+            'use_models': False,
+        }
 
+        try:
+            print(swag_dict)
+            Spec.from_dict(swag_dict, config=bravado_config)
+            log.info("Validated")
+        except Exception as e:
+            error = str(e).split('\n')[0]
+            log.error("Failed to validate:\n%s\n" % error)
+            return False
 
-def validation(swag_dict):
-    """
-    Based on YELP library,
-    verify the current definition on the open standard
-    """
-
-    from bravado_core.spec import Spec
-
-    bravado_config = {
-        'validate_swagger_spec': True,
-        'validate_requests': False,
-        'validate_responses': False,
-        'use_models': False,
-    }
-
-    try:
-        Spec.from_dict(swag_dict, config=bravado_config)
-        log.info("Validated")
-    except Exception as e:
-        error = str(e).split('\n')[0]
-        log.error("Failed to valide:\n%s\n" % error)
-        return False
-
-    return True
+        return True

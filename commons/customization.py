@@ -18,7 +18,7 @@ from . import (
 )
 from .meta import Meta
 from .formats.yaml import YAML_EXT, load_yaml_file
-from .swagger import swaggerish, validation
+from .swagger import BeSwagger
 from .globals import mem
 from .logs import get_logger, pretty_print
 
@@ -34,7 +34,8 @@ class EndpointElements(object):
     cls = attribute(default=None)
     instance = attribute(default=None)
     uris = attribute(default={})
-    files = attribute(default=[])
+    methods = attribute(default=[])
+    custom = attribute(default={})
     tags = attribute(default=[])
 
 
@@ -98,24 +99,34 @@ class Customizer(object):
 
         ##################
 
-        # TODO: add endpoints to custom configuration to be saved
-
         # Save in memory all of the configuration
         mem.custom_config = custom_config
 
         # TODO: Write swagger complete definitions in base
 
-        # [SWAGGER]: read endpoints definition for the first time
-        swag_dict = swaggerish(*endpoints)
+        # [SWAGGER]: read endpoints definition
+        # for the first time (at init time)
+        swag = BeSwagger(endpoints)
+        swag_dict = swag.swaggerish()
+
+        # print("DEBUG")
+        # pretty_print(swag_dict)
+        # exit(1)
+        # with open('/tmp/test.json', 'w') as fh:
+        #     fh.write(swag_dict)
 
         # [SWAGGER]: validation
-        if not validation(swag_dict):
+        if not swag.validation(swag_dict):
             raise AttributeError("Current swagger definition is invalid")
 
         # TODO: update mem configuration with swagger definition
-        # mem.custom_config = custom_config
+        # TODO: add endpoints to custom configuration to be saved
+        # mem.custom_config
 
+        print("ARE ENDPOINTS USABLE NOW??")
+        exit(1)
         pretty_print(endpoints)
+        exit(0)
         self._endpoints = endpoints
 
         print("DEBUG")
@@ -132,7 +143,7 @@ class Customizer(object):
         for file in glob.glob(yaml_listing):
             if file.endswith('specs.%s' % YAML_EXT):
                 # load configuration and find file and class
-                conf = load_yaml_file(file, first_doc=True)
+                conf = load_yaml_file(file)
             else:
                 # add file to be loaded from swagger extension
                 p = re.compile(r'\/([^\.\/]+)\.' + YAML_EXT + '$')
@@ -146,7 +157,7 @@ class Customizer(object):
             raise ValueError("No 'class' defined for '%s'" % endpoint)
 
         current = self.load_endpoint(endpoint, base_dir, package, conf)
-        current.files = yaml_files
+        current.methods = yaml_files
         return current
 
     def read_complex_config(self, configfile):
@@ -215,7 +226,7 @@ class Customizer(object):
 
             # BUILD URI
             total_uri = '/%s%s' % (base, uri)
-            endpoint.uris[label] = {'uri': total_uri}
+            endpoint.uris[label] = total_uri
 
         # Check if something strange is still in configuration
         if len(conf) > 0:

@@ -3,6 +3,6 @@ file: endpoints
 class: Status
 baseuri: "/api"
 mapping:
-  login: "/status"
+  status: "/status"
 labels:
   - base
