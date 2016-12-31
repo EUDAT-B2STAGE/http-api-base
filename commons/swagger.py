@@ -15,7 +15,7 @@ import re
 import inspect
 from collections import defaultdict
 from attr import s as AttributedModel, ib as attribute
-from . import BASE_URLS, STATIC_URL, CORE_DIR, USER_CUSTOM_DIR
+from . import BASE_URLS, STATIC_URL, CORE_DIR, USER_CUSTOM_DIR, json
 from .logs import get_logger, pretty_print
 from .formats.yaml import yaml, load_yaml_file
 
@@ -326,8 +326,12 @@ def swagger(app, package_root='',
 #     return first_line, other_lines, swag
 
 
-# TODO: this should probably become a class...
 class BeSwagger(object):
+    """Swagger class in our own way:
+
+    Fewer methods than the original swagger reading,
+    also more control and closer to the original swagger.
+    """
 
     def __init__(self, endpoints):
         self._endpoints = endpoints
@@ -354,18 +358,17 @@ class BeSwagger(object):
 
         # read common
         commons = mapping.pop('common', {})
+        pattern = re.compile(r'\<([^\>]+)\>')
 
         ################################
         # Specs should contain only labels written in spec before
         for label, specs in mapping.items():
+
             if label not in uris:
                 raise KeyError(
                     "Invalid label '%s' found.\nAvailable labels: %s"
                     % (label, list(uris.keys())))
             uri = uris[label]
-            print("SWAGGERING", method, uri)
-            if uri not in self._paths:
-                self._paths[uri] = {}
 
             ################################
             # add common elements to all specs
@@ -394,8 +397,43 @@ class BeSwagger(object):
             # NOTE: whatever is left will be parsed into Swagger Validator
 
             ###########################
-            # pretty_print(specs)
-            self._paths[uri][method] = specs
+            # TODO: strip the uri of the parameter
+            # and add it to 'parameters'
+            newuri = uri[:]  # create a copy
+            if 'parameters' not in specs:
+                specs['parameters'] = []
+
+            for parameter in pattern.findall(uri):
+
+                # create parameters
+                x = parameter.split(':')
+                xlen = len(x)
+                paramtype = 'string'
+
+                if xlen == 1:
+                    paramname = x[0]
+                elif xlen == 2:
+                    paramtype = x[0]
+                    paramname = x[1]
+
+                specs['parameters'].append({
+                    'name': paramname, 'type': paramtype,
+                    'in': 'path', 'required': True
+                })
+
+                # replace in a new uri
+                newuri = newuri.replace('<%s>' % parameter, '{%s}' % paramname)
+
+            if len(specs['parameters']) < 1:
+                specs.pop('parameters')
+
+            ###########################
+            log.debug("Build definition for '%s:%s'"
+                      % (method.upper(), newuri))
+
+            if newuri not in self._paths:
+                self._paths[newuri] = {}
+            self._paths[newuri][method] = specs
 
         return extra
 
@@ -433,6 +471,11 @@ class BeSwagger(object):
                     self.read_my_swagger(file, method, endpoint.uris)
 
         output['paths'] = self._paths
+
+        # TO FIX: produce
+        # produces:
+        #   - application/json
+
         return output
 
     @staticmethod
@@ -444,6 +487,13 @@ class BeSwagger(object):
 
         from bravado_core.spec import Spec
 
+        try:
+            # Fix jsonschema validation problem
+            # http://j.mp/2hEquZy
+            swag_dict = json.loads(json.dumps(swag_dict))
+        except:
+            log.warning("Failed to json fix the swagger definition")
+
         bravado_config = {
             'validate_swagger_spec': True,
             'validate_requests': False,
@@ -452,10 +502,10 @@ class BeSwagger(object):
         }
 
         try:
-            print(swag_dict)
             Spec.from_dict(swag_dict, config=bravado_config)
             log.info("Validated")
         except Exception as e:
+            # raise e
             error = str(e).split('\n')[0]
             log.error("Failed to validate:\n%s\n" % error)
             return False

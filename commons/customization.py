@@ -109,12 +109,6 @@ class Customizer(object):
         swag = BeSwagger(endpoints)
         swag_dict = swag.swaggerish()
 
-        # print("DEBUG")
-        # pretty_print(swag_dict)
-        # exit(1)
-        # with open('/tmp/test.json', 'w') as fh:
-        #     fh.write(swag_dict)
-
         # [SWAGGER]: validation
         if not swag.validation(swag_dict):
             raise AttributeError("Current swagger definition is invalid")
