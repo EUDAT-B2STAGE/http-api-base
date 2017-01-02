@@ -362,6 +362,7 @@ class BeSwagger(object):
 
         ################################
         # Specs should contain only labels written in spec before
+        # pathparams = []
         for label, specs in mapping.items():
 
             if label not in uris:
@@ -416,6 +417,10 @@ class BeSwagger(object):
                     paramtype = x[0]
                     paramname = x[1]
 
+                # TO FIX: complete for all types
+                if paramtype == 'int':
+                    paramtype = 'number'
+
                 specs['parameters'].append({
                     'name': paramname, 'type': paramtype,
                     'in': 'path', 'required': True
@@ -434,6 +439,9 @@ class BeSwagger(object):
             if newuri not in self._paths:
                 self._paths[newuri] = {}
             self._paths[newuri][method] = specs
+            # pretty_print(specs)
+            # if len(pathparams) > 0:
+            #     self._paths[newuri]['parameters'] = pathparams
 
         return extra
 
@@ -471,10 +479,8 @@ class BeSwagger(object):
                     self.read_my_swagger(file, method, endpoint.uris)
 
         output['paths'] = self._paths
-
-        # TO FIX: produce
-        # produces:
-        #   - application/json
+        # output['consumes'] = ['application/json']
+        output['produces'] = ['application/json']
 
         return output
 
@@ -491,6 +497,10 @@ class BeSwagger(object):
             # Fix jsonschema validation problem
             # http://j.mp/2hEquZy
             swag_dict = json.loads(json.dumps(swag_dict))
+            print(swag_dict)
+            # write it down
+            with open('/tmp/test.json', 'w') as f:
+                json.dump(swag_dict, f)
         except:
             log.warning("Failed to json fix the swagger definition")
 

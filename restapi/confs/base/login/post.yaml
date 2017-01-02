@@ -9,7 +9,7 @@ login:
 
   parameters:
     - name: username
-      in: query  # or 'body' or 'path'
+      in: query  # or 'body' or 'path' or 'header'
       description: your registered username
       type: string
       required: true
