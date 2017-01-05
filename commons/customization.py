@@ -30,7 +30,8 @@ log = get_logger(__name__)
 ########################
 @AttributedModel
 class EndpointElements(object):
-    exists = attribute(default=False)  # bool
+    exists = attribute(default=False)
+    isbase = attribute(default=False)
     cls = attribute(default=None)
     instance = attribute(default=None)
     uris = attribute(default={})
@@ -47,19 +48,26 @@ class Customizer(object):
     """
     Customize your BACKEND:
     Read all of available configurations and definitions.
+
     """
     def __init__(self, package):
 
         self._meta = Meta()
 
+        # TODO: please refactor this piece of code
+        # by splitting single parts into submethods
+
         ##################
-        # # CUSTOM configuration
+        # CUSTOM configuration:
         # from Blueprint mounted directory
         bp_holder = self.load_json(BLUEPRINT_KEY, PATH, CONFIG_PATH)
-        # pretty_print(bp_holder)
         blueprint = bp_holder[BLUEPRINT_KEY]
         custom_config = self.load_json(blueprint, PATH, CONFIG_PATH)
         custom_config[BLUEPRINT_KEY] = blueprint
+        # pretty_print(custom_config)
+
+        # Save in memory all of the current configuration
+        mem.custom_config = custom_config
 
         # ##################
         # # # DEFAULT configuration (NOT IMPLEMENTED YET)
@@ -68,21 +76,18 @@ class Customizer(object):
         # if len(defaults) > 0:
         #     log.debug("Defaults:\n%s" % defaults)
 
-        # # TODO: mix default and custom configuration
-
         # ##################
-        # # DEBUG
-        # pretty_print(custom_config)
+        # # TODO: mix default and custom configuration
 
         ##################
         # # FRONTEND?
-        # TO FIX: see with @mdantonio how to fix here
+        # TO FIX: see with @mdantonio what to do here
         # custom_config['frameworks'] = \
         #     self.load_json(CONFIG_PATH, "", "frameworks")
         # auth = custom_config['variables']['containers']['authentication']
 
         ##################
-        # Walk swagger directories (both custom and base)
+        # Walk swagger directories looking for endpoints
         endpoints = []
 
         for base_dir in [CORE_DIR, USER_CUSTOM_DIR]:
@@ -97,34 +102,25 @@ class Customizer(object):
                     # Add endpoint to REST mapping
                     endpoints.append(current)
 
+        # Save endpoints to global memory, we never know
+        mem.endpoints = endpoints
+        # pretty_print(endpoints)
+
         ##################
-
-        # Save in memory all of the configuration
-        mem.custom_config = custom_config
-
-        # TODO: Write swagger complete definitions in base
-
-        # [SWAGGER]: read endpoints definition
-        # for the first time (at init time)
+        # SWAGGER read endpoints definition
         swag = BeSwagger(endpoints)
         swag_dict = swag.swaggerish()
 
-        # [SWAGGER]: validation
+        # SWAGGER validation
         if not swag.validation(swag_dict):
             raise AttributeError("Current swagger definition is invalid")
 
-        # TODO: update mem configuration with swagger definition
-        # TODO: add endpoints to custom configuration to be saved
-        # mem.custom_config
+        # Update global memory with swagger definition
+        mem.swagger_definition = swag_dict
 
-        print("ARE ENDPOINTS USABLE NOW??")
-        exit(1)
-        pretty_print(endpoints)
-        exit(0)
+        # INIT does not have a return.
+        # So we keep the endpoints to be returned with another method.
         self._endpoints = endpoints
-
-        print("DEBUG")
-        exit(1)
 
     def lookup(self, endpoint, package, base_dir, endpoint_dir):
 
@@ -186,9 +182,13 @@ class Customizer(object):
         else:
             endpoint.exists = True
 
+        # Is this a base or a custom class?
+        endpoint.isbase = dir_name == 'base'
+
         # Create the instance to recover all elements inside
         endpoint.instance = endpoint.cls()
         reference, endkey, endtype = endpoint.instance.get_endpoint()
+        # TO FIX: key and type are deprecated by swagger
         if reference is not None:
             # endpoint.default_uri = reference
             raise ValueError("DEPRECATED: URI reference %s in class %s"
@@ -226,8 +226,6 @@ class Customizer(object):
         if len(conf) > 0:
             raise KeyError("Unwanted keys: %s" % list(conf.keys()))
 
-        # pretty_print(endpoint)
-        # exit(1)
         return endpoint
 
     # TODO: move json things into commons/formats/json.py

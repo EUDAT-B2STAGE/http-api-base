@@ -7,14 +7,10 @@ App specifications
 from __future__ import absolute_import
 
 from flask_restful import Api as RestFulApi
-from . import myself, lic
 from .resources.farm import EndpointsFarmer
-from commons.logs import get_logger
-from commons.customization import Customizer
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
+from commons.customization import Customizer
+from commons.logs import get_logger  # , pretty_print
 
 log = get_logger(__name__)
 
@@ -68,56 +64,37 @@ log.debug(
 
 
 def create_endpoints(epo, security=False, debug=False):
-    """ A single method to add all endpoints """
-
-    # HELLO WORLD endpoint:
-    #
-    # ####################################
-    # @rest.resource('/')
-    # # @rest.resource('/', '/hello')
-    # class Hello(Resource):
-    #     """ Example with no authentication """
-    #     def get(self):
-    #         return "Hello world", 200
-    # log.debug("Base endpoint: Hello world!")
+    """
+    A single method to add all endpoints
+    """
 
     ####################################
     # Verify configuration
     customization = Customizer(__package__)
-    # resources = MyConfigs().rest()
-
     resources = customization.endpoints()
 
     ####################################
     # Basic configuration (simple): from example class
     if len(resources) < 1:
         log.warning("No custom endpoints found!")
-        from .resources import exampleservices as mymodule
-        epo.many_from_module(mymodule)
-        log.debug("Loaded example class instead")
-    # Advanced configuration (cleaner): from swagger definition
-    else:
-        log.info("Using resources defined within swagger")
-        for resource in resources:
-            # Load each resource
-            epo.create_single(resource.cls, [resource.uri], resource.key_name)
 
-    print("TEST")
-    # exit(1)
+        # # DEPRECATED
+        # from .resources import exampleservices as mymodule
+        # epo.many_from_module(mymodule)
+        # log.debug("Loaded example class instead")
 
-#     ####################################
-# # TODO: TO BE REMOVED (with the related code)
-#     # Define the base endpoints by injecting into the service
+        raise AttributeError("Follow the docs and define your endpoints")
 
-#     # Give me something to distinguish these endpoints classes from custom
-#     extrattrs = {'_is_base': True}
+    log.info("Using resources defined within swagger")
 
-#     if security:
-#         from .resources import endpoints
-#         epo.many_from_module(endpoints, custom_attributes=extrattrs)
-#     else:
-#         from .resources.endpoints import Status
-#         epo.create_many({'status': Status}, custom_attributes=extrattrs)
+    for resource in resources:
+
+        if not security:
+            # TODO: CHECK can we allow a server startup with no security?
+            raise NotImplementedError("No way to remove security with swagger")
+
+        # TODO: CHECK is there any way to remove farm.py ?
+        epo.add(resource)
 
     ####################################
     # The end

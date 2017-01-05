@@ -16,7 +16,7 @@ import inspect
 from collections import defaultdict
 from attr import s as AttributedModel, ib as attribute
 from . import BASE_URLS, STATIC_URL, CORE_DIR, USER_CUSTOM_DIR, json
-from .logs import get_logger, pretty_print
+from .logs import get_logger  # , pretty_print
 from .formats.yaml import yaml, load_yaml_file
 
 log = get_logger(__name__)
@@ -497,7 +497,6 @@ class BeSwagger(object):
             # Fix jsonschema validation problem
             # http://j.mp/2hEquZy
             swag_dict = json.loads(json.dumps(swag_dict))
-            print(swag_dict)
             # write it down
             with open('/tmp/test.json', 'w') as f:
                 json.dump(swag_dict, f)
