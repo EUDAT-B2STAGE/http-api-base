@@ -352,7 +352,8 @@ class BeSwagger(object):
         # A way to save external attributes
         @AttributedModel
         class ExtraAttributes(object):
-            auth = attribute(default=[])  # bool
+            auth = attribute(default=[])
+            whatever = attribute(default=None)
 
         extra = ExtraAttributes()
 
@@ -380,22 +381,24 @@ class BeSwagger(object):
             ################################
             # Separate external definitions
 
-            # Find the custom part
+            # Find any custom part which is not swagger definition
             custom = specs.pop('custom', {})
 
             # Authentication
             if custom.get('authentication', False):
 
-                roles = custom.get('authorized', [])
+                # TODO: get the default normal and admin user from 'auth'
+
+                # If enabled, at least the base role should be present
+                roles = custom.get('authorized', ['normal_user'])
+
                 for role in roles:
-                    # check if this role makes sense?
+
                     # TODO: create a method inside 'auth' to check roles
-                    pass
 
                     extra.auth = roles
 
-            # Other custom elements?
-            # NOTE: whatever is left will be parsed into Swagger Validator
+            # Other things that could be saved into 'custom' subset?
 
             ###########################
             # TODO: strip the uri of the parameter
@@ -442,6 +445,10 @@ class BeSwagger(object):
             # pretty_print(specs)
             # if len(pathparams) > 0:
             #     self._paths[newuri]['parameters'] = pathparams
+
+            ##################
+            # NOTE: whatever is left inside 'specs' will be
+            # passed later on to Swagger Validator...
 
         return extra
 

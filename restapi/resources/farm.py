@@ -29,17 +29,34 @@ class EndpointsFarmer(object):
     def add(self, resource):
         """ Adding a single restpoint from a Resource Class """
 
-        # TO FIX:
-        # what about security?
-        print("Protected methods?")
-        pretty_print(resource)
-        exit(1)
+        # pretty_print(resource)
+        from ..auth import authentication
+
+        # Apply authentication: if required from yaml configuration
+        # Done per each method
+        for method, attributes in resource.custom.items():
+
+            # If auth has some role, they have been validated
+            # and authentication has been requested
+            if len(attributes.auth) < 1:
+                continue
+            else:
+                roles = attributes.auth
+
+            # Programmatically applying the authentication decorator
+            original = getattr(resource.cls, method)
+            decorated = authentication.authorization_required(
+                original, roles=roles, from_swagger=True)
+            setattr(resource.cls, method, decorated)
+            log.debug("Auth enabled on %s.%s for %s"
+                      % (resource.cls.__name__, method, roles))
 
         urls = [uri for _, uri in resource.uris.items()]
-        log.debug("Mapping '%s' to %s", resource.cls.__name__, urls)
 
-        # Create the restful resource with it
+        # Create the restful resource with it;
+        # this method is from RESTful plugin
         self.rest_api.add_resource(resource.cls, *urls)
+        log.debug("Map '%s' to %s", resource.cls.__name__, urls)
 
     # def create_single(self, resource, endpoints, endkey):
     #     """ Adding a single restpoint from a Resource Class """

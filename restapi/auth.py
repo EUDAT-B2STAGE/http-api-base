@@ -97,7 +97,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
         return auth, token
 
     @class_method_decorator_with_optional_parameters
-    def authorization_required(self, f, roles=[]):
+    def authorization_required(self, f, roles=[], from_swagger=False):
         @wraps(f)
         def decorated(*args, **kwargs):
 
