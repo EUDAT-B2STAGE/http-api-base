@@ -14,12 +14,12 @@ from ...confs import config
 from ..services.detect import CELERY_AVAILABLE
 from ..services.authentication import BaseAuthentication
 # from . import decorators as decorate
-from flask import jsonify, current_app
+from flask import jsonify  # , current_app
 from commons import htmlcodes as hcodes
-from commons.swagger import swagger
-from commons.logs import get_logger
+# from commons.swagger import swagger
+from commons.logs import get_logger  # , pretty_print
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 class Status(EndpointResource):
@@ -35,16 +35,19 @@ class SwaggerSpecifications(EndpointResource):
     """
 
     def get(self):
-        # TO FIX: should cache this call, at least in production
 
-        # find the package root to read swagger
-        root = __package__.split('.')[0]
-        # Enable swagger
-        swag = swagger(current_app,
-                       package_root=root, from_file_keyword='swag_file')
+        # # find the package root to read swagger
+        # root = __package__.split('.')[0]
+        # # Enable swagger
+        # swag = swagger(current_app,
+        #                package_root=root, from_file_keyword='swag_file')
+        # # Build the output
+        # return jsonify(swag)
 
-        # Build the output
-        return jsonify(swag)
+        # NOTE: swagger dictionary is read only once, at server init time
+        from commons.globals import mem
+        # Jsonify, so we skip custom response building
+        return jsonify(mem.swagger_definition)
 
 
 class Login(EndpointResource):
@@ -157,7 +160,7 @@ class Tokens(EndpointResource):
                 if not done:
                     return self.send_errors("Failed", "token: '%s'" % token)
                 else:
-                    logger.debug("Invalidated %s" % token['id'])
+                    log.debug("Invalidated %s" % token['id'])
                     invalidated = True
 
         # Check
@@ -184,7 +187,7 @@ class AdminTokens(EndpointResource):
 
     @authentication.authorization_required(roles=[config.ROLE_ADMIN])
     def get(self, token_id):
-        logger.critical("This endpoint should be restricted to admin only!")
+        log.critical("This endpoint should be restricted to admin only!")
         auth = self.global_get('custom_auth')
         token = auth.get_tokens(token_jti=token_id)
         if len(token) == 0:
@@ -194,7 +197,7 @@ class AdminTokens(EndpointResource):
 
     @authentication.authorization_required(roles=[config.ROLE_ADMIN])
     def delete(self, token_id):
-        logger.critical("This endpoint should be restricted to admin only!")
+        log.critical("This endpoint should be restricted to admin only!")
         auth = self.global_get('custom_auth')
         if not auth.destroy_token(token_id):
             return self.send_errors(

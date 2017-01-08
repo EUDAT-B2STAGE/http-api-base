@@ -348,22 +348,30 @@ class BeSwagger(object):
         if not isinstance(mapping, dict):
             raise TypeError("Wrong method ")
 
+        # read common
+        commons = mapping.pop('common', {})
+
+        # Check if there is at least one except for common
+        if len(mapping) < 1:
+            raise ValueError("No definition found inside: %s " % file)
+
         ################################
-        # A way to save external attributes
+        # Using 'attrs': a way to save external attributes
+
+        # Definition
         @AttributedModel
         class ExtraAttributes(object):
             auth = attribute(default=[])
             whatever = attribute(default=None)
 
+        # Instance
         extra = ExtraAttributes()
-
-        # read common
-        commons = mapping.pop('common', {})
-        pattern = re.compile(r'\<([^\>]+)\>')
 
         ################################
         # Specs should contain only labels written in spec before
-        # pathparams = []
+
+        pattern = re.compile(r'\<([^\>]+)\>')
+
         for label, specs in mapping.items():
 
             if label not in uris:
@@ -421,8 +429,11 @@ class BeSwagger(object):
                     paramname = x[1]
 
                 # TO FIX: complete for all types
+                # http://swagger.io/specification/#data-types-12
                 if paramtype == 'int':
                     paramtype = 'number'
+                if paramtype == 'path':
+                    paramtype = 'string'
 
                 specs['parameters'].append({
                     'name': paramname, 'type': paramtype,

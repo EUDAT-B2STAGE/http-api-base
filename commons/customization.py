@@ -160,6 +160,9 @@ class Customizer(object):
     def load_endpoint(self, default_uri, dir_name, package_name, conf):
 
         endpoint = EndpointElements()
+
+        #####################
+        # Load the endpoint class defined in the YAML file
         file_name = conf.pop('file', default_uri)
         class_name = conf.pop('class')
         name = '%s.%s.%s.%s' % (package_name, 'resources', dir_name, file_name)
@@ -170,6 +173,7 @@ class Customizer(object):
             return endpoint
 
         #####################
+        # Check for dependecies and skip if missing
         for dependency in conf.pop('depends_on', []):
             if not getattr(module, dependency, False):
                 log.warning("Skip '%s': unmet %s" % (default_uri, dependency))
@@ -185,10 +189,14 @@ class Customizer(object):
         # Is this a base or a custom class?
         endpoint.isbase = dir_name == 'base'
 
-        # Create the instance to recover all elements inside
+        #####################
+        # TODO: IMPORTANT! remove the creation of an instance here!
+        # reference, endkey, endtype and all of this informations
+        # do not count anymore, since swagger is the place to define them
         endpoint.instance = endpoint.cls()
         reference, endkey, endtype = endpoint.instance.get_endpoint()
-        # TO FIX: key and type are deprecated by swagger
+        # NOTE: reference and key and type are deprecated by swagger
+        #
         if reference is not None:
             # endpoint.default_uri = reference
             raise ValueError("DEPRECATED: URI reference %s in class %s"
