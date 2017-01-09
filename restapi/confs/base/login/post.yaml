@@ -12,24 +12,12 @@ login:
   #   - application/json
 
   parameters:
-    - name: username
-      in: "body" # WHY CAN'T THIS BE 'body' ?
+    - name: credentials
+      in: "body"
       # OPTIONS are 'query', 'body', 'path' or 'header'
       description: your registered username
       schema:
-        $ref: "#/definitions/Person"
-      # type: string
-      # required: true
-      # examples:
-      #   application/json:
-      #     {
-      #       "username": "user@nomail.org",
-      #       "password": "WHATEVER",
-      #     }
-    - name: password
-      in: query
-      type: string
-      description: password coupling in credentials for your username
+        $ref: "#/definitions/Credentials"
 
   responses:
     '401':

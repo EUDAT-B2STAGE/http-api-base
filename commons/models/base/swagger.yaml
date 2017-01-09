@@ -1,5 +1,13 @@
 
-Person:
+Credentials:
+  required:
+    - username
+    - password
   properties:
     username:
       type: string
+      description: your registered username
+    password:
+      type: string
+      description: password coupling in credentials for your username
+

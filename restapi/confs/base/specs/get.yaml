@@ -10,4 +10,4 @@ status:
     200:
       description: a JSON with all endpoint defined with Swagger standards
   tags:
-    - definitions
+    - swagger
