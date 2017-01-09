@@ -161,7 +161,10 @@ def returnError(self, label, error, code=hcodes.HTTP_BAD_NOTFOUND):
 def graph_transactions(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-
+        logger.warning(
+            "@graph_transactions is DEPRECATED. " +
+            "Use @neomodel.db.transaction instead"
+        )
         try:
 
             logger.debug("Neomodel transaction BEGIN")
