@@ -362,6 +362,7 @@ class BeSwagger(object):
         @AttributedModel
         class ExtraAttributes(object):
             auth = attribute(default=[])
+            publish = attribute(default=True)
             whatever = attribute(default=None)
 
         # Instance
@@ -391,6 +392,10 @@ class BeSwagger(object):
 
             # Find any custom part which is not swagger definition
             custom = specs.pop('custom', {})
+
+            # Publish the specs on the final Swagger JSON
+            # Default is to do it if not otherwise specified
+            extra.publish = custom.get('publish', True)
 
             # Authentication
             if custom.get('authentication', False):
@@ -443,23 +448,25 @@ class BeSwagger(object):
                 # replace in a new uri
                 newuri = newuri.replace('<%s>' % parameter, '{%s}' % paramname)
 
+            # Skip what the developers does not want to be public in swagger
+            if not extra.publish:
+                continue
+
             if len(specs['parameters']) < 1:
                 specs.pop('parameters')
-
-            ###########################
-            log.debug("Build definition for '%s:%s'"
-                      % (method.upper(), newuri))
-
-            if newuri not in self._paths:
-                self._paths[newuri] = {}
-            self._paths[newuri][method] = specs
-            # pretty_print(specs)
-            # if len(pathparams) > 0:
-            #     self._paths[newuri]['parameters'] = pathparams
 
             ##################
             # NOTE: whatever is left inside 'specs' will be
             # passed later on to Swagger Validator...
+
+            log.debug("Build definition for '%s:%s'"
+                      % (method.upper(), newuri))
+
+            # Save definition for publishing
+            if newuri not in self._paths:
+                self._paths[newuri] = {}
+            self._paths[newuri][method] = specs
+
 
         return extra
 

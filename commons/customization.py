@@ -20,7 +20,7 @@ from .meta import Meta
 from .formats.yaml import YAML_EXT, load_yaml_file
 from .swagger import BeSwagger
 from .globals import mem
-from .logs import get_logger, pretty_print
+from .logs import get_logger  # , pretty_print
 
 log = get_logger(__name__)
 
