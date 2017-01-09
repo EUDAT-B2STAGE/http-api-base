@@ -114,7 +114,7 @@ htmlfiles:
 # Should implements SSL on 443
 
 proxy:
-  image: nginx
+  image: nginx:1.11-alpine
   hostname: iamaproxy
   volumes_from:
     - htmlfiles
