@@ -1,0 +1,5 @@
+
+Person:
+  properties:
+    username:
+      type: string

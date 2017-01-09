@@ -1,12 +1,8 @@
 
 file: endpoints
-
-class: Login
-
+class: Logout
 baseuri: "/auth"
-
 mapping:
-  login: "/login"
-
+  tologout: "/logout"
 # labels:
 #   - base

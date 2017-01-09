@@ -219,6 +219,10 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         self._token = token
         return True
 
+    def verify_admin(self):
+        """ Check if current user has administration role """
+        return self.verify_roles(ROLE_ADMIN)
+
     def save_token(self, user, token, jti):
         logger.debug("Token is not saved in base authentication")
 

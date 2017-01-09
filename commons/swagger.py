@@ -20,6 +20,7 @@ from .logs import get_logger  # , pretty_print
 from .formats.yaml import yaml, load_yaml_file
 
 log = get_logger(__name__)
+JSON_APPLICATION = 'application/json'
 
 
 def _sanitize(comment):
@@ -467,7 +468,6 @@ class BeSwagger(object):
                 self._paths[newuri] = {}
             self._paths[newuri][method] = specs
 
-
         return extra
 
     def swaggerish(self):
@@ -483,7 +483,10 @@ class BeSwagger(object):
             "info": {
                 "version": "0.0.1",
                 "title": "Your application name",
-            }
+            },
+
+            # "host": "localhost:8080",
+            # "basePath": "/",
         }
 
         # Set existing values
@@ -495,19 +498,27 @@ class BeSwagger(object):
             output['info']['title'] = proj['title']
 
         for endpoint in self._endpoints:
-
             endpoint.custom = {}
-
             for method, file in endpoint.methods.items():
-
                 endpoint.custom[method] = \
                     self.read_my_swagger(file, method, endpoint.uris)
 
+        output['definitions'] = self.read_definitions()
+        output['consumes'] = [JSON_APPLICATION]
+        output['produces'] = [JSON_APPLICATION]
         output['paths'] = self._paths
-        # output['consumes'] = ['application/json']
-        output['produces'] = ['application/json']
 
         return output
+
+    def read_definitions(self):
+
+        # TODO: read definitions from yaml
+
+        # base dir for definitions (commons/models/swagger.yaml)
+
+        # custom dir for definitions (commons/models/custom/swagger.yaml)
+
+        pass
 
     @staticmethod
     def validation(swag_dict):
@@ -519,13 +530,16 @@ class BeSwagger(object):
         from bravado_core.spec import Spec
 
         try:
+            from commons import original_json
             # Fix jsonschema validation problem
+            # expected string or bytes-like object
             # http://j.mp/2hEquZy
-            swag_dict = json.loads(json.dumps(swag_dict))
+            swag_dict = original_json.loads(original_json.dumps(swag_dict))
             # write it down
             with open('/tmp/test.json', 'w') as f:
-                json.dump(swag_dict, f)
-        except:
+                original_json.dump(swag_dict, f)
+        except Exception as e:
+            raise e
             log.warning("Failed to json fix the swagger definition")
 
         bravado_config = {

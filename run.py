@@ -48,7 +48,7 @@ app = create_app(
     name='REST_API', enable_security=enable_security, debug=enable_debug)
 
 if __name__ == "__main__":
-    # Note: 'threaded' option avoid to see
+    # NOTE: 'threaded' option avoid to see
     # angular request on this server dropping
     # and becoming slow if not totally frozen
     logger.info("*** Running Flask!")

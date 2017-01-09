@@ -14,6 +14,7 @@ except:
 #######################
 # TODO: move json things into commons/formats/json.py
 # Look for the best chance for json lib
+import json as original_json
 try:
     import commentjson as json
 except:
@@ -26,6 +27,7 @@ except:
 
 #######################
 # Make a json and yaml test
+original_json.dumps({})
 json.dumps({})
 JSON_EXT = 'json'
 

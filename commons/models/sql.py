@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
+# TODO: move into base dir
+
 """ Models for the relational database """
 
 from __future__ import absolute_import
 
-import datetime
+# import datetime
 from ..services.alchemy import db
 from ..logs import get_logger
 

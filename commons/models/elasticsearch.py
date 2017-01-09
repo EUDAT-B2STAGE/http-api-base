@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# TODO: move into base dir
+
 """ Models for elastic search """
 
 # from __future__ import absolute_import

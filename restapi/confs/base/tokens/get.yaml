@@ -1,0 +1,22 @@
+
+common:
+  # description: some
+  tags:
+    - tokens
+  custom:
+    # publish: true
+    authentication: true
+    # authorized:
+    #   - admin_root
+
+tokenizers:
+  summary: Show all tokens emitted for logged user
+  responses:
+    '200':
+      description: List of tokens
+
+tokenizer:
+  summary: Show specified token if available for logged user
+  responses:
+    '200':
+      description: Details on the specified token

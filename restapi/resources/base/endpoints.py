@@ -13,8 +13,8 @@ from ...auth import authentication
 from ...confs import config
 from ..services.detect import CELERY_AVAILABLE
 from ..services.authentication import BaseAuthentication
-# from . import decorators as decorate
-from flask import jsonify  # , current_app
+from .. import decorators as decorate
+from flask import jsonify, current_app
 from commons import htmlcodes as hcodes
 # from commons.swagger import swagger
 from commons.logs import get_logger  # , pretty_print
@@ -55,7 +55,7 @@ class Login(EndpointResource):
 
     def post(self):
 
-        # # In case you need different behaviour when using unittest:
+        # NOTE: In case you need different behaviour when using unittest
         # if current_app.config['TESTING']:
         #     print("\nThis is inside a TEST\n")
 
@@ -108,11 +108,8 @@ class Login(EndpointResource):
 
 
 class Logout(EndpointResource):
-    """ Let the logged user escape from here """
+    """ Let the logged user escape from here, invalidating current token """
 
-    base_url = AUTH_URL
-
-    @authentication.authorization_required
     def get(self):
         auth = self.global_get('custom_auth')
         auth.invalidate_token(auth.get_token())
@@ -122,14 +119,19 @@ class Logout(EndpointResource):
 class Tokens(EndpointResource):
     """ List all active tokens for a user """
 
-    base_url = AUTH_URL
-    endkey = "token_id"
-    endtype = "string"
-
-    @authentication.authorization_required(roles=[config.ROLE_ADMIN])
+    @decorate.add_endpoint_parameter('user')
     def get(self, token_id=None):
+
         auth = self.global_get('custom_auth')
-        tokens = auth.get_tokens(user=auth._user)
+        iamadmin = auth.verify_admin()
+        current_user = self.get_current_user()
+        if iamadmin:
+            user = self.get_input(single_param='user', default=current_user)
+        else:
+            user = current_user
+
+        tokens = auth.get_tokens(user=user)
+
         if token_id is None:
             return tokens
 
@@ -142,14 +144,21 @@ class Tokens(EndpointResource):
         return self.send_errors(
             "Token not found", errorMessage, code=hcodes.HTTP_BAD_NOTFOUND)
 
-    @authentication.authorization_required
+    @decorate.add_endpoint_parameter('user')
     def delete(self, token_id=None):
         """
             For additional security, tokens are invalidated both
             by chanding the user UUID and by removing single tokens
         """
+
         auth = self.global_get('custom_auth')
-        user = self.get_current_user()
+        iamadmin = auth.verify_admin()
+        current_user = self.get_current_user()
+        if iamadmin:
+            user = self.get_input(single_param='user', default=current_user)
+        else:
+            user = current_user
+
         tokens = auth.get_tokens(user=user)
         invalidated = False
 
@@ -167,6 +176,9 @@ class Tokens(EndpointResource):
 
         # ALL
         if token_id is None:
+            # NOTE: this is allowed only in removing tokens in unittests
+            if not current_app.config['TESTING']:
+                raise KeyError("Please specify a valid token")
             auth.invalidate_all_tokens(user=user)
         # SPECIFIC
         else:
@@ -178,32 +190,30 @@ class Tokens(EndpointResource):
         return self.empty_response()
 
 
-class AdminTokens(EndpointResource):
-    """ Admin operations on token list """
+# class AdminTokens(EndpointResource):
+#     """ Admin operations on token list """
 
-    base_url = AUTH_URL
-    endkey = "token_id"
-    endtype = "string"
+#     base_url = AUTH_URL
+#     endkey = "token_id"
+#     endtype = "string"
 
-    @authentication.authorization_required(roles=[config.ROLE_ADMIN])
-    def get(self, token_id):
-        log.critical("This endpoint should be restricted to admin only!")
-        auth = self.global_get('custom_auth')
-        token = auth.get_tokens(token_jti=token_id)
-        if len(token) == 0:
-            return self.send_errors(
-                "Token not found", token_id, code=hcodes.HTTP_BAD_NOTFOUND)
-        return token
+#     @authentication.authorization_required(roles=[config.ROLE_ADMIN])
+#     def get(self, token_id):
+#         auth = self.global_get('custom_auth')
+#         token = auth.get_tokens(token_jti=token_id)
+#         if len(token) == 0:
+#             return self.send_errors(
+#                 "Token not found", token_id, code=hcodes.HTTP_BAD_NOTFOUND)
+#         return token
 
-    @authentication.authorization_required(roles=[config.ROLE_ADMIN])
-    def delete(self, token_id):
-        log.critical("This endpoint should be restricted to admin only!")
-        auth = self.global_get('custom_auth')
-        if not auth.destroy_token(token_id):
-            return self.send_errors(
-                "Token not found", token_id, code=hcodes.HTTP_BAD_NOTFOUND)
+#     @authentication.authorization_required(roles=[config.ROLE_ADMIN])
+#     def delete(self, token_id):
+#         auth = self.global_get('custom_auth')
+#         if not auth.destroy_token(token_id):
+#             return self.send_errors(
+#                 "Token not found", token_id, code=hcodes.HTTP_BAD_NOTFOUND)
 
-        return self.empty_response()
+#         return self.empty_response()
 
 
 class Profile(EndpointResource):

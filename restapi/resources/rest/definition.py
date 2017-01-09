@@ -90,7 +90,7 @@ class EndpointResource(Resource):
     def get_endpoint(self):
         return (self.endpoint, self.endkey, self.endtype)
 
-    def get_input(self, forcing=True, single_parameter=None):
+    def get_input(self, forcing=True, single_parameter=None, default=None):
         """
         Recover parameters from current requests.
 
@@ -119,7 +119,7 @@ class EndpointResource(Resource):
                 pass
 
         if single_parameter is not None:
-            return self._args.get(single_parameter)
+            return self._args.get(single_parameter, default)
 
         if len(self._args) > 0:
             logger.info("Parameters %s" % self._args)

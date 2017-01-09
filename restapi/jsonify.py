@@ -11,19 +11,14 @@ source: http://flask.pocoo.org/snippets/83/
 """
 
 from __future__ import division, absolute_import
-from . import myself, lic
-from commons.logs import get_logger
 
 # from flask import jsonify, make_response
 # from werkzeug.exceptions import HTTPException
 from commons import htmlcodes as hcodes
 from commons import json
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
-logger = get_logger(__name__)
+# from commons.logs import get_logger
+# logger = get_logger(__name__)
 
 
 def test_json(message):
