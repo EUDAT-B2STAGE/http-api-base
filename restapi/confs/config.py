@@ -83,7 +83,7 @@ USER_HOME = os.environ['HOME']
 ###################
 # Uploads
 # ## default no limits
-#MAX_CONTENT_LENGTH = 128 * (1024 * 1024)  # 128MB
+# MAX_CONTENT_LENGTH = 128 * (1024 * 1024)  # 128MB
 UPLOAD_FOLDER = '/uploads'
 INTERPRETER = 'python3'
 PY2_INTERPRETER = 'python2'
@@ -94,7 +94,7 @@ BASE_DB_DIR = '/dbs'
 SQLLITE_EXTENSION = 'db'
 SQLLITE_DBFILE = 'backend' + '.' + SQLLITE_EXTENSION
 dbfile = os.path.join(BASE_DB_DIR, SQLLITE_DBFILE)
-SECRET_KEY = 'simplesecret'
+SECRET_KEY_FILE = "/jwt_tokens/secret.key"
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + dbfile
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 

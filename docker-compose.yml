@@ -15,7 +15,7 @@ conf:
 backend:
   extends:
     service: conf
-  image: eudatb2stage/apiserver
+  image: eudatb2stage/apiserver:neo4j2
   hostname: restapi
   # user may be overriden from project config
   # note: if you change the user, you should also
@@ -37,6 +37,8 @@ backend:
     - ../apis:/code/restapi/resources/custom
     # Rest API services models
     - ../models:/code/commons/models/custom
+    # JWT tokens secret
+    - jwt_tokens:/jwt_tokens
     # Tests
     - ../tests/backend:/code/test/custom
     # Celery Tasks
@@ -97,7 +99,7 @@ htmlfiles:
 # Should implements SSL on 443
 
 proxy:
-  image: nginx
+  image: nginx:1.11-alpine
   hostname: iamaproxy
   volumes_from:
     - htmlfiles

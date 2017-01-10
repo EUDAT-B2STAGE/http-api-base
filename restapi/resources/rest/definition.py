@@ -459,7 +459,6 @@ class EndpointResource(Resource):
         elif verify_attribute(instance, "id"):
             id = instance.id
         else:
-            # Do not show internal id. Only UUID if available.
             id = "-"
 
         if id is None:

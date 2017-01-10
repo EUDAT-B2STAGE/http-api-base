@@ -40,7 +40,7 @@ class Flask(OriginalFlask):
             if len(out) > response_log_max_len:
                 out = out[:response_log_max_len] + ' ...'
 
-            logger.debug("MAKE_RESPONSE: %s" % out)
+            logger.verbose("MAKE_RESPONSE: %s" % out)
         except:
             logger.debug("MAKE_RESPONSE: [UNREADABLE OBJ]")
         responder = ResponseMaker(rv)
@@ -63,38 +63,7 @@ class Flask(OriginalFlask):
         return super().make_response(response)
 
 
-# ########################
-# # Configure Secret Key #
-# ########################
-# def install_secret_key(app, filename='secret_key'):
-#     """
-
-# Found at
-# https://github.com/pallets/flask/wiki/Large-app-how-to
-
-#     Configure the SECRET_KEY from a file
-#     in the instance directory.
-
-#     If the file does not exist, print instructions
-#     to create it from a shell with a random key,
-#     then exit.
-#     """
-#     filename = os.path.join(app.instance_path, filename)
-
-#     try:
-#         app.config['SECRET_KEY'] = open(filename, 'rb').read()
-#     except IOError:
-#         logger.critical('No secret key!\n\nYou must create it with:')
-#         full_path = os.path.dirname(filename)
-#         if not os.path.isdir(full_path):
-#             print('mkdir -p {filename}'.format(filename=full_path))
-#         print('head -c 24 /dev/urandom > {filename}'.format(filename=filename))
-#         import sys
-#         sys.exit(1)
-
-
 def create_auth_instance(module, services, app, first_call=False):
-
     # This is the main object that drives authentication
     # inside our Flask server.
     # Note: to be stored inside the flask global context
@@ -105,9 +74,7 @@ def create_auth_instance(module, services, app, first_call=False):
         ext_auth = oauth2(app.config['TESTING'])
         custom_auth.set_oauth2_services(ext_auth._available_services)
 
-## // TO FIX: in production
-    # SECRET_KEY??
-    # custom_auth.setup_secret(app.config['SECRET_KEY'])
+    custom_auth.import_secret(app.config['SECRET_KEY_FILE'])
 
     return custom_auth
 
@@ -269,8 +236,6 @@ def create_app(name=__name__, debug=False,
 
             # Init users/roles for Security
             if enable_security:
-                # custom_auth.setup_secret(microservice.config['SECRET_KEY'])
-                # custom_auth.init_users_and_roles()
                 init_auth.init_users_and_roles()
 
             # Allow a custom method for mixed services init

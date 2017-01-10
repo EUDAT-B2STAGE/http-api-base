@@ -12,6 +12,7 @@ import hmac
 import hashlib
 import base64
 import pytz
+import os
 from commons.logs import get_logger
 from commons.services.uuid import getUUID
 from ....confs.config import USER, PWD, \
@@ -36,17 +37,20 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     ##########################
     # DEFAULTS
+
     DEFAULT_USER = USER
     DEFAULT_PASSWORD = PWD
     DEFAULT_ROLE = ROLE_USER
     DEFAULT_ROLES = [ROLE_USER, ROLE_INTERNAL, ROLE_ADMIN]
 
     ##########################
-    SECRET = 'top secret!'
+    # This string will be replaced with a proper secret file
+    JWT_SECRET = 'top secret!'
     JWT_ALGO = 'HS256'
 # TO FIX: already defined in auth.py HTTPAUTH_DEFAULT_SCHEME
     token_type = 'Bearer'
 
+    ##########################
     _oauth2 = {}
     _payload = {}
     _user = None
@@ -63,8 +67,29 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         """
         return
 
-    def setup_secret(self, secret):
-        self.SECRET = secret
+    # ########################
+    # # Configure Secret Key #
+    # ########################
+    def import_secret(self, abs_filename):
+        """
+        Configure the JWT_SECRET from a file
+
+        If the file does not exist, print instructions
+        to create it from a shell with a random key
+        and continues with default key
+        """
+        try:
+            self.JWT_SECRET = open(abs_filename, 'rb').read()
+        except IOError:
+            logger.warning("Jwt secret file not found: %s" % abs_filename)
+            logger.warning("You are using a default secret key")
+            logger.info("To create your own secret file:")
+            # full_path = os.path.dirname(abs_filename)
+            # if not os.path.isdir(full_path):
+            #     print('mkdir -p {filename}'.format(filename=full_path))
+            logger.info("head -c 24 /dev/urandom > %s" % abs_filename)
+            # import sys
+            # sys.exit(1)
 
     def set_oauth2_services(self, services):
         self._oauth2 = services
@@ -139,7 +164,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         self._payload = payload
         self._user = self.get_user_object(payload=self._payload)
         encode = jwt.encode(
-            payload, self.SECRET, algorithm=self.JWT_ALGO).decode('ascii')
+            payload, self.JWT_SECRET, algorithm=self.JWT_ALGO).decode('ascii')
 
         return encode, self._payload['jti']
 
@@ -164,7 +189,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         try:
             payload = jwt.decode(
-                token, self.SECRET, algorithms=[self.JWT_ALGO])
+                token, self.JWT_SECRET, algorithms=[self.JWT_ALGO])
         # now > exp
         except jwt.exceptions.ExpiredSignatureError as e:
 # should this token be invalidated into the DB?
@@ -215,7 +240,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         if not self.refresh_token(self._payload['jti']):
             return False
 
-        logger.info("User authorized")
+        logger.debug("User authorized")
         self._token = token
         return True
 

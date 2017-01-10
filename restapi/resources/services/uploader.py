@@ -72,26 +72,40 @@ class Uploader(object):
 
         return send_from_directory(path, filename)
 
-    def upload(self, subfolder=None, force=False, flow=False):
+    def ngflow_upload(self, filename, destination, content,
+                      chunk_number, chunk_size, chunk_total,
+                      overwrite=True
+                      ):
+
+        chunk_number = int(chunk_number)
+        chunk_size = int(chunk_size)
+        chunk_total = int(chunk_total)
+        sec_filename = secure_filename(filename)
+        abs_fname = os.path.join(destination, sec_filename)
+
+# TO FIX: what happens if chunk 2 arrives before chunk 1?
+        if overwrite and chunk_number == 1:
+            if os.path.exists(abs_fname):
+                os.remove(abs_fname)
+
+# TO FIX: file is saved as data, not as ASCII/TEXT
+        # with open(abs_fname, "wb") as f:
+        with open(abs_fname, "ab") as f:
+            # logger.critical("Copying chunk %d" % chunk_number)
+            # logger.critical("Pos = %d" % ((chunk_number - 1) * chunk_size))
+            # f.seek((int(chunk_number) - 1) * int(chunk_size), 0)
+            content.save(f)
+            f.close()
+
+        return abs_fname, sec_filename
+
+    def upload(self, subfolder=None, force=False):
 
         if 'file' not in request.files:
             return self.force_response(errors={
                 "Missing file": "No files specified"})
 
         myfile = request.files['file']
-
-        if flow:
-            # ## IN CASE WE WANT TO CHUNK
-            # ##parser = reqparse.RequestParser()
-            # &flowChunkNumber=1
-            # &flowChunkSize=1048576&flowCurrentChunkSize=1367129
-            # &flowTotalSize=1367129
-            # &flowIdentifier=1367129-IMG_4364CR2jpg
-            # &flowFilename=IMG_4364.CR2.jpg
-            # &flowRelativePath=IMG_4364.CR2.jpg
-            # &flowTotalChunks=1
-
-            return NotImplementedError("Chunks are not implemented YET")
 
         # Check file extension?
         if not self.allowed_file(myfile.filename):
