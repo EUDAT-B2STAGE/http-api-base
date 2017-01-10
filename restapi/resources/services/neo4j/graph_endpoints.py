@@ -10,7 +10,7 @@ from py2neo.cypher.error.schema import ConstraintViolation
 from neomodel.exception import RequiredProperty
 from neomodel.exception import UniqueProperty
 from restapi.resources.exceptions import RestApiException
-from restapi.resources.base import ExtendedApiResource
+from ...rest.definition import EndpointResource
 from commons import htmlcodes as hcodes
 
 from commons.logs import get_logger
@@ -19,7 +19,7 @@ logger = get_logger(__name__)
 __author__ = "Mattia D'Antonio (m.dantonio@cineca.it)"
 
 
-class GraphBaseOperations(ExtendedApiResource):
+class GraphBaseOperations(EndpointResource):
 
     def initGraph(self):
         self.graph = self.global_get_service('neo4j')
