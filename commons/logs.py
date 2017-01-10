@@ -14,26 +14,27 @@ from logging.config import fileConfig
 from json.decoder import JSONDecodeError
 from . import AVOID_COLORS_ENV_LABEL, LOG_CONFIG
 
-VERBOSE_LEVEL = 5
-VERY_VERBOSE_LEVEL = 1
+# DEBUG level is 10 (https://docs.python.org/3/howto/logging.html)
+logging.VERBOSE_LEVEL = 5
+logging.VERY_VERBOSE_LEVEL = 1
 
 
 def verbose(self, message, *args, **kws):
     # Yes, logger takes its '*args' as 'args'.
-    if self.isEnabledFor(VERBOSE_LEVEL):
-        self._log(VERBOSE_LEVEL, message, args, **kws)
+    if self.isEnabledFor(logging.VERBOSE_LEVEL):
+        self._log(logging.VERBOSE_LEVEL, message, args, **kws)
 
 
 def very_verbose(self, message, *args, **kws):
     # Yes, logger takes its '*args' as 'args'.
-    if self.isEnabledFor(VERBOSE_LEVEL):
-        self._log(VERBOSE_LEVEL, message, args, **kws)
+    if self.isEnabledFor(logging.VERBOSE_LEVEL):
+        self._log(logging.VERBOSE_LEVEL, message, args, **kws)
 
 
-logging.addLevelName(VERY_VERBOSE_LEVEL, "VERY_VERBOSE")
+logging.addLevelName(logging.VERY_VERBOSE_LEVEL, "VERY_VERBOSE")
 logging.Logger.very_verbose = very_verbose
 
-logging.addLevelName(VERBOSE_LEVEL, "VERBOSE")
+logging.addLevelName(logging.VERBOSE_LEVEL, "VERBOSE")
 logging.Logger.verbose = verbose
 
 
@@ -101,11 +102,11 @@ class LogMe(object):
                 logging.DEBUG, "\033[1;35m%s\033[1;0m"
                 % logging.getLevelName(logging.DEBUG))
             logging.addLevelName(
-                VERBOSE_LEVEL, "\033[1;35m%s\033[1;0m"
-                % logging.getLevelName(VERBOSE_LEVEL))
+                logging.VERBOSE_LEVEL, "\033[1;35m%s\033[1;0m"
+                % logging.getLevelName(logging.VERBOSE_LEVEL))
             logging.addLevelName(
-                VERY_VERBOSE_LEVEL, "\033[1;35m%s\033[1;0m"
-                % logging.getLevelName(VERY_VERBOSE_LEVEL))
+                logging.VERY_VERBOSE_LEVEL, "\033[1;35m%s\033[1;0m"
+                % logging.getLevelName(logging.VERY_VERBOSE_LEVEL))
 
     def set_debug(self, debug=True, level=None):
         # print("DEBUG IS", debug)

@@ -33,7 +33,7 @@ class EndpointsFarmer(object):
 
         for endpoint in endpoints:
             address = resource.base_url + '/' + endpoint
-            logger.debug(
+            logger.verbose(
                 "Mapping '%s' res to '%s'", resource.__name__, address)
             # Normal endpoint, e.g. /api/foo
             urls.append(address)
@@ -41,7 +41,7 @@ class EndpointsFarmer(object):
             if endkey is not None:
                 newaddress = address + '/<' + endkey + '>'
                 urls.append(newaddress)
-                logger.debug(
+                logger.verbose(
                     "Mapping '%s' res to '%s'", resource.__name__, newaddress)
 
         # Create the restful resource with it

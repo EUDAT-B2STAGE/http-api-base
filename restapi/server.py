@@ -39,7 +39,7 @@ class Flask(OriginalFlask):
             if len(out) > response_log_max_len:
                 out = out[:response_log_max_len] + ' ...'
 
-            logger.debug("MAKE_RESPONSE: %s" % out)
+            logger.verbose("MAKE_RESPONSE: %s" % out)
         except:
             logger.debug("MAKE_RESPONSE: [UNREADABLE OBJ]")
         responder = ResponseMaker(rv)
