@@ -6,7 +6,8 @@ class: Login
 baseuri: "/auth"
 
 mapping:
-  login: "/login"
+  tologin: "/login"
 
-# labels:
-#   - base
+labels:
+  - base
+  - authentication

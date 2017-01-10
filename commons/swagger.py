@@ -19,7 +19,7 @@ from attr import s as AttributedModel, ib as attribute
 from .formats.yaml import load_yaml_file, YAML_EXT  # , yaml
 from . import CORE_DIR, USER_CUSTOM_DIR
 
-from .logs import get_logger  # , pretty_print
+from .logs import get_logger, pretty_print
 
 log = get_logger(__name__)
 JSON_APPLICATION = 'application/json'
@@ -340,7 +340,7 @@ class BeSwagger(object):
         self._endpoints = endpoints
         self._paths = {}
 
-    def read_my_swagger(self, file, method, uris={}):
+    def read_my_swagger(self, file, method, endpoint):
 
         ################################
         # NOTE: the file reading here is cached
@@ -378,11 +378,11 @@ class BeSwagger(object):
 
         for label, specs in mapping.items():
 
-            if label not in uris:
+            if label not in endpoint.uris:
                 raise KeyError(
                     "Invalid label '%s' found.\nAvailable labels: %s"
-                    % (label, list(uris.keys())))
-            uri = uris[label]
+                    % (label, list(endpoint.uris.keys())))
+            uri = endpoint.uris[label]
 
             ################################
             # add common elements to all specs
@@ -451,12 +451,21 @@ class BeSwagger(object):
                 # replace in a new uri
                 newuri = newuri.replace('<%s>' % parameter, '{%s}' % paramname)
 
+            ##################
             # Skip what the developers does not want to be public in swagger
             if not extra.publish:
                 continue
 
+            # Swagger does not like empty arrays
             if len(specs['parameters']) < 1:
                 specs.pop('parameters')
+
+            # Handle global tags
+            if 'tags' not in specs and len(endpoint.tags) > 0:
+                specs['tags'] = []
+            for tag in endpoint.tags:
+                if tag not in specs['tags']:
+                    specs['tags'].append(tag)
 
             ##################
             # NOTE: whatever is left inside 'specs' will be
@@ -493,11 +502,22 @@ class BeSwagger(object):
             # "host": "localhost:8080",
         }
 
+        """
         # securityDefinitions:
         #   Bearer:
         #     type: apiKey
         #     name: Authorization
         #     in: header
+
+        #     OR IN EVERY METHOD:
+
+        # parameters:
+        #   -
+        #     name: authorization
+        #     in: header
+        #     type: string
+        #     required: true
+        """
 
         # Set existing values
         from commons.globals import mem
@@ -511,12 +531,18 @@ class BeSwagger(object):
             endpoint.custom = {}
             for method, file in endpoint.methods.items():
                 endpoint.custom[method] = \
-                    self.read_my_swagger(file, method, endpoint.uris)
+                    self.read_my_swagger(file, method, endpoint)
 
         output['definitions'] = self.read_definitions()
         output['consumes'] = [JSON_APPLICATION]
         output['produces'] = [JSON_APPLICATION]
         output['paths'] = self._paths
+
+        # tags?
+        tags = []
+        for tag, desc in mem.custom_config['tags'].items():
+            tags.append({'name': tag, 'description': desc})
+        output['tags'] = tags
 
         return output
 

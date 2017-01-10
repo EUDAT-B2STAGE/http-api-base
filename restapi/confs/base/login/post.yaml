@@ -1,5 +1,5 @@
 
-login:
+tologin:
 
   summary: Login with basic credentials
   description: Normal credentials (username and password) login endpoint
@@ -43,6 +43,6 @@ login:
             }
           }
 
-  tags:
-    # - credentials
-    - login
+  # tags:
+  #   - authentication
+  #   # - login

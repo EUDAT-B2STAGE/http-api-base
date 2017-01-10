@@ -9,5 +9,5 @@ status:
   responses:
     200:
       description: a JSON with all endpoint defined with Swagger standards
-  tags:
-    - swagger
+  # tags:
+  #   - swagger

@@ -2,8 +2,8 @@
 file: endpoints
 class: Tokens
 baseuri: /auth
-# labels:
-#   - base
+labels:
+  - open_sessions
 mapping:
   tokenizers: "/tokens"
   tokenizer: "/tokens/<token_id>"

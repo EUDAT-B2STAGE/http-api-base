@@ -4,14 +4,9 @@
 a Farm: How to create endpoints into REST service.
 """
 
-from __future__ import absolute_import
-from .. import myself, lic
+# from __future__ import absolute_import
 # from commons.meta import Meta
-from commons.logs import get_logger, pretty_print
-
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
+from commons.logs import get_logger  # , pretty_print
 
 log = get_logger(__name__)
 

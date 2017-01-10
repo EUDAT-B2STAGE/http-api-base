@@ -63,6 +63,7 @@ CORE_DIR = 'base'
 USER_CUSTOM_DIR = 'custom'
 
 PATH = ""
+DEFAULTS_PATH = "defaults"
 CONFIG_PATH = ""
 BLUEPRINT_KEY = 'blueprint'
 

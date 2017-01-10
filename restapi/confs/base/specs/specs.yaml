@@ -6,3 +6,4 @@ mapping:
   status: "/specs"
 labels:
   - base
+  - specifications

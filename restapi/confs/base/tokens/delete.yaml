@@ -1,8 +1,8 @@
 
 common:
   # description: some
-  tags:
-    - tokens
+  # tags:
+  #   - tokens
   custom:
     # publish: true
     authentication: true

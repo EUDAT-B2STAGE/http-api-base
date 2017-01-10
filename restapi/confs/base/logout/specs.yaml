@@ -4,5 +4,6 @@ class: Logout
 baseuri: "/auth"
 mapping:
   tologout: "/logout"
-# labels:
-#   - base
+labels:
+  - base
+  - authentication

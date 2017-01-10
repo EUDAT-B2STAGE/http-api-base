@@ -13,7 +13,7 @@ from collections import OrderedDict
 from attr import s as AttributedModel, ib as attribute
 # from jinja2._compat import iteritems
 from . import (
-    JSON_EXT, json, CORE_DIR, USER_CUSTOM_DIR,
+    JSON_EXT, json, CORE_DIR, USER_CUSTOM_DIR, DEFAULTS_PATH,
     PATH, CONFIG_PATH, BLUEPRINT_KEY, API_URL, BASE_URLS,
 )
 from .meta import Meta
@@ -58,26 +58,33 @@ class Customizer(object):
         # by splitting single parts into submethods
 
         ##################
-        # CUSTOM configuration:
-        # from Blueprint mounted directory
+        # CUSTOM configuration
+
+        # Find out what is the active blueprint
         bp_holder = self.load_json(BLUEPRINT_KEY, PATH, CONFIG_PATH)
         blueprint = bp_holder[BLUEPRINT_KEY]
+
+        # Read the custom configuration from the active blueprint file
         custom_config = self.load_json(blueprint, PATH, CONFIG_PATH)
         custom_config[BLUEPRINT_KEY] = blueprint
-        # pretty_print(custom_config)
 
-        # Save in memory all of the current configuration
-        mem.custom_config = custom_config
-
-        # ##################
-        # # # DEFAULT configuration (NOT IMPLEMENTED YET)
-        # # Add a value for all possibilities
-        # defaults = self.load_json('defaults', CONFIG_DIR, __package__)
+        ##################
+        # DEFAULT configuration
+        defaults = self.load_json(BLUEPRINT_KEY, DEFAULTS_PATH, CONFIG_PATH)
         # if len(defaults) > 0:
         #     log.debug("Defaults:\n%s" % defaults)
 
-        # ##################
-        # # TODO: mix default and custom configuration
+        # Mix default and custom configuration
+        # We go deep into two levels down of dictionaries
+        for key, elements in defaults.items():
+            if key not in custom_config:
+                custom_config[key] = {}
+            for label, element in elements.items():
+                if label not in custom_config[key]:
+                    custom_config[key][label] = element
+
+        # Save in memory all of the current configuration
+        mem.custom_config = custom_config
 
         ##################
         # # FRONTEND?
