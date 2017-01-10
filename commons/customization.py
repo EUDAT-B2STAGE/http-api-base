@@ -104,6 +104,9 @@ class Customizer(object):
             for ep in os.listdir(current_dir):
 
                 endpoint_dir = os.path.join(CONFIG_PATH, base_dir, ep)
+                if os.path.isfile(endpoint_dir):
+                    log.debug("%s is not a file, skipping it")
+                    continue
                 current = self.lookup(ep, package, base_dir, endpoint_dir)
                 if current.exists:
                     # Add endpoint to REST mapping
