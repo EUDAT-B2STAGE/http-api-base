@@ -406,13 +406,16 @@ class BeSwagger(object):
                 # TODO: get the default normal and admin user from 'auth'
 
                 # If enabled, at least the base role should be present
-                roles = custom.get('authorized', ['normal_user'])
+                # roles = custom.get('authorized', ['normal_user'])
+                roles = custom.get('authorized', [])
 
                 for role in roles:
 
                     # TODO: create a method inside 'auth' to check roles
 
                     extra.auth = roles
+            else:
+                extra.auth = None
 
             # Other things that could be saved into 'custom' subset?
 

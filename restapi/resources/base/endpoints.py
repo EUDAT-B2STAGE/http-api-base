@@ -195,29 +195,30 @@ class Profile(EndpointResource):
 
     def get(self):
 
-        auth = self.global_get('custom_auth')
+        # auth = self.global_get('custom_auth')
+        current_user = self.get_current_user()
         data = {
-            'uuid': auth._user.uuid,
+            'uuid': current_user.uuid,
             'status': "Valid user",
-            'email': auth._user.email
+            'email': current_user.email
         }
 
         # roles = []
         roles = {}
-        for role in auth._user.roles:
+        for role in current_user.roles:
             # roles.append(role.name)
             roles[role.name] = role.name
         data["roles"] = roles
         data["isAdmin"] = "admin_root" in roles
 
-        if hasattr(auth._user, 'name'):
-            data["name"] = auth._user.name
+        if hasattr(current_user, 'name'):
+            data["name"] = current_user.name
 
-        if hasattr(auth._user, 'surname'):
-            data["surname"] = auth._user.surname
+        if hasattr(current_user, 'surname'):
+            data["surname"] = current_user.surname
 
-        if hasattr(auth._user, 'irods_user'):
-            data["irods_user"] = auth._user.irods_user
+        if hasattr(current_user, 'irods_user'):
+            data["irods_user"] = current_user.irods_user
 
         return data
 

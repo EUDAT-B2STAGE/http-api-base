@@ -33,10 +33,14 @@ class EndpointsFarmer(object):
 
             # If auth has some role, they have been validated
             # and authentication has been requested
-            if len(attributes.auth) < 1:
+            # if len(attributes.auth) < 1:
+            #     continue
+            # else:
+            #     roles = attributes.auth
+
+            roles = attributes.auth
+            if roles is None:
                 continue
-            else:
-                roles = attributes.auth
 
             # Programmatically applying the authentication decorator
             original = getattr(resource.cls, method)
