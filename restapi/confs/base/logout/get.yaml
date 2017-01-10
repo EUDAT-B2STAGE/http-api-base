@@ -2,9 +2,9 @@
 tologout:
   summary: Logout from current credentials
   description: Invalidate current registered token
-  tags:
-    # - logout
-    - authentication
+  # tags:
+  #   # - logout
+  #   - authentication
   custom:
     # publish: true
     authentication: true

@@ -503,20 +503,18 @@ class BeSwagger(object):
         }
 
         """
-        # securityDefinitions:
-        #   Bearer:
-        #     type: apiKey
-        #     name: Authorization
-        #     in: header
-
-        #     OR IN EVERY METHOD:
-
-        # parameters:
-        #   -
-        #     name: authorization
-        #     in: header
-        #     type: string
-        #     required: true
+        SECURITY
+        {
+            "type": "apiKey",
+            "in": "header",
+            "name": "Authorization"
+        }
+        # IN EVERY METHOD:
+        parameters:
+          - name: authorization
+            in: header
+            type: string
+            required: true
         """
 
         # Set existing values
@@ -538,7 +536,6 @@ class BeSwagger(object):
         output['produces'] = [JSON_APPLICATION]
         output['paths'] = self._paths
 
-        # tags?
         tags = []
         for tag, desc in mem.custom_config['tags'].items():
             tags.append({'name': tag, 'description': desc})

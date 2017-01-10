@@ -1,9 +1,9 @@
 
 file: endpoints
-class: Status
-baseuri: "/api"
+class: Internal
+# baseuri: "/api"
 mapping:
-  status: "/status"
+  inter: "/internal"
 labels:
   - base
   - helpers

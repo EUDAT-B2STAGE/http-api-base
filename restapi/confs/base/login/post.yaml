@@ -15,9 +15,9 @@ tologin:
     - name: credentials
       in: "body"
       # OPTIONS are 'query', 'body', 'path' or 'header'
-      description: your registered username
       schema:
         $ref: "#/definitions/Credentials"
+      # description: your registered username
 
   responses:
     '401':
@@ -42,7 +42,3 @@ tologin:
               }
             }
           }
-
-  # tags:
-  #   - authentication
-  #   # - login

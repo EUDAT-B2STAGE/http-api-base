@@ -2,8 +2,9 @@
     "tags": {
         "specifications": "JSON with SWAGGER standards for any REST client",
         "base": "endpoints for base operations",
-        "status": "ping the server",
+        "helpers": "tools for checking status and privileges",
         "authentication": "log in and out of the REST API",
+        "profiles": "set and view profile for current credentials",
         "open_sessions": "manage authorized sessions"
     },
     "project": {

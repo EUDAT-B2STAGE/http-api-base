@@ -7,5 +7,3 @@ status:
   responses:
     200:
       description: Server is alive!
-  tags:
-    - status

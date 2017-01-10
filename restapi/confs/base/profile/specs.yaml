@@ -1,0 +1,10 @@
+
+file: endpoints
+class: Profile
+baseuri: "/auth"
+mapping:
+  whoami: "/profile"
+  iam: "/profile/<uuid>"
+labels:
+  - base
+  - profiles

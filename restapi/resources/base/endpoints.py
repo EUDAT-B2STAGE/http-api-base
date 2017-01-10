@@ -9,8 +9,8 @@ from __future__ import absolute_import
 
 from ..rest.definition import EndpointResource
 from ...confs.config import AUTH_URL
-from ...auth import authentication
-from ...confs import config
+# from ...auth import authentication
+# from ...confs import config
 from ..services.detect import CELERY_AVAILABLE
 from ..services.authentication import BaseAuthentication
 from .. import decorators as decorate
@@ -190,49 +190,17 @@ class Tokens(EndpointResource):
         return self.empty_response()
 
 
-# class AdminTokens(EndpointResource):
-#     """ Admin operations on token list """
-
-#     base_url = AUTH_URL
-#     endkey = "token_id"
-#     endtype = "string"
-
-#     @authentication.authorization_required(roles=[config.ROLE_ADMIN])
-#     def get(self, token_id):
-#         auth = self.global_get('custom_auth')
-#         token = auth.get_tokens(token_jti=token_id)
-#         if len(token) == 0:
-#             return self.send_errors(
-#                 "Token not found", token_id, code=hcodes.HTTP_BAD_NOTFOUND)
-#         return token
-
-#     @authentication.authorization_required(roles=[config.ROLE_ADMIN])
-#     def delete(self, token_id):
-#         auth = self.global_get('custom_auth')
-#         if not auth.destroy_token(token_id):
-#             return self.send_errors(
-#                 "Token not found", token_id, code=hcodes.HTTP_BAD_NOTFOUND)
-
-#         return self.empty_response()
-
-
 class Profile(EndpointResource):
     """ Current user informations """
 
-    base_url = AUTH_URL
-
-    @authentication.authorization_required
     def get(self):
-        """
-        Token authentication tester. Example of working call is: 
-        http localhost:8081/auth/profile
-            Authorization:"Bearer RECEIVED_TOKEN"
-        """
 
         auth = self.global_get('custom_auth')
-        data = {}
-        data["status"] = "Valid user"
-        data["email"] = auth._user.email
+        data = {
+            'uuid': auth._user.uuid,
+            'status': "Valid user",
+            'email': auth._user.email
+        }
 
         roles = []
         for role in auth._user.roles:
@@ -250,34 +218,42 @@ class Profile(EndpointResource):
 
         return data
 
-    @authentication.authorization_required
-    def put(self):
+    def put(self, uuid):
+        # TO FIX: this should be a POST method...
+
+        """ Create or update profile for current user """
 
         from flask_restful import request
         try:
+            user = self.get_current_user()
+            if user.uuid != uuid:
+                return self.send_errors(
+                    "Invalid uuid",
+                    "Identifier specified does not match current user",
+                )
+
             data = request.get_json(force=True)
 
-            if "newpassword" not in data:
+            key = "newpassword"
+            if key not in data:
                 return self.send_errors(
-                    "Error",
-                    "Invalid request, this operation cannot be completed",
+                    "Invalid request", "Missing %s value" % key,
                     code=hcodes.HTTP_BAD_REQUEST
                 )
-            user = self.get_current_user()
-            pwd = BaseAuthentication.hash_password(data["newpassword"])
-            user.password = pwd
+            user.password = BaseAuthentication.hash_password(data[key])
             user.save()
+
             auth = self.global_get('custom_auth')
             tokens = auth.get_tokens(user=auth._user)
-
             for token in tokens:
+                # for graphdb it just remove the edge
                 auth.invalidate_token(token=token["token"])
+            # changes the user uuid invalidating all tokens
             auth.invalidate_all_tokens()
 
         except:
             return self.send_errors(
-                "Error",
-                "Unknown error, please contact system administrators",
+                "Error", "Unknown error, please contact administrators",
                 code=hcodes.HTTP_BAD_REQUEST
             )
 
@@ -287,9 +263,6 @@ class Profile(EndpointResource):
 class Internal(EndpointResource):
     """ Token and Role authentication test """
 
-    base_url = AUTH_URL
-
-    @authentication.authorization_required(roles=[config.ROLE_INTERNAL])
     def get(self):
         return "I am internal"
 
@@ -299,7 +272,6 @@ class Admin(EndpointResource):
 
     base_url = AUTH_URL
 
-    @authentication.authorization_required(roles=[config.ROLE_ADMIN])
     def get(self):
         return "I am admin!"
 
@@ -311,10 +283,6 @@ if CELERY_AVAILABLE:
 
     class Queue(EndpointResource):
 
-        endkey = "task_id"
-        endtype = "string"
-
-        @authentication.authorization_required(roles=[config.ROLE_ADMIN])
         def get(self, task_id=None):
 
             # Inspect all worker nodes
@@ -378,18 +346,11 @@ if CELERY_AVAILABLE:
 
             return self.force_response(data)
 
-        # @authentication.authorization_required(roles=[config.ROLE_ADMIN])
-        # def put(self, task_id):
-        #     from celery.task.control import revoke
-        #     revoke(task_id, terminate=True)
-        #     return self.force_response("!")
-
-        @authentication.authorization_required(roles=[config.ROLE_ADMIN])
         def put(self, task_id):
             celery_app.control.revoke(task_id)
             return self.empty_response()
 
-        @authentication.authorization_required(roles=[config.ROLE_ADMIN])
+        # @authentication.authorization_required(roles=[config.ROLE_ADMIN])
         def delete(self, task_id):
             celery_app.control.revoke(task_id, terminate=True)
             return self.empty_response()

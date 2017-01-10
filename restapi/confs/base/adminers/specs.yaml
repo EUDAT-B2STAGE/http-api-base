@@ -1,9 +1,9 @@
 
 file: endpoints
-class: Status
-baseuri: "/api"
+class: Admin
+# baseuri: "/api"
 mapping:
-  status: "/status"
+  adm: "/admin"
 labels:
   - base
   - helpers

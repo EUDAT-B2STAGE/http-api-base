@@ -1,0 +1,10 @@
+
+adm:
+  summary: Administration privilege verification
+  custom:
+    authentication: true
+    authorized:
+      - admin_root
+  responses:
+    200:
+      description: Current user is classified as admin

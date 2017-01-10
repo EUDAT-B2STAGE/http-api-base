@@ -4,6 +4,8 @@ depends_on:
 class: Queue
 file: endpoints
 mapping:
-  queue: "/queue/<str:task_id>"
+  list_queue: "/queue"
+  single_queue: "/queue/<task_id>"
 labels:
   - base
+  - tasks
