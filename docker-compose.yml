@@ -30,9 +30,9 @@ backend:
     # Base code
     - ../backend:/code
     # Project configuration
-    - ./vanilla/specs:/code/restapi/confs/main
+    - ../specs:/code/restapi/confs/main
     # Swagger API definition
-    - ./vanilla/swagger:/code/restapi/confs/custom
+    - ../swagger:/code/restapi/confs/custom
     # Rest API endpoints (code)
     - ../apis:/code/restapi/resources/custom
     # Rest API services models
