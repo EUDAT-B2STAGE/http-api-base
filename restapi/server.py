@@ -49,7 +49,7 @@ class Flask(OriginalFlask):
         # or the make_response replica.
         # This happens with Flask exceptions
         if responder.already_converted():
-            logger.debug("Response was already converted")
+            logger.verbose("Response was already converted")
             # # Note: this response could be a class ResponseElements
             # return rv
 
@@ -161,7 +161,7 @@ def create_app(name=__name__, debug=False,
     # DATABASE/SERVICEs CHECKS
     from .resources.services.detect import services as internal_services
     for service, myclass in internal_services.items():
-        logger.info("Available service %s" % service)
+        logger.debug("Available service %s" % service)
         myclass(check_connection=True, app=microservice)
 
     ##############################

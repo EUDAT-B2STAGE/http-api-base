@@ -122,7 +122,7 @@ class EndpointResource(Resource):
             return self._args.get(single_parameter, default)
 
         if len(self._args) > 0:
-            logger.info("Parameters %s" % self._args)
+            logger.verbose("Parameters %s" % self._args)
         return self._args
 
     def myname(self):
@@ -407,7 +407,7 @@ class EndpointResource(Resource):
         for instance in instances:
             json_data["content"].append(self.getJsonResponse(instance))
 
-## // TO FIX:
+# // TO FIX:
 # get pages FROM SELF ARGS?
         # json_data["links"]["next"] = \
         #     endpoint + '?currentpage=2&perpage=1',
@@ -415,6 +415,7 @@ class EndpointResource(Resource):
         #     endpoint + '?currentpage=' + str(len(instances)) + '&perpage=1',
 
         return json_data
+
     @staticmethod
     def dateFromString(date, format="%d/%m/%Y"):
 
@@ -427,7 +428,7 @@ class EndpointResource(Resource):
             return dateutil.parser.parse(date)
 
     @staticmethod
-# To mattia: can we stop using java-like camelCase? XD
+# TO FIX: can we stop using java-like camelCase? XD
     def stringFromTimestamp(timestamp):
         if timestamp == "":
             return ""

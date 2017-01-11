@@ -109,7 +109,7 @@ proxy:
 
 ##############################
 swagger:
-  image: eudatb2stage/swagger-ui
+  image: eudatb2stage/swagger-ui:latest
 
 #######################
 # Define here your services

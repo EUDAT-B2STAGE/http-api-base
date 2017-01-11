@@ -30,7 +30,7 @@ def load_yaml_file(file, path=None, get_all=False, skip_error=False):
         filepath = file
     else:
         filepath = os.path.join(path, file + "." + YAML_EXT)
-    log.debug("Reading file %s" % filepath)
+    log.verbose("Reading file %s" % filepath)
 
     # load from this file
     if os.path.exists(filepath):
@@ -53,7 +53,7 @@ def load_yaml_file(file, path=None, get_all=False, skip_error=False):
     else:
         error = 'File does not exist'
 
-    message = "Failed to read YAML from '%s':\n%s" % (filepath, error)
+    message = "Failed to read YAML from '%s': %s" % (filepath, error)
     if skip_error:
         log.warning(message)
     else:

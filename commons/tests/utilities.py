@@ -96,7 +96,8 @@ class TestUtilities(unittest.TestCase):
         for data in content['Response']['data']:
             if data["token"] == token:
                 id = data["id"]
-                uri = '%s/tokensadminonly/%s' % (AUTH_URI, id)
+                logger.info("Destroying token %s" % id)
+                uri = '%s/tokens/%s' % (AUTH_URI, id)
                 r = self.app.delete(uri, headers=headers)
                 self.assertEqual(r.status_code, NO_CONTENT)
                 break
@@ -127,7 +128,7 @@ class TestUtilities(unittest.TestCase):
             schema = [
                 {
                     "key": "unique-key-name-of-this-field",
-                    "type": "text/int/select",
+                    "type": "text/int/select/date",
                     "required": "true/false",
                     "options": [
                         {"id": "OptionID", "value": "OptionValue"},
@@ -151,6 +152,12 @@ class TestUtilities(unittest.TestCase):
                     value = "NOT_FOUND"
             elif type == "int":
                 value = random.randrange(0, 1000, 1)
+            elif type == "date":
+                value = "1969-07-20"  # 20:17:40 UTC
+            # elif type == "autocomplete":
+                # continue
+            elif type == "multi_section":
+                continue
             else:
                 value = self.randomString()
 
@@ -178,8 +185,8 @@ class TestUtilities(unittest.TestCase):
     def parseResponse(self, response, inner=False):
         """
             This method is used to verify and simplify the access to
-            json-standard-responses. It returns an Object filled
-            with attributes obtained by mapping json content.
+            json-standard-responses. It returns an Object built
+            by mapping json content as attributes.
             This is a recursive method, the inner flag is used to
             distinguish further calls on inner elements.
         """
@@ -345,9 +352,9 @@ class TestUtilities(unittest.TestCase):
         content = json.loads(r.data.decode('utf-8'))
 
         # In this case the response is returned by Flask
-        if status == NOT_ALLOWED:
-            self.assertEqual(content, NOT_ALLOWED_ERROR)
-            return content
+        # if status == NOT_ALLOWED:
+        #     self.assertEqual(content, NOT_ALLOWED_ERROR)
+        #     return content
 
         if error is not None:
             errors = content['Response']['errors']
