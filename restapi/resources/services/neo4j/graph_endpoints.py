@@ -163,17 +163,17 @@ def graph_transactions(func):
     def wrapper(self, *args, **kwargs):
         try:
 
-            logger.debug("Neomodel transaction BEGIN")
+            logger.verbose("Neomodel transaction BEGIN")
             transaction.begin()
 
             out = func(self, *args, **kwargs)
 
-            logger.debug("Neomodel transaction COMMIT")
+            logger.verbose("Neomodel transaction COMMIT")
             transaction.commit()
 
             return out
         except Exception as e:
-            logger.debug("Neomodel transaction ROLLBACK")
+            logger.verbose("Neomodel transaction ROLLBACK")
             try:
                 # Starting from neo4j 2.3.0 ClientErrors automatically
                 # rollback transactions and raise a 404 error:
