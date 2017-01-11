@@ -240,7 +240,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         if not self.refresh_token(self._payload['jti']):
             return False
 
-        logger.debug("User authorized")
+        logger.verbose("User authorized")
         self._token = token
         return True
 

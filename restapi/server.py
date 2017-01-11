@@ -49,7 +49,7 @@ class Flask(OriginalFlask):
         # or the make_response replica.
         # This happens with Flask exceptions
         if responder.already_converted():
-            logger.debug("Response was already converted")
+            logger.verbose("Response was already converted")
             # # Note: this response could be a class ResponseElements
             # return rv
 
