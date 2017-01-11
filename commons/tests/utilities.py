@@ -351,9 +351,9 @@ class TestUtilities(unittest.TestCase):
         content = json.loads(r.data.decode('utf-8'))
 
         # In this case the response is returned by Flask
-        if status == NOT_ALLOWED:
-            self.assertEqual(content, NOT_ALLOWED_ERROR)
-            return content
+        # if status == NOT_ALLOWED:
+        #     self.assertEqual(content, NOT_ALLOWED_ERROR)
+        #     return content
 
         if error is not None:
             errors = content['Response']['errors']
