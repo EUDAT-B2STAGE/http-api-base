@@ -707,7 +707,6 @@ class ICommands(BashCommands):
             }
         """
         iout = self.list(path=path, acl=True)
-        logger.debug(iout)
 
         data = {}
         for d in iout:
