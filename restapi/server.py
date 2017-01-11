@@ -161,7 +161,7 @@ def create_app(name=__name__, debug=False,
     # DATABASE/SERVICEs CHECKS
     from .resources.services.detect import services as internal_services
     for service, myclass in internal_services.items():
-        logger.info("Available service %s" % service)
+        logger.debug("Available service %s" % service)
         myclass(check_connection=True, app=microservice)
 
     ##############################

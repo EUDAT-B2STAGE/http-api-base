@@ -30,7 +30,7 @@ def load_yaml_file(file, path=None, get_all=False, skip_error=False):
         filepath = file
     else:
         filepath = os.path.join(path, file + "." + YAML_EXT)
-    log.debug("Reading file %s" % filepath)
+    log.verbose("Reading file %s" % filepath)
 
     # load from this file
     if os.path.exists(filepath):

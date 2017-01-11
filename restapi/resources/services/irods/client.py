@@ -1401,7 +1401,7 @@ class IrodsFarm(ServiceFarm):
 
     def init_connection(self, app):
         self.get_instance()
-        logger.debug("iRODS seems online")
+        logger.verbose("iRODS seems online")
 
     @classmethod
     def get_instance(cls, user=None, proxy=False, become_admin=False):

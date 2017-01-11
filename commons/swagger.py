@@ -474,7 +474,7 @@ class BeSwagger(object):
             # NOTE: whatever is left inside 'specs' will be
             # passed later on to Swagger Validator...
 
-            log.debug("Build definition for '%s:%s'"
+            log.verbose("Build definition for '%s:%s'"
                       % (method.upper(), newuri))
 
             # Save definition for publishing
@@ -598,7 +598,7 @@ class BeSwagger(object):
 
         try:
             Spec.from_dict(swag_dict, config=bravado_config)
-            log.info("Validated")
+            log.info("Swagger configuration is validated")
         except Exception as e:
             # raise e
             error = str(e).split('\n')[0]

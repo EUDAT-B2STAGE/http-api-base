@@ -105,7 +105,10 @@ class Customizer(object):
 
                 endpoint_dir = os.path.join(CONFIG_PATH, base_dir, ep)
                 if os.path.isfile(endpoint_dir):
-                    log.debug("%s is not a file, skipping it")
+                    log.debug(
+                        "Expected a swagger conf folder, found a file (%s/%s)"
+                        % (base_dir, ep)
+                    )
                     continue
                 current = self.lookup(ep, package, base_dir, endpoint_dir)
                 if current.exists:
@@ -134,7 +137,7 @@ class Customizer(object):
 
     def lookup(self, endpoint, package, base_dir, endpoint_dir):
 
-        log.info("Found endpoint dir: '%s'" % endpoint)
+        log.verbose("Found endpoint dir: '%s'" % endpoint)
 
         # Find yaml files
         conf = None
