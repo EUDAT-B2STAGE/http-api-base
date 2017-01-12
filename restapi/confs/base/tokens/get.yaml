@@ -8,6 +8,13 @@ common:
     authentication: true
     # authorized:
     #   - admin_root
+  parameters:
+    - name: username
+      # description: test
+      # required: true
+      # default: 'pdonorio'
+      in: query
+      type: string
 
 tokenizers:
   summary: Show all tokens emitted for logged user

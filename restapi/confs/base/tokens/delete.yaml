@@ -10,6 +10,10 @@ common:
 tokenizers:
   summary: Remove all tokens emitted for logged user
   description: "Note: allowed only for testing"
+  parameters:
+    - name: username
+      in: query
+      type: string
   responses:
     '200':
       description: Tokens have been erased

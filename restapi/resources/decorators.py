@@ -19,7 +19,7 @@ I didn't manage so far to have it working in the way the documentation require.
 
 from __future__ import absolute_import
 
-import traceback
+# import traceback
 from functools import wraps
 from commons import htmlcodes as hcodes
 from commons.globals import mem
@@ -32,7 +32,7 @@ __author__ = myself
 __copyright__ = myself
 __license__ = lic
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 #################################
@@ -61,7 +61,7 @@ def set_response(original=False, custom_method=None, first_call=False):
 
         # Debug when response is injected and if custom
         if not first_call:
-            logger.debug("Response method set to: %s" % custom_method)
+            log.debug("Response method set to: %s" % custom_method)
 
 
 def custom_response(func=None, original=False):
@@ -84,10 +84,10 @@ def enable_endpoint_identifier(name='myid', idtype='string'):
     def class_rebuilder(cls):   # decorator
 
         def init(self):
-            logger.info("[%s] Applying ID to endopoint:%s of type '%s'"
-                        % (self.__class__.__name__, name, idtype))
+            log.info("[%s] Applying ID to endopoint:%s of type '%s'"
+                     % (self.__class__.__name__, name, idtype))
             self.set_method_id(name, idtype)
-            # logger.debug("New init %s %s" % (name, idtype))
+            # log.debug("New init %s %s" % (name, idtype))
             super(cls, self).__init__()
 
         NewClass = Meta.metaclassing(
@@ -97,42 +97,22 @@ def enable_endpoint_identifier(name='myid', idtype='string'):
 
 
 #################################
-# Adding a parameter to method
-# ...this decorator took me quite a lot of time...
-
-# In fact, it is a decorator which requires special points:
-# 1. chaining: more than one decorator of the same type stacked
-# 2. arguments: the decorator takes parameters
-# 3. works for a method of class: not a single function, but with 'self'
-
-# http://scottlobdell.me/2015/04/decorators-arguments-python/
-
+# TOFIX: remove it here, it has been moved to commons
 def add_endpoint_parameter(name, ptype=str, default=None, required=False):
-    """ 
-    Add a new parameter to the whole endpoint class.
-    Parameters are the ones passed encoded in the url, e.g.
-
-    GET /api/myendpoint?param1=string&param2=42
-
-    """
 
     def decorator(func):
-        # logger.warning("Deprecated 'add_endpoint_parameter', " +
-        #                "use JSON config in %s" % func)
+        log.warning("DEPRECATED add_endpoint_parameter for %s" % func)
 
         @wraps(func)
         def wrapper(self, *args, **kwargs):
 
-            # Debug
             class_name = self.__class__.__name__
             method_name = func.__name__.upper()
-            logger.debug("[Class: %s] %s decorated with parameter '%s'"
-                         % (class_name, method_name, name))
-
+            log.debug("[Class: %s] %s decorated with parameter '%s'"
+                      % (class_name, method_name, name))
             params = {
                 'name': name,
                 'method': method_name,
-                # Check list type? for filters
                 'mytype': ptype,
                 'default': default,
                 'required': required,
@@ -156,14 +136,13 @@ def add_endpoint_parameter(name, ptype=str, default=None, required=False):
 # http://flask-restful.readthedocs.org/en/latest/reqparse.html
 
 def apimethod(func):
-## TO BE DEPRECATED
+# TODO: remove it when nobody uses it anymore
     """ 
     Decorate methods to return the most standard json data
     and also to parse available args before using them in the function
     """
 
-    # logger.warning("Deprecated 'apimethod', to add parameters" +
-    #                "use JSON config in %s" % func)
+    log.warning("Deprecated 'apimethod', to add parameters use SWAGGER")
 
     @wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -171,7 +150,7 @@ def apimethod(func):
         # Debug
         class_name = self.__class__.__name__
         method_name = func.__name__.upper()
-        logger.info("[Class: %s] %s request" % (class_name, method_name))
+        log.info("[Class: %s] %s request" % (class_name, method_name))
 
         #######################
         # PARAMETERS INPUT
@@ -180,7 +159,6 @@ def apimethod(func):
         if self.apply_parameters(method_name):
             # Call the parse method
             self.parse()
-        # self.get_input()
 
         #######################
         # Call the wrapped function
@@ -189,7 +167,8 @@ def apimethod(func):
             out = func(self, *args, **kwargs)
         # Handle any error to avoid Flask using the HTML web page for errors
         except BaseException as e:
-            logger.warning("nb: dig more changing the decorator 'except'")
+            # raise e
+            log.warning("nb: dig more changing the decorator 'except'")
             # import sys
             # error = sys.exc_info()[0]
 
@@ -203,9 +182,9 @@ def apimethod(func):
 # #######################
 # # TO CHECK AND PROBABLY REMOVE
 #         except TypeError as e:
-#             logger.warning(e)
+#             log.warning(e)
 #             error = str(e).strip("'")
-#             logger.critical("Type error: %s" % error)
+#             log.critical("Type error: %s" % error)
 
 #             # This error can be possible only if using the default response
 #             if "required positional argument" in error:
@@ -214,7 +193,7 @@ def apimethod(func):
 #                     current_response_available=False)
 #             raise e
         finally:
-            logger.debug("Called %s", func)
+            log.debug("Called %s", func)
 
         return out
 
@@ -234,6 +213,7 @@ def time_all_class_methods(Cls):
 
 
 def all_rest_methods(Cls):
+# TODO: remove it when nobody uses 'apimethod' anymore
     """
     Decorate all the rest methods inside the custom restful class,
     with the previously created 'apimethod'
@@ -251,7 +231,7 @@ def all_rest_methods(Cls):
         original_method = getattr(Cls, attr)
         setattr(Cls, attr, apimethod(original_method))
 
-        logger.debug("Decorated %s.%s as api method" % (Cls.__name__, attr))
+        log.debug("Decorated %s.%s as api method" % (Cls.__name__, attr))
 
     return Cls
 
@@ -260,7 +240,7 @@ def all_rest_methods(Cls):
 # Error handling with custom methods
 def exceptionError(self, label, e, code):
     error = str(e)
-    logger.error(error)
+    log.error(error)
     return self.send_errors(label, error, code=code)
 
 
@@ -277,9 +257,9 @@ def error_handler(func, self, some_exception,
     # Catch the single exception that the user requested
     except some_exception as e:
         return exceptionError(self, label, e, error_code)
-## TO CHECK WITH MATTIA
+# TODO: check with @mdantonio
     # except Exception as e:
-    #     logger.warning(
+    #     log.warning(
     #         "Unexpected exception inside error handler:\n%s" % str(e))
 
     #     if not catch_generic:

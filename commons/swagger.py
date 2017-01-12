@@ -13,12 +13,13 @@ import re
 import os
 # import inspect
 # from collections import defaultdict
-from attr import s as AttributedModel, ib as attribute
 # from . import BASE_URLS, STATIC_URL, CORE_DIR, USER_CUSTOM_DIR, json
+from attr import s as AttributedModel, ib as attribute
+from commons import decorators as decorate
 from .formats.yaml import load_yaml_file, YAML_EXT  # , yaml
 from . import CORE_DIR, USER_CUSTOM_DIR
 
-from .logs import get_logger  # , pretty_print
+from .logs import get_logger, pretty_print
 
 log = get_logger(__name__)
 JSON_APPLICATION = 'application/json'
@@ -146,11 +147,6 @@ class BeSwagger(object):
                     'in': 'path', 'required': True
                 })
 
-                # handle parameters in URI for Flask
-                if paramtype == 'query':
-                    print("QUERY", paramname)
-                    pass
-
                 # replace in a new uri
                 newuri = newuri.replace('<%s>' % parameter, '{%s}' % paramname)
 
@@ -158,6 +154,17 @@ class BeSwagger(object):
             # Skip what the developers does not want to be public in swagger
             if not extra.publish:
                 continue
+
+            # cycle parameters and add them to the endpoint class
+            query_params = []
+            for param in specs['parameters']:
+                # handle parameters in URI for Flask
+                if param['in'] == 'query':
+                    query_params.append(param)
+
+            if len(query_params) > 0:
+                endpoint.cls = self.query_parameters(
+                    endpoint.cls, method, query_params)
 
             # Swagger does not like empty arrays
             if len(specs['parameters']) < 1:
@@ -174,15 +181,32 @@ class BeSwagger(object):
             # NOTE: whatever is left inside 'specs' will be
             # passed later on to Swagger Validator...
 
-            log.verbose("Build definition for '%s:%s'"
-                      % (method.upper(), newuri))
-
             # Save definition for publishing
             if newuri not in self._paths:
                 self._paths[newuri] = {}
             self._paths[newuri][method] = specs
+            log.verbose("Built definition '%s:%s'" % (method.upper(), newuri))
 
-        return extra
+        endpoint.custom[method] = extra
+        return endpoint
+
+    def query_parameters(self, cls, method, params):
+        """
+        apply decorator to endpoint for query parameters
+        """
+
+        # Programmatically applying the authentication decorator
+        original = getattr(cls, method)
+        decorated = decorate.add_endpoint_parameters(
+            original,
+            params
+            # name=param['name'],
+            # # ptype = ?
+            # default=param.get('default', None),
+            # required=param.get('required', False),
+        )
+        setattr(cls, method, decorated)
+        return cls
 
     def swaggerish(self):
         """
@@ -228,10 +252,12 @@ class BeSwagger(object):
         if 'title' in proj:
             output['info']['title'] = proj['title']
 
-        for endpoint in self._endpoints:
+        for key, endpoint in enumerate(self._endpoints):
             endpoint.custom = {}
             for method, file in endpoint.methods.items():
-                endpoint.custom[method] = \
+
+                # add the custom part to the endpoint
+                self._endpoints[key] = \
                     self.read_my_swagger(file, method, endpoint)
 
         output['definitions'] = self.read_definitions()

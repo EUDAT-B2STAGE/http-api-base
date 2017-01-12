@@ -16,9 +16,9 @@ from flask_restful import request, Resource, reqparse
 from ...confs.config import API_URL  # , STACKTRACE
 from ...response import ResponseElements
 from commons import htmlcodes as hcodes
-from commons.logs import get_logger
+from commons.logs import get_logger  # , pretty_print
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 ###################
 # Paging costants
@@ -48,6 +48,7 @@ class EndpointResource(Resource):
         self._args = {}
         self._json_args = {}
         self._params = {}
+
         self._parser = reqparse.RequestParser()
 
     @staticmethod
@@ -59,21 +60,12 @@ class EndpointResource(Resource):
 
     def parse(self):
         """
-        Parameters may be necessary at any method.
-        Parse args.
+        Parameters may be necessary at any method: Parse them all.
         """
 
         self._args = self._parser.parse_args()
-
-        # if len(self._args) < 1:
-        #     try:
-        #         self._args = request.get_json(force=forcing)
-        #     except Exception as e:
-        #         logger.warning("Fail: get JSON for current req: '%s'" % e)
-
         if len(self._args) > 0:
-            logger.debug("Parsed parameters: %s" % self._args)
-
+            log.debug("Parsed parameters: %s" % self._args)
         return self._args
 
     def get_input(self, forcing=True, single_parameter=None, default=None):
@@ -101,14 +93,14 @@ class EndpointResource(Resource):
                         key += '_json'
                     self._args[key] = value
             except Exception:  # as e:
-                # logger.critical("Cannot get JSON for req: '%s'" % e)
+                # log.critical("Cannot get JSON for req: '%s'" % e)
                 pass
 
         if single_parameter is not None:
             return self._args.get(single_parameter, default)
 
         if len(self._args) > 0:
-            logger.verbose("Parameters %s" % self._args)
+            log.verbose("Parameters %s" % self._args)
         return self._args
 
     def myname(self):
@@ -136,12 +128,18 @@ class EndpointResource(Resource):
         if name not in self._params[classname][method]:
             self._params[classname][method][name] = [mytype, default, required]
 
-    def apply_parameters(self, method):
+    def apply_parameters(self, method=None):
         """ Use parameters received via decoration """
 
         classname = self.myname()
         if classname not in self._params:
             return False
+
+        ##############################
+        if method is None:
+            from flask_restful import request
+            method = request.method
+
         if method not in self._params[classname]:
             return False
         p = self._params[classname][method]
@@ -175,11 +173,12 @@ class EndpointResource(Resource):
                 act = 'append'
 
             # Really add the parameter
+            # print("ADD TO PARSER", param, param_type, param_default, param_required)
             self._parser.add_argument(
                 param, type=param_type,
                 default=param_default, required=param_required,
                 trim=trim, action=act, location=loc)
-            logger.debug("Accept param '%s', type %s" % (param, param_type))
+            log.debug("Accept param '%s', type %s" % (param, param_type))
 
         return True
 
@@ -275,7 +274,7 @@ class EndpointResource(Resource):
 
         Build a ResponseElements instance.
         """
-        # logger.debug("Force response:\nargs[%s] kwargs[%s]" % (args, kwargs))
+        # log.debug("Force response:\nargs[%s] kwargs[%s]" % (args, kwargs))
 
         # If args has something, it should be one simple element
         # That element is the content and nothing else
@@ -337,7 +336,7 @@ class EndpointResource(Resource):
 
         if message is None:
             message = "Something BAD happened somewhere..."
-        logger.critical(message)
+        log.critical(message)
 
         user_message = "Server unable to respond."
         code = hcodes.HTTP_SERVER_ERROR
@@ -422,7 +421,7 @@ class EndpointResource(Resource):
             date = datetime.fromtimestamp(float(timestamp))
             return date.isoformat()
         except:
-            logger.warning(
+            log.warning(
                 "Errors parsing %s" % timestamp)
             return ""
 
@@ -509,7 +508,7 @@ class EndpointResource(Resource):
 
             for relationship in relationships:
                 subrelationship = []
-                # logger.debug("Investigate relationship %s" % relationship)
+                # log.debug("Investigate relationship %s" % relationship)
 
                 if hasattr(instance, relationship):
                     for node in getattr(instance, relationship).all():

@@ -43,12 +43,14 @@ class EndpointsFarmer(object):
                 continue
 
             # Programmatically applying the authentication decorator
+            # TODO: should this be moved to Meta class?
+            # there is another similar piece of code in swagger.py
             original = getattr(resource.cls, method)
             decorated = authentication.authorization_required(
                 original, roles=roles, from_swagger=True)
             setattr(resource.cls, method, decorated)
             log.verbose("Auth enabled on %s.%s for %s"
-                      % (resource.cls.__name__, method, roles))
+                        % (resource.cls.__name__, method, roles))
 
         urls = [uri for _, uri in resource.uris.items()]
 

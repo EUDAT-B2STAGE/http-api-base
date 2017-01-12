@@ -20,7 +20,7 @@ from .meta import Meta
 from .formats.yaml import YAML_EXT, load_yaml_file
 from .swagger import BeSwagger
 from .globals import mem
-from .logs import get_logger  # , pretty_print
+from .logs import get_logger, pretty_print
 
 log = get_logger(__name__)
 
@@ -33,7 +33,7 @@ class EndpointElements(object):
     exists = attribute(default=False)
     isbase = attribute(default=False)
     cls = attribute(default=None)
-    instance = attribute(default=None)
+    # instance = attribute(default=None)
     uris = attribute(default={})
     methods = attribute(default=[])
     custom = attribute(default={})
@@ -115,10 +115,6 @@ class Customizer(object):
                     # Add endpoint to REST mapping
                     endpoints.append(current)
 
-        # Save endpoints to global memory, we never know
-        mem.endpoints = endpoints
-        # pretty_print(endpoints)
-
         ##################
         # SWAGGER read endpoints definition
         swag = BeSwagger(endpoints)
@@ -127,6 +123,19 @@ class Customizer(object):
         # SWAGGER validation
         if not swag.validation(swag_dict):
             raise AttributeError("Current swagger definition is invalid")
+
+        ##################
+        # This is the part where we may mix swagger and endpoints specs
+        # swagger holds the parameters
+        # while the specs are the endpoint list
+        # pretty_print(endpoints)
+        # pretty_print(swag_dict)
+        pass
+
+        ##################
+        # Save endpoints to global memory, we never know
+        mem.endpoints = endpoints
+        # pretty_print(endpoints)
 
         # Update global memory with swagger definition
         mem.swagger_definition = swag_dict
@@ -202,22 +211,8 @@ class Customizer(object):
         # Is this a base or a custom class?
         endpoint.isbase = dir_name == 'base'
 
-        #####################
-        # TODO: IMPORTANT! remove the creation of an instance here!
-        # reference, endkey, endtype and all of this informations
-        # do not count anymore, since swagger is the place to define them
-        endpoint.instance = endpoint.cls()
-        reference, endkey, endtype = endpoint.instance.get_endpoint()
-        # NOTE: reference and key and type are deprecated by swagger
-        #
-        if reference is not None:
-            # endpoint.default_uri = reference
-            raise ValueError("DEPRECATED: URI reference %s in class %s"
-                             % (reference, endpoint.cls))
-        # if endkey is not None and endtype is not None:
-        #     endpoint.key_name = endtype + ':' + endkey
-        if endkey is not None or endtype is not None:
-            raise ValueError("DEPRECATED: key/type in class %s" % endpoint.cls)
+        # DEPRECATED
+        # endpoint.instance = endpoint.cls()
 
         # Global tags
         # to be applied to all methods

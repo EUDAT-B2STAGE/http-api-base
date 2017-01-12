@@ -8,12 +8,9 @@ And a Farm: How to create endpoints into REST service.
 from __future__ import absolute_import
 
 from ..rest.definition import EndpointResource
-from ...confs.config import AUTH_URL
-# from ...auth import authentication
 # from ...confs import config
 from ..services.detect import CELERY_AVAILABLE
 from ..services.authentication import BaseAuthentication
-from .. import decorators as decorate
 from flask import jsonify, current_app
 from commons import htmlcodes as hcodes
 # from commons.swagger import swagger
@@ -119,17 +116,25 @@ class Logout(EndpointResource):
 class Tokens(EndpointResource):
     """ List all active tokens for a user """
 
-    @decorate.add_endpoint_parameter('user')
+    def get_user(self, auth):
+
+        iamadmin = auth.verify_admin()
+
+        if iamadmin:
+            username = self.get_input(single_parameter='username')
+            if username is not None:
+                return auth.get_user_object(username=username)
+
+        return self.get_current_user()
+
     def get(self, token_id=None):
 
         auth = self.global_get('custom_auth')
-        iamadmin = auth.verify_admin()
-        current_user = self.get_current_user()
-        if iamadmin:
-            user = self.get_input(
-                single_parameter='user', default=current_user)
-        else:
-            user = current_user
+        user = self.get_user(auth)
+
+        if user is None:
+            return self.send_errors(
+                "Invalid", "Bad username", code=hcodes.HTTP_BAD_REQUEST)
 
         tokens = auth.get_tokens(user=user)
 
@@ -145,7 +150,6 @@ class Tokens(EndpointResource):
         return self.send_errors(
             "Token not found", errorMessage, code=hcodes.HTTP_BAD_NOTFOUND)
 
-    @decorate.add_endpoint_parameter('user')
     def delete(self, token_id=None):
         """
             For additional security, tokens are invalidated both
@@ -153,13 +157,10 @@ class Tokens(EndpointResource):
         """
 
         auth = self.global_get('custom_auth')
-        iamadmin = auth.verify_admin()
-        current_user = self.get_current_user()
-        if iamadmin:
-            user = self.get_input(
-                single_parameter='user', default=current_user)
-        else:
-            user = current_user
+        user = self.get_user(auth)
+        if user is None:
+            return self.send_errors(
+                "Invalid", "Bad username", code=hcodes.HTTP_BAD_REQUEST)
 
         tokens = auth.get_tokens(user=user)
         invalidated = False
@@ -360,7 +361,6 @@ if CELERY_AVAILABLE:
             celery_app.control.revoke(task_id)
             return self.empty_response()
 
-        # @authentication.authorization_required(roles=[config.ROLE_ADMIN])
         def delete(self, task_id):
             celery_app.control.revoke(task_id, terminate=True)
             return self.empty_response()
