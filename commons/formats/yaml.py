@@ -8,7 +8,7 @@ from __future__ import absolute_import
 
 import yaml
 import os
-from functools import lru_cache
+# from functools import lru_cache
 
 from ..logs import get_logger
 log = get_logger(__name__)
@@ -18,7 +18,7 @@ YAML_EXT = 'yaml'
 yaml.dump({})
 
 
-@lru_cache()
+# @lru_cache()
 def load_yaml_file(file, path=None, get_all=False, skip_error=False):
     """
     Import data from a YAML file.

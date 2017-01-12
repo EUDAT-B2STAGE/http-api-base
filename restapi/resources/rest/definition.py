@@ -38,17 +38,12 @@ class EndpointResource(Resource):
 
     myname = __name__
     _latest_headers = {}
-    endpoint = None
-    endkey = None
-    endtype = None
     hcode = hcodes.HTTP_OK_BASIC
     base_url = API_URL
 
     def __init__(self):
         super(EndpointResource, self).__init__()
 
-        # Apply decision about the url of endpoint
-        self.set_endpoint()
         # Make sure you can parse arguments at every call
         self._args = {}
         self._json_args = {}
@@ -80,15 +75,6 @@ class EndpointResource(Resource):
             logger.debug("Parsed parameters: %s" % self._args)
 
         return self._args
-
-    def set_endpoint(self):
-        # if self.endpoint is None:
-        #     self.endpoint = \
-        #         type(self).__name__.lower().replace("resource", "")
-        pass
-
-    def get_endpoint(self):
-        return (self.endpoint, self.endkey, self.endtype)
 
     def get_input(self, forcing=True, single_parameter=None, default=None):
         """

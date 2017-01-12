@@ -282,8 +282,6 @@ class Internal(EndpointResource):
 class Admin(EndpointResource):
     """ Token and Role authentication test """
 
-    base_url = AUTH_URL
-
     def get(self):
         return "I am admin!"
 
