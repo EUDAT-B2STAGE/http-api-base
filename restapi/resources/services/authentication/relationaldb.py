@@ -222,6 +222,15 @@ instead of here
 
         return True
 
+    def verify_token_custom(self, jti, user, payload):
+        token_entry = self._db.Token.query.filter_by(jti=jti).first()
+        if token_entry is None:
+            return False
+        if token_entry.emitted_for is None or token_entry.emitted_for != user:
+            return False
+
+        return True
+
     def destroy_token(self, token_id):
         token = self._db.Token.query.filter_by(jti=token_id).first()
 

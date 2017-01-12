@@ -126,7 +126,8 @@ class Tokens(EndpointResource):
         iamadmin = auth.verify_admin()
         current_user = self.get_current_user()
         if iamadmin:
-            user = self.get_input(single_param='user', default=current_user)
+            user = self.get_input(
+                single_parameter='user', default=current_user)
         else:
             user = current_user
 
@@ -155,7 +156,8 @@ class Tokens(EndpointResource):
         iamadmin = auth.verify_admin()
         current_user = self.get_current_user()
         if iamadmin:
-            user = self.get_input(single_param='user', default=current_user)
+            user = self.get_input(
+                single_parameter='user', default=current_user)
         else:
             user = current_user
 

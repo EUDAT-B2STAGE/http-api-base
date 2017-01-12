@@ -168,12 +168,13 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         return encode, self._payload['jti']
 
+    @abc.abstractmethod
     def verify_token_custom(self, jti, user, payload):
         """
-            This method can be implemented by specific Authentication Methods
+            This method MUST be implemented by specific Authentication Methods
             to add more specific validation contraints
         """
-        return True
+        return
 
     @abc.abstractmethod
     def refresh_token(self, jti):
@@ -246,7 +247,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     def verify_admin(self):
         """ Check if current user has administration role """
-        return self.verify_roles(ROLE_ADMIN)
+        return self.verify_roles([ROLE_ADMIN])
 
     def save_token(self, user, token, jti):
         logger.debug("Token is not saved in base authentication")
