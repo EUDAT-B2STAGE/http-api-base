@@ -217,6 +217,7 @@ instead of here
 
         user.uuid = getUUID()
         user.save()
+        return True
 
     def invalidate_token(self, token, user=None):
         if user is None:
@@ -226,6 +227,8 @@ instead of here
             token_node.emitted_for.disconnect(user)
         except self._graph.Token.DoesNotExist:
             logger.warning("Could not invalidate token")
+            return False
+        return True
 
     def destroy_token(self, token_id):
         try:
