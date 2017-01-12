@@ -78,16 +78,17 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         to create it from a shell with a random key
         and continues with default key
         """
+
         try:
             self.JWT_SECRET = open(abs_filename, 'rb').read()
         except IOError:
-            logger.warning("Jwt secret file not found: %s" % abs_filename)
-            logger.warning("You are using a default secret key")
-            logger.info("To create your own secret file:")
+            logger.warning("Jwt secret file %s not found, using default "
+                           % abs_filename)
+            logger.info("To create your own secret file:\n" +
+                        "head -c 24 /dev/urandom > %s" % abs_filename)
             # full_path = os.path.dirname(abs_filename)
             # if not os.path.isdir(full_path):
             #     print('mkdir -p {filename}'.format(filename=full_path))
-            logger.info("head -c 24 /dev/urandom > %s" % abs_filename)
             # import sys
             # sys.exit(1)
 
@@ -203,12 +204,13 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         return payload
 
-    def verify_roles(self, roles):
+    def verify_roles(self, roles, warnings=True):
 
         current_roles = self.get_roles_from_user()
         for role in roles:
             if role not in current_roles:
-                logger.warning("Auth role '%s' missing for request" % role)
+                if warnings:
+                    logger.warning("Auth role '%s' missing for request" % role)
                 return False
         return True
 
@@ -247,7 +249,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     def verify_admin(self):
         """ Check if current user has administration role """
-        return self.verify_roles([ROLE_ADMIN])
+        return self.verify_roles([ROLE_ADMIN], warnings=False)
 
     def save_token(self, user, token, jti):
         logger.debug("Token is not saved in base authentication")

@@ -39,9 +39,8 @@ class ExternalServicesLogin(object):
     def __init__(self, testing=False):
 
         if testing:
-            logger.critical("TO FIX: currently skipping oauth2 in tests")
-## // TO FIX?
-# provide some tests for oauth2 calls?
+            logger.warning("currently skipping oauth2 in tests")
+            # TO FIX: provide some tests for oauth2 calls
             return
 
         # Global memory of oauth2 services across the whole server instance

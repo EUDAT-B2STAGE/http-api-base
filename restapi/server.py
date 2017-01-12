@@ -74,7 +74,8 @@ def create_auth_instance(module, services, app, first_call=False):
         ext_auth = oauth2(app.config['TESTING'])
         custom_auth.set_oauth2_services(ext_auth._available_services)
 
-    custom_auth.import_secret(app.config['SECRET_KEY_FILE'])
+    if not app.config['TESTING']:
+        custom_auth.import_secret(app.config['SECRET_KEY_FILE'])
 
     return custom_auth
 
