@@ -15,11 +15,10 @@ import os
 # from collections import defaultdict
 # from . import BASE_URLS, STATIC_URL, CORE_DIR, USER_CUSTOM_DIR, json
 from attr import s as AttributedModel, ib as attribute
-from commons import decorators as decorate
 from .formats.yaml import load_yaml_file, YAML_EXT  # , yaml
 from . import CORE_DIR, USER_CUSTOM_DIR
 
-from .logs import get_logger, pretty_print
+from .logs import get_logger  # , pretty_print
 
 log = get_logger(__name__)
 JSON_APPLICATION = 'application/json'
@@ -35,6 +34,8 @@ class BeSwagger(object):
     def __init__(self, endpoints):
         self._endpoints = endpoints
         self._paths = {}
+        # The complete set of query parameters for all classes
+        self._qparams = {}
 
     def read_my_swagger(self, file, method, endpoint):
 
@@ -163,8 +164,8 @@ class BeSwagger(object):
                     query_params.append(param)
 
             if len(query_params) > 0:
-                endpoint.cls = self.query_parameters(
-                    endpoint.cls, method, query_params)
+                self.query_parameters(
+                    endpoint.cls, method=method, uri=uri, params=query_params)
 
             # Swagger does not like empty arrays
             if len(specs['parameters']) < 1:
@@ -190,23 +191,24 @@ class BeSwagger(object):
         endpoint.custom[method] = extra
         return endpoint
 
-    def query_parameters(self, cls, method, params):
+    def query_parameters(self, cls, method, uri, params):
         """
         apply decorator to endpoint for query parameters
+        # self._params[classname][URI][method][name]
         """
 
-        # Programmatically applying the authentication decorator
-        original = getattr(cls, method)
-        decorated = decorate.add_endpoint_parameters(
-            original,
-            params
-            # name=param['name'],
-            # # ptype = ?
-            # default=param.get('default', None),
-            # required=param.get('required', False),
-        )
-        setattr(cls, method, decorated)
-        return cls
+        clsname = cls.__name__
+        if clsname not in self._qparams:
+            self._qparams[clsname] = {}
+        if uri not in self._qparams[clsname]:
+            self._qparams[clsname][uri] = {}
+        if method not in self._qparams[clsname][uri]:
+            self._qparams[clsname][uri][method] = {}
+
+        for param in params:
+            name = param['name']
+            if name not in self._qparams[clsname][uri][method]:
+                self._qparams[clsname][uri][method][name] = param
 
     def swaggerish(self):
         """
@@ -255,16 +257,22 @@ class BeSwagger(object):
         for key, endpoint in enumerate(self._endpoints):
             endpoint.custom = {}
             for method, file in endpoint.methods.items():
-
                 # add the custom part to the endpoint
                 self._endpoints[key] = \
                     self.read_my_swagger(file, method, endpoint)
 
+        ###################
+        # Save query parameters globally
+        from commons.globals import mem
+        mem.query_params = self._qparams
+
+        ###################
         output['definitions'] = self.read_definitions()
         output['consumes'] = [JSON_APPLICATION]
         output['produces'] = [JSON_APPLICATION]
         output['paths'] = self._paths
 
+        ###################
         tags = []
         for tag, desc in mem.custom_config['tags'].items():
             tags.append({'name': tag, 'description': desc})

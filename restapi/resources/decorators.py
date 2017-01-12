@@ -98,6 +98,15 @@ def enable_endpoint_identifier(name='myid', idtype='string'):
 
 #################################
 # TOFIX: remove it here, it has been moved to commons
+
+# NOTE: ...this decorator took me quite a lot of time...
+
+# In fact, it is a decorator which requires special points:
+# 1. chaining: more than one decorator of the same type stacked
+# 2. arguments: the decorator takes parameters
+# 3. works for a method of class: not a single function, but with 'self'
+
+# http://scottlobdell.me/2015/04/decorators-arguments-python/
 def add_endpoint_parameter(name, ptype=str, default=None, required=False):
 
     def decorator(func):

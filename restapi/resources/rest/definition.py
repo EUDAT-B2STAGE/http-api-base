@@ -16,7 +16,8 @@ from flask_restful import request, Resource, reqparse
 from ...confs.config import API_URL  # , STACKTRACE
 from ...response import ResponseElements
 from commons import htmlcodes as hcodes
-from commons.logs import get_logger  # , pretty_print
+from commons.globals import mem
+from commons.logs import get_logger, pretty_print
 
 log = get_logger(__name__)
 
@@ -49,7 +50,48 @@ class EndpointResource(Resource):
         self._json_args = {}
         self._params = {}
 
+        # Query parameters
         self._parser = reqparse.RequestParser()
+
+        # use self to get the classname
+        k1 = self.myname()
+        # use request to recover uri and method
+        k2 = str(request.url_rule)
+        k3 = request.method.lower()
+        # recover from the global mem parameters query parameters
+        current_params = mem.query_params.get(k1, {}).get(k2, {}).get(k3, {})
+
+        if len(current_params) > 0:
+
+            # Basic options
+            basevalue = str  # Python3
+            # basevalue = unicode  #Python2
+            act = 'store'  # store is normal, append is a list
+            loc = ['headers', 'values']  # multiple locations
+            trim = True
+
+            for param, data in current_params.items():
+
+                # TO FIX: Add a method to convert types swagger <-> flask
+                tmptype = data.get('type', 'string')
+                if tmptype == 'number':
+                    mytype = int
+                else:
+                    mytype = basevalue
+
+                # TO CHECK: I am creating an option to handle arrays
+                if tmptype == 'select':
+                    act = 'append'
+
+                self._parser.add_argument(
+                    param, type=mytype,
+                    default=data.get('default', None),
+                    required=data.get('required', False),
+                    trim=trim, action=act, location=loc)
+
+                log.debug("Accept param '%s', type %s" % (param, mytype))
+
+        # TODO: should I check body parameters?
 
     @staticmethod
     def clean_parameter(param=""):
@@ -80,6 +122,8 @@ class EndpointResource(Resource):
         while JSON parameters may be already saved from another previous call
         """
 
+        self.parse()
+
         if len(self._json_args) < 1:
             try:
                 self._json_args = request.get_json(force=forcing)
@@ -105,82 +149,6 @@ class EndpointResource(Resource):
 
     def myname(self):
         return self.__class__.__name__
-
-    def add_parameter(self, name, method,
-                      mytype=str, default=None, required=False):
-        """
-        Save a parameter inside the class
-
-        Note: parameters are specific to the method
-        (and not to the whole class as before) using subarrays
-        """
-
-        # Class name as a key
-        classname = self.myname()
-
-        if classname not in self._params:
-            self._params[classname] = {}
-
-        if method not in self._params[classname]:
-            self._params[classname][method] = {}
-
-        # Avoid if already exists?
-        if name not in self._params[classname][method]:
-            self._params[classname][method][name] = [mytype, default, required]
-
-    def apply_parameters(self, method=None):
-        """ Use parameters received via decoration """
-
-        classname = self.myname()
-        if classname not in self._params:
-            return False
-
-        ##############################
-        if method is None:
-            from flask_restful import request
-            method = request.method
-
-        if method not in self._params[classname]:
-            return False
-        p = self._params[classname][method]
-
-        ##############################
-        # Basic options
-        basevalue = str  # Python3
-        # basevalue = unicode  #Python2
-        act = 'store'  # store is normal, append is a list
-        loc = ['headers', 'values']  # multiple locations
-        trim = True
-
-## // TO FIX?
-# when should I apply parameters for paging?
-# let the developer specify with a dedicated decorator?
-        # p[PERPAGE_KEY] = (int, DEFAULT_PERPAGE, False)
-        # p[CURRENTPAGE_KEY] = (int, DEFAULT_CURRENTPAGE, False)
-
-        if len(p.keys()) < 1:
-            return False
-
-        for param, (param_type, param_default, param_required) in p.items():
-
-            # Decide what is left for this parameter
-            if param_type is None:
-                param_type = basevalue
-
-            # I am creating an option to handle arrays:
-            if param_type == 'makearray':
-                param_type = basevalue
-                act = 'append'
-
-            # Really add the parameter
-            # print("ADD TO PARSER", param, param_type, param_default, param_required)
-            self._parser.add_argument(
-                param, type=param_type,
-                default=param_default, required=param_required,
-                trim=trim, action=act, location=loc)
-            log.debug("Accept param '%s', type %s" % (param, param_type))
-
-        return True
 
     def set_method_id(self, name='myid', idtype='string'):
         """ How to have api/method/:id route possible"""
@@ -208,14 +176,6 @@ class EndpointResource(Resource):
             return content, err, code
 
         return content
-
-# BAD PRACTICE
-    # def set_latest_token(self, token):
-    #     self.global_get('custom_auth')._latest_token = token
-
-    # def get_latest_token(self):
-    #     return self.global_get('custom_auth')._latest_token
-# BAD PRACTICE
 
     def get_current_token(self):
         from ..auth import HTTPTokenAuth
@@ -253,7 +213,7 @@ class EndpointResource(Resource):
             **kwargs)
 
     def method_not_allowed(self, methods=['GET']):
-## IS IT USED?
+        # TO FIX: is it used?
 
         methods.append('HEAD')
         methods.append('OPTIONS')
@@ -351,7 +311,7 @@ class EndpointResource(Resource):
         Define a standard response to give a Bearer token back.
         Also considering headers.
         """
-## // TO FIX
+        # TODO: write it and use it in EUDAT
         return NotImplementedError("To be written")
 
     @staticmethod
@@ -392,8 +352,7 @@ class EndpointResource(Resource):
         for instance in instances:
             json_data["content"].append(self.getJsonResponse(instance))
 
-# // TO FIX:
-# get pages FROM SELF ARGS?
+        # TO FIX: get pages FROM SELF ARGS?
         # json_data["links"]["next"] = \
         #     endpoint + '?currentpage=2&perpage=1',
         # json_data["links"]["last"] = \
