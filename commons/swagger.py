@@ -100,6 +100,17 @@ class BeSwagger(object):
             # Authentication
             if custom.get('authentication', False):
 
+                specs['security'] = [{
+                    "Bearer": []
+                }]
+
+                # specs['security'] = [{
+                #     "name": "Authorization",
+                #     "type": "apiKey",
+                #     "required": True,
+                #     "in": "header"
+                # }]
+
                 # TODO: get the default normal and admin user from 'auth'
 
                 # If enabled, at least the base role should be present
@@ -224,6 +235,8 @@ class BeSwagger(object):
         # A template base
         output = {
             "swagger": "2.0",
+            # TO FIX: set localhost from request, at least in production
+            # "host": "localhost:8080",
             "info": {
                 "version": "0.0.1",
                 "title": "Your application name",
@@ -232,23 +245,30 @@ class BeSwagger(object):
                 "http"
             ],
             "basePath": "/",
-            # "host": "localhost:8080",
+            "securityDefinitions": {
+                "Bearer": {
+                    "type": "apiKey",
+                    "name": "Authorization",
+                    "in": "header"
+                }
+                # "OauthSecurity": {
+                #     "type": "oauth2",
+                #     "tokenUrl": "https://oauth.simple.api/token",
+                #     "flow": "accessCode",
+                #     "authorizationUrl": "https://blabla/authorization",
+                #     "scopes": {
+                #         "admin": "Admin scope",
+                #         "user": "User scope"
+                #       }
+                # }
+                # TODO: check about scopes (roles?)
+            },
+            "security": [
+                {
+                    "Bearer": []
+                }
+            ]
         }
-
-        """
-        SECURITY
-        {
-            "type": "apiKey",
-            "in": "header",
-            "name": "Authorization"
-        }
-        # IN EVERY METHOD:
-        parameters:
-          - name: authorization
-            in: header
-            type: string
-            required: true
-        """
 
         # Set existing values
         from commons.globals import mem
