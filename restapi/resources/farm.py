@@ -57,7 +57,8 @@ class EndpointsFarmer(object):
         # Create the restful resource with it;
         # this method is from RESTful plugin
         self.rest_api.add_resource(resource.cls, *urls)
-        log.verbose("Map '%s' to %s", resource.cls.__name__, urls)
+        # TO FIX: I need debug here...
+        log.debug("Map '%s' to %s", resource.cls.__name__, urls)
 
     # def create_single(self, resource, endpoints, endkey):
     #     """ Adding a single restpoint from a Resource Class """

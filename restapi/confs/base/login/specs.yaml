@@ -1,9 +1,7 @@
 
 file: endpoints
-
 class: Login
-
-baseuri: "/auth"
+baseuri: /auth
 
 mapping:
   tologin: "/login"

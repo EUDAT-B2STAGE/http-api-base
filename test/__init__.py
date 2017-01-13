@@ -8,8 +8,9 @@ from __future__ import absolute_import
 
 import unittest
 from restapi.server import create_app
-from restapi.confs.config import USER, PWD, \
-    TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
+from restapi.confs.config import TEST_HOST, \
+    DEFAULT_USER, DEFAULT_PASSWORD, \
+    SERVER_PORT, API_URL, AUTH_URL
 from restapi.response import get_content_from_response
 from restapi.jsonify import json
 import commons.htmlcodes as hcodes
@@ -25,8 +26,9 @@ class RestTestsBase(unittest.TestCase):
     _api_uri = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
     _auth_uri = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
 
-    _username = USER
-    _password = PWD
+    _username = DEFAULT_USER
+    _password \
+        = DEFAULT_PASSWORD
     _hcodes = hcodes
 
     latest_response = None
