@@ -93,40 +93,40 @@ def get_response():
 #     return class_rebuilder
 
 
-#################################
-# TOFIX: remove it here, it has been moved to commons
+# #################################
+# # TOFIX: remove it here, it has been moved to commons
 
-# NOTE: ...this decorator took me quite a lot of time...
+# # NOTE: ...this decorator took me quite a lot of time...
 
-# In fact, it is a decorator which requires special points:
-# 1. chaining: more than one decorator of the same type stacked
-# 2. arguments: the decorator takes parameters
-# 3. works for a method of class: not a single function, but with 'self'
+# # In fact, it is a decorator which requires special points:
+# # 1. chaining: more than one decorator of the same type stacked
+# # 2. arguments: the decorator takes parameters
+# # 3. works for a method of class: not a single function, but with 'self'
 
-# http://scottlobdell.me/2015/04/decorators-arguments-python/
-def add_endpoint_parameter(name, ptype=str, default=None, required=False):
+# # http://scottlobdell.me/2015/04/decorators-arguments-python/
+# def add_endpoint_parameter(name, ptype=str, default=None, required=False):
 
-    def decorator(func):
-        log.warning("DEPRECATED add_endpoint_parameter for %s" % func)
+#     def decorator(func):
+#         log.warning("DEPRECATED add_endpoint_parameter for %s" % func)
 
-        @wraps(func)
-        def wrapper(self, *args, **kwargs):
+#         @wraps(func)
+#         def wrapper(self, *args, **kwargs):
 
-            class_name = self.__class__.__name__
-            method_name = func.__name__.upper()
-            log.debug("[Class: %s] %s decorated with parameter '%s'"
-                      % (class_name, method_name, name))
-            params = {
-                'name': name,
-                'method': method_name,
-                'mytype': ptype,
-                'default': default,
-                'required': required,
-            }
-            self.add_parameter(**params)
-            return func(self, *args, **kwargs)
-        return wrapper
-    return decorator
+#             class_name = self.__class__.__name__
+#             method_name = func.__name__.upper()
+#             log.debug("[Class: %s] %s decorated with parameter '%s'"
+#                       % (class_name, method_name, name))
+#             params = {
+#                 'name': name,
+#                 'method': method_name,
+#                 'mytype': ptype,
+#                 'default': default,
+#                 'required': required,
+#             }
+#             self.add_parameter(**params)
+#             return func(self, *args, **kwargs)
+#         return wrapper
+#     return decorator
 
 
 ##############################
