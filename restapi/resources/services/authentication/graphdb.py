@@ -31,6 +31,7 @@ if not GRAPHDB_AVAILABLE:
 class Authentication(BaseAuthentication):
 
     def __init__(self, services=None):
+        self.myinit()
         self._graph = services.get('neo4j').get_instance()
 
     def get_user_object(self, username=None, payload=None):
