@@ -95,6 +95,11 @@ class Customizer(object):
         # auth = custom_config['variables']['containers']['authentication']
 
         ##################
+        # # DEBUG
+        # pretty_print(custom_config)
+        # exit(1)
+
+        ##################
         # Walk swagger directories looking for endpoints
         endpoints = []
 
@@ -192,14 +197,15 @@ class Customizer(object):
         module = self._meta.get_module_from_string(name)
 
         if module is None:
-            log.warning("Could not find python module '%s'..." % file_name)
+            log.warning("Could not find module %s in %s" % (name, file_name))
+            # exit(1)
             return endpoint
 
         #####################
         # Check for dependecies and skip if missing
         for dependency in conf.pop('depends_on', []):
             if not getattr(module, dependency, False):
-                log.warning("Skip '%s': unmet %s" % (default_uri, dependency))
+                log.verbose("Skip '%s': unmet %s" % (default_uri, dependency))
                 return endpoint
 
         endpoint.cls = self._meta.get_class_from_string(class_name, module)

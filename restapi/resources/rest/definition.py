@@ -17,7 +17,7 @@ from ...confs.config import API_URL  # , STACKTRACE
 from ...response import ResponseElements
 from commons import htmlcodes as hcodes
 from commons.globals import mem
-from commons.logs import get_logger  # , pretty_print
+from commons.logs import get_logger, pretty_print
 
 log = get_logger(__name__)
 
@@ -61,6 +61,9 @@ class EndpointResource(Resource):
         # recover from the global mem parameters query parameters
         current_params = mem.query_params.get(k1, {}).get(k2, {}).get(k3, {})
 
+        # pretty_print(mem.query_params)
+        # pretty_print(current_params)
+
         if len(current_params) > 0:
 
             # Basic options
@@ -74,6 +77,8 @@ class EndpointResource(Resource):
 
                 # TO FIX: Add a method to convert types swagger <-> flask
                 tmptype = data.get('type', 'string')
+                if tmptype == 'boolean':
+                    mytype = bool
                 if tmptype == 'number':
                     mytype = int
                 else:
@@ -163,7 +168,7 @@ class EndpointResource(Resource):
                          api_output, get_all=False,
                          get_error=False, get_status=False, get_meta=False):
 
-        from ..response import get_content_from_response
+        from ...response import get_content_from_response
         content, err, meta, code = get_content_from_response(api_output)
 
         if get_error:

@@ -9,7 +9,7 @@ from __future__ import absolute_import
 from flask_restful import Api as RestFulApi
 from .resources.farm import EndpointsFarmer
 
-from commons.customization import Customizer
+from commons.globals import mem
 from commons.logs import get_logger  # , pretty_print
 
 log = get_logger(__name__)
@@ -68,10 +68,9 @@ def create_endpoints(epo, security=False, debug=False):
     A single method to add all endpoints
     """
 
-    ####################################
+    # ####################################
     # Verify configuration
-    customization = Customizer(__package__)
-    resources = customization.endpoints()
+    resources = mem.customizer.endpoints()
 
     ####################################
     # Basic configuration (simple): from example class

@@ -6,25 +6,23 @@ Add auth checks called /checklogged and /testadmin
 """
 
 from __future__ import absolute_import
+
+import os
 import abc
 import jwt
 import hmac
 import hashlib
 import base64
 import pytz
-import os
-from commons.logs import get_logger
+
 from commons.services.uuid import getUUID
-from ....confs.config import USER, PWD, \
-    ROLE_ADMIN, ROLE_INTERNAL, ROLE_USER
+from ....confs.config import DEFAULT_USER, DEFAULT_PASSWORD, \
+    ROLE_ADMIN, ROLE_INTERNAL, ROLE_USER, DEFAULT_ROLE, DEFAULT_ROLES
 from datetime import datetime, timedelta
-from .... import myself, lic
+from commons.globals import mem
+from commons.logs import get_logger  # , pretty_print
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 class BaseAuthentication(metaclass=abc.ABCMeta):
@@ -34,14 +32,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     to be implemented with a new service
     that aims to store credentials of users and roles.
     """
-
-    ##########################
-    # DEFAULTS
-
-    DEFAULT_USER = USER
-    DEFAULT_PASSWORD = PWD
-    DEFAULT_ROLE = ROLE_USER
-    DEFAULT_ROLES = [ROLE_USER, ROLE_INTERNAL, ROLE_ADMIN]
 
     ##########################
     # This string will be replaced with a proper secret file
@@ -58,6 +48,20 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     longTTL = 2592000     # 1 month in seconds
     shortTTL = 604800     # 1 week in seconds
+
+    def myinit(self):
+        credentials = mem.custom_config \
+            .get('variables', {}) \
+            .get('python', {}) \
+            .get('backend', {}) \
+            .get('credentials', {})
+        # print("CREDENTIALS")
+        # pretty_print(credentials)
+
+        self.default_user = credentials.get('username', DEFAULT_USER)
+        self.default_password = credentials.get('password', DEFAULT_PASSWORD)
+        self.default_role = DEFAULT_ROLE
+        self.default_roles = DEFAULT_ROLES
 
     @abc.abstractmethod
     def __init__(self, services=None):
@@ -82,10 +86,10 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         try:
             self.JWT_SECRET = open(abs_filename, 'rb').read()
         except IOError:
-            logger.warning("Jwt secret file %s not found, using default "
-                           % abs_filename)
-            logger.info("To create your own secret file:\n" +
-                        "head -c 24 /dev/urandom > %s" % abs_filename)
+            log.warning("Jwt secret file %s not found, using default "
+                        % abs_filename)
+            log.info("To create your own secret file:\n" +
+                     "head -c 24 /dev/urandom > %s" % abs_filename)
             # full_path = os.path.dirname(abs_filename)
             # if not os.path.isdir(full_path):
             #     print('mkdir -p {filename}'.format(filename=full_path))
@@ -156,7 +160,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
                 # note: this will return the ip if hostname is not available
                 hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
             except Exception as e:
-                logger.warning(
+                log.warning(
                     "Hostname from '%s' solving:\nerror '%s'" % (ip, e))
         return ip, hostname
 
@@ -195,12 +199,12 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         # now > exp
         except jwt.exceptions.ExpiredSignatureError as e:
 # should this token be invalidated into the DB?
-            logger.warning("Unable to decode JWT token. %s" % e)
+            log.warning("Unable to decode JWT token. %s" % e)
         # now < nbf
         except jwt.exceptions.ImmatureSignatureError as e:
-            logger.warning("Unable to decode JWT token. %s" % e)
+            log.warning("Unable to decode JWT token. %s" % e)
         except Exception as e:
-            logger.warning("Unable to decode JWT token. %s" % e)
+            log.warning("Unable to decode JWT token. %s" % e)
 
         return payload
 
@@ -210,7 +214,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         for role in roles:
             if role not in current_roles:
                 if warnings:
-                    logger.warning("Auth role '%s' missing for request" % role)
+                    log.warning("Auth role '%s' missing for request" % role)
                 return False
         return True
 
@@ -243,7 +247,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         if not self.refresh_token(self._payload['jti']):
             return False
 
-        logger.verbose("User authorized")
+        log.verbose("User authorized")
         self._token = token
         return True
 
@@ -252,7 +256,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return self.verify_roles([ROLE_ADMIN], warnings=False)
 
     def save_token(self, user, token, jti):
-        logger.debug("Token is not saved in base authentication")
+        log.debug("Token is not saved in base authentication")
 
     @abc.abstractmethod
     def init_users_and_roles(self):
@@ -388,7 +392,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
                 return None, None
         except:
             # Missing authmethod as requested for authentication
-            logger.critical("Current authentication db models are broken!")
+            log.critical("Current authentication db models are broken!")
             return None, None
 
 # // TO FIX:

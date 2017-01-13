@@ -312,6 +312,12 @@ class BeSwagger(object):
         verify the current definition on the open standard
         """
 
+        if len(swag_dict['paths']) < 1:
+            raise AttributeError("Swagger 'paths' definition is empty")
+        # else:
+        #     from commons.logs import pretty_print
+        #     pretty_print(swag_dict)
+
         from bravado_core.spec import Spec
 
         try:

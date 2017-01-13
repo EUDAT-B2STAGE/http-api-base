@@ -13,7 +13,7 @@ tologin:
 
   parameters:
     - name: credentials
-      in: "body"
+      in: body
       # OPTIONS are 'query', 'body', 'path' or 'header'
       schema:
         $ref: "#/definitions/Credentials"

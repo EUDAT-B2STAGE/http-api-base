@@ -24,7 +24,7 @@ from functools import wraps
 from commons import htmlcodes as hcodes
 from commons.globals import mem
 from commons.logs import get_logger
-from commons.meta import Meta
+# from commons.meta import Meta
 
 from .. import myself, lic
 
@@ -38,11 +38,8 @@ log = get_logger(__name__)
 #################################
 # Identity is usefull to some (very) extreme decorators cases
 def identity(*args, **kwargs):
-    """
-    Expecting no keywords arguments
-    """
+    """ Expecting no keywords arguments """
     kwargs['content'] = args
-## TO CHECK AGAIN
     return kwargs
 
 
@@ -72,28 +69,28 @@ def get_response():
     return mem.current_response
 
 
-#################################
-# Adding an identifier to a REST class
-# https://andrefsp.wordpress.com/2012/08/23/writing-a-class-decorator-in-python
+# #################################
+# # Adding an identifier to a REST class
+# # https://andrefsp.wordpress.com/2012/08/23/writing-a-class-decorator-in-python
 
-def enable_endpoint_identifier(name='myid', idtype='string'):
-    """
-    Class decorator for ExtendedApiResource objects;
-    Enable identifier and let you choose name and type.
-    """
-    def class_rebuilder(cls):   # decorator
+# def enable_endpoint_identifier(name='myid', idtype='string'):
+#     """
+#     Class decorator for ExtendedApiResource objects;
+#     Enable identifier and let you choose name and type.
+#     """
+#     def class_rebuilder(cls):   # decorator
 
-        def init(self):
-            log.info("[%s] Applying ID to endopoint:%s of type '%s'"
-                     % (self.__class__.__name__, name, idtype))
-            self.set_method_id(name, idtype)
-            # log.debug("New init %s %s" % (name, idtype))
-            super(cls, self).__init__()
+#         def init(self):
+#             log.info("[%s] Applying ID to endopoint:%s of type '%s'"
+#                      % (self.__class__.__name__, name, idtype))
+#             self.set_method_id(name, idtype)
+#             # log.debug("New init %s %s" % (name, idtype))
+#             super(cls, self).__init__()
 
-        NewClass = Meta.metaclassing(
-            cls, cls.__name__ + '_withid', {'__init__': init})
-        return NewClass
-    return class_rebuilder
+#         NewClass = Meta.metaclassing(
+#             cls, cls.__name__ + '_withid', {'__init__': init})
+#         return NewClass
+#     return class_rebuilder
 
 
 #################################
@@ -170,6 +167,7 @@ def apimethod(func):
             self.parse()
 
         #######################
+# MAYBE THIS IS STILL USEFULL
         # Call the wrapped function
         out = None
         try:
@@ -178,29 +176,12 @@ def apimethod(func):
         except BaseException as e:
             # raise e
             log.warning("nb: dig more changing the decorator 'except'")
-            # import sys
-            # error = sys.exc_info()[0]
-
-            # If we raise NotImpleted ...
+            # If we raise NotImpleted
             if isinstance(e, NotImplementedError):
                 message = "Missing functionality"
             else:
                 message = "Unexpected error"
             return self.report_generic_error("%s\n[%s]" % (message, e))
-
-# #######################
-# # TO CHECK AND PROBABLY REMOVE
-#         except TypeError as e:
-#             log.warning(e)
-#             error = str(e).strip("'")
-#             log.critical("Type error: %s" % error)
-
-#             # This error can be possible only if using the default response
-#             if "required positional argument" in error:
-#                 return self.report_generic_error(
-#                     "Custom response defined is not compliant",
-#                     current_response_available=False)
-#             raise e
         finally:
             log.debug("Called %s", func)
 
@@ -209,40 +190,30 @@ def apimethod(func):
     return wrapper
 
 
-##############################
-# A decorator for the whole class
+# ##############################
+# # A decorator for the whole class
 
-"""
-def time_all_class_methods(Cls):
-    class NewCls(object):
-        def __init__(self,*args,**kwargs):
-            self.oInstance = Cls(*args,**kwargs)
+# def all_rest_methods(Cls):
+#     """
+#     Decorate all the rest methods inside the custom restful class,
+#     with the previously created 'apimethod'
+#     """
 
-"""
+#     api_methods = ['get', 'post', 'put', 'patch', 'delete']  # , 'search']
 
+#     for attr in Cls.__dict__:
 
-def all_rest_methods(Cls):
-# TODO: remove it when nobody uses 'apimethod' anymore
-    """
-    Decorate all the rest methods inside the custom restful class,
-    with the previously created 'apimethod'
-    """
+#         # Check if it's a method and if in it's in my list
+#         if attr not in api_methods or not callable(getattr(Cls, attr)):
+#             continue
 
-    api_methods = ['get', 'post', 'put', 'patch', 'delete']  # , 'search']
+#         # Get the method, and set the decorated version
+#         original_method = getattr(Cls, attr)
+#         setattr(Cls, attr, apimethod(original_method))
 
-    for attr in Cls.__dict__:
+#         log.debug("Decorated %s.%s as api method" % (Cls.__name__, attr))
 
-        # Check if it's a method and if in it's in my list
-        if attr not in api_methods or not callable(getattr(Cls, attr)):
-            continue
-
-        # Get the method, and set the decorated version
-        original_method = getattr(Cls, attr)
-        setattr(Cls, attr, apimethod(original_method))
-
-        log.debug("Decorated %s.%s as api method" % (Cls.__name__, attr))
-
-    return Cls
+#     return Cls
 
 
 #####################################################################

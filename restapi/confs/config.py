@@ -20,8 +20,21 @@ logger.info("AUTHENTICATION base URL is %s" % AUTH_URL)
 # what you could change
 STACKTRACE = False
 REMOVE_DATA_AT_INIT_TIME = False
-USER = 'user@nomail.org'
-PWD = 'test'
+
+
+##########################
+# AUTH DEFAULTS
+#
+DEFAULT_USER = 'user@nomail.org'
+DEFAULT_PASSWORD = 'test'
+
+# System ROLES
+ROLE_ADMIN = 'admin_root'
+ROLE_INTERNAL = 'staff_user'
+ROLE_USER = 'normal_user'
+
+DEFAULT_ROLE = ROLE_USER
+DEFAULT_ROLES = [ROLE_USER, ROLE_INTERNAL, ROLE_ADMIN]
 
 
 #############################
@@ -69,11 +82,6 @@ SERVER_PORT = int(os.environ.get('PORT', 5000))
 
 TRAP_BAD_REQUEST_ERRORS = True
 PROPAGATE_EXCEPTIONS = False
-
-# System ROLES
-ROLE_ADMIN = 'admin_root'
-ROLE_INTERNAL = 'staff_user'
-ROLE_USER = 'normal_user'
 
 # I am inside the conf dir.
 # The base dir is one level up from here
