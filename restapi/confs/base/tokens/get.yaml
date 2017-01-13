@@ -1,13 +1,10 @@
 
 common:
   # description: some
-  # tags:
-  #   - tokens
   custom:
-    # publish: true
+    publish: true
+    # pagination: true # activate 'per_page' and 'current_page' in body
     authentication: true
-    # authorized:
-    #   - admin_root
   parameters:
     - name: username
       # description: test

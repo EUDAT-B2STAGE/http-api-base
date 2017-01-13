@@ -143,10 +143,14 @@ class BeSwagger(object):
                 if paramtype == 'path':
                     paramtype = 'string'
 
-                specs['parameters'].append({
+                path_parameter = {
                     'name': paramname, 'type': paramtype,
                     'in': 'path', 'required': True
-                })
+                }
+                if paramname in endpoint.ids:
+                    path_parameter['description'] = endpoint.ids[paramname]
+
+                specs['parameters'].append(path_parameter)
 
                 # replace in a new uri
                 newuri = newuri.replace('<%s>' % parameter, '{%s}' % paramname)

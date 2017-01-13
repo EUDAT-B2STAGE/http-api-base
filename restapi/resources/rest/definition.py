@@ -17,7 +17,7 @@ from ...confs.config import API_URL  # , STACKTRACE
 from ...response import ResponseElements
 from commons import htmlcodes as hcodes
 from commons.globals import mem
-from commons.logs import get_logger, pretty_print
+from commons.logs import get_logger  # , pretty_print
 
 log = get_logger(__name__)
 

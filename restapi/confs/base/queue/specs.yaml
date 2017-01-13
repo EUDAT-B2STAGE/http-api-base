@@ -6,6 +6,8 @@ file: endpoints
 mapping:
   list_queue: "/queue"
   single_queue: "/queue/<task_id>"
+ids:
+  task_id: uuid referring to the task you are selecting
 labels:
   - base
   - tasks

@@ -20,7 +20,7 @@ from .meta import Meta
 from .formats.yaml import YAML_EXT, load_yaml_file
 from .swagger import BeSwagger
 from .globals import mem
-from .logs import get_logger, pretty_print
+from .logs import get_logger  # , pretty_print
 
 log = get_logger(__name__)
 
@@ -35,6 +35,7 @@ class EndpointElements(object):
     cls = attribute(default=None)
     # instance = attribute(default=None)
     uris = attribute(default={})
+    ids = attribute(default={})
     methods = attribute(default=[])
     custom = attribute(default={})
     tags = attribute(default=[])
@@ -231,12 +232,15 @@ class Customizer(object):
         if len(mappings) < 1:
             raise KeyError("Missing 'mapping' section")
 
-        endpoint.uris = {}  # attrs bug?
+        endpoint.uris = {}  # attrs python lib bug?
         for label, uri in mappings.items():
 
             # BUILD URI
             total_uri = '/%s%s' % (base, uri)
             endpoint.uris[label] = total_uri
+
+        # Description for path parameters
+        endpoint.ids = conf.pop('ids', {})
 
         # Check if something strange is still in configuration
         if len(conf) > 0:
