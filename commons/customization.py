@@ -103,6 +103,7 @@ class Customizer(object):
         # Walk swagger directories looking for endpoints
         endpoints = []
 
+        # for base_dir in [CORE_DIR]:
         for base_dir in [CORE_DIR, USER_CUSTOM_DIR]:
 
             current_dir = os.path.join(CONFIG_PATH, base_dir)

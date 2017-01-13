@@ -11,13 +11,10 @@ from __future__ import absolute_import
 
 import re
 import os
-# import inspect
-# from collections import defaultdict
-# from . import BASE_URLS, STATIC_URL, CORE_DIR, USER_CUSTOM_DIR, json
 from attr import s as AttributedModel, ib as attribute
-from .formats.yaml import load_yaml_file, YAML_EXT  # , yaml
+from commons import htmlcodes as hcodes
+from .formats.yaml import load_yaml_file, YAML_EXT
 from . import CORE_DIR, USER_CUSTOM_DIR
-
 from .logs import get_logger  # , pretty_print
 
 log = get_logger(__name__)
@@ -100,28 +97,24 @@ class BeSwagger(object):
             # Authentication
             if custom.get('authentication', False):
 
-                specs['security'] = [{
-                    "Bearer": []
-                }]
+                # Add Bearer Token security to this method
+                # This was already defined in swagger root
+                specs['security'] = [{"Bearer": []}]
 
-                # specs['security'] = [{
-                #     "name": "Authorization",
-                #     "type": "apiKey",
-                #     "required": True,
-                #     "in": "header"
-                # }]
+                # Automatically add the response for Unauthorized
+                specs['responses'][hcodes.HTTP_BAD_UNAUTHORIZED] = \
+                    {'description': "Invalid credentials/token provided"}
 
-                # TODO: get the default normal and admin user from 'auth'
-
-                # If enabled, at least the base role should be present
-                # roles = custom.get('authorized', ['normal_user'])
+                # Recover required roles
                 roles = custom.get('authorized', [])
+                # roles = custom.get('authorized', ['normal_user'])
 
                 for role in roles:
+                    # TODO: create a method inside 'auth' to check this role
+                    pass
 
-                    # TODO: create a method inside 'auth' to check roles
-
-                    extra.auth = roles
+                # If everything is fine set the roles to be required by Flask
+                extra.auth = roles
             else:
                 extra.auth = None
 
