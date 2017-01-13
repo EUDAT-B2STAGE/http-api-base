@@ -7,10 +7,3 @@ status:
   responses:
     200:
       description: Server is alive!
-  parameters:
-    - name: test
-      description: just a test
-      required: true
-      default: 'pippo'
-      in: query
-      type: string
