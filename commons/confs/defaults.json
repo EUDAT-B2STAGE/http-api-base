@@ -1,4 +1,25 @@
 {
+    "variables": {
+        "python": {
+            "backend": {
+                "credentials":{
+                    "username": "user@nomail.org",
+                    "password": "test",
+                    "roles": {
+                        "user": "normal_user",
+                        "internal": "staff_user",
+                        "admin": "admin_root",
+                        "default": "normal_user"
+                    }
+                }
+            }
+        }
+    },
+    "project": {
+        "title": "REST HTTP-API server with Python, Flask and Docker",
+        "version": "v0.1",
+        "description": "No description yet"
+    },
     "tags": {
         "specifications": "JSON with SWAGGER standards for any REST client",
         "base": "endpoints for base operations",
@@ -6,10 +27,5 @@
         "authentication": "log in and out of the REST API",
         "profiles": "set and view profile for current credentials",
         "open_sessions": "manage authorized sessions"
-    },
-    "project": {
-        "title": "REST HTTP-API server with Python, Flask and Docker",
-        "version": "v0.1",
-        "description": "No description yet"
     }
 }

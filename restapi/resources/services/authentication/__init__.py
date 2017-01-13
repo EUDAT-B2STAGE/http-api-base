@@ -20,7 +20,7 @@ from ....confs.config import DEFAULT_USER, DEFAULT_PASSWORD, \
     ROLE_ADMIN, ROLE_INTERNAL, ROLE_USER, DEFAULT_ROLE, DEFAULT_ROLES
 from datetime import datetime, timedelta
 from commons.globals import mem
-from commons.logs import get_logger  # , pretty_print
+from commons.logs import get_logger  # , pretty_print
 
 log = get_logger(__name__)
 
@@ -50,18 +50,31 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     shortTTL = 604800     # 1 week in seconds
 
     def myinit(self):
+
+        # TODO: force changing base credentials in production...
+        # I may check here somehow if credentials in production
+        # are the same as defaults, which is not good at all
+
         credentials = mem.custom_config \
             .get('variables', {}) \
             .get('python', {}) \
             .get('backend', {}) \
             .get('credentials', {})
-        # print("CREDENTIALS")
-        # pretty_print(credentials)
 
-        self.default_user = credentials.get('username', DEFAULT_USER)
-        self.default_password = credentials.get('password', DEFAULT_PASSWORD)
-        self.default_role = DEFAULT_ROLE
-        self.default_roles = DEFAULT_ROLES
+        self.default_user = credentials.get('username', None)
+        self.default_password = credentials.get('password', None)
+        if self.default_user is None or self.default_password is None:
+            raise AttributeError("Default credentials unavailable!")
+
+        roles = credentials.get('roles', {})
+        self.default_role = roles.get('default')
+        self.default_roles = [
+            roles.get('user'),
+            roles.get('internal'),
+            roles.get('admin'),
+        ]
+        if self.default_role is None or None in self.default_roles:
+            raise AttributeError("Default roles are not available!")
 
     @abc.abstractmethod
     def __init__(self, services=None):

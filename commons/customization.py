@@ -72,8 +72,8 @@ class Customizer(object):
         ##################
         # DEFAULT configuration
         defaults = self.load_json(BLUEPRINT_KEY, DEFAULTS_PATH, CONFIG_PATH)
-        # if len(defaults) > 0:
-        #     log.debug("Defaults:\n%s" % defaults)
+        if len(defaults) < 0:
+            raise ValueError("Missing defaults for server configuration!")
 
         # Mix default and custom configuration
         # We go deep into two levels down of dictionaries

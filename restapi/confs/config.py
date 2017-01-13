@@ -22,21 +22,6 @@ STACKTRACE = False
 REMOVE_DATA_AT_INIT_TIME = False
 
 
-##########################
-# AUTH DEFAULTS
-#
-DEFAULT_USER = 'user@nomail.org'
-DEFAULT_PASSWORD = 'test'
-
-# System ROLES
-ROLE_ADMIN = 'admin_root'
-ROLE_INTERNAL = 'staff_user'
-ROLE_USER = 'normal_user'
-
-DEFAULT_ROLE = ROLE_USER
-DEFAULT_ROLES = [ROLE_USER, ROLE_INTERNAL, ROLE_ADMIN]
-
-
 #############################
 # Command line arguments
 
