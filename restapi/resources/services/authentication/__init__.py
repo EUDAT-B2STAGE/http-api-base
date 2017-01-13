@@ -16,8 +16,6 @@ import base64
 import pytz
 
 from commons.services.uuid import getUUID
-from ....confs.config import DEFAULT_USER, DEFAULT_PASSWORD, \
-    ROLE_ADMIN, ROLE_INTERNAL, ROLE_USER, DEFAULT_ROLE, DEFAULT_ROLES
 from datetime import datetime, timedelta
 from commons.globals import mem
 from commons.logs import get_logger  # , pretty_print
@@ -49,7 +47,8 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     longTTL = 2592000     # 1 month in seconds
     shortTTL = 604800     # 1 week in seconds
 
-    def myinit(self):
+    @classmethod
+    def myinit(cls):
 
         # TODO: force changing base credentials in production...
         # I may check here somehow if credentials in production
@@ -61,19 +60,20 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             .get('backend', {}) \
             .get('credentials', {})
 
-        self.default_user = credentials.get('username', None)
-        self.default_password = credentials.get('password', None)
-        if self.default_user is None or self.default_password is None:
+        cls.default_user = credentials.get('username', None)
+        cls.default_password = credentials.get('password', None)
+        if cls.default_user is None or cls.default_password is None:
             raise AttributeError("Default credentials unavailable!")
 
         roles = credentials.get('roles', {})
-        self.default_role = roles.get('default')
-        self.default_roles = [
+        cls.default_role = roles.get('default')
+        cls.role_admin = roles.get('admin')
+        cls.default_roles = [
             roles.get('user'),
             roles.get('internal'),
-            roles.get('admin'),
+            cls.role_admin
         ]
-        if self.default_role is None or None in self.default_roles:
+        if cls.default_role is None or None in cls.default_roles:
             raise AttributeError("Default roles are not available!")
 
     @abc.abstractmethod
@@ -266,7 +266,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     def verify_admin(self):
         """ Check if current user has administration role """
-        return self.verify_roles([ROLE_ADMIN], warnings=False)
+        return self.verify_roles([self.role_admin], warnings=False)
 
     def save_token(self, user, token, jti):
         log.debug("Token is not saved in base authentication")
@@ -290,7 +290,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return
 
     @abc.abstractmethod
-    def create_user(self, userdata, roles=[DEFAULT_ROLE]):
+    def create_user(self, userdata, roles=[]):
         """
         A method to create a new user following some standards.
         - The user should be at least associated to the default (basic) role

@@ -4,32 +4,25 @@
 Test base
 """
 
-from __future__ import absolute_import
-
 import unittest
 from restapi.server import create_app
 from restapi.confs.config import TEST_HOST, \
-    DEFAULT_USER, DEFAULT_PASSWORD, \
     SERVER_PORT, API_URL, AUTH_URL
 from restapi.response import get_content_from_response
 from restapi.jsonify import json
+from restapi.resources.services.authentication import BaseAuthentication as ba
 import commons.htmlcodes as hcodes
 
-from commons.logs import get_logger
+from commons.logs import get_logger  # , pretty_print
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 logger = get_logger(__name__, True)
-
 
 class RestTestsBase(unittest.TestCase):
 
     _api_uri = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
     _auth_uri = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
-
-    _username = DEFAULT_USER
-    _password = DEFAULT_PASSWORD
     _hcodes = hcodes
-
     latest_response = None
 
     """
@@ -68,6 +61,11 @@ class RestTestsBase(unittest.TestCase):
         logger.debug('### Setting up the Flask server ###')
         app = create_app(testing_mode=True)
         self.app = app.test_client()
+
+        # Auth init from base/custom config
+        ba.myinit()
+        self._username = ba.default_user
+        self._password = ba.default_password
 
     def tearDown(self):
         logger.debug('### Tearing down the Flask server ###')
