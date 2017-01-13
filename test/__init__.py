@@ -27,8 +27,7 @@ class RestTestsBase(unittest.TestCase):
     _auth_uri = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
 
     _username = DEFAULT_USER
-    _password \
-        = DEFAULT_PASSWORD
+    _password = DEFAULT_PASSWORD
     _hcodes = hcodes
 
     latest_response = None

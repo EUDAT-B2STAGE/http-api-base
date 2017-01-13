@@ -38,7 +38,6 @@ class EndpointResource(Resource):
     """
 
     myname = __name__
-    _latest_headers = {}
     hcode = hcodes.HTTP_OK_BASIC
     base_url = API_URL
 
@@ -277,7 +276,9 @@ class EndpointResource(Resource):
         return self.force_response(
             defined_content=defined_content, errors=errors, code=code)
 
-    def send_errors(self, label="Error", message=None, errors=None, code=None):
+    def send_errors(self,
+                    label="Error", message=None, errors=None,
+                    code=None, headers=None):
         """
         Setup an error message and
         """
@@ -299,7 +300,7 @@ class EndpointResource(Resource):
             # default error
             code = hcodes.HTTP_SERVER_ERROR
 
-        return self.force_response(errors=errors, code=code)
+        return self.force_response(errors=errors, code=code, headers=headers)
 
     def report_generic_error(self,
                              message=None, current_response_available=True):
