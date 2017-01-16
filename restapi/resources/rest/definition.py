@@ -497,6 +497,27 @@ class EndpointResource(Resource):
 
         return data
 
+    def get_endpoint_definition(self, key=None):
+
+        url = request.url_rule.rule
+        if url not in mem.swagger_definition["paths"]:
+            return None
+
+        method = request.method.lower()
+
+        if method not in mem.swagger_definition["paths"][url]:
+            return None
+
+        tmp = mem.swagger_definition["paths"][url][method]
+
+        if key is None:
+            return tmp
+
+        if key not in tmp:
+            return None
+
+        return tmp[key]
+
 # # Set default response
 # set_response(
 #     original=False,  # first_call=True,
