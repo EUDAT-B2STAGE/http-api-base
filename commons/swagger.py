@@ -13,6 +13,7 @@ import re
 import os
 from attr import s as AttributedModel, ib as attribute
 from commons import htmlcodes as hcodes
+from commons.globals import mem
 from .formats.yaml import load_yaml_file, YAML_EXT
 from . import CORE_DIR, USER_CUSTOM_DIR
 from .logs import get_logger  # , pretty_print
@@ -264,7 +265,6 @@ class BeSwagger(object):
         }
 
         # Set existing values
-        from commons.globals import mem
         proj = mem.custom_config['project']
         if 'version' in proj:
             output['info']['version'] = proj['version']
@@ -280,7 +280,6 @@ class BeSwagger(object):
 
         ###################
         # Save query parameters globally
-        from commons.globals import mem
         mem.query_params = self._qparams
 
         ###################
@@ -354,7 +353,8 @@ class BeSwagger(object):
         }
 
         try:
-            Spec.from_dict(swag_dict, config=bravado_config)
+            mem.validated_spec = Spec.from_dict(
+                swag_dict, config=bravado_config)
             log.info("Swagger configuration is validated")
         except Exception as e:
             # raise e
@@ -363,3 +363,14 @@ class BeSwagger(object):
             return False
 
         return True
+
+    def input_validation(self):
+
+        # TODO: it works with body parameters, to be investigated with other types
+
+        # from bravado_core.validate import validate_object
+        # Car = mem.swagger_definition['definitions']['Car']
+        # # self is rest/definitions.py:EndpointResource
+        # json = self.get_input()
+        # validate_object(mem.validated_spec, Car, json)
+        pass
