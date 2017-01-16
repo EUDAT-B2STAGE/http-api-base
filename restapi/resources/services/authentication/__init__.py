@@ -18,7 +18,7 @@ import pytz
 from commons.services.uuid import getUUID
 from datetime import datetime, timedelta
 from commons.globals import mem
-from commons.logs import get_logger  # , pretty_print
+from commons.logs import get_logger
 
 log = get_logger(__name__)
 

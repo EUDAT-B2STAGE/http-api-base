@@ -13,10 +13,11 @@ from restapi.jsonify import json
 from restapi.resources.services.authentication import BaseAuthentication as ba
 import commons.htmlcodes as hcodes
 
-from commons.logs import get_logger  # , pretty_print
+from commons.logs import get_logger
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 logger = get_logger(__name__, True)
+
 
 class RestTestsBase(unittest.TestCase):
 

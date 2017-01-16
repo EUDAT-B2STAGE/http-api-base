@@ -19,7 +19,7 @@ from .formats.yaml import YAML_EXT, load_yaml_file
 from .swagger import BeSwagger
 from .globals import mem
 from .attrs.api import EndpointElements, ExtraAttributes
-from .logs import get_logger  # , pretty_print
+from .logs import get_logger
 
 log = get_logger(__name__)
 
@@ -79,7 +79,7 @@ class Customizer(object):
 
         ##################
         # # DEBUG
-        # pretty_print(custom_config)
+        # log.pp(custom_config)
         # exit(1)
 
         ######################################
@@ -142,7 +142,7 @@ class Customizer(object):
         ##################
         # Save endpoints to global memory, we never know
         mem.endpoints = endpoints
-        # pretty_print(endpoints)
+        # log.pp(endpoints)
 
         # Update global memory with swagger definition
         mem.swagger_definition = swag_dict

@@ -7,7 +7,7 @@ Add schema endpoint if you have models to expose
 from __future__ import absolute_import
 
 from .definition import EndpointResource
-from commons.logs import get_logger  # , pretty_print
+from commons.logs import get_logger
 
 log = get_logger(__name__)
 

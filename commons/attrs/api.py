@@ -6,7 +6,7 @@ defined with the help of the cool library @attr.s
 """
 
 from attr import (
-    s as AttributedModel,
+    s as ClassOfAttributes,
     ib as attribute
 )
 
@@ -14,7 +14,7 @@ from attr import (
 ########################
 # All attributes we use for a Flask Response
 ########################
-@AttributedModel
+@ClassOfAttributes
 class ResponseElements(object):
     defined_content = attribute()
     elements = attribute(default=None)
@@ -28,7 +28,7 @@ class ResponseElements(object):
 ########################
 # Definition for extra custom attributes to EndpointElements
 ########################
-@AttributedModel
+@ClassOfAttributes
 class ExtraAttributes(object):
     auth = attribute(default=[])
     publish = attribute(default=True)
@@ -39,7 +39,7 @@ class ExtraAttributes(object):
 ########################
 # Elements for endpoint configuration
 ########################
-@AttributedModel
+@ClassOfAttributes
 class EndpointElements(object):
     exists = attribute(default=False)
     isbase = attribute(default=False)

@@ -14,7 +14,7 @@ from ..services.authentication import BaseAuthentication
 from flask import jsonify, current_app
 from commons import htmlcodes as hcodes
 # from commons.swagger import swagger
-from commons.logs import get_logger  # , pretty_print
+from commons.logs import get_logger
 
 log = get_logger(__name__)
 

@@ -14,7 +14,7 @@ from ...oauth import oauth
 from ...confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from ... import myself, lic
 from commons.globals import mem
-from commons.logs import get_logger, pretty_print
+from commons.logs import get_logger
 from commons.meta import Meta
 
 __author__ = myself
@@ -145,7 +145,7 @@ class ExternalServicesLogin(object):
         if PRODUCTION:
             if ENVVAR_DEBUG is None or not ENVVAR_DEBUG:
                 arguments['base_url'] = B2ACCESS_PROD_URL + '/oauth2/'
-        # pretty_print(arguments)
+
         b2access_oauth = oauth.remote_app('b2access', **arguments)
 
         #####################
@@ -154,7 +154,7 @@ class ExternalServicesLogin(object):
         if PRODUCTION:
             if ENVVAR_DEBUG is None or not ENVVAR_DEBUG:
                 arguments['base_url'] = B2ACCESS_PROD_CA_URL
-        # pretty_print(arguments)
+
         b2accessCA = oauth.remote_app('b2accessCA', **arguments)
 
         #####################
