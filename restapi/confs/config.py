@@ -9,12 +9,17 @@ import re
 import sys
 import argparse
 
+from commons import API_URL, AUTH_URL
+from commons.logs import get_logger
+
+logger = get_logger(__name__)
+logger.info("API base URL is %s" % API_URL)
+logger.info("AUTHENTICATION base URL is %s" % AUTH_URL)
+
 #################################
 # what you could change
 STACKTRACE = False
 REMOVE_DATA_AT_INIT_TIME = False
-USER = 'user@nomail.org'
-PWD = 'test'
 
 
 #############################
@@ -52,18 +57,16 @@ SERVER_HOSTS = '0.0.0.0'
 TEST_HOST = 'localhost'
 SERVER_PORT = int(os.environ.get('PORT', 5000))
 
-# Use this to specifiy endpoints based on your resources module
-REST_CONFIG_DIR = 'endpoints'
-# REST_CONFIG_INIT = 'api_init.json'
-BLUEPRINT_INIT = 'blueprint.json'
+# ######################
+# # TO FIX: remove this
+# # Use this to specifiy endpoints based on your resources module
+# REST_CONFIG_DIR = 'main'
+# # REST_CONFIG_INIT = 'api_init.json'
+# BLUEPRINT_INIT = 'blueprint.json'
+# ######################
 
 TRAP_BAD_REQUEST_ERRORS = True
 PROPAGATE_EXCEPTIONS = False
-
-# System ROLES
-ROLE_ADMIN = 'admin_root'
-ROLE_INTERNAL = 'staff_user'
-ROLE_USER = 'normal_user'
 
 # I am inside the conf dir.
 # The base dir is one level up from here
@@ -109,11 +112,6 @@ SECURITY_REGISTERABLE = True
 SECURITY_CONFIRMABLE = True
 SECURITY_SEND_REGISTER_EMAIL = False
 #SECURITY_TRACKABLE
-
-#################################
-# ENDPOINTS
-API_URL = '/api'
-AUTH_URL = '/auth'
 
 # # IRODS 4
 # IRODS_HOME = os.path.join(USER_HOME, ".irods")

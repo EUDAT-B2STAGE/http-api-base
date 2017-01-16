@@ -11,19 +11,18 @@ import os
 # from json.decoder import JSONDecodeError
 from flask import Flask as OriginalFlask, request, g
 from .response import ResponseMaker
+from .resources.services.oauth2clients import ExternalServicesLogin as oauth2
 from .confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from commons.meta import Meta
+from commons.customization import Customizer
+from commons.globals import mem
 from commons.logs import get_logger, handle_log_output, MAX_CHAR_LEN
 
-from . import myself, lic
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
+#############################
 class Flask(OriginalFlask):
 
     def make_response(self, rv, response_log_max_len=MAX_CHAR_LEN):
@@ -39,16 +38,16 @@ class Flask(OriginalFlask):
             if len(out) > response_log_max_len:
                 out = out[:response_log_max_len] + ' ...'
 
-            logger.verbose("MAKE_RESPONSE: %s" % out)
+            log.verbose("MAKE_RESPONSE: %s" % out)
         except:
-            logger.debug("MAKE_RESPONSE: [UNREADABLE OBJ]")
+            log.debug("MAKE_RESPONSE: [UNREADABLE OBJ]")
         responder = ResponseMaker(rv)
 
         # Avoid duplicating the response generation
         # or the make_response replica.
         # This happens with Flask exceptions
         if responder.already_converted():
-            logger.debug("Response was already converted")
+            log.verbose("Response was already converted")
             # # Note: this response could be a class ResponseElements
             # return rv
 
@@ -62,18 +61,19 @@ class Flask(OriginalFlask):
         return super().make_response(response)
 
 
-def create_auth_instance(module, internal_services, microservice):
+def create_auth_instance(module, services, app, first_call=False):
     # This is the main object that drives authentication
     # inside our Flask server.
     # Note: to be stored inside the flask global context
-    custom_auth = module.Authentication(internal_services)
+    custom_auth = module.Authentication(services)
 
-    # Verify if we can inject oauth2 services into this module
-    from .resources.services.oauth2clients import ExternalServicesLogin
-    oauth2 = ExternalServicesLogin(microservice.config['TESTING'])
-    custom_auth.set_oauth2_services(oauth2._available_services)
+    # If oauth services are available, set them before every request
+    if first_call or oauth2._check_if_services_exist():
+        ext_auth = oauth2(app.config['TESTING'])
+        custom_auth.set_oauth2_services(ext_auth._available_services)
 
-    custom_auth.import_secret(microservice.config['SECRET_KEY_FILE'])
+    if not app.config['TESTING']:
+        custom_auth.import_secret(app.config['SECRET_KEY_FILE'])
 
     return custom_auth
 
@@ -87,6 +87,10 @@ def create_app(name=__name__, debug=False,
                skip_endpoint_mapping=False,
                **kwargs):
     """ Create the server istance for Flask application """
+
+    #############################
+    # Initialize reading of all files
+    mem.customizer = Customizer(__package__)
 
     #################################################
     # Flask app instance
@@ -129,23 +133,17 @@ def create_app(name=__name__, debug=False,
     microservice.config['DEBUG'] = debug
 
     # Set the new level of debugging
-    logger = get_logger(__name__, debug)
-    logger.info("FLASKING! Created application")
+    log = get_logger(__name__, debug)
+    log.info("FLASKING! Created application")
 
     ##############################
     if PRODUCTION:
 
-        logger.info("Production server ON")
+        log.info("Production server ON")
 
-## // TO FIX or CHECK
+        # TO FIX: random secrety key in production
         # # Check and use a random file a secret key.
         # install_secret_key(microservice)
-
-        # probably useless
-        # # http://stackoverflow.com/a/26636880/2114395
-        # microservice.config.update(
-        #     dict(PREFERRED_URL_SCHEME = 'https')
-        # )
 
         # # To enable exceptions printing inside uWSGI
         # # http://stackoverflow.com/a/17839750/2114395
@@ -160,13 +158,13 @@ def create_app(name=__name__, debug=False,
     # Cors
     from .cors import cors
     cors.init_app(microservice)
-    logger.info("FLASKING! Injected CORS")
+    log.info("FLASKING! Injected CORS")
 
     ##############################
     # DATABASE/SERVICEs CHECKS
     from .resources.services.detect import services as internal_services
     for service, myclass in internal_services.items():
-        logger.info("Available service %s" % service)
+        log.debug("Available service %s" % service)
         myclass(check_connection=True, app=microservice)
 
     ##############################
@@ -183,13 +181,17 @@ def create_app(name=__name__, debug=False,
         module_base = __package__ + ".resources.services.authentication"
         auth_service = os.environ.get('BACKEND_AUTH_SERVICE', '')
         module_name = module_base + '.' + auth_service
-        logger.debug("Trying to load the module %s" % module_name)
+        log.debug("Trying to load the module %s" % module_name)
         module = meta.get_module_from_string(module_name)
 
+        # At init time, verify and build Oauth services if any
         init_auth = create_auth_instance(
-            module, internal_services, microservice)
+            module, internal_services, microservice, first_call=True)
 
-        # Global namespace inside the Flask server
+        # Enabling also OAUTH library
+        from .oauth import oauth
+        oauth.init_app(microservice)
+
         @microservice.before_request
         def enable_authentication_per_request():
             """ Save auth object """
@@ -201,16 +203,7 @@ def create_app(name=__name__, debug=False,
             # Save globally across the code
             g._custom_auth = custom_auth
 
-        # OLD BAD
-        # def enable_global_authentication():
-        #     """ Save auth object """
-        #     g._custom_auth = custom_auth
-
-        # Enabling also OAUTH library
-        from .oauth import oauth
-        oauth.init_app(microservice)
-
-        logger.info("FLASKING! Injected security internal module")
+        log.info("FLASKING! Injected security internal module")
 
     if not worker_mode:
         # Global namespace inside the Flask server
@@ -223,7 +216,7 @@ def create_app(name=__name__, debug=False,
     # Restful plugin
     if not skip_endpoint_mapping:
         from .rest import Api, EndpointsFarmer, create_endpoints
-        # Defining AUTOMATIC Resources
+        # Triggering automatic mapping of REST endpoints
         current_endpoints = \
             create_endpoints(EndpointsFarmer(Api), enable_security, debug)
         # Restful init of the app
@@ -236,7 +229,6 @@ def create_app(name=__name__, debug=False,
 
             # Set global objects for celery workers
             if worker_mode:
-                from commons.globals import mem
                 mem.services = internal_services
 
             # Note:
@@ -253,7 +245,7 @@ def create_app(name=__name__, debug=False,
                 from .resources.custom import services as custom_services
                 custom_services.init(internal_services, enable_security)
             except:
-                logger.debug("No custom init available for mixed services")
+                log.debug("No custom init available for mixed services")
 
     ##############################
     # Logging responses
@@ -273,7 +265,7 @@ def create_app(name=__name__, debug=False,
             except IndexError:
                 pass
 
-        logger.info("{} {} {} {}".format(
+        log.info("{} {} {} {}".format(
                     request.method, request.url, data, response))
         return response
 

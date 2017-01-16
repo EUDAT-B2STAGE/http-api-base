@@ -5,14 +5,14 @@ Using x509 certificates
 """
 
 from __future__ import absolute_import
+
 import os
 from .services.uuid import getUUID
 from OpenSSL import crypto
 from commons import htmlcodes as hcodes
+from .logs import get_logger  # , pretty_print
 
-from .logs import get_logger, pretty_print
-
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 class Certificates(object):
@@ -94,7 +94,7 @@ class Certificates(object):
 
         #######################
         key, req = self.generate_csr_and_key()
-        # logger.debug("Key and Req:\n%s\n%s" % (key, req))
+        # log.debug("Key and Req:\n%s\n%s" % (key, req))
 
         # Certificates should be trusted:
         # they are injected them inside the docker image at init time.
@@ -110,20 +110,20 @@ class Certificates(object):
                 headers={'Accept-Encoding': 'identity'})
             # Note: token is applied from oauth2 lib using the session content
         except ValueError as e:
-            logger.error("Oauthlib call with CA: %s" % e)
+            log.error("Oauthlib call with CA: %s" % e)
             return None
         except Exception as e:
-            logger.error("CA is probably down... [%s]" % e)
+            log.error("CA is probably down... [%s]" % e)
             return None
         if response.status != hcodes.HTTP_OK_BASIC:
             # print("\nCertificate:"); pretty_print(response)
-            logger.error("Could not get proxy from CA: %s" % response.data)
+            log.error("Could not get proxy from CA: %s" % response.data)
             return None
         # pretty_print(response)
 
         #######################
         # write proxy certificate to a random file name
         proxyfile = self.write_key_and_cert(key, response.data)
-        logger.debug('Wrote certificate to %s' % proxyfile)
+        log.debug('Wrote certificate to %s' % proxyfile)
 
         return proxyfile

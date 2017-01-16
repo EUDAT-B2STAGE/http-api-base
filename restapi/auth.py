@@ -1,10 +1,21 @@
 # -*- coding: utf-8 -*-
 
+"""
+The tokens used are RFC6750 Bearer tokens.
+
+The Resource should validate the tokens using the token validation endpoint;
+its basic use is by adding
+'Authorization: Bearer ' + tokenString to the HTTP header;
+cf. RFC6749 section 7.1.
+
+Note that anyone can validate a token as it is a bearer token:
+there is no client id nor is client authentication required.
+"""
+
 from __future__ import division, absolute_import
 
 from functools import wraps
 from flask import request, g
-from werkzeug.datastructures import Authorization
 from commons import htmlcodes as hcodes
 from commons.meta import Meta
 from commons.decorators import class_method_decorator_with_optional_parameters
@@ -19,19 +30,6 @@ logger = get_logger(__name__)
 
 # Few costants
 HTTPAUTH_DEFAULT_SCHEME = "Bearer"
-
-"""
-The tokens used are RFC6750 Bearer tokens.
-
-The Resource should validate the tokens using the token validation endpoint;
-its basic use is by adding
-'Authorization: Bearer ' + tokenString to the HTTP header;
-cf. RFC6749 section 7.1.
-
-Note that anyone can validate a token as it is a bearer token:
-there is no client id nor is client authentication required.
-"""
-
 HTTPAUTH_DEFAULT_REALM = "Authentication Required"
 HTTPAUTH_TOKEN_KEY = 'Token'
 HTTPAUTH_AUTH_HEADER = 'WWW-Authenticate'
@@ -51,11 +49,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
     def authenticate_header(self):
         return '{0} realm="{1}"'.format(self._scheme, self._realm)
 
-    def authenticate(self, verify_token_callback, auth, stored_password):
-        if auth:
-            token = auth[HTTPAUTH_TOKEN_KEY]
-        else:
-            token = ""
+    def authenticate(self, verify_token_callback, token):
         if verify_token_callback:
             return verify_token_callback(token)
         return False
@@ -76,6 +70,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
 
         # If token is unavailable, clearly state it in response to user
         token = "EMPTY"
+        auth_type = None
 
         auth = request.authorization
         if auth is None and HTTPAUTH_AUTH_FIELD in request.headers:
@@ -83,62 +78,59 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
             # other than Basic or Digest, so here we parse the header by hand
             try:
                 auth_type, token = self.get_authentication_from_headers()
-                auth = Authorization(auth_type, {HTTPAUTH_TOKEN_KEY: token})
             except ValueError:
                 # The Authorization header is either empty or has no token
                 pass
 
-        # if the auth type does not match, we act as if there is no auth
-        # this is better than failing directly, as it allows the callback
-        # to handle special cases, like supporting multiple auth types
-        if auth is not None and auth.type.lower() != self._scheme.lower():
-            auth = None
+        return auth_type, token
 
-        return auth, token
-
+    # TODO: check if we can now remove this decorator
+    # to use authorization_required as a simple decorator
     @class_method_decorator_with_optional_parameters
-    def authorization_required(self, f, roles=[]):
+    def authorization_required(self, f, roles=[], from_swagger=False):
         @wraps(f)
         def decorated(*args, **kwargs):
 
             # Recover the auth object
-            auth, token = self.get_auth_from_header()
+            auth_type, token = self.get_auth_from_header()
+            # Base header for errors
+            headers = {HTTPAUTH_AUTH_HEADER: self.authenticate_header()}
+            bad_code = hcodes.HTTP_BAD_UNAUTHORIZED
             # Internal API 'self' reference
             decorated_self = Meta.get_self_reference_from_args(*args)
+
+            if auth_type is None or auth_type.lower() != self._scheme.lower():
+                # Wrong authentication string
+                msg = "Please provide valid credentials " + \
+                      "inside HEADERS in the form of '%s': '%s %s'" % \
+                      (HTTPAUTH_AUTH_FIELD, HTTPAUTH_DEFAULT_SCHEME, 'TOKEN')
+                #
+                return decorated_self.send_errors(
+                    label="No authentication schema",
+                    message=msg, headers=headers, code=bad_code)
 
             # Handling OPTIONS forwarded to our application:
             # ignore headers and let go, avoid unwanted interactions with CORS
             if request.method != 'OPTIONS':
-                if auth and auth.username:
-                    # case of username and password
-                    password = self.get_password_callback(auth.username)
-                else:
-                    # case for a header token
-                    password = None
+
                 # Check authentication
                 token_fn = g._custom_auth.verify_token
-                if not self.authenticate(token_fn, auth, password):
+                if not self.authenticate(token_fn, token):
                     # Clear TCP receive buffer of any pending data
                     request.data
-                    headers = {
-                        HTTPAUTH_AUTH_HEADER: self.authenticate_header()}
                     # Mimic the response from a normal endpoint
                     # To use the same standards
-                    return decorated_self.force_response(
-                        errors={"Invalid token": "Received '%s'" % token},
-                        headers=headers,
-                        code=hcodes.HTTP_BAD_UNAUTHORIZED
-                    )
+                    return decorated_self.send_errors(
+                        label="Invalid token", message="Received '%s'" % token,
+                        headers=headers, code=bad_code)
 
             # Check roles
             if len(roles) > 0:
                 roles_fn = g._custom_auth.verify_roles
                 if not self.authenticate_roles(roles_fn, roles):
-                    return decorated_self.force_response(
-                        errors={"Missing privileges":
-                                "One or more role required"},
-                        code=hcodes.HTTP_BAD_UNAUTHORIZED
-                    )
+                    return decorated_self.send_errors(
+                        label="Missing privileges",
+                        message="One or more role required", code=bad_code)
 
             return f(*args, **kwargs)
 

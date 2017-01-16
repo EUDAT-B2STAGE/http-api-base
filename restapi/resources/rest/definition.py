@@ -5,17 +5,21 @@ The most basic (and standard) Rest Resource
 we could provide back then
 """
 
+from __future__ import absolute_import
+
 import pytz
 import dateutil.parser
 from datetime import datetime
 from flask import g
 from flask_restful import request, Resource, reqparse
-from ..confs.config import API_URL  # , STACKTRACE
-from ..response import ResponseElements
-from commons import htmlcodes as hcodes
-from commons.logs import get_logger
 
-logger = get_logger(__name__)
+from ...confs.config import API_URL  # , STACKTRACE
+from ...response import ResponseElements
+from commons import htmlcodes as hcodes
+from commons.globals import mem
+from commons.logs import get_logger, pretty_print
+
+log = get_logger(__name__)
 
 ###################
 # Paging costants
@@ -28,29 +32,70 @@ DEFAULT_PERPAGE = 10
 ###################
 # Extending the concept of rest generic resource
 
-class ExtendedApiResource(Resource):
+class EndpointResource(Resource):
     """
     Implements a generic Resource for our Restful APIs model
     """
 
     myname = __name__
-    _latest_headers = {}
-    endpoint = None
-    endkey = None
-    endtype = None
     hcode = hcodes.HTTP_OK_BASIC
     base_url = API_URL
 
     def __init__(self):
-        super(ExtendedApiResource, self).__init__()
+        super(EndpointResource, self).__init__()
 
-        # Apply decision about the url of endpoint
-        self.set_endpoint()
         # Make sure you can parse arguments at every call
         self._args = {}
         self._json_args = {}
         self._params = {}
+
+        # Query parameters
         self._parser = reqparse.RequestParser()
+
+        # use self to get the classname
+        k1 = self.myname()
+        # use request to recover uri and method
+        k2 = str(request.url_rule)
+        k3 = request.method.lower()
+        # recover from the global mem parameters query parameters
+        current_params = mem.query_params.get(k1, {}).get(k2, {}).get(k3, {})
+
+        # pretty_print(mem.query_params)
+        # pretty_print(current_params)
+
+        if len(current_params) > 0:
+
+            # Basic options
+            basevalue = str  # Python3
+            # basevalue = unicode  #Python2
+            act = 'store'  # store is normal, append is a list
+            loc = ['headers', 'values']  # multiple locations
+            trim = True
+
+            for param, data in current_params.items():
+
+                # TO FIX: Add a method to convert types swagger <-> flask
+                tmptype = data.get('type', 'string')
+                if tmptype == 'boolean':
+                    mytype = bool
+                if tmptype == 'number':
+                    mytype = int
+                else:
+                    mytype = basevalue
+
+                # TO CHECK: I am creating an option to handle arrays
+                if tmptype == 'select':
+                    act = 'append'
+
+                self._parser.add_argument(
+                    param, type=mytype,
+                    default=data.get('default', None),
+                    required=data.get('required', False),
+                    trim=trim, action=act, location=loc)
+
+                log.debug("Accept param '%s', type %s" % (param, mytype))
+
+        # TODO: should I check body parameters?
 
     @staticmethod
     def clean_parameter(param=""):
@@ -61,32 +106,15 @@ class ExtendedApiResource(Resource):
 
     def parse(self):
         """
-        Parameters may be necessary at any method.
-        Parse args.
+        Parameters may be necessary at any method: Parse them all.
         """
 
         self._args = self._parser.parse_args()
-
-        # if len(self._args) < 1:
-        #     try:
-        #         self._args = request.get_json(force=forcing)
-        #     except Exception as e:
-        #         logger.warning("Fail: get JSON for current req: '%s'" % e)
-
         if len(self._args) > 0:
-            logger.debug("Parsed parameters: %s" % self._args)
-
+            log.debug("Parsed parameters: %s" % self._args)
         return self._args
 
-    def set_endpoint(self):
-        if self.endpoint is None:
-            self.endpoint = \
-                type(self).__name__.lower().replace("resource", "")
-
-    def get_endpoint(self):
-        return (self.endpoint, self.endkey, self.endtype)
-
-    def get_input(self, forcing=True, single_parameter=None):
+    def get_input(self, forcing=True, single_parameter=None, default=None):
         """
         Recover parameters from current requests.
 
@@ -98,100 +126,38 @@ class ExtendedApiResource(Resource):
         while JSON parameters may be already saved from another previous call
         """
 
+        self.parse()
+
         if len(self._json_args) < 1:
             try:
                 self._json_args = request.get_json(force=forcing)
-                for key, value in self._json_args.items():
-                    if value is None:
-                        continue
-                    # if isinstance(value, str) and value == 'None':
-                    #     continue
-                    if key in self._args and self._args[key] is not None:
-                        # print("Key", key, "Value", value, self._args[key])
-                        key += '_json'
-                    self._args[key] = value
             except Exception:  # as e:
-                # logger.critical("Cannot get JSON for req: '%s'" % e)
+                # log.critical("Cannot get JSON for req: '%s'" % e)
                 pass
 
+            # json payload and formData cannot co-exist
+            if len(self._json_args) < 1:
+                self._json_args = request.form
+
+            for key, value in self._json_args.items():
+                if value is None:
+                    continue
+                # if isinstance(value, str) and value == 'None':
+                #     continue
+                if key in self._args and self._args[key] is not None:
+                    # print("Key", key, "Value", value, self._args[key])
+                    key += '_json'
+                self._args[key] = value
+
         if single_parameter is not None:
-            return self._args.get(single_parameter)
+            return self._args.get(single_parameter, default)
 
         if len(self._args) > 0:
-            logger.info("Parameters %s" % self._args)
+            log.verbose("Parameters %s" % self._args)
         return self._args
 
     def myname(self):
         return self.__class__.__name__
-
-    def add_parameter(self, name, method,
-                      mytype=str, default=None, required=False):
-        """
-        Save a parameter inside the class
-
-        Note: parameters are specific to the method
-        (and not to the whole class as before) using subarrays
-        """
-
-        # Class name as a key
-        classname = self.myname()
-
-        if classname not in self._params:
-            self._params[classname] = {}
-
-        if method not in self._params[classname]:
-            self._params[classname][method] = {}
-
-        # Avoid if already exists?
-        if name not in self._params[classname][method]:
-            self._params[classname][method][name] = [mytype, default, required]
-
-    def apply_parameters(self, method):
-        """ Use parameters received via decoration """
-
-        classname = self.myname()
-        if classname not in self._params:
-            return False
-        if method not in self._params[classname]:
-            return False
-        p = self._params[classname][method]
-
-        ##############################
-        # Basic options
-        basevalue = str  # Python3
-        # basevalue = unicode  #Python2
-        act = 'store'  # store is normal, append is a list
-        loc = ['headers', 'values']  # multiple locations
-        trim = True
-
-## // TO FIX?
-# when should I apply parameters for paging?
-# let the developer specify with a dedicated decorator?
-        # p[PERPAGE_KEY] = (int, DEFAULT_PERPAGE, False)
-        # p[CURRENTPAGE_KEY] = (int, DEFAULT_CURRENTPAGE, False)
-
-        if len(p.keys()) < 1:
-            return False
-
-        for param, (param_type, param_default, param_required) in p.items():
-
-            # Decide what is left for this parameter
-            if param_type is None:
-                param_type = basevalue
-
-            # I am creating an option to handle arrays:
-            if param_type == 'makearray':
-                param_type = basevalue
-                act = 'append'
-
-            # Really add the parameter
-            self._parser.add_argument(
-                param, type=param_type,
-                default=param_default, required=param_required,
-                trim=trim, action=act, location=loc)
-            logger.debug("Accept param '%s', type %s" % (param, param_type))
-
-        return True
 
     def set_method_id(self, name='myid', idtype='string'):
         """ How to have api/method/:id route possible"""
@@ -206,7 +172,7 @@ class ExtendedApiResource(Resource):
                          api_output, get_all=False,
                          get_error=False, get_status=False, get_meta=False):
 
-        from ..response import get_content_from_response
+        from ...response import get_content_from_response
         content, err, meta, code = get_content_from_response(api_output)
 
         if get_error:
@@ -219,14 +185,6 @@ class ExtendedApiResource(Resource):
             return content, err, code
 
         return content
-
-# BAD PRACTICE
-    # def set_latest_token(self, token):
-    #     self.global_get('custom_auth')._latest_token = token
-
-    # def get_latest_token(self):
-    #     return self.global_get('custom_auth')._latest_token
-# BAD PRACTICE
 
     def get_current_token(self):
         from ..auth import HTTPTokenAuth
@@ -264,7 +222,7 @@ class ExtendedApiResource(Resource):
             **kwargs)
 
     def method_not_allowed(self, methods=['GET']):
-## IS IT USED?
+        # TO FIX: is it used?
 
         methods.append('HEAD')
         methods.append('OPTIONS')
@@ -285,7 +243,7 @@ class ExtendedApiResource(Resource):
 
         Build a ResponseElements instance.
         """
-        # logger.debug("Force response:\nargs[%s] kwargs[%s]" % (args, kwargs))
+        # log.debug("Force response:\nargs[%s] kwargs[%s]" % (args, kwargs))
 
         # If args has something, it should be one simple element
         # That element is the content and nothing else
@@ -318,7 +276,9 @@ class ExtendedApiResource(Resource):
         return self.force_response(
             defined_content=defined_content, errors=errors, code=code)
 
-    def send_errors(self, label="Error", message=None, errors=None, code=None):
+    def send_errors(self,
+                    label="Error", message=None, errors=None,
+                    code=None, headers=None):
         """
         Setup an error message and
         """
@@ -340,14 +300,14 @@ class ExtendedApiResource(Resource):
             # default error
             code = hcodes.HTTP_SERVER_ERROR
 
-        return self.force_response(errors=errors, code=code)
+        return self.force_response(errors=errors, code=code, headers=headers)
 
     def report_generic_error(self,
                              message=None, current_response_available=True):
 
         if message is None:
             message = "Something BAD happened somewhere..."
-        logger.critical(message)
+        log.critical(message)
 
         user_message = "Server unable to respond."
         code = hcodes.HTTP_SERVER_ERROR
@@ -362,7 +322,7 @@ class ExtendedApiResource(Resource):
         Define a standard response to give a Bearer token back.
         Also considering headers.
         """
-## // TO FIX
+        # TODO: write it and use it in EUDAT
         return NotImplementedError("To be written")
 
     @staticmethod
@@ -403,14 +363,14 @@ class ExtendedApiResource(Resource):
         for instance in instances:
             json_data["content"].append(self.getJsonResponse(instance))
 
-## // TO FIX:
-# get pages FROM SELF ARGS?
+        # TO FIX: get pages FROM SELF ARGS?
         # json_data["links"]["next"] = \
         #     endpoint + '?currentpage=2&perpage=1',
         # json_data["links"]["last"] = \
         #     endpoint + '?currentpage=' + str(len(instances)) + '&perpage=1',
 
         return json_data
+
     @staticmethod
     def dateFromString(date, format="%d/%m/%Y"):
 
@@ -423,7 +383,7 @@ class ExtendedApiResource(Resource):
             return dateutil.parser.parse(date)
 
     @staticmethod
-# To mattia: can we stop using java-like camelCase? XD
+# TO FIX: can we stop using java-like camelCase? XD
     def stringFromTimestamp(timestamp):
         if timestamp == "":
             return ""
@@ -431,7 +391,7 @@ class ExtendedApiResource(Resource):
             date = datetime.fromtimestamp(float(timestamp))
             return date.isoformat()
         except:
-            logger.warning(
+            log.warning(
                 "Errors parsing %s" % timestamp)
             return ""
 
@@ -518,7 +478,7 @@ class ExtendedApiResource(Resource):
 
             for relationship in relationships:
                 subrelationship = []
-                # logger.debug("Investigate relationship %s" % relationship)
+                # log.debug("Investigate relationship %s" % relationship)
 
                 if hasattr(instance, relationship):
                     for node in getattr(instance, relationship).all():
@@ -537,7 +497,28 @@ class ExtendedApiResource(Resource):
 
         return data
 
+    def get_endpoint_definition(self, key=None):
+
+        url = request.url_rule.rule
+        if url not in mem.swagger_definition["paths"]:
+            return None
+
+        method = request.method.lower()
+
+        if method not in mem.swagger_definition["paths"][url]:
+            return None
+
+        tmp = mem.swagger_definition["paths"][url][method]
+
+        if key is None:
+            return tmp
+
+        if key not in tmp:
+            return None
+
+        return tmp[key]
+
 # # Set default response
 # set_response(
 #     original=False,  # first_call=True,
-#     custom_method=ExtendedApiResource().default_response)
+#     custom_method=EndpointResource().default_response)

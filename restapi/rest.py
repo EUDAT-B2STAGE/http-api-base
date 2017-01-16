@@ -4,18 +4,15 @@
 App specifications
 """
 
-from __future__ import division
-from . import myself, lic
-from commons.logs import get_logger
+from __future__ import absolute_import
+
 from flask_restful import Api as RestFulApi
 from .resources.farm import EndpointsFarmer
-from .config import MyConfigs
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
+from commons.globals import mem
+from commons.logs import get_logger  # , pretty_print
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 # Hack the original class to remove the response making...
@@ -28,7 +25,7 @@ class Api(RestFulApi):
         'make_response' on unpacked elements.
 
         This ruins our plan of creating our standard response,
-        so I am overriding it to just avoid the decorator
+        so I am overriding it to JUST TO AVOID THE DECORATOR
         """
 
         ##################################
@@ -62,57 +59,42 @@ class Api(RestFulApi):
 
 ####################################
 # REST to be activated inside the app factory
-logger.debug(
-    "Restful classes to create endpoints: [%s, %s]" % (Api, EndpointsFarmer))
+log.debug(
+    "Create endpoints w/ [%s, %s]" % (Api, EndpointsFarmer))
 
 
-def create_endpoints(custom_epo, security=False, debug=False):
-    """ A single method to add all endpoints """
+def create_endpoints(epo, security=False, debug=False):
+    """
+    A single method to add all endpoints
+    """
 
     # ####################################
-    # # HELLO WORLD endpoint...
-    # @rest.resource('/')
-    # # @rest.resource('/', '/hello')
-    # class Hello(Resource):
-    #     """ Example with no authentication """
-    #     def get(self):
-    #         return "Hello world", 200
-    # logger.debug("Base endpoint: Hello world!")
-
-    ####################################
     # Verify configuration
-    resources = MyConfigs().rest()
+    resources = mem.customizer.endpoints()
 
     ####################################
     # Basic configuration (simple): from example class
     if len(resources) < 1:
-        logger.info("No file configuration found (or no section inside)")
-        from .resources import exampleservices as mymodule
-        custom_epo.many_from_module(mymodule)
-    # Advanced configuration (cleaner): from your module and .ini
-    else:
-        logger.info("Using resources found in configuration")
+        log.warning("No custom endpoints found!")
 
-        for myclass, instance, endpoint, endkey in resources:
-            # Load each resource
-            custom_epo.create_single(myclass, endpoint, endkey)
+        # # DEPRECATED
+        # from .resources import exampleservices as mymodule
+        # epo.many_from_module(mymodule)
+        # log.debug("Loaded example class instead")
 
-    ####################################
-    # Verify functions on the API server
-    if security:
-        from .resources import endpoints
-        custom_epo.many_from_module(endpoints)
-    else:
-        from .resources.endpoints import Status
-        custom_epo.create_many({'status': Status})
+        raise AttributeError("Follow the docs and define your endpoints")
 
-    ####################################
-    # Extra endpoints?
+    log.info("Using resources defined within swagger")
 
-    # #EXAMPLE:
-    # from .resources import profiles
-    # custom_epo.many_from_module(profiles)
+    for resource in resources:
+
+        if not security:
+            # TODO: CHECK can we allow a server startup with no security?
+            raise NotImplementedError("No way to remove security with swagger")
+
+        # TODO: CHECK is there any way to remove farm.py ?
+        epo.add(resource)
 
     ####################################
     # The end
-    return custom_epo
+    return epo

@@ -27,7 +27,7 @@ class BashCommands(object):
         self._shell = myshell
 
         super(BashCommands, self).__init__()
-        logger.debug("Internal shell initialized")
+        logger.verbose("Internal shell initialized")
 
     def execute_command(self, command, parameters=[], env=None, parseException=False, raisedException=BaseException):
         try:

@@ -6,93 +6,53 @@ And a Farm: How to create endpoints into REST service.
 """
 
 from __future__ import absolute_import
-from .. import myself, lic
 
-from ..confs.config import AUTH_URL
-from .base import ExtendedApiResource
-from ..auth import authentication
-from ..confs import config
-from .services.detect import CELERY_AVAILABLE
-from .services.authentication import BaseAuthentication
-# from . import decorators as decorate
+from ..rest.definition import EndpointResource
+# from ...confs import config
+from ..services.detect import CELERY_AVAILABLE
+from ..services.authentication import BaseAuthentication
 from flask import jsonify, current_app
 from commons import htmlcodes as hcodes
-from commons.logs import get_logger
+# from commons.swagger import swagger
+from commons.logs import get_logger  # , pretty_print
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
-class Status(ExtendedApiResource):
-    """
-        API online test
-    """
+class Status(EndpointResource):
+    """ API online client testing """
 
     def get(self):
-        """
-        Check if the API server is currently reachable
-
-        You may use this URI to monitor network or server problems.
-        ---
-        tags:
-          - status
-        responses:
-          200:
-            description: Server is alive!
-        """
         return 'Server is alive!'
 
 
-class Spec(ExtendedApiResource):
+class SwaggerSpecifications(EndpointResource):
     """
     Specifications output throught Swagger (open API) standards
     """
 
     def get(self):
-        """
-        Request current API server swagger specifications
-        ---
 
-        tags:
-            - swagger
-        responses:
-          200:
-            description: Specifications in a JSON standard format
-        """
+        # # find the package root to read swagger
+        # root = __package__.split('.')[0]
+        # # Enable swagger
+        # swag = swagger(current_app,
+        #                package_root=root, from_file_keyword='swag_file')
+        # # Build the output
+        # return jsonify(swag)
 
-        ##############################
-        # Enable swagger
-        from commons.swagger import swagger
-        swag = swagger(current_app, from_file_keyword='swag_file')
-        swag['info']['version'] = "1.0"
-## // TO FIX:
-# make it dynamic from configuration
-        swag['info']['title'] = "Python3 REST API"
-        return jsonify(swag)
+        # NOTE: swagger dictionary is read only once, at server init time
+        from commons.globals import mem
+        # Jsonify, so we skip custom response building
+        return jsonify(mem.swagger_definition)
 
 
-class Login(ExtendedApiResource):
+class Login(EndpointResource):
     """ Let a user login with the developer chosen method """
 
-    base_url = AUTH_URL
-
-    # @decorate.apimethod
-    # def get(self):
-    #     return self.send_errors(
-    #         "Wrong method", "Please login with the POST method",
-    #         code=hcodes.HTTP_BAD_UNAUTHORIZED)
-
     def post(self):
-        """
-        Using a service-dependent callback
 
-        swag_file: restapi/swagger/base/login/post.yaml
-        """
-
-        # # In case you need different behaviour when using unittest:
+        # NOTE: In case you need different behaviour when using unittest
         # if current_app.config['TESTING']:
         #     print("\nThis is inside a TEST\n")
 
@@ -125,53 +85,59 @@ class Login(ExtendedApiResource):
 
         auth.save_token(auth._user, token, jti)
 
-## // TO FIX
-# split response as above in access_token and token_type?
-# also set headers?
+        # TO FIX: split response as above in access_token and token_type?
         # # The right response should be the following
-        # # Just remove the simple response above
         # return self.force_response({
         #     'access_token': token,
         #     'token_type': auth.token_type
         # })
-
-        """
-        e.g.
-{
-  "scope": "https://b2stage.cineca.it/api/.*",
-  "access_token": "EEwJ6tF9x5WCIZDYzyZGaz6Khbw7raYRIBV_WxVvgmsG",
-  "token_type": "Bearer",
-  "user": "pippo",
-  "expires_in": 28800
-}
-        """
+        # OR
+        # {
+        #   "scope": "https://b2stage.cineca.it/api/.*",
+        #   "access_token": "EEwJ6tF9x5WCIZDYzyZGaz6Khbw7raYRIBV_WxVvgmsG",
+        #   "token_type": "Bearer",
+        #   "user": "pippo",
+        #   "expires_in": 28800
+        # }
+        # TO FIX: also set headers
 
         return {'token': token}
 
 
-class Logout(ExtendedApiResource):
-    """ Let the logged user escape from here """
+class Logout(EndpointResource):
+    """ Let the logged user escape from here, invalidating current token """
 
-    base_url = AUTH_URL
-
-    @authentication.authorization_required
     def get(self):
         auth = self.global_get('custom_auth')
         auth.invalidate_token(auth.get_token())
         return self.empty_response()
 
 
-class Tokens(ExtendedApiResource):
+class Tokens(EndpointResource):
     """ List all active tokens for a user """
 
-    base_url = AUTH_URL
-    endkey = "token_id"
-    endtype = "string"
+    def get_user(self, auth):
 
-    @authentication.authorization_required(roles=[config.ROLE_ADMIN])
+        iamadmin = auth.verify_admin()
+
+        if iamadmin:
+            username = self.get_input(single_parameter='username')
+            if username is not None:
+                return auth.get_user_object(username=username)
+
+        return self.get_current_user()
+
     def get(self, token_id=None):
+
         auth = self.global_get('custom_auth')
-        tokens = auth.get_tokens(user=auth._user)
+        user = self.get_user(auth)
+
+        if user is None:
+            return self.send_errors(
+                "Invalid", "Bad username", code=hcodes.HTTP_BAD_REQUEST)
+
+        tokens = auth.get_tokens(user=user)
+
         if token_id is None:
             return tokens
 
@@ -184,14 +150,18 @@ class Tokens(ExtendedApiResource):
         return self.send_errors(
             "Token not found", errorMessage, code=hcodes.HTTP_BAD_NOTFOUND)
 
-    @authentication.authorization_required
     def delete(self, token_id=None):
         """
             For additional security, tokens are invalidated both
             by chanding the user UUID and by removing single tokens
         """
+
         auth = self.global_get('custom_auth')
-        user = self.get_current_user()
+        user = self.get_user(auth)
+        if user is None:
+            return self.send_errors(
+                "Invalid", "Bad username", code=hcodes.HTTP_BAD_REQUEST)
+
         tokens = auth.get_tokens(user=user)
         invalidated = False
 
@@ -202,13 +172,16 @@ class Tokens(ExtendedApiResource):
                 if not done:
                     return self.send_errors("Failed", "token: '%s'" % token)
                 else:
-                    logger.debug("Invalidated %s" % token['id'])
+                    log.debug("Invalidated %s" % token['id'])
                     invalidated = True
 
         # Check
 
         # ALL
         if token_id is None:
+            # NOTE: this is allowed only in removing tokens in unittests
+            if not current_app.config['TESTING']:
+                raise KeyError("Please specify a valid token")
             auth.invalidate_all_tokens(user=user)
         # SPECIFIC
         else:
@@ -220,121 +193,96 @@ class Tokens(ExtendedApiResource):
         return self.empty_response()
 
 
-class TokensAdminOnly(ExtendedApiResource):
-    """ Admin operations on token list """
-
-    base_url = AUTH_URL
-    endkey = "token_id"
-    endtype = "string"
-
-    @authentication.authorization_required
-    def get(self, token_id):
-        logger.critical("This endpoint should be restricted to admin only!")
-        auth = self.global_get('custom_auth')
-        token = auth.get_tokens(token_jti=token_id)
-        if len(token) == 0:
-            return self.send_errors(
-                "Token not found", token_id, code=hcodes.HTTP_BAD_NOTFOUND)
-        return token
-
-    @authentication.authorization_required
-    def delete(self, token_id):
-        logger.critical("This endpoint should be restricted to admin only!")
-        auth = self.global_get('custom_auth')
-        if not auth.destroy_token(token_id):
-            return self.send_errors(
-                "Token not found", token_id, code=hcodes.HTTP_BAD_NOTFOUND)
-
-        return self.empty_response()
-
-
-class Profile(ExtendedApiResource):
+class Profile(EndpointResource):
     """ Current user informations """
 
-    base_url = AUTH_URL
-
-    @authentication.authorization_required
     def get(self):
-        """
-        Token authentication tester. Example of working call is: 
-        http localhost:8081/auth/profile
-            Authorization:"Bearer RECEIVED_TOKEN"
-        """
 
-        auth = self.global_get('custom_auth')
-        data = {}
-        data["status"] = "Valid user"
-        data["email"] = auth._user.email
+        # auth = self.global_get('custom_auth')
+        current_user = self.get_current_user()
+        data = {
+            'uuid': current_user.uuid,
+            'status': "Valid user",
+            'email': current_user.email
+        }
 
         # roles = []
         roles = {}
-        for role in auth._user.roles:
+        for role in current_user.roles:
             # roles.append(role.name)
             roles[role.name] = role.name
         data["roles"] = roles
         data["isAdmin"] = "admin_root" in roles
 
-        if hasattr(auth._user, 'name'):
-            data["name"] = auth._user.name
+        if hasattr(current_user, 'name'):
+            data["name"] = current_user.name
 
-        if hasattr(auth._user, 'surname'):
-            data["surname"] = auth._user.surname
+        if hasattr(current_user, 'surname'):
+            data["surname"] = current_user.surname
 
-        if hasattr(auth._user, 'irods_user'):
-            data["irods_user"] = auth._user.irods_user
+        if hasattr(current_user, 'irods_user'):
+            data["irods_user"] = current_user.irods_user
+            if not data["irods_user"]:
+                data["irods_user"] = None
+            elif data["irods_user"] == '-':
+                data["irods_user"] = None
+            elif data["irods_user"] == '0':
+                data["irods_user"] = None
 
         return data
 
-    @authentication.authorization_required
-    def put(self):
+    def put(self, uuid):
+        # TO FIX: this should be a POST method...
+
+        """ Create or update profile for current user """
 
         from flask_restful import request
         try:
+            user = self.get_current_user()
+            if user.uuid != uuid:
+                return self.send_errors(
+                    "Invalid uuid",
+                    "Identifier specified does not match current user",
+                )
+
             data = request.get_json(force=True)
 
-            if "newpassword" not in data:
+            key = "newpassword"
+            if key not in data:
                 return self.send_errors(
-                    "Error",
-                    "Invalid request, this operation cannot be completed",
+                    "Invalid request", "Missing %s value" % key,
                     code=hcodes.HTTP_BAD_REQUEST
                 )
-            user = self.get_current_user()
-            pwd = BaseAuthentication.hash_password(data["newpassword"])
-            user.password = pwd
+            user.password = BaseAuthentication.hash_password(data[key])
             user.save()
+
             auth = self.global_get('custom_auth')
             tokens = auth.get_tokens(user=auth._user)
-
             for token in tokens:
+                # for graphdb it just remove the edge
                 auth.invalidate_token(token=token["token"])
+            # changes the user uuid invalidating all tokens
             auth.invalidate_all_tokens()
 
         except:
             return self.send_errors(
-                "Error",
-                "Unknown error, please contact system administrators",
+                "Error", "Unknown error, please contact administrators",
                 code=hcodes.HTTP_BAD_REQUEST
             )
 
         return self.empty_response()
 
 
-class Internal(ExtendedApiResource):
+class Internal(EndpointResource):
     """ Token and Role authentication test """
 
-    base_url = AUTH_URL
-
-    @authentication.authorization_required(roles=[config.ROLE_INTERNAL])
     def get(self):
         return "I am internal"
 
 
-class Admin(ExtendedApiResource):
+class Admin(EndpointResource):
     """ Token and Role authentication test """
 
-    base_url = AUTH_URL
-
-    @authentication.authorization_required(roles=[config.ROLE_ADMIN])
     def get(self):
         return "I am admin!"
 
@@ -344,12 +292,8 @@ class Admin(ExtendedApiResource):
 if CELERY_AVAILABLE:
     from commons.services.celery import celery_app
 
-    class Queue(ExtendedApiResource):
+    class Queue(EndpointResource):
 
-        endkey = "task_id"
-        endtype = "string"
-
-        @authentication.authorization_required(roles=[config.ROLE_ADMIN])
         def get(self, task_id=None):
 
             # Inspect all worker nodes
@@ -413,62 +357,10 @@ if CELERY_AVAILABLE:
 
             return self.force_response(data)
 
-        # @authentication.authorization_required(roles=[config.ROLE_ADMIN])
-        # def put(self, task_id):
-        #     from celery.task.control import revoke
-        #     revoke(task_id, terminate=True)
-        #     return self.force_response("!")
-
-        @authentication.authorization_required(roles=[config.ROLE_ADMIN])
         def put(self, task_id):
             celery_app.control.revoke(task_id)
             return self.empty_response()
 
-        @authentication.authorization_required(roles=[config.ROLE_ADMIN])
         def delete(self, task_id):
             celery_app.control.revoke(task_id, terminate=True)
             return self.empty_response()
-
-    # task = celery_app.AsyncResult(queue_id)
-    # logger.critical(task.status)
-
-    # if task.failed():
-    #     output = task.get()
-    #     return self.force_response(
-    #         "THIS TASK IS FAILED!!! %s" % output,
-    #         code=hcodes.HTTP_SERVER_ERROR)
-
-    # if task.successful():
-    #     output = task.get()
-    #     # Forget about (and possibly remove the result of) this task.
-    #     """
-    #     The task back to the pending status, because:
-
-    #     Task is waiting for execution or unknown.
-    #     Any task id that is not known is implied
-    #     to be in the pending state.
-    #     """
-    #     task.forget()
-
-    #     return self.force_response(
-    #         "THIS TASK IS COMPLETE. Output is: %s" % output,
-    #         code=hcodes.HTTP_OK_CREATED)
-
-    # if task.status == "SENT":
-    #     return self.force_response(
-    #         "THIS TASK IS STILL PENDING",
-    #         code=hcodes.HTTP_OK_BASIC)
-
-    # if task.status == "PROGRESS":
-    #     current = task.info['current']
-    #     total = task.info['total']
-
-    #     perc = 100 * current / total
-
-    #     return self.force_response(
-    #         "THIS TASK IS RUNNING (%s %s)" % (perc, '%'),
-    #         code=hcodes.HTTP_OK_BASIC)
-
-    # return self.force_response(
-    #     "This task does not exist",
-    #     code=hcodes.HTTP_BAD_NOTFOUND)

@@ -2,43 +2,47 @@
 ###############################
 # GLOBAL CONFIGURATION
 conf:
-    image: busybox
-    command: ./boot
-    environment:
-        APP_MODE: ${SELECTED_APP_MODE}
-        # Decide which service should handle users inside the backend server
-        BACKEND_AUTH_SERVICE: relationaldb
+  image: busybox
+  command: ./boot
+  environment:
+    APP_MODE: ${SELECTED_APP_MODE}
+    # Decide which service should handle users inside the backend server
+    BACKEND_AUTH_SERVICE: relationaldb
 ###############################
 
 
 ###############################
 backend:
-    extends:
-        service: conf
-    image: eudatb2stage/apiserver:neo4j2
-    hostname: restapi
-    # user may be overriden from project config
-    # note: if you change the user, you should also
-    # fix permissions (e.g. sqllite directory)
-    user: root
-    working_dir: /code
-    volumes:
-        # # Sql lite database
-        # - restangulask_apilitedb:/dbs
-        # Base code
-        - ../backend:/code
-        # Rest API configuration
-        - ../specs:/code/restapi/confs/endpoints
-        # Rest API endpoints
-        - ../apis:/code/restapi/resources/custom
-        # Rest API services models
-        - ../models:/code/commons/models/custom
-        # JWT tokens secret
-        - jwt_tokens:/jwt_tokens
-        # Tests
-        - ../tests/backend:/code/test/custom
-        # Celery Tasks
-        - ../tasks:/code/commons/tasks/custom
+  extends:
+    service: conf
+  image: eudatb2stage/apiserver:neo4j2
+  hostname: restapi
+  # user may be overriden from project config
+  # note: if you change the user, you should also
+  # fix permissions (e.g. sqllite directory)
+  user: root
+  working_dir: /code
+  environment:
+    PYTHON_SERVER_CATEGORY: backend
+  volumes:
+    # # Sql lite database
+    # - restangulask_apilitedb:/dbs
+    # Base code
+    - ../backend:/code
+    # Project configuration
+    - ../specs:/code/restapi/confs/main
+    # Swagger API definition
+    - ../swagger:/code/restapi/confs/custom
+    # Rest API endpoints (code)
+    - ../apis:/code/restapi/resources/custom
+    # Rest API services models
+    - ../models:/code/commons/models/custom
+    # JWT tokens secret
+    - jwt_tokens:/jwt_tokens
+    # Tests
+    - ../tests/backend:/code/test/custom
+    # Celery Tasks
+    - ../tasks:/code/commons/tasks/custom
 
 
 ###############################
@@ -49,7 +53,7 @@ redqueue:
   command: redis-server --appendonly yes
   hostname: myqueue
   volumes:
-      - ${VOLUMES_PREFIX}_redisdata:/data
+    - ${VOLUMES_PREFIX}_redisdata:/data
 
 worker:
   extends:
@@ -61,33 +65,14 @@ worker:
 #################################
 # Database administration
 
-# This image let you access the postgres db with a 'phpmyadmin' like web page
+# This docker image let you access sqllite/postgres/mysql
+# with a phpmyadmin-like web page
 sqladmin:
-    image: clue/adminer
-    # # Sql lite database & common models
-    # volumes:
-    #     - restangulask_apilitedb:/dbs
-    # links:
-    #     - sql:db
-    ports:
-        - 8888:80
-
-#######################
-# Define here your services
-
-# searchindex:
-#   image: elasticsearch
-#   hostname: elastic
-#   volumes:
-#       - restangulask_graphbased_elasticdata:/usr/share/elasticsearch/data
-
-gdb:
-  # image: neo4j  # 3.0 to be tested
-  image: neo4j:2.3.3
-  volumes:
-    - ${VOLUMES_PREFIX}_graphdata:/data
-  environment:
-    NEO4J_AUTH: neo4j/chooseapassword
+  image: eudatb2stage/sqladminer:latest
+  # links:
+  #   - sql:db
+  # ports:
+  #   - 8888:80
 
 ##############################
 htmlfiles:
@@ -124,4 +109,21 @@ proxy:
 
 ##############################
 swagger:
-  image: eudatb2stage/swagger-ui
+  image: eudatb2stage/swagger-ui:latest
+
+#######################
+# Define here your services
+
+# searchindex:
+#   image: elasticsearch
+#   hostname: elastic
+#   volumes:
+#       - restangulask_graphbased_elasticdata:/usr/share/elasticsearch/data
+
+gdb:
+  # image: neo4j  # 3.0 to be tested
+  image: neo4j:2.3.3
+  volumes:
+    - ${VOLUMES_PREFIX}_graphdata:/data
+  environment:
+    NEO4J_AUTH: neo4j/chooseapassword

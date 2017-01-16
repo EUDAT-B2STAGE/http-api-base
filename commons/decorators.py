@@ -4,18 +4,22 @@
 to write
 """
 
-from __future__ import absolute_import
+# from __future__ import absolute_import
 
 # import traceback
 from functools import wraps
 # from commons.globals import mem
 # from commons.meta import Meta
-from commons.logs import get_logger
+from commons.logs import get_logger, pretty_print
+# from flask_restful import reqparse
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 #################################
+# TODO: make this terrible decorator disappear!
+# (when completing the swagger integration)
+
 def class_method_decorator_with_optional_parameters(f):
     """
     a decorator decorator, allowing the decorator to be used as:
@@ -32,12 +36,16 @@ def class_method_decorator_with_optional_parameters(f):
         NOTE: in any case, args[0] is always the 'self' reference!
         """
         # print("DEBUG", args, kwargs)
-        # logger.debug("Wrapping a method decorator for double options")
+        # log.debug("Wrapping a method decorator for double options")
 
         if len(args) == 2 and len(kwargs) == 0 and callable(args[1]):
             # actual decorated function
             # args[0] is self, args[1] is the function
             return f(args[0], args[1])
+        elif 'from_swagger' in kwargs:
+            # NOTE: the 'else' condition does not work
+            # if applying the method programmatically in meta python
+            return f(*args, **kwargs)
         else:
             # decorator with arguments
             # self, f, arguments

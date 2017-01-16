@@ -34,13 +34,12 @@ if args is not None:
         logger.warning("No security enabled! Are you really sure?")
         time.sleep(1)
 
-# The connection is HTTP internally to containers
+# The connection is HTTP internally to containers
 # The proxy will handle HTTPS calls
 # We can safely disable HTTPS on OAUTHLIB requests
-# http://stackoverflow.com/a/27785830/2114395
+# http://stackoverflow.com/a/27785830/2114395
 if PRODUCTION:
     os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
-
 
 #############################
 # BE FLASK
@@ -48,7 +47,7 @@ app = create_app(
     name='REST_API', enable_security=enable_security, debug=enable_debug)
 
 if __name__ == "__main__":
-    # Note: 'threaded' option avoid to see
+    # NOTE: 'threaded' option avoid to see
     # angular request on this server dropping
     # and becoming slow if not totally frozen
     logger.info("*** Running Flask!")

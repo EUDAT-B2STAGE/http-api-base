@@ -6,25 +6,21 @@ Add auth checks called /checklogged and /testadmin
 """
 
 from __future__ import absolute_import
+
+import os
 import abc
 import jwt
 import hmac
 import hashlib
 import base64
 import pytz
-import os
-from commons.logs import get_logger
+
 from commons.services.uuid import getUUID
-from ....confs.config import USER, PWD, \
-    ROLE_ADMIN, ROLE_INTERNAL, ROLE_USER
 from datetime import datetime, timedelta
-from .... import myself, lic
+from commons.globals import mem
+from commons.logs import get_logger  # , pretty_print
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 class BaseAuthentication(metaclass=abc.ABCMeta):
@@ -35,16 +31,14 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     that aims to store credentials of users and roles.
     """
 
+    ##########################
     # This string will be replaced with a proper secret file
     JWT_SECRET = 'top secret!'
-
     JWT_ALGO = 'HS256'
 # TO FIX: already defined in auth.py HTTPAUTH_DEFAULT_SCHEME
     token_type = 'Bearer'
-    DEFAULT_USER = USER
-    DEFAULT_PASSWORD = PWD
-    DEFAULT_ROLE = ROLE_USER
-    DEFAULT_ROLES = [ROLE_USER, ROLE_INTERNAL, ROLE_ADMIN]
+
+    ##########################
     _oauth2 = {}
     _payload = {}
     _user = None
@@ -52,6 +46,35 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     longTTL = 2592000     # 1 month in seconds
     shortTTL = 604800     # 1 week in seconds
+
+    @classmethod
+    def myinit(cls):
+
+        # TODO: force changing base credentials in production...
+        # I may check here somehow if credentials in production
+        # are the same as defaults, which is not good at all
+
+        credentials = mem.custom_config \
+            .get('variables', {}) \
+            .get('python', {}) \
+            .get('backend', {}) \
+            .get('credentials', {})
+
+        cls.default_user = credentials.get('username', None)
+        cls.default_password = credentials.get('password', None)
+        if cls.default_user is None or cls.default_password is None:
+            raise AttributeError("Default credentials unavailable!")
+
+        roles = credentials.get('roles', {})
+        cls.default_role = roles.get('default')
+        cls.role_admin = roles.get('admin')
+        cls.default_roles = [
+            roles.get('user'),
+            roles.get('internal'),
+            cls.role_admin
+        ]
+        if cls.default_role is None or None in cls.default_roles:
+            raise AttributeError("Default roles are not available!")
 
     @abc.abstractmethod
     def __init__(self, services=None):
@@ -72,16 +95,17 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         to create it from a shell with a random key
         and continues with default key
         """
+
         try:
             self.JWT_SECRET = open(abs_filename, 'rb').read()
         except IOError:
-            logger.warning("Jwt secret file not found: %s" % abs_filename)
-            logger.warning("You are using a default secret key")
-            logger.info("To create your own secret file:")
+            log.warning("Jwt secret file %s not found, using default "
+                        % abs_filename)
+            log.info("To create your own secret file:\n" +
+                     "head -c 24 /dev/urandom > %s" % abs_filename)
             # full_path = os.path.dirname(abs_filename)
             # if not os.path.isdir(full_path):
             #     print('mkdir -p {filename}'.format(filename=full_path))
-            logger.info("head -c 24 /dev/urandom > %s" % abs_filename)
             # import sys
             # sys.exit(1)
 
@@ -149,7 +173,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
                 # note: this will return the ip if hostname is not available
                 hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
             except Exception as e:
-                logger.warning(
+                log.warning(
                     "Hostname from '%s' solving:\nerror '%s'" % (ip, e))
         return ip, hostname
 
@@ -162,12 +186,13 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         return encode, self._payload['jti']
 
+    @abc.abstractmethod
     def verify_token_custom(self, jti, user, payload):
         """
-            This method can be implemented by specific Authentication Methods
+            This method MUST be implemented by specific Authentication Methods
             to add more specific validation contraints
         """
-        return True
+        return
 
     @abc.abstractmethod
     def refresh_token(self, jti):
@@ -187,21 +212,22 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         # now > exp
         except jwt.exceptions.ExpiredSignatureError as e:
 # should this token be invalidated into the DB?
-            logger.warning("Unable to decode JWT token. %s" % e)
+            log.warning("Unable to decode JWT token. %s" % e)
         # now < nbf
         except jwt.exceptions.ImmatureSignatureError as e:
-            logger.warning("Unable to decode JWT token. %s" % e)
+            log.warning("Unable to decode JWT token. %s" % e)
         except Exception as e:
-            logger.warning("Unable to decode JWT token. %s" % e)
+            log.warning("Unable to decode JWT token. %s" % e)
 
         return payload
 
-    def verify_roles(self, roles):
+    def verify_roles(self, roles, warnings=True):
 
         current_roles = self.get_roles_from_user()
         for role in roles:
             if role not in current_roles:
-                logger.warning("Auth role '%s' missing for request" % role)
+                if warnings:
+                    log.warning("Auth role '%s' missing for request" % role)
                 return False
         return True
 
@@ -234,12 +260,16 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         if not self.refresh_token(self._payload['jti']):
             return False
 
-        logger.debug("User authorized")
+        log.verbose("User authorized")
         self._token = token
         return True
 
+    def verify_admin(self):
+        """ Check if current user has administration role """
+        return self.verify_roles([self.role_admin], warnings=False)
+
     def save_token(self, user, token, jti):
-        logger.debug("Token is not saved in base authentication")
+        log.debug("Token is not saved in base authentication")
 
     @abc.abstractmethod
     def init_users_and_roles(self):
@@ -260,7 +290,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return
 
     @abc.abstractmethod
-    def create_user(self, userdata, roles=[DEFAULT_ROLE]):
+    def create_user(self, userdata, roles=[]):
         """
         A method to create a new user following some standards.
         - The user should be at least associated to the default (basic) role
@@ -375,7 +405,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
                 return None, None
         except:
             # Missing authmethod as requested for authentication
-            logger.critical("Current authentication db models are broken!")
+            log.critical("Current authentication db models are broken!")
             return None, None
 
 # // TO FIX:

@@ -315,7 +315,8 @@ class ICommands(BashCommands):
             ###############################
             # USER PEMs: Private (key) and Public (Cert)
             elif os.path.isdir(CERTIFICATES_DIR + '/' + user):
-                logger.debug("Using standard x509 certificates")
+                logger.debug(
+                    "Using standard x509 certificates (user %s)" % user)
                 irods_env['X509_USER_CERT'] = \
                     CERTIFICATES_DIR + '/' + user + '/usercert.pem'
                 irods_env['X509_USER_KEY'] = \
@@ -324,7 +325,7 @@ class ICommands(BashCommands):
             # PROXY CERTIFICATE (myproxy)
 # NOTE: this is way too long, it should be splitted in subfunctions
             else:
-                logger.debug("Using proxy certificates")
+                logger.debug("Using proxy certificates (user %s)" % user)
                 proxy_cert_file = CERTIFICATES_DIR + '/' + user + '.pem'
 
                 if not os.path.isfile(proxy_cert_file):
@@ -413,7 +414,7 @@ class ICommands(BashCommands):
             self.prepare_irods_environment(user, proxy=proxy)
 
         self._current_user = user
-        logger.debug("Switched to user '%s'" % user)
+        logger.verbose("Switched to user '%s'" % user)
         # clean lru_cache because we changed user
         self.get_user_info.cache_clear()
 
@@ -706,7 +707,6 @@ class ICommands(BashCommands):
             }
         """
         iout = self.list(path=path, acl=True)
-        logger.debug(iout)
 
         data = {}
         for d in iout:
@@ -1044,7 +1044,7 @@ class ICommands(BashCommands):
         return self.query_user(where='USER_DN', field=dn)
 
     def user_exists(self, user):
-        return self.query_user(field=user)
+        return self.query_user(field=user) == user
 
 ################################################
 ################################################
@@ -1401,7 +1401,7 @@ class IrodsFarm(ServiceFarm):
 
     def init_connection(self, app):
         self.get_instance()
-        logger.debug("iRODS seems online")
+        logger.verbose("iRODS seems online")
 
     @classmethod
     def get_instance(cls, user=None, proxy=False, become_admin=False):

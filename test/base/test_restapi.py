@@ -47,7 +47,7 @@ class BaseTests(RestTestsBase):
         """ Test that the flask server is running and reachable """
 
         # Check success
-        endpoint = self._api_uri + '/spec'
+        endpoint = self._api_uri + '/specs'
         logger.info("*** VERIFY if API specifications are online")
         r = self.app.get(endpoint)
         self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
