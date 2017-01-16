@@ -16,10 +16,19 @@ from commons import htmlcodes as hcodes
 from commons.globals import mem
 from .formats.yaml import load_yaml_file, YAML_EXT
 from . import CORE_DIR, USER_CUSTOM_DIR
-from .logs import get_logger  # , pretty_print
+from .logs import get_logger
 
 log = get_logger(__name__)
 JSON_APPLICATION = 'application/json'
+
+
+# Definition of extra custom attributes
+@AttributedModel
+class ExtraAttributes(object):
+    auth = attribute(default=[])
+    publish = attribute(default=True)
+    schema = attribute(default={})
+    whatever = attribute(default=None)
 
 
 class BeSwagger(object):
@@ -55,13 +64,6 @@ class BeSwagger(object):
 
         ################################
         # Using 'attrs': a way to save external attributes
-
-        # Definition
-        @AttributedModel
-        class ExtraAttributes(object):
-            auth = attribute(default=[])
-            publish = attribute(default=True)
-            whatever = attribute(default=None)
 
         # Instance
         extra = ExtraAttributes()
@@ -122,7 +124,7 @@ class BeSwagger(object):
             # Other things that could be saved into 'custom' subset?
 
             ###########################
-            # TODO: strip the uri of the parameter
+            # Strip the uri of the parameter
             # and add it to 'parameters'
             newuri = uri[:]  # create a copy
             if 'parameters' not in specs:
@@ -160,14 +162,20 @@ class BeSwagger(object):
                 # replace in a new uri
                 newuri = newuri.replace('<%s>' % parameter, '{%s}' % paramname)
 
-            ##################
-            # Skip what the developers does not want to be public in swagger
-            if not extra.publish:
-                continue
-
             # cycle parameters and add them to the endpoint class
             query_params = []
             for param in specs['parameters']:
+
+                extrainfo = param.pop('custom', {})
+                if len(extrainfo) and endpoint.custom['schema']['expose']:
+
+                    # TODO: read a 'custom.publish' in every yaml
+                    # to decide if the /schema uri should be in swagger
+
+                    if uri not in endpoint.custom['params']:
+                        endpoint.custom['params'][uri] = {}
+                    endpoint.custom['params'][uri][method] = extrainfo
+
                 # handle parameters in URI for Flask
                 if param['in'] == 'query':
                     query_params.append(param)
@@ -175,6 +183,13 @@ class BeSwagger(object):
             if len(query_params) > 0:
                 self.query_parameters(
                     endpoint.cls, method=method, uri=uri, params=query_params)
+
+            ##################
+            # Skip what the developers does not want to be public in swagger
+            # TODO: check if this is the right moment
+            # to skip the rest of the cycle
+            if not extra.publish:
+                continue
 
             # Swagger does not like empty arrays
             if len(specs['parameters']) < 1:
@@ -197,7 +212,7 @@ class BeSwagger(object):
             self._paths[newuri][method] = specs
             log.verbose("Built definition '%s:%s'" % (method.upper(), newuri))
 
-        endpoint.custom[method] = extra
+        endpoint.custom['methods'][method] = extra
         return endpoint
 
     def query_parameters(self, cls, method, uri, params):
@@ -272,7 +287,10 @@ class BeSwagger(object):
             output['info']['title'] = proj['title']
 
         for key, endpoint in enumerate(self._endpoints):
-            endpoint.custom = {}
+
+            endpoint.custom['methods'] = {}
+            endpoint.custom['params'] = {}
+
             for method, file in endpoint.methods.items():
                 # add the custom part to the endpoint
                 self._endpoints[key] = \
@@ -327,8 +345,7 @@ class BeSwagger(object):
         if len(swag_dict['paths']) < 1:
             raise AttributeError("Swagger 'paths' definition is empty")
         # else:
-        #     from commons.logs import pretty_print
-        #     pretty_print(swag_dict)
+        #     log.pp(swag_dict)
 
         from bravado_core.spec import Spec
 
@@ -366,7 +383,8 @@ class BeSwagger(object):
 
     def input_validation(self):
 
-        # TODO: it works with body parameters, to be investigated with other types
+        # TODO: it works with body parameters,
+        # to be investigated with other types
 
         # from bravado_core.validate import validate_object
         # Car = mem.swagger_definition['definitions']['Car']

@@ -18,7 +18,7 @@ from . import (
 )
 from .meta import Meta
 from .formats.yaml import YAML_EXT, load_yaml_file
-from .swagger import BeSwagger
+from .swagger import BeSwagger, ExtraAttributes
 from .globals import mem
 from .logs import get_logger  # , pretty_print
 
@@ -99,6 +99,31 @@ class Customizer(object):
         # pretty_print(custom_config)
         # exit(1)
 
+        ######################################
+        # TAKE CARE OF SCHEMAs if requested
+        name = '%s.%s.%s.%s' % (package, 'resources', 'rest', 'schema')
+        module = self._meta.get_module_from_string(name)
+        schema_class = getattr(module, 'RecoverSchema')
+
+        mem.schema_endpoint = EndpointElements(
+            cls=schema_class,
+            exists=True,
+            custom={
+                'methods': {
+                    'get': ExtraAttributes(auth=None),
+                    # WHY DOES POST REQUEST AUTHENTICATION
+                    # 'post': ExtraAttributes(auth=None)
+                }
+            },
+            methods={}
+        )
+
+        # TODO: find a way to map authentication
+        # as in the original endpoint for the schema 'get' method
+
+        # TODO: find a way to publish on swagger the schema
+        # if endpoint is enabled to publish and the developer asks for it
+
         ##################
         # Walk swagger directories looking for endpoints
         endpoints = []
@@ -130,14 +155,6 @@ class Customizer(object):
         # SWAGGER validation
         if not swag.validation(swag_dict):
             raise AttributeError("Current swagger definition is invalid")
-
-        ##################
-        # This is the part where we may mix swagger and endpoints specs
-        # swagger holds the parameters
-        # while the specs are the endpoint list
-        # pretty_print(endpoints)
-        # pretty_print(swag_dict)
-        pass
 
         ##################
         # Save endpoints to global memory, we never know
@@ -188,7 +205,7 @@ class Customizer(object):
 
     def load_endpoint(self, default_uri, dir_name, package_name, conf):
 
-        endpoint = EndpointElements()
+        endpoint = EndpointElements(custom={})
 
         #####################
         # Load the endpoint class defined in the YAML file
@@ -235,16 +252,28 @@ class Customizer(object):
 
         #####################
         # MAPPING
+        schema = conf.pop('schema', {})
         mappings = conf.pop('mapping', [])
         if len(mappings) < 1:
             raise KeyError("Missing 'mapping' section")
 
         endpoint.uris = {}  # attrs python lib bug?
+        endpoint.custom['schema'] = {
+            'expose': schema.get('expose', False),
+            'publish': {}
+        }
         for label, uri in mappings.items():
 
             # BUILD URI
             total_uri = '/%s%s' % (base, uri)
             endpoint.uris[label] = total_uri
+
+            # If SCHEMA requested add uri + '/schema' to schema.py
+            if endpoint.custom['schema']['expose']:
+                p = hex(id(endpoint.cls))
+                mem.schema_endpoint.uris[label + p] = total_uri + '/schema'
+                endpoint.custom['schema']['publish'][label] = \
+                    schema.get('publish', False)
 
         # Description for path parameters
         endpoint.ids = conf.pop('ids', {})

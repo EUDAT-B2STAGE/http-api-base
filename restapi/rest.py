@@ -10,7 +10,7 @@ from flask_restful import Api as RestFulApi
 from .resources.farm import EndpointsFarmer
 
 from commons.globals import mem
-from commons.logs import get_logger  # , pretty_print
+from commons.logs import get_logger
 
 log = get_logger(__name__)
 
@@ -94,6 +94,10 @@ def create_endpoints(epo, security=False, debug=False):
 
         # TODO: CHECK is there any way to remove farm.py ?
         epo.add(resource)
+
+    # Enable all schema endpoint to be mapped
+    epo.add(mem.schema_endpoint)
+    # log.pp(mem.schema_endpoint)
 
     ####################################
     # The end

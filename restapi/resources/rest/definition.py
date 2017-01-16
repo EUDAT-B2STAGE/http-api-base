@@ -17,7 +17,7 @@ from ...confs.config import API_URL  # , STACKTRACE
 from ...response import ResponseElements
 from commons import htmlcodes as hcodes
 from commons.globals import mem
-from commons.logs import get_logger, pretty_print
+from commons.logs import get_logger
 
 log = get_logger(__name__)
 
@@ -60,8 +60,8 @@ class EndpointResource(Resource):
         # recover from the global mem parameters query parameters
         current_params = mem.query_params.get(k1, {}).get(k2, {}).get(k3, {})
 
-        # pretty_print(mem.query_params)
-        # pretty_print(current_params)
+        # log.pp(mem.query_params)
+        # log.pp(current_params)
 
         if len(current_params) > 0:
 
@@ -497,14 +497,18 @@ class EndpointResource(Resource):
 
         return data
 
-    def get_endpoint_definition(self, key=None):
+    def get_endpoint_definition(self, key=None,
+                                is_schema_url=False, method=None):
 
         url = request.url_rule.rule
+        if is_schema_url and url.endswith('/schema'):
+            url = url[:-7]
         if url not in mem.swagger_definition["paths"]:
             return None
 
-        method = request.method.lower()
-
+        if method is None:
+            method = request.method
+        method = method.lower()
         if method not in mem.swagger_definition["paths"][url]:
             return None
 
@@ -512,11 +516,17 @@ class EndpointResource(Resource):
 
         if key is None:
             return tmp
-
         if key not in tmp:
             return None
 
         return tmp[key]
+
+    def get_endpoint_custom_definition(self, key=None, is_schema_url=False, method=None):
+
+        # url = request.url_rule.rule[:-7]
+        # TO FIX: Find a way to recover the right endpoint inside this list:
+        log.pp(mem.endpoints)
+        pass
 
 # # Set default response
 # set_response(
