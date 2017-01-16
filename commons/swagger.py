@@ -11,24 +11,15 @@ from __future__ import absolute_import
 
 import re
 import os
-from attr import s as AttributedModel, ib as attribute
 from commons import htmlcodes as hcodes
-from commons.globals import mem
-from .formats.yaml import load_yaml_file, YAML_EXT
 from . import CORE_DIR, USER_CUSTOM_DIR
+from .globals import mem
+from .attrs.api import ExtraAttributes
+from .formats.yaml import load_yaml_file, YAML_EXT
 from .logs import get_logger
 
 log = get_logger(__name__)
 JSON_APPLICATION = 'application/json'
-
-
-# Definition of extra custom attributes
-@AttributedModel
-class ExtraAttributes(object):
-    auth = attribute(default=[])
-    publish = attribute(default=True)
-    schema = attribute(default={})
-    whatever = attribute(default=None)
 
 
 class BeSwagger(object):

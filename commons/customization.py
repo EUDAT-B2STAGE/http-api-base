@@ -10,35 +10,18 @@ import os
 import re
 import glob
 from collections import OrderedDict
-from attr import s as AttributedModel, ib as attribute
-# from jinja2._compat import iteritems
 from . import (
     JSON_EXT, json, CORE_DIR, USER_CUSTOM_DIR, DEFAULTS_PATH,
     PATH, CONFIG_PATH, BLUEPRINT_KEY, API_URL, BASE_URLS,
 )
 from .meta import Meta
 from .formats.yaml import YAML_EXT, load_yaml_file
-from .swagger import BeSwagger, ExtraAttributes
+from .swagger import BeSwagger
 from .globals import mem
+from .attrs.api import EndpointElements, ExtraAttributes
 from .logs import get_logger  # , pretty_print
 
 log = get_logger(__name__)
-
-
-########################
-# Elements for endpoint configuration
-########################
-@AttributedModel
-class EndpointElements(object):
-    exists = attribute(default=False)
-    isbase = attribute(default=False)
-    cls = attribute(default=None)
-    # instance = attribute(default=None)
-    uris = attribute(default={})
-    ids = attribute(default={})
-    methods = attribute(default=[])
-    custom = attribute(default={})
-    tags = attribute(default=[])
 
 
 ########################
@@ -333,37 +316,3 @@ class Customizer(object):
 
     def endpoints(self):
         return self._endpoints
-
-    # def read_config(self, configfile, case_sensitive=True):
-
-    #     """
-    #     A generic reader for 'ini' files via standard library
-# NOTE: this method is UNUSED at the moment
-# But it could become usefull for reading '.ini' files
-    #     """
-
-    #     sections = {}
-    #     try:
-    #         import configparser
-    #     except:
-    #         # python2
-    #         import ConfigParser as configparser
-
-    #     if case_sensitive:
-    #         # Make sure configuration is case sensitive
-    #         config = configparser.RawConfigParser()
-    #         config.optionxform = str
-    #     else:
-    #         config = configparser.ConfigParser()
-
-    #     # Read
-    #     config.read(configfile)
-    #     for section in config.sections():
-    #         print(section)
-    #         elements = {}
-    #         for classname, endpoint in iteritems(dict(config.items(section))):
-    #             print(classname, endpoint)
-    #             elements[classname] = [endpoint]
-    #         sections[str(section)] = elements
-
-    #     return sections
