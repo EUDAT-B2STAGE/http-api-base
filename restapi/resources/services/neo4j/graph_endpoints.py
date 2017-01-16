@@ -4,11 +4,8 @@ import re
 from datetime import datetime
 import pytz
 from functools import wraps
-from neomodel import db as transaction
 from py2neo.error import GraphError
 from py2neo.cypher.error.schema import ConstraintViolation
-from neomodel.exception import RequiredProperty
-from neomodel.exception import UniqueProperty
 from restapi.resources.exceptions import RestApiException
 from ...rest.definition import EndpointResource
 from commons import htmlcodes as hcodes
@@ -162,6 +159,7 @@ def graph_transactions(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         try:
+            from neomodel import db as transaction
 
             logger.verbose("Neomodel transaction BEGIN")
             transaction.begin()
@@ -192,6 +190,9 @@ def graph_transactions(func):
 def catch_graph_exceptions(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
+
+        from neomodel.exception import RequiredProperty
+        from neomodel.exception import UniqueProperty
 
         try:
             return func(self, *args, **kwargs)
