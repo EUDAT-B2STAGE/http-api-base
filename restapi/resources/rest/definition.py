@@ -521,14 +521,15 @@ class EndpointResource(Resource):
 
         return tmp[key]
 
-    def get_endpoint_custom_definition(self, key=None, is_schema_url=False, method=None):
+    def get_endpoint_custom_definition(self, key=None, method=None):
 
         # url = request.url_rule.rule[:-7]
         # TO FIX: Find a way to recover the right endpoint inside this list:
-        log.pp(mem.endpoints)
-        pass
+        for a in mem.endpoints:
+            log.pp(a)
 
 # # Set default response
 # set_response(
 #     original=False,  # first_call=True,
 #     custom_method=EndpointResource().default_response)
+        return []

@@ -14,7 +14,7 @@ log = get_logger(__name__)
 
 class RecoverSchema(EndpointResource):
 
-    def get(self):
+    def get(self, **kwargs):
         """ Expose schemas for UIs automatic form building """
 
         # TO FIX: not from json but from query
@@ -22,5 +22,5 @@ class RecoverSchema(EndpointResource):
         out1 = self.get_endpoint_definition(
             key='parameters', is_schema_url=True, method=method)
         out2 = self.get_endpoint_custom_definition(
-            key='parameters', is_schema_url=True, method=method)
+            key='parameters', method=method)
         return "Hello"
