@@ -503,6 +503,7 @@ class EndpointResource(Resource):
         url = request.url_rule.rule
         if is_schema_url and url.endswith('/schema'):
             url = url[:-7]
+
         if url not in mem.swagger_definition["paths"]:
             return None
 
@@ -521,15 +522,21 @@ class EndpointResource(Resource):
 
         return tmp[key]
 
-    def get_endpoint_custom_definition(self, key=None, method=None):
+    def get_endpoint_custom_definition(self, is_schema_url=False, method=None):
 
-        # url = request.url_rule.rule[:-7]
-        # TO FIX: Find a way to recover the right endpoint inside this list:
-        for a in mem.endpoints:
-            log.pp(a)
+        url = request.url_rule.rule
+        if is_schema_url and url.endswith('/schema'):
+            url = url[:-7]
+        if url not in mem.parameter_schemas:
+            log.warning("Schema not found for %s %s" % (method, url))
+            return None
 
-# # Set default response
-# set_response(
-#     original=False,  # first_call=True,
-#     custom_method=EndpointResource().default_response)
-        return []
+        if method is None:
+            method = request.method
+        method = method.lower()
+
+        if method not in mem.parameter_schemas[url]:
+            log.warning("Schema not found for %s %s" % (method, url))
+            return None
+
+        return mem.parameter_schemas[url][method]

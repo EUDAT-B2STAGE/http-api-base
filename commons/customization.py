@@ -147,6 +147,8 @@ class Customizer(object):
         # Update global memory with swagger definition
         mem.swagger_definition = swag_dict
 
+        mem.parameter_schemas = swag.parameter_schemas
+
         # INIT does not have a return.
         # So we keep the endpoints to be returned with another method.
         self._endpoints = endpoints
