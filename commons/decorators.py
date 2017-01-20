@@ -10,7 +10,7 @@ to write
 from functools import wraps
 # from commons.globals import mem
 # from commons.meta import Meta
-from commons.logs import get_logger, pretty_print
+from commons.logs import get_logger
 # from flask_restful import reqparse
 
 log = get_logger(__name__)

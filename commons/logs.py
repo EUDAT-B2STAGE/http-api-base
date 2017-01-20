@@ -31,6 +31,21 @@ def very_verbose(self, message, *args, **kws):
         self._log(logging.VERBOSE_LEVEL, message, args, **kws)
 
 
+def pretty_print(self, myobject, prefix_line=None):
+    """
+    Make object(s) and structure(s) clearer to debug
+    """
+
+    if prefix_line is not None:
+        print("PRETTY PRINT [%s]" % prefix_line)
+    from beeprint import pp
+    pp(myobject)
+    return
+
+
+logging.Logger.pp = pretty_print
+
+
 logging.addLevelName(logging.VERY_VERBOSE_LEVEL, "VERY_VERBOSE")
 logging.Logger.very_verbose = very_verbose
 
@@ -55,6 +70,8 @@ class LogMe(object):
         self._log_level = logging.INFO
         self._colors_enabled = True
         super(LogMe, self).__init__()
+
+        # FIX VERBOSE
 
         # became useless:
 
@@ -195,14 +212,3 @@ def handle_log_output(original_parameters_string):
 
     return output
 
-
-def pretty_print(myobject, prefix_line=None):
-    """
-    Make object(s) and structure(s) clearer to debug
-    """
-
-    if prefix_line is not None:
-        print("PRETTY PRINT [%s]" % prefix_line)
-    from beeprint import pp
-    pp(myobject)
-    return

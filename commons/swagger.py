@@ -11,12 +11,13 @@ from __future__ import absolute_import
 
 import re
 import os
-from attr import s as AttributedModel, ib as attribute
+from bravado_core.spec import Spec
+# from bravado_core.validate import validate_object
 from commons import htmlcodes as hcodes
-from commons.globals import mem
-from .formats.yaml import load_yaml_file, YAML_EXT
 from . import CORE_DIR, USER_CUSTOM_DIR
-from .logs import get_logger  # , pretty_print
+from .attrs.api import ExtraAttributes
+from .formats.yaml import load_yaml_file, YAML_EXT
+from .logs import get_logger
 
 log = get_logger(__name__)
 JSON_APPLICATION = 'application/json'
@@ -29,11 +30,15 @@ class BeSwagger(object):
     also more control and closer to the original swagger.
     """
 
-    def __init__(self, endpoints):
+    def __init__(self, endpoints, customizer):
         self._endpoints = endpoints
         self._paths = {}
+        self._customizer = customizer
         # The complete set of query parameters for all classes
         self._qparams = {}
+        # Save schemas for parameters before to remove the custom sections
+        # It is used to provide schemas for unittests and automatic forms
+        self._parameter_schemas = {}
 
     def read_my_swagger(self, file, method, endpoint):
 
@@ -55,13 +60,6 @@ class BeSwagger(object):
 
         ################################
         # Using 'attrs': a way to save external attributes
-
-        # Definition
-        @AttributedModel
-        class ExtraAttributes(object):
-            auth = attribute(default=[])
-            publish = attribute(default=True)
-            whatever = attribute(default=None)
 
         # Instance
         extra = ExtraAttributes()
@@ -103,8 +101,9 @@ class BeSwagger(object):
                 specs['security'] = [{"Bearer": []}]
 
                 # Automatically add the response for Unauthorized
-                specs['responses'][hcodes.HTTP_BAD_UNAUTHORIZED] = \
-                    {'description': "Invalid credentials/token provided"}
+                specs['responses'][hcodes.HTTP_BAD_UNAUTHORIZED] = {
+                    'description': "Missing or invalid credentials or token"
+                }
 
                 # Recover required roles
                 roles = custom.get('authorized', [])
@@ -122,7 +121,7 @@ class BeSwagger(object):
             # Other things that could be saved into 'custom' subset?
 
             ###########################
-            # TODO: strip the uri of the parameter
+            # Strip the uri of the parameter
             # and add it to 'parameters'
             newuri = uri[:]  # create a copy
             if 'parameters' not in specs:
@@ -160,14 +159,38 @@ class BeSwagger(object):
                 # replace in a new uri
                 newuri = newuri.replace('<%s>' % parameter, '{%s}' % paramname)
 
-            ##################
-            # Skip what the developers does not want to be public in swagger
-            if not extra.publish:
-                continue
-
             # cycle parameters and add them to the endpoint class
             query_params = []
             for param in specs['parameters']:
+
+                if param["in"] != 'path':
+                    if uri not in self._parameter_schemas:
+                        self._parameter_schemas[uri] = {}
+
+                    if method not in self._parameter_schemas[uri]:
+                        self._parameter_schemas[uri][method] = []
+
+                    self._parameter_schemas[uri][method].append(param.copy())
+
+                extrainfo = param.pop('custom', {})
+
+                if len(extrainfo) and endpoint.custom['schema']['expose']:
+
+                    # TODO: read a 'custom.publish' in every yaml
+                    # to decide if the /schema uri should be in swagger
+
+                    if uri not in endpoint.custom['params']:
+                        endpoint.custom['params'][uri] = {}
+                    endpoint.custom['params'][uri][method] = extrainfo
+
+                # enum [{key1: value1}, {key2: value2}] became enum [key1, ke2]
+                enum = param.pop("enum", None)
+                if enum is not None:
+                    param["enum"] = []
+                    for option in enum:
+                        for k in option:
+                            param["enum"].append(k)
+
                 # handle parameters in URI for Flask
                 if param['in'] == 'query':
                     query_params.append(param)
@@ -175,6 +198,13 @@ class BeSwagger(object):
             if len(query_params) > 0:
                 self.query_parameters(
                     endpoint.cls, method=method, uri=uri, params=query_params)
+
+            ##################
+            # Skip what the developers does not want to be public in swagger
+            # TODO: check if this is the right moment
+            # to skip the rest of the cycle
+            if not extra.publish:
+                continue
 
             # Swagger does not like empty arrays
             if len(specs['parameters']) < 1:
@@ -197,7 +227,7 @@ class BeSwagger(object):
             self._paths[newuri][method] = specs
             log.verbose("Built definition '%s:%s'" % (method.upper(), newuri))
 
-        endpoint.custom[method] = extra
+        endpoint.custom['methods'][method] = extra
         return endpoint
 
     def query_parameters(self, cls, method, uri, params):
@@ -265,14 +295,17 @@ class BeSwagger(object):
         }
 
         # Set existing values
-        proj = mem.custom_config['project']
+        proj = self._customizer._configurations['project']
         if 'version' in proj:
             output['info']['version'] = proj['version']
         if 'title' in proj:
             output['info']['title'] = proj['title']
 
         for key, endpoint in enumerate(self._endpoints):
-            endpoint.custom = {}
+
+            endpoint.custom['methods'] = {}
+            endpoint.custom['params'] = {}
+
             for method, file in endpoint.methods.items():
                 # add the custom part to the endpoint
                 self._endpoints[key] = \
@@ -280,7 +313,8 @@ class BeSwagger(object):
 
         ###################
         # Save query parameters globally
-        mem.query_params = self._qparams
+        self._customizer._query_params = self._qparams
+        self._customizer._parameter_schemas = self._parameter_schemas
 
         ###################
         output['definitions'] = self.read_definitions()
@@ -290,7 +324,7 @@ class BeSwagger(object):
 
         ###################
         tags = []
-        for tag, desc in mem.custom_config['tags'].items():
+        for tag, desc in self._customizer._configurations['tags'].items():
             tags.append({'name': tag, 'description': desc})
         output['tags'] = tags
 
@@ -317,8 +351,7 @@ class BeSwagger(object):
 
         return data
 
-    @staticmethod
-    def validation(swag_dict):
+    def validation(self, swag_dict):
         """
         Based on YELP library,
         verify the current definition on the open standard
@@ -327,10 +360,7 @@ class BeSwagger(object):
         if len(swag_dict['paths']) < 1:
             raise AttributeError("Swagger 'paths' definition is empty")
         # else:
-        #     from commons.logs import pretty_print
-        #     pretty_print(swag_dict)
-
-        from bravado_core.spec import Spec
+        #     log.pp(swag_dict)
 
         try:
             from commons import original_json
@@ -353,7 +383,7 @@ class BeSwagger(object):
         }
 
         try:
-            mem.validated_spec = Spec.from_dict(
+            self._customizer._validated_spec = Spec.from_dict(
                 swag_dict, config=bravado_config)
             log.info("Swagger configuration is validated")
         except Exception as e:
@@ -366,11 +396,13 @@ class BeSwagger(object):
 
     def input_validation(self):
 
-        # TODO: it works with body parameters, to be investigated with other types
+        # TODO: it works with body parameters,
+        # to be investigated with other types
 
-        # from bravado_core.validate import validate_object
-        # Car = mem.swagger_definition['definitions']['Car']
+        # from .globals import mem
+
+        # Car = mem.customizer._definitions['definitions']['Car']
         # # self is rest/definitions.py:EndpointResource
         # json = self.get_input()
-        # validate_object(mem.validated_spec, Car, json)
+        # validate_object(mem.customizer._validated_spec, Car, json)
         pass

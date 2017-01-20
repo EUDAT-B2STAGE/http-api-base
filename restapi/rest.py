@@ -10,7 +10,7 @@ from flask_restful import Api as RestFulApi
 from .resources.farm import EndpointsFarmer
 
 from commons.globals import mem
-from commons.logs import get_logger  # , pretty_print
+from commons.logs import get_logger
 
 log = get_logger(__name__)
 
@@ -69,8 +69,8 @@ def create_endpoints(epo, security=False, debug=False):
     """
 
     # ####################################
-    # Verify configuration
-    resources = mem.customizer.endpoints()
+    # Use configuration built with swagger
+    resources = mem.customizer._endpoints
 
     ####################################
     # Basic configuration (simple): from example class
@@ -94,6 +94,14 @@ def create_endpoints(epo, security=False, debug=False):
 
         # TODO: CHECK is there any way to remove farm.py ?
         epo.add(resource)
+
+    # Enable all schema endpoints to be mapped with this extra step
+    se = mem.customizer._schema_endpoint
+
+    if len(se.uris) > 0:
+        log.info("Found one or more schema to expose")
+        # log.pp(se)
+        epo.add(se)
 
     ####################################
     # The end

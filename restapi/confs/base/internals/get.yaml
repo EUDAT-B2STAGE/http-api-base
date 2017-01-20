@@ -5,6 +5,7 @@ inter:
     authentication: true
     authorized:
       - staff_user
+    # publish: false
   responses:
     200:
       description: Current user is classified as internal

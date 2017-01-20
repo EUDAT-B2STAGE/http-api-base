@@ -6,7 +6,7 @@ a Farm: How to create endpoints into REST service.
 
 # from __future__ import absolute_import
 # from commons.meta import Meta
-from commons.logs import get_logger  # , pretty_print
+from commons.logs import get_logger
 
 log = get_logger(__name__)
 
@@ -24,12 +24,11 @@ class EndpointsFarmer(object):
     def add(self, resource):
         """ Adding a single restpoint from a Resource Class """
 
-        # pretty_print(resource)
         from ..auth import authentication
 
         # Apply authentication: if required from yaml configuration
         # Done per each method
-        for method, attributes in resource.custom.items():
+        for method, attributes in resource.custom['methods'].items():
 
             # If auth has some role, they have been validated
             # and authentication has been requested
@@ -57,7 +56,7 @@ class EndpointsFarmer(object):
         # Create the restful resource with it;
         # this method is from RESTful plugin
         self.rest_api.add_resource(resource.cls, *urls)
-        # TO FIX: I need debug here...
+        # TO FIX: maybe verbose?
         log.debug("Map '%s' to %s", resource.cls.__name__, urls)
 
     # def create_single(self, resource, endpoints, endkey):

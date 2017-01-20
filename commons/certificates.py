@@ -10,7 +10,7 @@ import os
 from .services.uuid import getUUID
 from OpenSSL import crypto
 from commons import htmlcodes as hcodes
-from .logs import get_logger  # , pretty_print
+from .logs import get_logger
 
 log = get_logger(__name__)
 
@@ -116,10 +116,10 @@ class Certificates(object):
             log.error("CA is probably down... [%s]" % e)
             return None
         if response.status != hcodes.HTTP_OK_BASIC:
-            # print("\nCertificate:"); pretty_print(response)
+            # print("\nCertificate:"); log.pp(response)
             log.error("Could not get proxy from CA: %s" % response.data)
             return None
-        # pretty_print(response)
+        # log.pp(response)
 
         #######################
         # write proxy certificate to a random file name

@@ -10,8 +10,6 @@ import os
 import re
 import glob
 from collections import OrderedDict
-from attr import s as AttributedModel, ib as attribute
-# from jinja2._compat import iteritems
 from . import (
     JSON_EXT, json, CORE_DIR, USER_CUSTOM_DIR, DEFAULTS_PATH,
     PATH, CONFIG_PATH, BLUEPRINT_KEY, API_URL, BASE_URLS,
@@ -19,26 +17,12 @@ from . import (
 from .meta import Meta
 from .formats.yaml import YAML_EXT, load_yaml_file
 from .swagger import BeSwagger
-from .globals import mem
-from .logs import get_logger  # , pretty_print
+from .attrs.api import EndpointElements, ExtraAttributes
+# from .globals import mem
+
+from .logs import get_logger
 
 log = get_logger(__name__)
-
-
-########################
-# Elements for endpoint configuration
-########################
-@AttributedModel
-class EndpointElements(object):
-    exists = attribute(default=False)
-    isbase = attribute(default=False)
-    cls = attribute(default=None)
-    # instance = attribute(default=None)
-    uris = attribute(default={})
-    ids = attribute(default={})
-    methods = attribute(default=[])
-    custom = attribute(default={})
-    tags = attribute(default=[])
 
 
 ########################
@@ -53,13 +37,23 @@ class Customizer(object):
     """
     def __init__(self, package):
 
+        # Some initialization
+        self._current_package = package
+        self._endpoints = []  # TO FIX: should not be a list, but a dictionary
+        self._definitions = {}
+        self._configurations = {}
+        self._query_params = {}
         self._meta = Meta()
 
-        # TODO: please refactor this piece of code
-        # by splitting single parts into submethods
+        # Do things
+        self.do_config()
+        self.do_schema()
+        self.find_endpoints()
+        self.do_swagger()
 
+    def do_config(self):
         ##################
-        # CUSTOM configuration
+        # Reading configuration
 
         # Find out what is the active blueprint
         bp_holder = self.load_json(BLUEPRINT_KEY, PATH, CONFIG_PATH)
@@ -69,8 +63,7 @@ class Customizer(object):
         custom_config = self.load_json(blueprint, PATH, CONFIG_PATH)
         custom_config[BLUEPRINT_KEY] = blueprint
 
-        ##################
-        # DEFAULT configuration
+        # Read default configuration
         defaults = self.load_json(BLUEPRINT_KEY, DEFAULTS_PATH, CONFIG_PATH)
         if len(defaults) < 0:
             raise ValueError("Missing defaults for server configuration!")
@@ -84,24 +77,46 @@ class Customizer(object):
                 if label not in custom_config[key]:
                     custom_config[key][label] = element
 
-        # Save in memory all of the current configuration
-        mem.custom_config = custom_config
-
-        ##################
         # # FRONTEND?
         # TO FIX: see with @mdantonio what to do here
         # custom_config['frameworks'] = \
         #     self.load_json(CONFIG_PATH, "", "frameworks")
         # auth = custom_config['variables']['containers']['authentication']
 
-        ##################
-        # # DEBUG
-        # pretty_print(custom_config)
-        # exit(1)
+        # Save in memory all of the current configuration
+        self._configurations = custom_config
+
+    def do_schema(self):
+        """ Schemas exposing, if requested """
+
+        name = '%s.%s.%s.%s' % (
+            self._current_package, 'resources', 'rest', 'schema')
+        module = self._meta.get_module_from_string(name)
+        schema_class = getattr(module, 'RecoverSchema')
+
+        self._schema_endpoint = EndpointElements(
+            cls=schema_class,
+            exists=True,
+            custom={
+                'methods': {
+                    'get': ExtraAttributes(auth=None),
+                    # WHY DOES POST REQUEST AUTHENTICATION
+                    # 'post': ExtraAttributes(auth=None)
+                }
+            },
+            methods={}
+        )
+
+        # TODO: find a way to map authentication
+        # as in the original endpoint for the schema 'get' method
+
+        # TODO: find a way to publish on swagger the schema
+        # if endpoint is enabled to publish and the developer asks for it
+
+    def find_endpoints(self):
 
         ##################
         # Walk swagger directories looking for endpoints
-        endpoints = []
 
         # for base_dir in [CORE_DIR]:
         for base_dir in [CORE_DIR, USER_CUSTOM_DIR]:
@@ -117,39 +132,26 @@ class Customizer(object):
                         % (base_dir, ep)
                     )
                     continue
-                current = self.lookup(ep, package, base_dir, endpoint_dir)
+                current = self.lookup(
+                    ep, self._current_package, base_dir, endpoint_dir)
                 if current.exists:
                     # Add endpoint to REST mapping
-                    endpoints.append(current)
+                    self._endpoints.append(current)
 
-        ##################
+    def do_swagger(self):
+
         # SWAGGER read endpoints definition
-        swag = BeSwagger(endpoints)
+        swag = BeSwagger(self._endpoints, self)
         swag_dict = swag.swaggerish()
+
+        # TODO: update internal endpoints from swagger
+        self._endpoints = swag._endpoints[:]
 
         # SWAGGER validation
         if not swag.validation(swag_dict):
             raise AttributeError("Current swagger definition is invalid")
 
-        ##################
-        # This is the part where we may mix swagger and endpoints specs
-        # swagger holds the parameters
-        # while the specs are the endpoint list
-        # pretty_print(endpoints)
-        # pretty_print(swag_dict)
-        pass
-
-        ##################
-        # Save endpoints to global memory, we never know
-        mem.endpoints = endpoints
-        # pretty_print(endpoints)
-
-        # Update global memory with swagger definition
-        mem.swagger_definition = swag_dict
-
-        # INIT does not have a return.
-        # So we keep the endpoints to be returned with another method.
-        self._endpoints = endpoints
+        self._definitions = swag_dict
 
     def lookup(self, endpoint, package, base_dir, endpoint_dir):
 
@@ -188,7 +190,7 @@ class Customizer(object):
 
     def load_endpoint(self, default_uri, dir_name, package_name, conf):
 
-        endpoint = EndpointElements()
+        endpoint = EndpointElements(custom={})
 
         #####################
         # Load the endpoint class defined in the YAML file
@@ -235,16 +237,28 @@ class Customizer(object):
 
         #####################
         # MAPPING
+        schema = conf.pop('schema', {})
         mappings = conf.pop('mapping', [])
         if len(mappings) < 1:
             raise KeyError("Missing 'mapping' section")
 
         endpoint.uris = {}  # attrs python lib bug?
+        endpoint.custom['schema'] = {
+            'expose': schema.get('expose', False),
+            'publish': {}
+        }
         for label, uri in mappings.items():
 
             # BUILD URI
             total_uri = '/%s%s' % (base, uri)
             endpoint.uris[label] = total_uri
+
+            # If SCHEMA requested add uri + '/schema' to schema.py
+            if endpoint.custom['schema']['expose']:
+                p = hex(id(endpoint.cls))
+                self._schema_endpoint.uris[label + p] = total_uri + '/schema'
+                endpoint.custom['schema']['publish'][label] = \
+                    schema.get('publish', False)
 
         # Description for path parameters
         endpoint.ids = conf.pop('ids', {})
@@ -301,40 +315,3 @@ class Customizer(object):
             return None
         else:
             raise Exception(message)
-
-    def endpoints(self):
-        return self._endpoints
-
-    # def read_config(self, configfile, case_sensitive=True):
-
-    #     """
-    #     A generic reader for 'ini' files via standard library
-# NOTE: this method is UNUSED at the moment
-# But it could become usefull for reading '.ini' files
-    #     """
-
-    #     sections = {}
-    #     try:
-    #         import configparser
-    #     except:
-    #         # python2
-    #         import ConfigParser as configparser
-
-    #     if case_sensitive:
-    #         # Make sure configuration is case sensitive
-    #         config = configparser.RawConfigParser()
-    #         config.optionxform = str
-    #     else:
-    #         config = configparser.ConfigParser()
-
-    #     # Read
-    #     config.read(configfile)
-    #     for section in config.sections():
-    #         print(section)
-    #         elements = {}
-    #         for classname, endpoint in iteritems(dict(config.items(section))):
-    #             print(classname, endpoint)
-    #             elements[classname] = [endpoint]
-    #         sections[str(section)] = elements
-
-    #     return sections

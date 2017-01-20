@@ -17,7 +17,7 @@ from ...confs.config import API_URL  # , STACKTRACE
 from ...response import ResponseElements
 from commons import htmlcodes as hcodes
 from commons.globals import mem
-from commons.logs import get_logger, pretty_print
+from commons.logs import get_logger
 
 log = get_logger(__name__)
 
@@ -58,10 +58,8 @@ class EndpointResource(Resource):
         k2 = str(request.url_rule)
         k3 = request.method.lower()
         # recover from the global mem parameters query parameters
-        current_params = mem.query_params.get(k1, {}).get(k2, {}).get(k3, {})
-
-        # pretty_print(mem.query_params)
-        # pretty_print(current_params)
+        current_params = mem.customizer._query_params \
+            .get(k1, {}).get(k2, {}).get(k3, {})
 
         if len(current_params) > 0:
 
@@ -497,28 +495,46 @@ class EndpointResource(Resource):
 
         return data
 
-    def get_endpoint_definition(self, key=None):
+    def get_endpoint_definition(self, key=None,
+                                is_schema_url=False, method=None):
 
         url = request.url_rule.rule
-        if url not in mem.swagger_definition["paths"]:
+        if is_schema_url and url.endswith('/schema'):
+            url = url[:-7]
+        if url not in mem.customizer._definitions["paths"]:
             return None
 
-        method = request.method.lower()
-
-        if method not in mem.swagger_definition["paths"][url]:
+        if method is None:
+            method = request.method
+        method = method.lower()
+        if method not in mem.customizer._definitions["paths"][url]:
             return None
 
-        tmp = mem.swagger_definition["paths"][url][method]
+        tmp = mem.customizer._definitions["paths"][url][method]
 
         if key is None:
             return tmp
-
         if key not in tmp:
             return None
 
         return tmp[key]
 
-# # Set default response
-# set_response(
-#     original=False,  # first_call=True,
-#     custom_method=EndpointResource().default_response)
+    def get_endpoint_custom_definition(self, is_schema_url=False, method=None):
+
+        # log.pp(mem.customizer._parameter_schemas)
+        url = request.url_rule.rule
+        if is_schema_url and url.endswith('/schema'):
+            url = url[:-7]
+        if url not in mem.customizer._parameter_schemas:
+            log.warning("Schema not found for %s %s" % (method, url))
+            return None
+
+        if method is None:
+            method = request.method
+        method = method.lower()
+
+        if method not in mem.customizer._parameter_schemas[url]:
+            log.warning("Schema not found for %s %s" % (method, url))
+            return None
+
+        return mem.customizer._parameter_schemas[url][method]

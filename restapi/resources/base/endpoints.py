@@ -14,7 +14,7 @@ from ..services.authentication import BaseAuthentication
 from flask import jsonify, current_app
 from commons import htmlcodes as hcodes
 # from commons.swagger import swagger
-from commons.logs import get_logger  # , pretty_print
+from commons.logs import get_logger
 
 log = get_logger(__name__)
 
@@ -44,7 +44,7 @@ class SwaggerSpecifications(EndpointResource):
         # NOTE: swagger dictionary is read only once, at server init time
         from commons.globals import mem
         # Jsonify, so we skip custom response building
-        return jsonify(mem.swagger_definition)
+        return jsonify(mem.customizer._definitions)
 
 
 class Login(EndpointResource):

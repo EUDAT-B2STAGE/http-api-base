@@ -18,7 +18,7 @@ import pytz
 from commons.services.uuid import getUUID
 from datetime import datetime, timedelta
 from commons.globals import mem
-from commons.logs import get_logger  # , pretty_print
+from commons.logs import get_logger
 
 log = get_logger(__name__)
 
@@ -54,7 +54,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         # I may check here somehow if credentials in production
         # are the same as defaults, which is not good at all
 
-        credentials = mem.custom_config \
+        credentials = mem.customizer._configurations \
             .get('variables', {}) \
             .get('python', {}) \
             .get('backend', {}) \

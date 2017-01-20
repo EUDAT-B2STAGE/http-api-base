@@ -27,18 +27,14 @@ force_response (base.py)    or              simple return
 """
 
 import attr
-from attr import (
-    s as AttributedModel,
-    ib as attribute,
-)
 from .jsonify import json
 from flask import Response, jsonify
 from werkzeug import exceptions as wsgi_exceptions
 from werkzeug.wrappers import Response as WerkzeugResponse
-from commons import htmlcodes as hcodes
 from .resources.decorators import get_response, set_response
-# from .resources.base import ExtendedApiResource
-from commons.logs import get_logger, pretty_print
+from commons import htmlcodes as hcodes
+from commons.attrs.api import ResponseElements
+from commons.logs import get_logger
 
 logger = get_logger(__name__)
 
@@ -89,20 +85,6 @@ class InternalResponse(Response):
 
 
 ########################
-# Elements for response
-########################
-@AttributedModel
-class ResponseElements(object):
-    defined_content = attribute()
-    elements = attribute(default=None)
-    code = attribute(default=None)
-    errors = attribute(default=None)
-    headers = attribute(default={})
-    meta = attribute(default=None)
-    extra = attribute(default=None)
-
-
-########################
 # Flask response internal builder
 ########################
 class ResponseMaker(object):
@@ -112,13 +94,13 @@ class ResponseMaker(object):
 
     def __init__(self, response):
         """
-        We would receive almost certainly a ResponseElements class
-        which we have to parse.
+        We would receive most of the time a ResponseElements class
+        that we have to parse.
+
         The parser will find out if inside there is either:
         - an original Flask/Werkzeug Response
         - A Flask Exception (e.g. NotFound)
         """
-        # logger.debug("Making a response")
         self._response = self.parse_elements(response)
 
     def parse_elements(self, response):
@@ -150,8 +132,9 @@ class ResponseMaker(object):
 
                 if len(response) > 0:
                     elements['defined_content'] = main
-## // TO FIX: add more checks to second and third element?
-# should I make sure that second is integer and headers is a dictionary?
+                # TO FIX: should add more checks to 2nd and 3rd element?
+                # Should also make sure that 2nd is integer
+                # and headers is a dictionary?
                 if len(response) > 1:
                     if response[1] > hcodes.HTTP_TRESHOLD:
                         elements['defined_content'] = None
@@ -218,7 +201,7 @@ class ResponseMaker(object):
 
         # 1. Use response elements
         r = self._response
-        # pretty_print(r)
+        # log.pp(r)
 
         # 2. Apply DEFAULT or CUSTOM manipulation
         # (strictly to the sole content)
@@ -356,57 +339,17 @@ class ResponseMaker(object):
 
     @staticmethod
     def flask_response(data, status=hcodes.HTTP_OK_BASIC, headers=None):
-        pass
+
+        raise DeprecationWarning("Useless mimic of Flask response")
 #         """
-#         Inspired by
+#         Was inspired by
 #         http://blog.miguelgrinberg.com/
 #             post/customizing-the-flask-response-class
-
-# # THIS IS NOW DEPRECATED, DON'T USE IT!!
-#         """
-
-#         # print(data, status, headers)
-
-#         #######################################
-#         # Skip this method if the whole data
-#         # is already a Flask Response
-
-#         # Based on hierarchy: flask response extends werkezeug
-#         # So I can be more flexible
-#         if isinstance(data, WerkzeugResponse):
-#             return data
-
-#         # Handle normal response (not Flaskified)
-#         if isinstance(data, tuple) and len(data) == 2:
-#             print("NORMAL RESPONSE")
-#             subdata, substatus = data
-#             data = subdata
-#             if isinstance(substatus, int):
-#                 status = substatus
-
-#         #######################################
-#         # Create the Flask original response
-#         # response = make_response((jsonify(data), status))
-#         response = make_response((data, status))
-
-#         #######################################
-#         # # Handle headers if specified by the user
-#         # response_headers = response.headers.keys()
-#         # for header, header_content in headers.items():
-#         #     # Only headers that are missing
-#         #     if header not in response_headers:
-#         #         response.headers[header] = header_content
-# # UHM
-#         response.headers.extend(headers or {})
-#         # response = make_response((data, status, headers)) ?
-
-#         #######################################
-#         # Return the Flask Response
-#         return response
 
 
 ########################
 # Set default response
+# as the user may support its own response
 set_response(
     # Note: original here means the Flask simple response
     original=False,
@@ -415,7 +358,7 @@ set_response(
 
 
 ########################
-# Explode the normal response content?
+# TO FIX: Explode the normal response content?
 def get_content_from_response(http_out):
 
     response = None
