@@ -11,7 +11,7 @@ from ...rest.definition import EndpointResource
 from commons import htmlcodes as hcodes
 
 from commons.logs import get_logger
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 __author__ = "Mattia D'Antonio (m.dantonio@cineca.it)"
 
@@ -84,6 +84,8 @@ class GraphBaseOperations(EndpointResource):
 
     def readProperty(self, schema, values, checkRequired=True):
 
+        log.warning("This method is deprecated, use read_properties instead")
+
         properties = {}
         for field in schema:
             if 'islink' in field:
@@ -103,10 +105,44 @@ class GraphBaseOperations(EndpointResource):
 
     def updateProperties(self, instance, schema, properties):
 
+        log.warning("This method is deprecated, use update_properties instead")
+
         for field in schema:
             if 'islink' in field:
                 continue
             key = field["key"]
+            if key in properties:
+                instance.__dict__[key] = properties[key]
+
+    def read_properties(self, schema, values, checkRequired=True):
+
+        properties = {}
+        for field in schema:
+            if 'custom' in field:
+                if 'islink' in field['custom']:
+                    if field['custom']['islink']:
+                        continue
+
+            k = field["name"]
+            if k in values:
+                properties[k] = values[k]
+
+            # this field is missing but required!
+            elif checkRequired and field["required"]:
+                raise myGraphError(
+                    'Missing field: %s' % k,
+                    status_code=hcodes.HTTP_BAD_REQUEST)
+
+        return properties
+
+    def update_properties(self, instance, schema, properties):
+
+        for field in schema:
+            if 'custom' in field:
+                if 'islink' in field['custom']:
+                    if field['custom']['islink']:
+                        continue
+            key = field["name"]
             if key in properties:
                 instance.__dict__[key] = properties[key]
 
@@ -151,7 +187,7 @@ class myGraphError(RestApiException):
 
 def returnError(self, label, error, code=hcodes.HTTP_BAD_NOTFOUND):
     error = str(error)
-    logger.error(error)
+    log.error(error)
     return self.force_response(errors={label: error}, code=code)
 
 
@@ -161,17 +197,17 @@ def graph_transactions(func):
         try:
             from neomodel import db as transaction
 
-            logger.verbose("Neomodel transaction BEGIN")
+            log.verbose("Neomodel transaction BEGIN")
             transaction.begin()
 
             out = func(self, *args, **kwargs)
 
-            logger.verbose("Neomodel transaction COMMIT")
+            log.verbose("Neomodel transaction COMMIT")
             transaction.commit()
 
             return out
         except Exception as e:
-            logger.verbose("Neomodel transaction ROLLBACK")
+            log.verbose("Neomodel transaction ROLLBACK")
             try:
                 # Starting from neo4j 2.3.0 ClientErrors automatically
                 # rollback transactions and raise a 404 error:
@@ -180,7 +216,7 @@ def graph_transactions(func):
 
                 transaction.rollback()
             except Exception as rollback_exp:
-                logger.warning(
+                log.warning(
                     "Exception raised during rollback: %s" % rollback_exp)
             raise e
 

@@ -144,7 +144,7 @@ class Customizer(object):
         swag = BeSwagger(self._endpoints, self)
         swag_dict = swag.swaggerish()
 
-        # TODO: I should update internal endpoints from swagger
+        # TODO: update internal endpoints from swagger
         self._endpoints = swag._endpoints[:]
 
         # SWAGGER validation

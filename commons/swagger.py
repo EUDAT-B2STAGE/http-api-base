@@ -36,6 +36,7 @@ class BeSwagger(object):
         self._customizer = customizer
         # The complete set of query parameters for all classes
         self._qparams = {}
+        self.parameter_schemas = {}
 
     def read_my_swagger(self, file, method, endpoint):
 
@@ -98,8 +99,9 @@ class BeSwagger(object):
                 specs['security'] = [{"Bearer": []}]
 
                 # Automatically add the response for Unauthorized
-                specs['responses'][hcodes.HTTP_BAD_UNAUTHORIZED] = \
-                    {'description': "Invalid credentials/token provided"}
+                specs['responses'][hcodes.HTTP_BAD_UNAUTHORIZED] = {
+                    'description': "Missing or invalid credentials or token"
+                }
 
                 # Recover required roles
                 roles = custom.get('authorized', [])
@@ -159,7 +161,17 @@ class BeSwagger(object):
             query_params = []
             for param in specs['parameters']:
 
+                if param["in"] != 'path':
+                    if uri not in self.parameter_schemas:
+                        self.parameter_schemas[uri] = {}
+
+                    if method not in self.parameter_schemas[uri]:
+                        self.parameter_schemas[uri][method] = []
+
+                    self.parameter_schemas[uri][method].append(param.copy())
+
                 extrainfo = param.pop('custom', {})
+
                 if len(extrainfo) and endpoint.custom['schema']['expose']:
 
                     # TODO: read a 'custom.publish' in every yaml
@@ -168,6 +180,14 @@ class BeSwagger(object):
                     if uri not in endpoint.custom['params']:
                         endpoint.custom['params'][uri] = {}
                     endpoint.custom['params'][uri][method] = extrainfo
+
+                # enum [{key1: value1}, {key2: value2}] became enum [key1, ke2]
+                enum = param.pop("enum", None)
+                if enum is not None:
+                    param["enum"] = []
+                    for option in enum:
+                        for k in option:
+                            param["enum"].append(k)
 
                 # handle parameters in URI for Flask
                 if param['in'] == 'query':
