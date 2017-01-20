@@ -521,10 +521,11 @@ class EndpointResource(Resource):
 
     def get_endpoint_custom_definition(self, is_schema_url=False, method=None):
 
+        # log.pp(mem.customizer._parameter_schemas)
         url = request.url_rule.rule
         if is_schema_url and url.endswith('/schema'):
             url = url[:-7]
-        if url not in mem.parameter_schemas:
+        if url not in mem.customizer._parameter_schemas:
             log.warning("Schema not found for %s %s" % (method, url))
             return None
 
@@ -532,8 +533,8 @@ class EndpointResource(Resource):
             method = request.method
         method = method.lower()
 
-        if method not in mem.parameter_schemas[url]:
+        if method not in mem.customizer._parameter_schemas[url]:
             log.warning("Schema not found for %s %s" % (method, url))
             return None
 
-        return mem.parameter_schemas[url][method]
+        return mem.customizer._parameter_schemas[url][method]

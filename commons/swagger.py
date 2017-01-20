@@ -36,7 +36,9 @@ class BeSwagger(object):
         self._customizer = customizer
         # The complete set of query parameters for all classes
         self._qparams = {}
-        self.parameter_schemas = {}
+        # Save schemas for parameters before to remove the custom sections
+        # It is used to provide schemas for unittests and automatic forms
+        self._parameter_schemas = {}
 
     def read_my_swagger(self, file, method, endpoint):
 
@@ -162,13 +164,13 @@ class BeSwagger(object):
             for param in specs['parameters']:
 
                 if param["in"] != 'path':
-                    if uri not in self.parameter_schemas:
-                        self.parameter_schemas[uri] = {}
+                    if uri not in self._parameter_schemas:
+                        self._parameter_schemas[uri] = {}
 
-                    if method not in self.parameter_schemas[uri]:
-                        self.parameter_schemas[uri][method] = []
+                    if method not in self._parameter_schemas[uri]:
+                        self._parameter_schemas[uri][method] = []
 
-                    self.parameter_schemas[uri][method].append(param.copy())
+                    self._parameter_schemas[uri][method].append(param.copy())
 
                 extrainfo = param.pop('custom', {})
 
@@ -312,6 +314,7 @@ class BeSwagger(object):
         ###################
         # Save query parameters globally
         self._customizer._query_params = self._qparams
+        self._customizer._parameter_schemas = self._parameter_schemas
 
         ###################
         output['definitions'] = self.read_definitions()
