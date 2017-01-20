@@ -88,7 +88,7 @@ class IrodsException(RestApiException):
 
     def parse_SYS_INVALID_INPUT_PARAM(
             self, utility, error_string, error_code, error_label, role='user'):
-        return "Invalid system path"
+        return "One input parameters is invalid (resource, file, etc.)"
 
     def parse_SYS_LINK_CNT_EXCEEDED_ERR(
             self, utility, error_string, error_code, error_label, role='user'):
@@ -182,8 +182,7 @@ class ICommands(BashCommands):
     _current_environment = None
     _base_dir = ''
 
-
-    first_resource = 'demoResc'
+    first_resource = 'myResc'
     second_resource = 'replicaResc'
 
     def __init__(self, user=None, proxy=False, become_admin=False):
@@ -204,18 +203,18 @@ class ICommands(BashCommands):
             raise ValueError("Cannot raise privileges in external service")
         return self.change_user(IRODS_DEFAULT_ADMIN)
 
-    def get_resources(self):
+    def get_resources_admin(self):
         resources = []
         out = self.admin(command='lr')
         if isinstance(out, str):
             resources = out.strip().split('\n')
         return resources
 
-    def get_default_resource(self, skip=['bundleResc']):
+    def get_default_resource_admin(self, skip=['bundleResc']):
 # // TO FIX:
 # find out the right way to get the default irods resource
 # note: we could use ienv
-        resources = self.get_resources()
+        resources = self.get_resources_admin()
         if len(resources) > 0:
             # Remove strange resources
             for element in skip:
@@ -462,6 +461,18 @@ class ICommands(BashCommands):
 
     ###################
     # ICOMs !!!
+    def list_resources(self):
+        com = 'ilsresc'
+        iout = self.basic_icom(com).strip()
+        logger.debug("Resources %s" % iout)
+        return iout.split("\n")
+
+    def get_base_resource(self):
+        resources = self.list_resources()
+        if len(resources) > 0:
+            return resources[0]
+        return None
+
     def get_base_dir(self):
         com = "ipwd"
         iout = self.basic_icom(com).strip()
@@ -582,9 +593,13 @@ class ICommands(BashCommands):
             args.append('-f')
         if destination is not None:
             args.append(destination)
-        if resource is not None:
-            args.append('-R')
-            args.append(resource)
+
+        # Bug fix: currently irods does not use the default resource anymore?
+        if resource is None:
+            resource = self.get_base_resource()
+        args.append('-R')
+        args.append(resource)
+
         # Execute
         return self.basic_icom(com, args)
 
