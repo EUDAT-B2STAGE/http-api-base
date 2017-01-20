@@ -44,7 +44,7 @@ class SwaggerSpecifications(EndpointResource):
         # NOTE: swagger dictionary is read only once, at server init time
         from commons.globals import mem
         # Jsonify, so we skip custom response building
-        return jsonify(mem.swagger_definition)
+        return jsonify(mem.customizer._definitions)
 
 
 class Login(EndpointResource):

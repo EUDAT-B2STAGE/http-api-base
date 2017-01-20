@@ -43,19 +43,22 @@ class ExternalServicesLogin(object):
             # TO FIX: provide some tests for oauth2 calls
             return
 
-        # Global memory of oauth2 services across the whole server instance
+        # Global memory of oauth2 services across the whole server instance:
+        # because we may define the external service
+        # in different places of the code
         if not self._check_if_services_exist():
             # Note: this gets called only at INIT time
-            mem._services = self._get_oauth2_instances(testing)
+            mem.oauth2_services = self.get_oauth2_instances(testing)
 
         # Recover services for current instance
-        self._available_services = mem._services
+        # This list will be used from the outside world
+        self._available_services = mem.oauth2_services
 
     @staticmethod
     def _check_if_services_exist():
-        return getattr(mem, '_services', None) is not None
+        return getattr(mem, 'oauth2_services', None) is not None
 
-    def _get_oauth2_instances(self, testing=False):
+    def get_oauth2_instances(self, testing=False):
         """
         Setup every oauth2 instance available through configuration
         """
@@ -85,7 +88,6 @@ class ExternalServicesLogin(object):
 
                 # Cycle all the Oauth2 group services
                 for name, oauth2 in obj.items():
-                    # self._available_services[name] = oauth2
                     services[name] = oauth2
                     logger.info("Created Oauth2 service %s" % name)
 

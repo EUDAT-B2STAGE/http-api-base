@@ -54,7 +54,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         # I may check here somehow if credentials in production
         # are the same as defaults, which is not good at all
 
-        credentials = mem.custom_config \
+        credentials = mem.customizer._configurations \
             .get('variables', {}) \
             .get('python', {}) \
             .get('backend', {}) \

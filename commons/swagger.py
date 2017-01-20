@@ -11,9 +11,10 @@ from __future__ import absolute_import
 
 import re
 import os
+from bravado_core.spec import Spec
+# from bravado_core.validate import validate_object
 from commons import htmlcodes as hcodes
 from . import CORE_DIR, USER_CUSTOM_DIR
-from .globals import mem
 from .attrs.api import ExtraAttributes
 from .formats.yaml import load_yaml_file, YAML_EXT
 from .logs import get_logger
@@ -29,9 +30,10 @@ class BeSwagger(object):
     also more control and closer to the original swagger.
     """
 
-    def __init__(self, endpoints):
+    def __init__(self, endpoints, customizer):
         self._endpoints = endpoints
         self._paths = {}
+        self._customizer = customizer
         # The complete set of query parameters for all classes
         self._qparams = {}
 
@@ -271,7 +273,7 @@ class BeSwagger(object):
         }
 
         # Set existing values
-        proj = mem.custom_config['project']
+        proj = self._customizer._configurations['project']
         if 'version' in proj:
             output['info']['version'] = proj['version']
         if 'title' in proj:
@@ -289,7 +291,7 @@ class BeSwagger(object):
 
         ###################
         # Save query parameters globally
-        mem.query_params = self._qparams
+        self._customizer._query_params = self._qparams
 
         ###################
         output['definitions'] = self.read_definitions()
@@ -299,7 +301,7 @@ class BeSwagger(object):
 
         ###################
         tags = []
-        for tag, desc in mem.custom_config['tags'].items():
+        for tag, desc in self._customizer._configurations['tags'].items():
             tags.append({'name': tag, 'description': desc})
         output['tags'] = tags
 
@@ -326,8 +328,7 @@ class BeSwagger(object):
 
         return data
 
-    @staticmethod
-    def validation(swag_dict):
+    def validation(self, swag_dict):
         """
         Based on YELP library,
         verify the current definition on the open standard
@@ -337,8 +338,6 @@ class BeSwagger(object):
             raise AttributeError("Swagger 'paths' definition is empty")
         # else:
         #     log.pp(swag_dict)
-
-        from bravado_core.spec import Spec
 
         try:
             from commons import original_json
@@ -361,7 +360,7 @@ class BeSwagger(object):
         }
 
         try:
-            mem.validated_spec = Spec.from_dict(
+            self._customizer._validated_spec = Spec.from_dict(
                 swag_dict, config=bravado_config)
             log.info("Swagger configuration is validated")
         except Exception as e:
@@ -377,9 +376,10 @@ class BeSwagger(object):
         # TODO: it works with body parameters,
         # to be investigated with other types
 
-        # from bravado_core.validate import validate_object
-        # Car = mem.swagger_definition['definitions']['Car']
+        # from .globals import mem
+
+        # Car = mem.customizer._definitions['definitions']['Car']
         # # self is rest/definitions.py:EndpointResource
         # json = self.get_input()
-        # validate_object(mem.validated_spec, Car, json)
+        # validate_object(mem.customizer._validated_spec, Car, json)
         pass

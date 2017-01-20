@@ -69,8 +69,8 @@ def create_endpoints(epo, security=False, debug=False):
     """
 
     # ####################################
-    # Verify configuration
-    resources = mem.customizer.endpoints()
+    # Use configuration built with swagger
+    resources = mem.customizer._endpoints
 
     ####################################
     # Basic configuration (simple): from example class
@@ -95,9 +95,13 @@ def create_endpoints(epo, security=False, debug=False):
         # TODO: CHECK is there any way to remove farm.py ?
         epo.add(resource)
 
-    # Enable all schema endpoint to be mapped
-    epo.add(mem.schema_endpoint)
-    # log.pp(mem.schema_endpoint)
+    # Enable all schema endpoints to be mapped with this extra step
+    se = mem.customizer._schema_endpoint
+
+    if len(se.uris) > 0:
+        log.info("Found one or more schema to expose")
+        # log.pp(se)
+        epo.add(se)
 
     ####################################
     # The end

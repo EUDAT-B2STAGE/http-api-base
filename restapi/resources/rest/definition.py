@@ -58,10 +58,8 @@ class EndpointResource(Resource):
         k2 = str(request.url_rule)
         k3 = request.method.lower()
         # recover from the global mem parameters query parameters
-        current_params = mem.query_params.get(k1, {}).get(k2, {}).get(k3, {})
-
-        # log.pp(mem.query_params)
-        # log.pp(current_params)
+        current_params = mem.customizer._query_params \
+            .get(k1, {}).get(k2, {}).get(k3, {})
 
         if len(current_params) > 0:
 
@@ -503,16 +501,16 @@ class EndpointResource(Resource):
         url = request.url_rule.rule
         if is_schema_url and url.endswith('/schema'):
             url = url[:-7]
-        if url not in mem.swagger_definition["paths"]:
+        if url not in mem.customizer._definitions["paths"]:
             return None
 
         if method is None:
             method = request.method
         method = method.lower()
-        if method not in mem.swagger_definition["paths"][url]:
+        if method not in mem.customizer._definitions["paths"][url]:
             return None
 
-        tmp = mem.swagger_definition["paths"][url][method]
+        tmp = mem.customizer._definitions["paths"][url][method]
 
         if key is None:
             return tmp
