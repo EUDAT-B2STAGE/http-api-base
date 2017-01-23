@@ -68,6 +68,7 @@ class Flask(OriginalFlask):
 
 
 def create_auth_instance(module, services, app, first_call=False):
+
     # This is the main object that drives authentication
     # inside our Flask server.
     # Note: to be stored inside the flask global context
@@ -78,8 +79,12 @@ def create_auth_instance(module, services, app, first_call=False):
         ext_auth = oauth2(app.config['TESTING'])
         custom_auth.set_oauth2_services(ext_auth._available_services)
 
+    secret = 'IaMvERYsUPERsECRET'
     if not app.config['TESTING']:
-        custom_auth.import_secret(app.config['SECRET_KEY_FILE'])
+        secret = str(custom_auth.import_secret(app.config['SECRET_KEY_FILE']))
+
+    # Install app secret for oauth2
+    app.secret_key = secret + '_app'
 
     return custom_auth
 

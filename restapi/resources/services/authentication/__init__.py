@@ -111,6 +111,8 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             # import sys
             # sys.exit(1)
 
+        return self.JWT_SECRET
+
     def set_oauth2_services(self, services):
         self._oauth2 = services
 
