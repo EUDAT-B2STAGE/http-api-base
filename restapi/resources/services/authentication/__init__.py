@@ -14,9 +14,11 @@ import hmac
 import hashlib
 import base64
 import pytz
+import socket
 
 from commons.services.uuid import getUUID
 from datetime import datetime, timedelta
+from flask import current_app, request
 from commons.globals import mem
 from commons.logs import get_logger
 
@@ -148,8 +150,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     @staticmethod
     def get_host_info():
 
-        import socket
-
         ###############
         # Note: timeout do not work on dns lookup...
         # also read:
@@ -163,7 +163,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         ###############
         hostname = ""
-        from flask import current_app, request
         ip = request.remote_addr
 
         if current_app.config['TESTING'] and ip is None:
@@ -260,7 +259,11 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         if not self.refresh_token(self._payload['jti']):
             return False
 
-        log.verbose("User authorized")
+        logfunc = log.verbose
+        if current_app.config['TESTING']:
+            logfunc = log.very_verbose
+        logfunc("User authorized")
+
         self._token = token
         return True
 

@@ -13,7 +13,7 @@ from .. import RestTestsBase
 from commons.logs import get_logger
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
-log = get_logger(__name__, True)  # , logging.VERY_VERBOSE
+log = get_logger(__name__)
 
 
 class BaseTests(RestTestsBase):

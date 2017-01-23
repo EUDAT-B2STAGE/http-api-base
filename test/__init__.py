@@ -5,7 +5,7 @@ Test base
 """
 
 import unittest
-# import logging
+import logging
 from restapi.server import create_app
 from restapi.confs.config import TEST_HOST, \
     SERVER_PORT, API_URL, AUTH_URL
@@ -13,13 +13,19 @@ from restapi.response import get_content_from_response
 from restapi.jsonify import json
 from restapi.resources.services.authentication import BaseAuthentication as ba
 import commons.htmlcodes as hcodes
-
-from commons.logs import get_logger
+from commons.logs import get_logger, set_global_log_level
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
-log = get_logger(__name__, True)  # , logging.VERY_VERBOSE
+
+# To change UNITTEST debugging level
+TEST_DEBUGGING_LEVEL = logging.DEBUG
+
+#####################
+set_global_log_level('restapi', TEST_DEBUGGING_LEVEL)
+log = get_logger(__name__)
 
 
+#####################
 class RestTestsBase(unittest.TestCase):
 
     _api_uri = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)

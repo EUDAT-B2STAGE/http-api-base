@@ -92,7 +92,7 @@ class LogMe(object):
     def __init__(self, debug=None):
 
         #####################
-        self._log_level = logging.INFO
+        self._log_level = None
         self._colors_enabled = True
         super(LogMe, self).__init__()
 
@@ -156,7 +156,6 @@ class LogMe(object):
                 self._log_level = logging.DEBUG
         else:
             self._log_level = logging.INFO
-        # print("NEW LEVEL", self._log_level, self)
 
         return self._log_level
 
@@ -174,7 +173,11 @@ class LogMe(object):
         return logger
 
 
-def set_global_log_level(package=None):
+def set_global_log_level(package=None, app_level=None):
+
+    external_level = logging.WARNING
+    if app_level is None:
+        app_level = please_logme._log_level
 
     external_packages = [
         logging.getLogger('werkzeug'),
@@ -182,12 +185,12 @@ def set_global_log_level(package=None):
     ]
 
     for logger in external_packages:
-        logger.setLevel(logging.WARNING)
+        logger.setLevel(external_level)
 
     for handler in logging.getLogger().handlers:
-        handler.setLevel(VERBOSITY_REQUESTED)
+        handler.setLevel(app_level)
 
-    logging.getLogger().setLevel(VERBOSITY_REQUESTED)
+    logging.getLogger().setLevel(app_level)
 
     for key, value in logging.Logger.manager.loggerDict.items():
 
@@ -197,15 +200,12 @@ def set_global_log_level(package=None):
 
         if package is not None and package + '.' in key:
             # print("current", key, value.level)
-            value.setLevel(VERBOSITY_REQUESTED)
+            value.setLevel(app_level)
         elif __package__ + '.' in key:
             # print("common", key)
-            value.setLevel(VERBOSITY_REQUESTED)
+            value.setLevel(app_level)
         else:
-            value.setLevel(logging.WARNING)
-
-        # TO FIX:
-        # value.setLevel(VERY_VERBOSE)
+            value.setLevel(external_level)
 
 
 please_logme = LogMe()
