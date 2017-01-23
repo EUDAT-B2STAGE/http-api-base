@@ -19,8 +19,13 @@ class RecoverSchema(EndpointResource):
 
         # TO FIX: not from json but from query
         method = self.get_input(single_parameter='method', default='GET')
+
         out1 = self.get_endpoint_definition(
             key='parameters', is_schema_url=True, method=method)
-        out2 = self.get_endpoint_custom_definition(
-            key='parameters', method=method)
+
+        out2 = self.get_endpoint_custom_definition(method=method)
+
+        print("DEF", out1)
+        print("CUSTOM DEF", out2)
+
         return "Hello"

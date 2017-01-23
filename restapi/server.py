@@ -238,6 +238,10 @@ def create_app(name=__name__, debug=False,
     for rule in microservice.url_map.iter_rules():
 
         rulename = str(rule)
+        # Skip rules for exposing schemas
+        if '/schemas/' in rulename:
+            continue
+
         endpoint = microservice.view_functions[rule.endpoint]
         if not hasattr(endpoint, 'view_class'):
             continue

@@ -47,6 +47,7 @@ class Customizer(object):
         self._definitions = {}
         self._configurations = {}
         self._query_params = {}
+        self._schemas_map = {}
         self._meta = Meta()
 
         # Do things
@@ -257,12 +258,18 @@ class Customizer(object):
             total_uri = '/%s%s' % (base, uri)
             endpoint.uris[label] = total_uri
 
-            # If SCHEMA requested add uri + '/schema' to schema.py
+            # If SCHEMA requested create
             if endpoint.custom['schema']['expose']:
+
+                schema_uri = '%s%s%s' % (API_URL, '/schemas', uri)
+
                 p = hex(id(endpoint.cls))
-                self._schema_endpoint.uris[label + p] = total_uri + '/schema'
+                self._schema_endpoint.uris[label + p] = schema_uri
+
                 endpoint.custom['schema']['publish'][label] = \
                     schema.get('publish', False)
+
+                self._schemas_map[schema_uri] = total_uri
 
         # Description for path parameters
         endpoint.ids = conf.pop('ids', {})
