@@ -106,7 +106,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                       (HTTPAUTH_AUTH_FIELD, HTTPAUTH_DEFAULT_SCHEME, 'TOKEN')
                 #
                 return decorated_self.send_errors(
-                    label="No authentication schema",
+                    # label="No authentication schema",
                     message=msg, headers=headers, code=bad_code)
 
             # Handling OPTIONS forwarded to our application:
@@ -121,7 +121,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                     # Mimic the response from a normal endpoint
                     # To use the same standards
                     return decorated_self.send_errors(
-                        label="Invalid token", message="Received '%s'" % token,
+                        message="Invalid token received '%s'" % token,
                         headers=headers, code=bad_code)
 
             # Check roles
@@ -129,8 +129,8 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
                 roles_fn = g._custom_auth.verify_roles
                 if not self.authenticate_roles(roles_fn, roles):
                     return decorated_self.send_errors(
-                        label="Missing privileges",
-                        message="One or more role required", code=bad_code)
+                        message="You are not authorized: missing privileges",
+                        code=bad_code)
 
             return f(*args, **kwargs)
 

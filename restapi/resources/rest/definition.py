@@ -275,24 +275,29 @@ class EndpointResource(Resource):
             defined_content=defined_content, errors=errors, code=code)
 
     def send_errors(self,
-                    label="Error", message=None, errors=None,
+                    label=None, message=None, errors=None,
                     code=None, headers=None):
         """
         Setup an error message and
         """
-
+        if label is not None:
+            log.warning(
+                "Dictionary errors are deprecated, " +
+                "send errors as a list of strings instead"
+            )
         # Bug fix: if errors was initialized above, I received old errors...
         if errors is None:
-            errors = {}
+            errors = []
 
         # See if we have the main message
-        error = {}
+        # error = {}
         if message is not None:
-            error = {label: message}
+            # error = {label: message}
+            errors.append(message)
 
         # Extend existing errors
-        if isinstance(errors, dict) and len(error) > 0:
-            errors.update(error)
+        # if isinstance(errors, dict) and len(error) > 0:
+            # errors.update(error)
 
         if code is None or code < hcodes.HTTP_BAD_REQUEST:
             # default error

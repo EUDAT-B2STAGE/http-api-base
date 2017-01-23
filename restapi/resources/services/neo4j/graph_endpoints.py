@@ -185,10 +185,20 @@ class myGraphError(RestApiException):
         self.status_code = status_code
 
 
-def returnError(self, label, error, code=hcodes.HTTP_BAD_NOTFOUND):
-    error = str(error)
+def returnError(self, label=None, error=None, code=hcodes.HTTP_BAD_NOTFOUND):
+
+    if label is not None:
+        log.warning(
+            "Dictionary errors are deprecated, " +
+            "send errors as a list of strings instead"
+        )
+
+    if error is None:
+        error = "Raised an error without any motivation..."
+    else:
+        error = str(error)
     log.error(error)
-    return self.force_response(errors={label: error}, code=code)
+    return self.force_response(errors=[error], code=code)
 
 
 def graph_transactions(func):
@@ -233,13 +243,14 @@ def catch_graph_exceptions(func):
         try:
             return func(self, *args, **kwargs)
         except (myGraphError) as e:
-            if e.status_code == hcodes.HTTP_BAD_FORBIDDEN:
-                label = 'Forbidden'
-            elif e.status_code == hcodes.HTTP_BAD_NOTFOUND:
-                label = 'Not found'
-            else:
-                label = 'Bad request'
-            return returnError(self, label, e, code=e.status_code)
+            # if e.status_code == hcodes.HTTP_BAD_FORBIDDEN:
+            #     label = 'Forbidden'
+            # elif e.status_code == hcodes.HTTP_BAD_NOTFOUND:
+            #     label = 'Not found'
+            # else:
+            #     label = 'Bad request'
+            # return returnError(self, label, e, code=e.status_code)
+            return returnError(self, label=None, error=e, code=e.status_code)
 
         except (UniqueProperty) as e:
 
@@ -254,15 +265,15 @@ def catch_graph_exceptions(func):
                 parsedError = e
 
             return returnError(
-                self, 'Duplicated property',
-                parsedError, code=hcodes.HTTP_BAD_CONFLICT)
+                self, label=None,
+                error=parsedError, code=hcodes.HTTP_BAD_CONFLICT)
         except ConstraintViolation as e:
-            return returnError(self, 'DB', e)
+            return returnError(self, label=None, error=e)
         except (GraphError) as e:
             # Also returned for duplicated fields...
             # UniqueProperty not catched?
-            return returnError(self, 'DB', e)
+            return returnError(self, label=None, error=e)
         except (RequiredProperty) as e:
-            return returnError(self, 'DB', e)
+            return returnError(self, label=None, error=e)
 
     return wrapper
