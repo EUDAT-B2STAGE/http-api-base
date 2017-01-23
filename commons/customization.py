@@ -14,14 +14,14 @@ from . import (
     JSON_EXT, json, CORE_DIR, USER_CUSTOM_DIR, DEFAULTS_PATH,
     PATH, CONFIG_PATH, BLUEPRINT_KEY, API_URL, BASE_URLS,
 )
+from .attrs.api import EndpointElements, ExtraAttributes
+
+# TO FIX: should be imported after reading logger level from conf
 from .meta import Meta
 from .formats.yaml import YAML_EXT, load_yaml_file
 from .swagger import BeSwagger
-from .attrs.api import EndpointElements, ExtraAttributes
-# from .globals import mem
 
 from .logs import get_logger
-
 log = get_logger(__name__)
 
 
@@ -39,7 +39,7 @@ class Customizer(object):
 
         # Some initialization
         self._current_package = package
-        self._endpoints = []  # TO FIX: should not be a list, but a dictionary
+        self._endpoints = []
         self._definitions = {}
         self._configurations = {}
         self._query_params = {}
@@ -208,7 +208,7 @@ class Customizer(object):
         # Check for dependecies and skip if missing
         for dependency in conf.pop('depends_on', []):
             if not getattr(module, dependency, False):
-                log.verbose("Skip '%s': unmet %s" % (default_uri, dependency))
+                log.debug("Skip '%s': unmet %s" % (default_uri, dependency))
                 return endpoint
 
         endpoint.cls = self._meta.get_class_from_string(class_name, module)
@@ -279,7 +279,7 @@ class Customizer(object):
         filepath = os.path.join(config_root, path, file + "." + JSON_EXT)
         if retfile:
             return filepath
-        log.debug("Reading file %s" % filepath)
+        log.verbose("Reading file %s" % filepath)
 
         # Use also the original library
         import json as original_json

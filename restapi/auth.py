@@ -12,7 +12,7 @@ Note that anyone can validate a token as it is a bearer token:
 there is no client id nor is client authentication required.
 """
 
-from __future__ import division, absolute_import
+# from __future__ import division, absolute_import
 
 from functools import wraps
 from flask import request, g
@@ -20,13 +20,8 @@ from commons import htmlcodes as hcodes
 from commons.meta import Meta
 from commons.decorators import class_method_decorator_with_optional_parameters
 from commons.logs import get_logger
-from . import myself, lic
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 # Few costants
 HTTPAUTH_DEFAULT_SCHEME = "Bearer"
@@ -139,6 +134,6 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
 
 authentication = HTTPTokenAuth()
 
-logger.info(
+log.info(
     "Initizialized a valid authentication class: [%s]"
     % authentication._scheme)

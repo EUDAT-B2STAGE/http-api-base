@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+# TO FIX: import logger?
+
 
 class InvalidArgument(BaseException):
     pass
@@ -49,27 +51,25 @@ class ImplementedActions(object):
     def do_update(self, command, project, action, **kwargs):
         print("TEST", self._compose_project)
 
-        # git pull
-        ## plumbum?
-        ## also in init!
+        # TODO: git pull
+        # TO FIX: plumbum?
+        # TODO: also in init!
 
         # images pull
         command.append('pull')
-        from beeprint import pp
-        # pp(self._vanilla_services)
-        # pp(self._compose_project)
+        # log.pp(self._vanilla_services)
+        # log.pp(self._compose_project)
 
         raise NotImplementedAction("Missing recursion on service links")
 
         for service in self._compose_project.services:
             if service.name not in self._vanilla_services:
                 continue
-            print("TEST 1", service.name)
-            ## recursion on links
+            # recursion on links
             for link in service.links:
                 linked_service, name = link
                 print("TEST 2", linked_service)
-            # pp(service.__dict__)
+            # log.pp(service.__dict__)
             command.append(service)
         self._exec(command)
 

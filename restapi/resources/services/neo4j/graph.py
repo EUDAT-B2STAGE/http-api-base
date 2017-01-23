@@ -10,7 +10,7 @@ from commons.services.uuid import getUUID
 from datetime import datetime
 import pytz
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 ###############################
 # Verify Graph existence
@@ -30,7 +30,7 @@ try:
     PORT = os.environ['GDB_PORT_7474_TCP_PORT'].split(':').pop()
     USER, PW = os.environ['GDB_ENV_NEO4J_AUTH'].split('/')
 except Exception as e:
-    logger.critical("Cannot find a Graph database inside the environment\n" +
+    log.critical("Cannot find a Graph database inside the environment\n" +
                     "Please check variable GDB_NAME")
     # raise e
     exit(1)
@@ -56,7 +56,7 @@ class MyGraph(ServiceObject):
 
             # os.environ["NEO4J_BOLT_URL"] = "bolt://%s:%s@%s" % \
             #     (USER, PW, HOST)
-            logger.debug("Neo4j connection socket is set")
+            log.debug("Neo4j connection socket is set")
         except:
             raise EnvironmentError("Missing URL to connect to graph")
         # Set debug for cypher queries
@@ -71,15 +71,15 @@ class MyGraph(ServiceObject):
             raise Exception(
                 "Failed to execute Cypher Query: %s\n%s" % (query, str(e)))
             return False
-        # logger.debug("Graph query.\nResults: %s\nMeta: %s" % (results, meta))
+        # log.debug("Graph query.\nResults: %s\nMeta: %s" % (results, meta))
         return results
 
     def clean_pending_tokens(self):
-        logger.debug("Removing all pending tokens")
+        log.debug("Removing all pending tokens")
         return self.cypher("MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a")
 
     def clean_all(self):
-        logger.warning("Removing all data")
+        log.warning("Removing all data")
         return self.cypher("MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r")
 
     def createNode(self, model, attributes={}):
@@ -129,7 +129,7 @@ class GraphFarm(ServiceFarm):
 
         # CHECK 1: test the environment
         self._graph = MyGraph()
-        logger.debug("Neo4j service seems plugged")
+        log.debug("Neo4j service seems plugged")
 
         # CHECK 2: test the models
         # Do not import neomodel before the first check
@@ -139,7 +139,7 @@ class GraphFarm(ServiceFarm):
         class TestConnection(StructuredNode):
             name = StringProperty(unique_index=True)
 
-        logger.debug("neomodel: checked labeling on active connection")
+        log.debug("neomodel: checked labeling on active connection")
 
     @classmethod
     def get_instance(cls, models2skip=[], use_models=True):

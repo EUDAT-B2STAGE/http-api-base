@@ -8,9 +8,9 @@ from __future__ import absolute_import
 
 # import datetime
 from ..services.alchemy import db
-from ..logs import get_logger
 
-logger = get_logger(__name__)
+# from ..logs import get_logger
+# log = get_logger(__name__)
 
 
 ####################################

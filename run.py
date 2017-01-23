@@ -18,7 +18,7 @@ __author__ = myself
 __copyright__ = myself
 __license__ = lic
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 enable_debug = False
 enable_security = True
@@ -26,12 +26,12 @@ enable_security = True
 if args is not None:
     if args.debug:
         enable_debug = True
-        logger.warning("Enabling DEBUG mode")
+        log.warning("Enabling DEBUG mode")
         time.sleep(1)
 
     if not args.security:
         enable_security = False
-        logger.warning("No security enabled! Are you really sure?")
+        log.warning("No security enabled! Are you really sure?")
         time.sleep(1)
 
 # The connection is HTTP internally to containers
@@ -50,5 +50,5 @@ if __name__ == "__main__":
     # NOTE: 'threaded' option avoid to see
     # angular request on this server dropping
     # and becoming slow if not totally frozen
-    logger.info("*** Running Flask!")
+    log.info("*** Running Flask!")
     app.run(host=SERVER_HOSTS, port=SERVER_PORT, threaded=True)

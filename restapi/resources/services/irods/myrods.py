@@ -4,7 +4,7 @@
 iRODS connection via Official API.
 Python 3 is NOT supported at the moment.
 
-UNSUSED AT THE MOMENT!
+TO FIX: this will be the new default very soon
 
 """
 
@@ -14,7 +14,7 @@ import irods
 from irods.session import iRODSSession
 from commons.logs import get_logger, silence_loggers
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 # Silence the irods debugger which adds some useless handler
 silence_loggers()
 
@@ -40,7 +40,7 @@ class MyRods(object):
             'zone': self._default_zone
         }
         self._session = iRODSSession(**iconnection)
-        logger.info("Connected to irods")
+        log.info("Connected to irods")
 
     def other(self):
         """ To define """
@@ -48,19 +48,18 @@ class MyRods(object):
             coll = self._session.collections.get(
                 "/" + self._default_zone)
         except irods.exception.NetworkException as e:
-            logger.critical("Failed to read irods object:\n%s" %
-                            str(e))
+            log.critical("Failed to read irods object:\n%s" % str(e))
             return False
 
-        # logger.debug(coll.id)
-        # logger.debug(coll.path)
+        # log.debug(coll.id)
+        # log.debug(coll.path)
 
         for col in coll.subcollections:
-            logger.debug("Collection %s" % col)
+            log.debug("Collection %s" % col)
 
         for obj in coll.data_objects:
-            logger.debug("Data obj %s" % obj)
+            log.debug("Data obj %s" % obj)
 
         return self
 
-#mirods = MyRods()
+# mirods = MyRods()

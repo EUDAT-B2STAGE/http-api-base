@@ -48,16 +48,15 @@ class EndpointsFarmer(object):
             decorated = authentication.authorization_required(
                 original, roles=roles, from_swagger=True)
             setattr(resource.cls, method, decorated)
-            log.verbose("Auth enabled on %s.%s for %s"
-                        % (resource.cls.__name__, method, roles))
+            log.very_verbose("Auth on %s.%s for %s"
+                             % (resource.cls.__name__, method, roles))
 
         urls = [uri for _, uri in resource.uris.items()]
 
         # Create the restful resource with it;
         # this method is from RESTful plugin
         self.rest_api.add_resource(resource.cls, *urls)
-        # TO FIX: maybe verbose?
-        log.debug("Map '%s' to %s", resource.cls.__name__, urls)
+        log.verbose("Map '%s' to %s", resource.cls.__name__, urls)
 
     # def create_single(self, resource, endpoints, endkey):
     #     """ Adding a single restpoint from a Resource Class """

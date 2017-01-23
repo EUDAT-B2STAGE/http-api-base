@@ -385,7 +385,7 @@ class BeSwagger(object):
         try:
             self._customizer._validated_spec = Spec.from_dict(
                 swag_dict, config=bravado_config)
-            log.info("Swagger configuration is validated")
+            log.debug("Swagger configuration is validated")
         except Exception as e:
             # raise e
             error = str(e).split('\n')[0]

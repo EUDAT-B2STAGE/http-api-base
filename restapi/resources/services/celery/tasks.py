@@ -13,7 +13,7 @@ How to add a task:
 
 @celery_app.task
 def my_async_task(arg):
-    logger.debug("This is asynchronous: %s" % arg)
+    log.debug("This is asynchronous: %s" % arg)
 
 """
 
@@ -23,7 +23,7 @@ from commons.services import ServiceFarm, ServiceObject
 from commons.services.celery import celery_app
 from commons.logs import get_logger
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 class MyCelery(ServiceObject):
@@ -72,13 +72,11 @@ class CeleryFarm(ServiceFarm):
 
     def init_connection(self, app):
 
-# // TO FIX:
-        # Should we check also the REDIS connection?
+        # TO FIX: should we check also the REDIS connection?
         # Or is celery going to give us error if that does not work?
 
-        # self._flask_app = app
         celery = self.get_instance(app)
-        logger.debug("Celery queue is available")
+        log.debug("Celery queue is available")
         return celery
 
     @classmethod

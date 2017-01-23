@@ -4,6 +4,8 @@
 User configuration
 """
 
+# from __future__ import absolute_import
+
 import os
 import re
 import sys
@@ -12,9 +14,8 @@ import argparse
 from commons import API_URL, AUTH_URL
 from commons.logs import get_logger
 
-logger = get_logger(__name__)
-logger.info("API base URL is %s" % API_URL)
-logger.info("AUTHENTICATION base URL is %s" % AUTH_URL)
+log = get_logger(__name__)
+log.verbose("base URL[%s] - auth URL[%s]" % (API_URL, AUTH_URL))
 
 #################################
 # what you could change

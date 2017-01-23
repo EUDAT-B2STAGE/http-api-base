@@ -91,7 +91,7 @@ class EndpointResource(Resource):
                     required=data.get('required', False),
                     trim=trim, action=act, location=loc)
 
-                log.debug("Accept param '%s', type %s" % (param, mytype))
+                log.very_verbose("Accept param '%s' type %s" % (param, mytype))
 
         # TODO: should I check body parameters?
 
@@ -108,8 +108,6 @@ class EndpointResource(Resource):
         """
 
         self._args = self._parser.parse_args()
-        if len(self._args) > 0:
-            log.debug("Parsed parameters: %s" % self._args)
         return self._args
 
     def get_input(self, forcing=True, single_parameter=None, default=None):

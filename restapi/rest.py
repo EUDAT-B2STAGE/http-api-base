@@ -84,7 +84,7 @@ def create_endpoints(epo, security=False, debug=False):
 
         raise AttributeError("Follow the docs and define your endpoints")
 
-    log.info("Using resources defined within swagger")
+    log.debug("Using resources defined within swagger")
 
     for resource in resources:
 

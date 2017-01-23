@@ -12,16 +12,11 @@ import os
 from base64 import b64encode
 from ...oauth import oauth
 from ...confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
-from ... import myself, lic
 from commons.globals import mem
-from commons.logs import get_logger
 from commons.meta import Meta
+from commons.logs import get_logger
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 B2ACCESS_DEV_BASEURL = "https://unity.eudat-aai.fz-juelich.de"
 B2ACCESS_DEV_URL = B2ACCESS_DEV_BASEURL + ":8443"
@@ -39,7 +34,7 @@ class ExternalServicesLogin(object):
     def __init__(self, testing=False):
 
         if testing:
-            logger.warning("currently skipping oauth2 in tests")
+            log.warning("currently skipping oauth2 in tests")
             # TO FIX: provide some tests for oauth2 calls
             return
 
@@ -68,14 +63,14 @@ class ExternalServicesLogin(object):
         # For each defined internal service
         for key, func in Meta().get_methods_inside_instance(self).items():
 
-            # logger.info("META %s-%s" % (key, func))
+            # log.info("META %s-%s" % (key, func))
 
             # Check if credentials are enabled inside docker env
             var1 = key.upper() + '_APPNAME'
             var2 = key.upper() + '_APPKEY'
 
             if var1 not in os.environ or var2 not in os.environ:
-                logger.debug("Skipping Oauth2 service %s" % key)
+                log.verbose("Skipping Oauth2 service %s" % key)
                 continue
 
             # Call the service and save it
@@ -89,10 +84,10 @@ class ExternalServicesLogin(object):
                 # Cycle all the Oauth2 group services
                 for name, oauth2 in obj.items():
                     services[name] = oauth2
-                    logger.info("Created Oauth2 service %s" % name)
+                    log.debug("Created Oauth2 service %s" % name)
 
             except Exception as e:
-                logger.critical(
+                log.critical(
                     "Could not request oauth2 service %s:\n%s" % (key, e))
 
         return services
@@ -127,7 +122,7 @@ class ExternalServicesLogin(object):
                 token_url = B2ACCESS_PROD_URL + '/oauth2/token'
                 authorize_url = B2ACCESS_PROD_URL + '/oauth2-as/oauth2-authz'
             else:
-                logger.warning("Switching to b2access dev in production")
+                log.warning("Switching to b2access dev in production")
 
         # COMMON ARGUMENTS
         arguments = {
@@ -200,8 +195,7 @@ def decorate_http_request(remote):
             headers.update({'Authorization': 'Basic %s' % (userpass,)})
         response = old_http_request(
             uri, headers=headers, data=data, method=method)
-## // TO FIX:
-# may we handle failed B2ACCESS response here?
+        # TO FIX: may we handle failed B2ACCESS response here?
         return response
 
     remote.http_request = new_http_request

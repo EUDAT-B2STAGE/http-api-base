@@ -5,6 +5,7 @@ Test base
 """
 
 import unittest
+# import logging
 from restapi.server import create_app
 from restapi.confs.config import TEST_HOST, \
     SERVER_PORT, API_URL, AUTH_URL
@@ -16,7 +17,7 @@ import commons.htmlcodes as hcodes
 from commons.logs import get_logger
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
-logger = get_logger(__name__, True)
+log = get_logger(__name__, True)  # , logging.VERY_VERBOSE
 
 
 class RestTestsBase(unittest.TestCase):
@@ -59,7 +60,7 @@ class RestTestsBase(unittest.TestCase):
 
         Thi is why i prefer setUp on setUpClass
         """
-        logger.debug('### Setting up the Flask server ###')
+        log.debug('### Setting up the Flask server ###')
         app = create_app(testing_mode=True)
         self.app = app.test_client()
 
@@ -69,7 +70,7 @@ class RestTestsBase(unittest.TestCase):
         self._password = ba.default_password
 
     def tearDown(self):
-        logger.debug('### Tearing down the Flask server ###')
+        log.debug('### Tearing down the Flask server ###')
         del self.app
 
     def get_content(self, response):
@@ -96,7 +97,7 @@ class RestTestsAuthenticatedBase(RestTestsBase):
         # Call father's method
         super().setUp()
 
-        logger.info("### Creating a test token ###")
+        log.info("### Creating a test token ###")
         endpoint = self._auth_uri + '/login'
         credentials = json.dumps(
             {'username': self._username, 'password': self._password})
@@ -111,7 +112,7 @@ class RestTestsAuthenticatedBase(RestTestsBase):
     def tearDown(self):
 
         # Token clean up
-        logger.debug('### Cleaning token ###')
+        log.debug('### Cleaning token ###')
         ep = self._auth_uri + '/tokens'
         # Recover current token id
         r = self.app.get(ep, headers=self.__class__.auth_header)
@@ -127,4 +128,4 @@ class RestTestsAuthenticatedBase(RestTestsBase):
 
         # The end
         super().tearDown()
-        logger.info("Completed one method to test\n\n")
+        log.info("Completed one method to test\n\n")

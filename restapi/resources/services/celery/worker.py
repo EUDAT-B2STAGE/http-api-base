@@ -13,11 +13,12 @@ So we made some improvement along the code.
 
 # from restapi.resources.services.celery.tasks import MyCelery
 from commons.services.celery import celery_app
+# TO FIX: can we import from __package__ instead?
 from restapi.server import create_app
 from commons.meta import Meta
 from commons.logs import get_logger
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 ################################################
 # Reload Flask app code also for the worker
@@ -28,7 +29,7 @@ app = create_app(worker_mode=True, debug=True)
 # celery_app = MyCelery(app)._current
 
 # celery_app = MyCelery(app)._current
-logger.debug("Celery %s" % celery_app)
+log.debug("Celery %s" % celery_app)
 
 ################################################
 # Import tasks modules to make sure all tasks are avaiable

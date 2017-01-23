@@ -16,10 +16,16 @@ from .confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from commons.meta import Meta
 from commons.customization import Customizer
 from commons.globals import mem
-from commons.logs import get_logger, handle_log_output, MAX_CHAR_LEN
+from commons.logs import get_logger, \
+    handle_log_output, MAX_CHAR_LEN, set_global_log_level
 
-
+#############################
+# LOGS
 log = get_logger(__name__)
+
+# This is the first file to be imported in the project
+# We need to enable many things on a global level for logs
+set_global_log_level(package=__package__)
 
 
 #############################
@@ -38,7 +44,7 @@ class Flask(OriginalFlask):
             if len(out) > response_log_max_len:
                 out = out[:response_log_max_len] + ' ...'
 
-            log.verbose("MAKE_RESPONSE: %s" % out)
+            log.very_verbose("MAKE_RESPONSE: %s" % out)
         except:
             log.debug("MAKE_RESPONSE: [UNREADABLE OBJ]")
         responder = ResponseMaker(rv)
@@ -90,6 +96,7 @@ def create_app(name=__name__, debug=False,
 
     #############################
     # Initialize reading of all files
+    # TO FIX: remove me
     mem.customizer = Customizer(__package__)
 
     #################################################
@@ -131,15 +138,12 @@ def create_app(name=__name__, debug=False,
             tmp = str(ENVVAR_DEBUG).lower() == 'true'
         debug = tmp  # bool(tmp)
     microservice.config['DEBUG'] = debug
-
-    # Set the new level of debugging
-    log = get_logger(__name__, debug)
-    log.info("FLASKING! Created application")
+    log.info("Flask application generated")
 
     ##############################
     if PRODUCTION:
 
-        log.info("Production server ON")
+        log.info("Production server mode is ON")
 
         # TO FIX: random secrety key in production
         # # Check and use a random file a secret key.
@@ -158,7 +162,7 @@ def create_app(name=__name__, debug=False,
     # Cors
     from .cors import cors
     cors.init_app(microservice)
-    log.info("FLASKING! Injected CORS")
+    log.debug("FLASKING! Injected CORS")
 
     ##############################
     # DATABASE/SERVICEs CHECKS
@@ -266,7 +270,7 @@ def create_app(name=__name__, debug=False,
                 pass
 
         log.info("{} {} {} {}".format(
-                    request.method, request.url, data, response))
+                 request.method, request.url, data, response))
         return response
 
     ##############################
@@ -276,6 +280,17 @@ def create_app(name=__name__, debug=False,
         for callback in getattr(g, 'after_request_callbacks', ()):
             callback(response)
         return response
+
+    # ##############################
+    # log.critical("test")
+    # log.error("test")
+    # log.warning("test")
+    # log.info("test")
+    # log.debug("test")
+    # log.verbose("test")
+    # log.very_verbose("test")
+    # log.pp(microservice)
+    # log.critical_exit("test")
 
     ##############################
     # App is ready

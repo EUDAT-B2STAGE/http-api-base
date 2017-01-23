@@ -8,11 +8,12 @@ Tests for http api base
 from __future__ import absolute_import
 
 import json
+# import logging
 from .. import RestTestsBase
 from commons.logs import get_logger
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
-logger = get_logger(__name__, True)
+log = get_logger(__name__, True)  # , logging.VERY_VERBOSE
 
 
 class BaseTests(RestTestsBase):
@@ -34,12 +35,12 @@ class BaseTests(RestTestsBase):
 
         # Check success
         endpoint = self._api_uri + '/status'
-        logger.info("*** VERIFY if API is online")
+        log.info("*** VERIFY if API is online")
         r = self.app.get(endpoint)
         self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
 
         # Check failure
-        logger.info("*** VERIFY if invalid endpoint gives Not Found")
+        log.info("*** VERIFY if invalid endpoint gives Not Found")
         r = self.app.get(self._api_uri)
         self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_NOTFOUND)
 
@@ -48,7 +49,7 @@ class BaseTests(RestTestsBase):
 
         # Check success
         endpoint = self._api_uri + '/specs'
-        logger.info("*** VERIFY if API specifications are online")
+        log.info("*** VERIFY if API specifications are online")
         r = self.app.get(endpoint)
         self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
 
@@ -58,7 +59,7 @@ class BaseTests(RestTestsBase):
         endpoint = self._auth_uri + '/login'
 
         # Check success
-        logger.info("*** VERIFY valid credentials")
+        log.info("*** VERIFY valid credentials")
         credentials = json.dumps(
             {'username': self._username, 'password': self._password})
         r = self.app.post(endpoint, data=credentials)
@@ -70,7 +71,7 @@ class BaseTests(RestTestsBase):
             'Authorization': 'Bearer ' + content['token']}
 
         # Check failure
-        logger.info("*** VERIFY invalid credentials")
+        log.info("*** VERIFY invalid credentials")
         credentials = json.dumps({
             'username': self._username + 'X',
             'password': self._password + 'Y'
@@ -84,12 +85,12 @@ class BaseTests(RestTestsBase):
         endpoint = self._auth_uri + '/profile'
 
         # Check success
-        logger.info("*** VERIFY valid token")
+        log.info("*** VERIFY valid token")
         r = self.app.get(endpoint, headers=self.__class__.auth_header)
         self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
 
         # Check failure
-        logger.info("*** VERIFY invalid token")
+        log.info("*** VERIFY invalid token")
         r = self.app.get(endpoint)
         self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_UNAUTHORIZED)
 
@@ -99,12 +100,12 @@ class BaseTests(RestTestsBase):
         endpoint = self._auth_uri + '/logout'
 
         # Check success
-        logger.info("*** VERIFY valid token")
+        log.info("*** VERIFY valid token")
         r = self.app.get(endpoint, headers=self.__class__.auth_header)
         self.assertEqual(r.status_code, self._hcodes.HTTP_OK_NORESPONSE)
 
         # Check failure
-        logger.info("*** VERIFY invalid token")
+        log.info("*** VERIFY invalid token")
         r = self.app.get(endpoint)
         self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_UNAUTHORIZED)
 

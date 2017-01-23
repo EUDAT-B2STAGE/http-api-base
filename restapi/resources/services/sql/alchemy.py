@@ -9,7 +9,7 @@ sqllite, MySQL or Postgres
 from commons.services import ServiceFarm
 from commons.logs import get_logger
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 class SQLFarm(ServiceFarm):
@@ -32,7 +32,7 @@ class SQLFarm(ServiceFarm):
         uri = app.config.get('SQLALCHEMY_DATABASE_URI')
         self.get_instance()
 
-        ## Create the sqllite file if missing?
+        # # Create the sqllite file if missing?
         # if uri.startswith('sqlite'):
         #     import re
         #     db_file = re.sub("sqlite.*:///", "", uri)
@@ -41,24 +41,23 @@ class SQLFarm(ServiceFarm):
         try:
             self._db.init_app(app)
         except Exception as e:
-            logger.critical("Invalid SQLalchemy instance!\n%s" % str(e))
+            log.critical("Invalid SQLalchemy instance!\n%s" % str(e))
 
 # // TO FIX:
 # CHECK IF PASSWORD IS INSIDE THE STRING AND CENSOR IT
-        logger.debug(
+        log.debug(
             "App attached to '%s'" % uri)
 
         # Create database and tables if they don't exist yet
         with app.app_context():
             from ....confs import config
 
-# // TO FIX:
-# this option should go inside the configuration file
+            # TO FIX: this option should go inside the configuration file
             if config.REMOVE_DATA_AT_INIT_TIME:
-                logger.warning("Removing old data")
+                log.warning("Removing old data")
                 self._db.drop_all()
 
-            logger.info("Created database and tables")
+            log.info("Created database and tables")
             self._db.create_all()
 
     @classmethod
@@ -77,11 +76,11 @@ class SQLFarm(ServiceFarm):
 
             # Inject models inside the class
             for name, model in cls._models.items():
-                logger.debug("Injecting SQL model '%s'" % name)
+                log.verbose("Injecting SQL model '%s'" % name)
                 setattr(current_instance, name, model)
 
             # Save the sqlalchemy reference (to init the app)
             SQLFarm._db = current_instance
-            logger.debug("SQLAlchemy for Flask initialized")
+            log.debug("SQLAlchemy for Flask initialized")
 
         return SQLFarm._db

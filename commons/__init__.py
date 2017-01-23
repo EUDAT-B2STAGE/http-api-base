@@ -32,9 +32,11 @@ json.dumps({})
 JSON_EXT = 'json'
 
 #######################
+# authors and license
 myself = "Paolo D'Onorio De Meo <p.donoriodemeo@gmail.com>"
 lic = "MIT"
 
+#######################
 IS_FRONTEND = os.getenv("PYTHON_SERVER_CATEGORY", "").lower() == 'frontend'
 IS_BACKEND = not IS_FRONTEND
 
