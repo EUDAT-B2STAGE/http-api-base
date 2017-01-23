@@ -82,22 +82,18 @@ class TestUtilities(unittest.TestCase):
 
         method = method.lower()
         status_code = str(status_code)
-        self.assertIn(method, definition)
-        self.assertIn("responses", definition[method])
 
-        for code in definition[method]["responses"]:
-            if code != status_code:
-                continue
+        try:
+            # self.assertIn(method, definition)
+            # self.assertIn("responses", definition[method])
+            # self.assertIn(status_code, definition[method]["responses"])
 
-            msg = definition[method]["responses"][status_code]
-            self.assertIn("description", msg)
+            status_message = definition[method]["responses"][status_code]
+            # self.assertIn("description", status_message)
 
-            return msg["description"]
-        log.error(
-            "Status code %s not found for %s %s "
-            % (status_code, method, "_endpoint_?")
-        )
-        return None
+            return status_message["description"]
+        except:
+            return None
 
     def save(self, variable, value, read_only=False):
         """
@@ -431,10 +427,18 @@ class TestUtilities(unittest.TestCase):
             error = force_error
         elif check_error:
             error = self.get_error_message(definition, method, status)
+            if error is None:
+                log.critical(
+                    "Unable to find a valid message for " +
+                    "status = %s, method = %s, endpoint = %s"
+                    % (status, method, endpoint)
+                )
+
+            # if error is None, it will give errors in the next error assert
         else:
             error = None
 
-        if error is not None:
+        if check_error:
             errors = content['Response']['errors']
             if errors is not None:
                 self.assertEqual(errors[0], error)
