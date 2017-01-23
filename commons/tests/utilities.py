@@ -11,6 +11,9 @@ import commons.htmlcodes as hcodes
 log = get_logger(__name__)
 log.setLevel(logging.DEBUG)
 
+TEST_TROUBLESOME = False
+TEST_NOTALLOWED = False
+
 SERVER_URI = 'http://%s:%ss' % (TEST_HOST, SERVER_PORT)
 API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
 AUTH_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
@@ -192,6 +195,10 @@ class TestUtilities(unittest.TestCase):
             # key = d["key"]
             key = d["name"]
             type = d["type"]
+            if "format" in d:
+                format = d['format']
+            else:
+                format = ""
             value = None
 
             if 'enum' in d:
@@ -205,7 +212,7 @@ class TestUtilities(unittest.TestCase):
                     value = "NOT_FOUND"
             elif type == "int":
                 value = random.randrange(0, 1000, 1)
-            elif type == "date":
+            elif format == "date":
                 value = "1969-07-20"  # 20:17:40 UTC
             # elif type == "autocomplete":
                 # continue
@@ -319,7 +326,10 @@ class TestUtilities(unittest.TestCase):
         # # # TEST GET # # #
         r = self.app.get(uri)
         if get not in definition:
-            self.assertEqual(r.status_code, NOT_ALLOWED)
+            if not TEST_NOTALLOWED:
+                log.critical("Skipping test for NOT_ALLOWED on GET %s" % uri)
+            else:
+                self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[get]:
             self.assertEqual(r.status_code, OK)
         else:
@@ -334,7 +344,10 @@ class TestUtilities(unittest.TestCase):
         # # # TEST POST # # #
         r = self.app.post(uri)
         if post not in definition:
-            self.assertEqual(r.status_code, NOT_ALLOWED)
+            if not TEST_NOTALLOWED:
+                log.critical("Skipping test for NOT_ALLOWED on POST %s" % uri)
+            else:
+                self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[post]:
             self.assertEqual(r.status_code, OK)
         else:
@@ -346,7 +359,10 @@ class TestUtilities(unittest.TestCase):
         # # # TEST PUT # # #
         r = self.app.put(uri)
         if put not in definition:
-            self.assertEqual(r.status_code, NOT_ALLOWED)
+            if not TEST_NOTALLOWED:
+                log.critical("Skipping test for NOT_ALLOWED on PUT %s" % uri)
+            else:
+                self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[put]:
             self.assertEqual(r.status_code, BAD_REQUEST)
         else:
@@ -358,7 +374,11 @@ class TestUtilities(unittest.TestCase):
         # # # TEST DELETE # # #
         r = self.app.delete(uri)
         if delete not in definition:
-            self.assertEqual(r.status_code, NOT_ALLOWED)
+            if not TEST_NOTALLOWED:
+                log.critical(
+                    "Skipping test for NOT_ALLOWED on DELETE %s" % uri)
+            else:
+                self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[delete]:
             self.assertEqual(r.status_code, BAD_REQUEST)
         else:
@@ -467,6 +487,10 @@ class TestUtilities(unittest.TestCase):
                                  headers, schema,
                                  second_definition, second_endpoint=None,
                                  status_configuration={}):
+
+        if not TEST_TROUBLESOME:
+            log.critical("---- SKIPPING TROUBLESOME TESTS ----")
+            return
         """
             Test several troublesome conditions based on field types
                 (obtained from json schema)
