@@ -11,7 +11,7 @@ from __future__ import absolute_import
 import os
 from base64 import b64encode
 from ...oauth import oauth
-from ...confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
+from commons import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from commons.globals import mem
 from commons.meta import Meta
 from commons.logs import get_logger

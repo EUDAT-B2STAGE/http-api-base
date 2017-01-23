@@ -112,22 +112,4 @@ SECURITY_PASSWORD_SALT = "thishastobelongenoughtosayislonglongverylong"
 SECURITY_REGISTERABLE = True
 SECURITY_CONFIRMABLE = True
 SECURITY_SEND_REGISTER_EMAIL = False
-#SECURITY_TRACKABLE
-
-# # IRODS 4
-# IRODS_HOME = os.path.join(USER_HOME, ".irods")
-# if not os.path.exists(IRODS_HOME):
-#     os.mkdir(IRODS_HOME)
-# IRODS_ENV = os.path.join(IRODS_HOME, "irods_environment.json")
-# # IRODS_ENV = USER_HOME + "/.irods/.irodsEnv"
-
-#################################
-# THE APP
-
-# DEBUG = os.environ.get('API_DEBUG', default_debug)
-DEBUG = os.environ.get('API_DEBUG', None)
-#DEBUG = True
-
-PRODUCTION = False
-if os.environ.get('APP_MODE', '') == 'production':
-    PRODUCTION = True
+# SECURITY_TRACKABLE

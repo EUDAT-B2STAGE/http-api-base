@@ -31,10 +31,15 @@ class BeSwagger(object):
     """
 
     def __init__(self, endpoints, customizer):
+
+        # Input
         self._endpoints = endpoints
-        self._paths = {}
-        self._original_paths = {}
         self._customizer = customizer
+
+        # Swagger paths to be publish
+        self._paths = {}
+        # Original paths as flask should map
+        self._original_paths = {}
         # The complete set of query parameters for all classes
         self._qparams = {}
         # Save schemas for parameters before to remove the custom sections
@@ -212,9 +217,8 @@ class BeSwagger(object):
 
             ##################
             # Skip what the developers does not want to be public in swagger
-            # TODO: check if this is the right moment
-            # to skip the rest of the cycle
-            if not extra.publish:
+            # NOTE: do not skip if in testing mode
+            if not extra.publish and not self._customizer._testing:
                 continue
 
             # Handle global tags
@@ -264,18 +268,20 @@ class BeSwagger(object):
         Provide the minimum required data according to swagger specs.
         """
 
+        # Better chosen dinamically from endpoint.py
+        schemes = ['http']
+        if self._customizer._production:
+            schemes = ['https']
+
         # A template base
         output = {
             "swagger": "2.0",
-            # TO FIX: set localhost from request, at least in production
-            # "host": "localhost:8080",
             "info": {
                 "version": "0.0.1",
                 "title": "Your application name",
             },
-            "schemes": [
-                "http"
-            ],
+            "schemes": schemes,
+            # "host": "localhost"  # chosen dinamically
             "basePath": "/",
             "securityDefinitions": {
                 "Bearer": {

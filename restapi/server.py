@@ -12,7 +12,7 @@ import os
 from flask import Flask as OriginalFlask, request, g
 from .response import ResponseMaker
 from .resources.services.oauth2clients import ExternalServicesLogin as oauth2
-from .confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
+from commons import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from commons.meta import Meta
 from commons.customization import Customizer
 from commons.globals import mem
@@ -102,7 +102,7 @@ def create_app(name=__name__, debug=False,
     #############################
     # Initialize reading of all files
     # TO FIX: remove me
-    mem.customizer = Customizer(__package__)
+    mem.customizer = Customizer(__package__, testing_mode, PRODUCTION)
 
     #################################################
     # Flask app instance

@@ -7,13 +7,12 @@ And a Farm: How to create endpoints into REST service.
 
 from __future__ import absolute_import
 
+from flask import jsonify, current_app
 from ..rest.definition import EndpointResource
-# from ...confs import config
 from ..services.detect import CELERY_AVAILABLE
 from ..services.authentication import BaseAuthentication
-from flask import jsonify, current_app
 from commons import htmlcodes as hcodes
-# from commons.swagger import swagger
+from commons.globals import mem
 from commons.logs import get_logger
 
 log = get_logger(__name__)
@@ -33,18 +32,18 @@ class SwaggerSpecifications(EndpointResource):
 
     def get(self):
 
-        # # find the package root to read swagger
-        # root = __package__.split('.')[0]
-        # # Enable swagger
-        # swag = swagger(current_app,
-        #                package_root=root, from_file_keyword='swag_file')
-        # # Build the output
-        # return jsonify(swag)
-
         # NOTE: swagger dictionary is read only once, at server init time
-        from commons.globals import mem
+        swagjson = mem.customizer._definitions
+
+        # NOTE: changing dinamically options, based on where the client lies
+        from commons import get_api_url
+        api_url, _ = get_api_url()
+        scheme, host = api_url.rstrip('/').split('://')
+        swagjson['host'] = host
+        swagjson['schemes'] = [scheme]
+
         # Jsonify, so we skip custom response building
-        return jsonify(mem.customizer._definitions)
+        return jsonify(swagjson)
 
 
 class Login(EndpointResource):

@@ -35,10 +35,14 @@ class Customizer(object):
     Read all of available configurations and definitions.
 
     """
-    def __init__(self, package):
+    def __init__(self, package, testing=False, production=False):
+
+        # Input
+        self._current_package = package
+        self._testing = testing
+        self._production = production
 
         # Some initialization
-        self._current_package = package
         self._endpoints = []
         self._definitions = {}
         self._configurations = {}
