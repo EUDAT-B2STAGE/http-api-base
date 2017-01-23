@@ -33,6 +33,7 @@ class BeSwagger(object):
     def __init__(self, endpoints, customizer):
         self._endpoints = endpoints
         self._paths = {}
+        self._original_paths = {}
         self._customizer = customizer
         # The complete set of query parameters for all classes
         self._qparams = {}
@@ -199,16 +200,22 @@ class BeSwagger(object):
                 self.query_parameters(
                     endpoint.cls, method=method, uri=uri, params=query_params)
 
+            # Swagger does not like empty arrays
+            if len(specs['parameters']) < 1:
+                specs.pop('parameters')
+
+            ##################
+            # Save definition for checking
+            if uri not in self._original_paths:
+                self._original_paths[uri] = {}
+            self._original_paths[uri][method] = specs
+
             ##################
             # Skip what the developers does not want to be public in swagger
             # TODO: check if this is the right moment
             # to skip the rest of the cycle
             if not extra.publish:
                 continue
-
-            # Swagger does not like empty arrays
-            if len(specs['parameters']) < 1:
-                specs.pop('parameters')
 
             # Handle global tags
             if 'tags' not in specs and len(endpoint.tags) > 0:
@@ -225,6 +232,7 @@ class BeSwagger(object):
             if newuri not in self._paths:
                 self._paths[newuri] = {}
             self._paths[newuri][method] = specs
+
             log.verbose("Built definition '%s:%s'" % (method.upper(), newuri))
 
         endpoint.custom['methods'][method] = extra
@@ -328,6 +336,7 @@ class BeSwagger(object):
             tags.append({'name': tag, 'description': desc})
         output['tags'] = tags
 
+        self._customizer._original_paths = self._original_paths
         return output
 
     def read_definitions(self, filename='swagger'):

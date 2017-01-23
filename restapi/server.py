@@ -232,6 +232,30 @@ def create_app(name=__name__, debug=False,
         current_endpoints.rest_api.init_app(microservice)
 
     ##############################
+    # Clean app routes
+    ignore_verbs = {"HEAD", "OPTIONS"}
+
+    for rule in microservice.url_map.iter_rules():
+
+        rulename = str(rule)
+        endpoint = microservice.view_functions[rule.endpoint]
+        if not hasattr(endpoint, 'view_class'):
+            continue
+        newmethods = ignore_verbs.copy()
+
+        for verb in rule.methods - ignore_verbs:
+            method = verb.lower()
+            if method in mem.customizer._original_paths[rulename]:
+                # remove from flask mapping
+                # to allow 405 response
+                newmethods.add(verb)
+            else:
+                log.verbose("Removed method %s.%s from mapping" %
+                            (rulename, verb))
+
+        rule.methods = newmethods
+
+    ##############################
     # Init objects inside the app context
     if not avoid_context:
         with microservice.app_context():
