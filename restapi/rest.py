@@ -84,7 +84,7 @@ def create_endpoints(epo, security=False, debug=False):
 
         raise AttributeError("Follow the docs and define your endpoints")
 
-    log.info("Using resources defined within swagger")
+    log.debug("Using resources defined within swagger")
 
     for resource in resources:
 
@@ -97,10 +97,8 @@ def create_endpoints(epo, security=False, debug=False):
 
     # Enable all schema endpoints to be mapped with this extra step
     se = mem.customizer._schema_endpoint
-
     if len(se.uris) > 0:
-        log.info("Found one or more schema to expose")
-        # log.pp(se)
+        log.debug("Found one or more schema to expose")
         epo.add(se)
 
     ####################################

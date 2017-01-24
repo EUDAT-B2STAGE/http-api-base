@@ -6,6 +6,7 @@ conf:
   command: ./boot
   environment:
     APP_MODE: ${SELECTED_APP_MODE}
+    DEBUG_LEVEL: DEBUG
     # Decide which service should handle users inside the backend server
     BACKEND_AUTH_SERVICE: relationaldb
 ###############################

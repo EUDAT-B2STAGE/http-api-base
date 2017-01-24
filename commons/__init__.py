@@ -32,9 +32,11 @@ json.dumps({})
 JSON_EXT = 'json'
 
 #######################
+# authors and license
 myself = "Paolo D'Onorio De Meo <p.donoriodemeo@gmail.com>"
 lic = "MIT"
 
+#######################
 IS_FRONTEND = os.getenv("PYTHON_SERVER_CATEGORY", "").lower() == 'frontend'
 IS_BACKEND = not IS_FRONTEND
 
@@ -112,6 +114,16 @@ if IS_FRONTEND:
     # AUTH_URL = URL + '/auth/'
     pass
 
+#################################
+# THE APP
+
+# DEBUG = os.environ.get('API_DEBUG', default_debug)
+DEBUG = os.environ.get('API_DEBUG', None)
+
+PRODUCTION = False
+if os.environ.get('APP_MODE', '') == 'production':
+    PRODUCTION = True
+
 
 ########################################
 def get_api_url():
@@ -123,7 +135,6 @@ def get_api_url():
     Warning: it works only if called inside a Flask endpoint
     """
 
-    import os
     import re
     from flask import request
     from urllib.parse import urlparse
@@ -131,7 +142,7 @@ def get_api_url():
     backend_port = BACKEND_PUBLIC_PORT
     api_url = request.url_root
 
-    if os.environ.get('APP_MODE', '') == 'production':
+    if PRODUCTION:
         parsed = urlparse(api_url)
         if parsed.port is not None and parsed.port == 443:
             backend_port = parsed.port

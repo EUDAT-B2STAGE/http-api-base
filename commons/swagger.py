@@ -31,9 +31,15 @@ class BeSwagger(object):
     """
 
     def __init__(self, endpoints, customizer):
+
+        # Input
         self._endpoints = endpoints
-        self._paths = {}
         self._customizer = customizer
+
+        # Swagger paths to be publish
+        self._paths = {}
+        # Original paths as flask should map
+        self._original_paths = {}
         # The complete set of query parameters for all classes
         self._qparams = {}
         # Save schemas for parameters before to remove the custom sections
@@ -199,16 +205,21 @@ class BeSwagger(object):
                 self.query_parameters(
                     endpoint.cls, method=method, uri=uri, params=query_params)
 
-            ##################
-            # Skip what the developers does not want to be public in swagger
-            # TODO: check if this is the right moment
-            # to skip the rest of the cycle
-            if not extra.publish:
-                continue
-
             # Swagger does not like empty arrays
             if len(specs['parameters']) < 1:
                 specs.pop('parameters')
+
+            ##################
+            # Save definition for checking
+            if uri not in self._original_paths:
+                self._original_paths[uri] = {}
+            self._original_paths[uri][method] = specs
+
+            ##################
+            # Skip what the developers does not want to be public in swagger
+            # NOTE: do not skip if in testing mode
+            if not extra.publish and not self._customizer._testing:
+                continue
 
             # Handle global tags
             if 'tags' not in specs and len(endpoint.tags) > 0:
@@ -225,6 +236,7 @@ class BeSwagger(object):
             if newuri not in self._paths:
                 self._paths[newuri] = {}
             self._paths[newuri][method] = specs
+
             log.verbose("Built definition '%s:%s'" % (method.upper(), newuri))
 
         endpoint.custom['methods'][method] = extra
@@ -256,18 +268,20 @@ class BeSwagger(object):
         Provide the minimum required data according to swagger specs.
         """
 
+        # Better chosen dinamically from endpoint.py
+        schemes = ['http']
+        if self._customizer._production:
+            schemes = ['https']
+
         # A template base
         output = {
             "swagger": "2.0",
-            # TO FIX: set localhost from request, at least in production
-            # "host": "localhost:8080",
             "info": {
                 "version": "0.0.1",
                 "title": "Your application name",
             },
-            "schemes": [
-                "http"
-            ],
+            "schemes": schemes,
+            # "host": "localhost"  # chosen dinamically
             "basePath": "/",
             "securityDefinitions": {
                 "Bearer": {
@@ -328,6 +342,7 @@ class BeSwagger(object):
             tags.append({'name': tag, 'description': desc})
         output['tags'] = tags
 
+        self._customizer._original_paths = self._original_paths
         return output
 
     def read_definitions(self, filename='swagger'):
@@ -385,7 +400,7 @@ class BeSwagger(object):
         try:
             self._customizer._validated_spec = Spec.from_dict(
                 swag_dict, config=bravado_config)
-            log.info("Swagger configuration is validated")
+            log.debug("Swagger configuration is validated")
         except Exception as e:
             # raise e
             error = str(e).split('\n')[0]

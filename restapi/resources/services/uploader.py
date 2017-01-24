@@ -14,17 +14,18 @@ http://stackoverflow.com/a/9533843/2114395
 
 """
 
+from __future__ import absolute_import
+
 import os
 # import shutil
 # import subprocess as shell
 from flask import request, send_from_directory
 from werkzeug import secure_filename
 import commons.htmlcodes as hcodes
-from commons.logs import get_logger
-
 from ...confs.config import UPLOAD_FOLDER
 
-logger = get_logger(__name__)
+from commons.logs import get_logger
+log = get_logger(__name__)
 
 
 ######################################
@@ -68,7 +69,7 @@ class Uploader(object):
 
         path = self.absolute_upload_file(
             filename, subfolder=subfolder, onlydir=True)
-        logger.info("Provide '%s' from '%s' " % (filename, path))
+        log.info("Provide '%s' from '%s' " % (filename, path))
 
         return send_from_directory(path, filename)
 
@@ -91,8 +92,8 @@ class Uploader(object):
 # TO FIX: file is saved as data, not as ASCII/TEXT
         # with open(abs_fname, "wb") as f:
         with open(abs_fname, "ab") as f:
-            # logger.critical("Copying chunk %d" % chunk_number)
-            # logger.critical("Pos = %d" % ((chunk_number - 1) * chunk_size))
+            # log.critical("Copying chunk %d" % chunk_number)
+            # log.critical("Pos = %d" % ((chunk_number - 1) * chunk_size))
             # f.seek((int(chunk_number) - 1) * int(chunk_size), 0)
             content.save(f)
             f.close()
@@ -115,7 +116,7 @@ class Uploader(object):
         # Check file name
         filename = secure_filename(myfile.filename)
         abs_file = self.absolute_upload_file(filename, subfolder)
-        logger.info("File request for [%s](%s)" % (myfile, abs_file))
+        log.info("File request for [%s](%s)" % (myfile, abs_file))
 
         # ## IMPORTANT NOTE TO SELF:
         # If you are going to receive chunks here there could be problems.
@@ -125,10 +126,10 @@ class Uploader(object):
         # But corrupted...
         if os.path.exists(abs_file):
 
-            logger.warn("Already exists")
+            log.warn("Already exists")
             if force:
                 os.remove(abs_file)
-                logger.debug("Forced removal")
+                log.debug("Forced removal")
             else:
                 return self.force_response(
                     errors={
@@ -139,7 +140,7 @@ class Uploader(object):
         # Save the file
         try:
             myfile.save(abs_file)
-            logger.debug("Absolute file path should be '%s'" % abs_file)
+            log.debug("Absolute file path should be '%s'" % abs_file)
         except Exception:
             return self.force_response(errors={
                 "Permissions": "Failed to write uploaded file"},
@@ -162,7 +163,7 @@ class Uploader(object):
             ftype = tmp[0].strip()
             fcharset = tmp[1].split('=')[1].strip()
         except Exception:
-            logger.warning("Unknown type for '%s'" % abs_file)
+            log.warning("Unknown type for '%s'" % abs_file)
 
         ########################
         # ## Final response
@@ -183,7 +184,7 @@ class Uploader(object):
 
         # Check file existence
         if not os.path.exists(abs_file):
-            logger.critical("File '%s' not found" % abs_file)
+            log.critical("File '%s' not found" % abs_file)
             return self.force_response(errors={
                 "File missing": "File requested does not exists"},
                 code=hcodes.HTTP_BAD_NOTFOUND)
@@ -192,11 +193,11 @@ class Uploader(object):
         try:
             os.remove(abs_file)
         except Exception:
-            logger.critical("Cannot remove local file %s" % abs_file)
+            log.critical("Cannot remove local file %s" % abs_file)
             return self.force_response(errors={
                 "Permissions": "Failed to remove file"},
                 code=hcodes.HTTP_DEFAULT_SERVICE_FAIL)
-        logger.warn("Removed '%s' " % abs_file)
+        log.warn("Removed '%s' " % abs_file)
 
         if skip_response:
             return

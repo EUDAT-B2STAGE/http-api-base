@@ -12,14 +12,20 @@ import os
 from flask import Flask as OriginalFlask, request, g
 from .response import ResponseMaker
 from .resources.services.oauth2clients import ExternalServicesLogin as oauth2
-from .confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
+from commons import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from commons.meta import Meta
 from commons.customization import Customizer
 from commons.globals import mem
-from commons.logs import get_logger, handle_log_output, MAX_CHAR_LEN
+from commons.logs import get_logger, \
+    handle_log_output, MAX_CHAR_LEN, set_global_log_level
 
-
+#############################
+# LOGS
 log = get_logger(__name__)
+
+# This is the first file to be imported in the project
+# We need to enable many things on a global level for logs
+set_global_log_level(package=__package__)
 
 
 #############################
@@ -38,7 +44,7 @@ class Flask(OriginalFlask):
             if len(out) > response_log_max_len:
                 out = out[:response_log_max_len] + ' ...'
 
-            log.verbose("MAKE_RESPONSE: %s" % out)
+            log.very_verbose("MAKE_RESPONSE: %s" % out)
         except:
             log.debug("MAKE_RESPONSE: [UNREADABLE OBJ]")
         responder = ResponseMaker(rv)
@@ -62,6 +68,7 @@ class Flask(OriginalFlask):
 
 
 def create_auth_instance(module, services, app, first_call=False):
+
     # This is the main object that drives authentication
     # inside our Flask server.
     # Note: to be stored inside the flask global context
@@ -72,8 +79,12 @@ def create_auth_instance(module, services, app, first_call=False):
         ext_auth = oauth2(app.config['TESTING'])
         custom_auth.set_oauth2_services(ext_auth._available_services)
 
+    secret = 'IaMvERYsUPERsECRET'
     if not app.config['TESTING']:
-        custom_auth.import_secret(app.config['SECRET_KEY_FILE'])
+        secret = str(custom_auth.import_secret(app.config['SECRET_KEY_FILE']))
+
+    # Install app secret for oauth2
+    app.secret_key = secret + '_app'
 
     return custom_auth
 
@@ -90,7 +101,8 @@ def create_app(name=__name__, debug=False,
 
     #############################
     # Initialize reading of all files
-    mem.customizer = Customizer(__package__)
+    # TO FIX: remove me
+    mem.customizer = Customizer(__package__, testing_mode, PRODUCTION)
 
     #################################################
     # Flask app instance
@@ -131,15 +143,12 @@ def create_app(name=__name__, debug=False,
             tmp = str(ENVVAR_DEBUG).lower() == 'true'
         debug = tmp  # bool(tmp)
     microservice.config['DEBUG'] = debug
-
-    # Set the new level of debugging
-    log = get_logger(__name__, debug)
-    log.info("FLASKING! Created application")
+    log.info("Flask application generated")
 
     ##############################
     if PRODUCTION:
 
-        log.info("Production server ON")
+        log.info("Production server mode is ON")
 
         # TO FIX: random secrety key in production
         # # Check and use a random file a secret key.
@@ -158,7 +167,7 @@ def create_app(name=__name__, debug=False,
     # Cors
     from .cors import cors
     cors.init_app(microservice)
-    log.info("FLASKING! Injected CORS")
+    log.debug("FLASKING! Injected CORS")
 
     ##############################
     # DATABASE/SERVICEs CHECKS
@@ -223,6 +232,34 @@ def create_app(name=__name__, debug=False,
         current_endpoints.rest_api.init_app(microservice)
 
     ##############################
+    # Clean app routes
+    ignore_verbs = {"HEAD", "OPTIONS"}
+
+    for rule in microservice.url_map.iter_rules():
+
+        rulename = str(rule)
+        # Skip rules for exposing schemas
+        if '/schemas/' in rulename:
+            continue
+
+        endpoint = microservice.view_functions[rule.endpoint]
+        if not hasattr(endpoint, 'view_class'):
+            continue
+        newmethods = ignore_verbs.copy()
+
+        for verb in rule.methods - ignore_verbs:
+            method = verb.lower()
+            if method in mem.customizer._original_paths[rulename]:
+                # remove from flask mapping
+                # to allow 405 response
+                newmethods.add(verb)
+            else:
+                log.verbose("Removed method %s.%s from mapping" %
+                            (rulename, verb))
+
+        rule.methods = newmethods
+
+    ##############################
     # Init objects inside the app context
     if not avoid_context:
         with microservice.app_context():
@@ -266,7 +303,7 @@ def create_app(name=__name__, debug=False,
                 pass
 
         log.info("{} {} {} {}".format(
-                    request.method, request.url, data, response))
+                 request.method, request.url, data, response))
         return response
 
     ##############################
@@ -276,6 +313,17 @@ def create_app(name=__name__, debug=False,
         for callback in getattr(g, 'after_request_callbacks', ()):
             callback(response)
         return response
+
+    # ##############################
+    # log.critical("test")
+    # log.error("test")
+    # log.warning("test")
+    # log.info("test")
+    # log.debug("test")
+    # log.verbose("test")
+    # log.very_verbose("test")
+    # log.pp(microservice)
+    # log.critical_exit("test")
 
     ##############################
     # App is ready

@@ -9,9 +9,9 @@ from __future__ import absolute_import
 from neomodel import StructuredNode, StringProperty, DateTimeProperty, \
     RelationshipTo, RelationshipFrom, \
     OneOrMore, ZeroOrMore, ZeroOrOne
-from ..logs import get_logger
 
-logger = get_logger(__name__)
+# from ..logs import get_logger
+# log = get_logger(__name__)
 
 
 class User(StructuredNode):

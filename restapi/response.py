@@ -3,7 +3,7 @@
 """
 
 Handle the response 'algorithm'
-(see EUDAT-B2STAGE/http-api-base#7)
+(also see EUDAT-B2STAGE/http-api-base#7)
 
 force_response (base.py)    or              simple return
 [ResponseElements()]        [obj / (content,status) / (content,status,headers)]
@@ -26,6 +26,8 @@ force_response (base.py)    or              simple return
 
 """
 
+from __future__ import absolute_import
+
 import attr
 from .jsonify import json
 from flask import Response, jsonify
@@ -36,15 +38,13 @@ from commons import htmlcodes as hcodes
 from commons.attrs.api import ResponseElements
 from commons.logs import get_logger
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 # useful for pagination
 CURRENTPAGE_KEY = 'currentpage'
 DEFAULT_CURRENTPAGE = 1
 PERPAGE_KEY = 'perpage'
 DEFAULT_PERPAGE = 10
-
-# response elements
 
 
 ########################
@@ -77,9 +77,9 @@ class InternalResponse(Response):
         if isinstance(rv, dict):
             try:
                 rv = jsonify(rv)
-                logger.debug("Jsonified response")
+                log.very_verbose("Jsonified response")
             except:
-                logger.error("Cannot jsonify rv")
+                log.error("Cannot jsonify rv")
 
         return super(InternalResponse, cls).force_type(rv, environ)
 
@@ -206,7 +206,7 @@ class ResponseMaker(object):
         # 2. Apply DEFAULT or CUSTOM manipulation
         # (strictly to the sole content)
         method = get_response()
-        logger.debug("Apply response method: %s" % method)
+        log.verbose("Apply response method: %s" % method)
         r['defined_content'] = method(r['defined_content'])
 
         # 3. Recover correct status and errors
@@ -220,7 +220,7 @@ class ResponseMaker(object):
             r['code'], r['errors'], r['meta'])
 
         if r['extra'] is not None:
-            logger.warning("NOT IMPLEMENTED YET: " +
+            log.warning("NOT IMPLEMENTED YET: " +
                            "what to do with extra field?\n%s" % r['extra'])
 
         # 5. Return what is necessary to build a standard flask response
@@ -257,7 +257,7 @@ class ResponseMaker(object):
 
         # Decide code range
         if errors is None and defined_content is None:
-            logger.warning("RESPONSE: Warning, no data and no errors")
+            log.warning("RESPONSE: Warning, no data and no errors")
             code = hcodes.HTTP_OK_NORESPONSE
         elif errors is None:
             if code not in range(0, hcodes.HTTP_MULTIPLE_CHOICES):
@@ -306,7 +306,7 @@ class ResponseMaker(object):
 
             code = int(code)
         except Exception as e:
-            logger.critical("Could not build response!\n%s" % e)
+            log.critical("Could not build response!\n%s" % e)
             # Revert to defaults
             defined_content = None,
             data_type = str(type(defined_content))
@@ -368,7 +368,7 @@ def get_content_from_response(http_out):
         try:
             response = json.loads(http_out.get_data().decode())
         except Exception as e:
-            logger.critical("Failed to load response:\n%s" % e)
+            log.critical("Failed to load response:\n%s" % e)
             raise ValueError(
                 "Trying to recover informations" +
                 " from a malformed response:\n%s" % http_out)
