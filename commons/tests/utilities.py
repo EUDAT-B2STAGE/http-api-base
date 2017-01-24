@@ -12,7 +12,6 @@ log = get_logger(__name__)
 log.setLevel(logging.DEBUG)
 
 TEST_TROUBLESOME = False
-TEST_NOTALLOWED = False
 
 SERVER_URI = 'http://%s:%ss' % (TEST_HOST, SERVER_PORT)
 API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
@@ -322,10 +321,7 @@ class TestUtilities(unittest.TestCase):
         # # # TEST GET # # #
         r = self.app.get(uri)
         if get not in definition:
-            if not TEST_NOTALLOWED:
-                log.critical("Skipping test for NOT_ALLOWED on GET %s" % uri)
-            else:
-                self.assertEqual(r.status_code, NOT_ALLOWED)
+            self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[get]:
             self.assertEqual(r.status_code, OK)
         else:
@@ -340,25 +336,19 @@ class TestUtilities(unittest.TestCase):
         # # # TEST POST # # #
         r = self.app.post(uri)
         if post not in definition:
-            if not TEST_NOTALLOWED:
-                log.critical("Skipping test for NOT_ALLOWED on POST %s" % uri)
-            else:
-                self.assertEqual(r.status_code, NOT_ALLOWED)
+            self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[post]:
-            self.assertEqual(r.status_code, OK)
+            self.assertEqual(r.status_code, BAD_REQUEST)
         else:
             self.assertEqual(r.status_code, UNAUTHORIZED)
 
             r = self.app.post(uri, headers=headers)
-            self.assertEqual(r.status_code, OK)
+            self.assertEqual(r.status_code, BAD_REQUEST)
 
         # # # TEST PUT # # #
         r = self.app.put(uri)
         if put not in definition:
-            if not TEST_NOTALLOWED:
-                log.critical("Skipping test for NOT_ALLOWED on PUT %s" % uri)
-            else:
-                self.assertEqual(r.status_code, NOT_ALLOWED)
+            self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[put]:
             self.assertEqual(r.status_code, BAD_REQUEST)
         else:
@@ -370,11 +360,7 @@ class TestUtilities(unittest.TestCase):
         # # # TEST DELETE # # #
         r = self.app.delete(uri)
         if delete not in definition:
-            if not TEST_NOTALLOWED:
-                log.critical(
-                    "Skipping test for NOT_ALLOWED on DELETE %s" % uri)
-            else:
-                self.assertEqual(r.status_code, NOT_ALLOWED)
+            self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[delete]:
             self.assertEqual(r.status_code, BAD_REQUEST)
         else:
