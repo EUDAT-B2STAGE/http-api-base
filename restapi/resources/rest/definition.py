@@ -502,17 +502,19 @@ class EndpointResource(Resource):
                                 is_schema_url=False, method=None):
 
         url = request.url_rule.rule
-        original_uri = mem.customizer._schemas_map[url]
-        if original_uri not in mem.customizer._definitions["paths"]:
+        if is_schema_url:
+            url = mem.customizer._schemas_map[url]
+
+        if url not in mem.customizer._definitions["paths"]:
             return None
 
         if method is None:
             method = request.method
         method = method.lower()
-        if method not in mem.customizer._definitions["paths"][original_uri]:
+        if method not in mem.customizer._definitions["paths"][url]:
             return None
 
-        tmp = mem.customizer._definitions["paths"][original_uri][method]
+        tmp = mem.customizer._definitions["paths"][url][method]
 
         if key is None:
             return tmp
@@ -521,16 +523,17 @@ class EndpointResource(Resource):
 
         return tmp[key]
 
-    def get_endpoint_custom_definition(self, method=None):
+    def get_endpoint_custom_definition(self, is_schema_url=False, method=None):
 
         url = request.url_rule.rule
-        original_uri = mem.customizer._schemas_map[url]
+        if is_schema_url:
+            url = mem.customizer._schemas_map[url]
 
         if method is None:
             method = request.method
         method = method.lower()
 
-        if method not in mem.customizer._parameter_schemas[original_uri]:
+        if method not in mem.customizer._parameter_schemas[url]:
             return None
         else:
-            return mem.customizer._parameter_schemas[original_uri][method]
+            return mem.customizer._parameter_schemas[url][method]

@@ -18,14 +18,12 @@ class RecoverSchema(EndpointResource):
         """ Expose schemas for UIs automatic form building """
 
         # TO FIX: not from json but from query
-        method = self.get_input(single_parameter='method', default='GET')
+        method = self.get_input(single_parameter='method', default='POST')
 
-        out1 = self.get_endpoint_definition(
-            key='parameters', is_schema_url=True, method=method)
+        # schema_definition = self.get_endpoint_definition(
+        #     key='parameters', is_schema_url=True, method=method)
 
-        out2 = self.get_endpoint_custom_definition(method=method)
+        custom_definition = self.get_endpoint_custom_definition(
+            method=method, is_schema_url=True)
 
-        print("DEF", out1)
-        print("CUSTOM DEF", out2)
-
-        return "Hello"
+        return self.force_response(custom_definition)
