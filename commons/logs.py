@@ -181,7 +181,10 @@ def set_global_log_level(package=None, app_level=None):
 
     external_packages = [
         logging.getLogger('werkzeug'),
-        logging.getLogger('plumbum')
+        logging.getLogger('plumbum'),
+        logging.getLogger('py2neo'),
+        logging.getLogger('neomodel'),
+        logging.getLogger('httpstream'),
     ]
 
     for logger in external_packages:
