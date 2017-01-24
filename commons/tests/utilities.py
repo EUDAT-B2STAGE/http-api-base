@@ -307,7 +307,8 @@ class TestUtilities(unittest.TestCase):
             if not hasattr(response[0], "_" + r):
                 self.assertIn(r, [])
 
-    def _test_endpoint(self, definition, endpoint, headers=None):
+    def _test_endpoint(
+            self, definition, endpoint, headers=None, status_code=None):
 
         """
             Make standard tests on endpoint based on Swagger definition
@@ -320,10 +321,11 @@ class TestUtilities(unittest.TestCase):
 
         # # # TEST GET # # #
         r = self.app.get(uri)
+        code = OK if status_code is None else status_code
         if get not in definition:
             self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[get]:
-            self.assertEqual(r.status_code, OK)
+            self.assertEqual(r.status_code, code)
         else:
 
             # testing only tokens... we should verify that:
@@ -331,43 +333,46 @@ class TestUtilities(unittest.TestCase):
             self.assertEqual(r.status_code, UNAUTHORIZED)
 
             r = self.app.get(uri, headers=headers)
-            self.assertEqual(r.status_code, OK)
+            self.assertEqual(r.status_code, code)
 
         # # # TEST POST # # #
         r = self.app.post(uri)
+        code = BAD_REQUEST if status_code is None else status_code
         if post not in definition:
             self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[post]:
-            self.assertEqual(r.status_code, BAD_REQUEST)
+            self.assertEqual(r.status_code, code)
         else:
             self.assertEqual(r.status_code, UNAUTHORIZED)
 
             r = self.app.post(uri, headers=headers)
-            self.assertEqual(r.status_code, BAD_REQUEST)
+            self.assertEqual(r.status_code, code)
 
         # # # TEST PUT # # #
         r = self.app.put(uri)
+        code = BAD_REQUEST if status_code is None else status_code
         if put not in definition:
             self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[put]:
-            self.assertEqual(r.status_code, BAD_REQUEST)
+            self.assertEqual(r.status_code, code)
         else:
             self.assertEqual(r.status_code, UNAUTHORIZED)
 
             r = self.app.put(uri, headers=headers)
-            self.assertEqual(r.status_code, BAD_REQUEST)
+            self.assertEqual(r.status_code, code)
 
         # # # TEST DELETE # # #
         r = self.app.delete(uri)
+        code = BAD_REQUEST if status_code is None else status_code
         if delete not in definition:
             self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[delete]:
-            self.assertEqual(r.status_code, BAD_REQUEST)
+            self.assertEqual(r.status_code, code)
         else:
             self.assertEqual(r.status_code, UNAUTHORIZED)
 
             r = self.app.delete(uri, headers=headers)
-            self.assertEqual(r.status_code, BAD_REQUEST)
+            self.assertEqual(r.status_code, code)
 
     # headers should be optional, if auth is not required
     def _test_method(self, definition, method, endpoint, headers,
