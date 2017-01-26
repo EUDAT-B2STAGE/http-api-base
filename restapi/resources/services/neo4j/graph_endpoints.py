@@ -4,8 +4,8 @@ import re
 from datetime import datetime
 import pytz
 from functools import wraps
-from py2neo.error import GraphError
-from py2neo.cypher.error.schema import ConstraintViolation
+# from py2neo.error import GraphError
+# from py2neo.cypher.error.schema import ConstraintViolation
 from restapi.resources.exceptions import RestApiException
 from ...rest.definition import EndpointResource
 from commons import htmlcodes as hcodes
@@ -267,13 +267,17 @@ def catch_graph_exceptions(func):
             return returnError(
                 self, label=None,
                 error=parsedError, code=hcodes.HTTP_BAD_CONFLICT)
-        except ConstraintViolation as e:
-            return returnError(self, label=None, error=e)
-        except (GraphError) as e:
-            # Also returned for duplicated fields...
-            # UniqueProperty not catched?
-            return returnError(self, label=None, error=e)
         except (RequiredProperty) as e:
             return returnError(self, label=None, error=e)
+
+        # TOFIX: to be specified with new neomodel exceptions
+        except Exception as e:
+            return returnError(self, label=None, error=e)
+        # except ConstraintViolation as e:
+            # return returnError(self, label=None, error=e)
+        # except (GraphError) as e:
+            # Also returned for duplicated fields...
+            # UniqueProperty not catched?
+            # return returnError(self, label=None, error=e)
 
     return wrapper

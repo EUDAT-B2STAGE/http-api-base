@@ -50,12 +50,16 @@ class MyGraph(ServiceObject):
     def connect(self):
         """ Connection http descriptor """
         try:
-            os.environ["NEO4J_REST_URL"] = \
-                PROTOCOL + "://" + USER + ":" + PW + "@" + \
-                HOST + ":" + PORT + "/db/data"
+            # os.environ["NEO4J_REST_URL"] = \
+            #     PROTOCOL + "://" + USER + ":" + PW + "@" + \
+            #     HOST + ":" + PORT + "/db/data"
 
             # os.environ["NEO4J_BOLT_URL"] = "bolt://%s:%s@%s" % \
             #     (USER, PW, HOST)
+
+            from neomodel import config
+            config.DATABASE_URL = "bolt://%s:%s@%s" % \
+                (USER, PW, HOST)
             log.debug("Neo4j connection socket is set")
         except:
             raise EnvironmentError("Missing URL to connect to graph")

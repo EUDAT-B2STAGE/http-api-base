@@ -16,7 +16,7 @@ conf:
 backend:
   extends:
     service: conf
-  image: eudatb2stage/apiserver:neo4j2
+  image: eudatb2stage/apiserver:neo4j3
   hostname: restapi
   # user may be overriden from project config
   # note: if you change the user, you should also
@@ -122,9 +122,13 @@ swagger:
 #       - restangulask_graphbased_elasticdata:/usr/share/elasticsearch/data
 
 gdb:
-  # image: neo4j  # 3.0 to be tested
-  image: neo4j:2.3.3
+  image: neo4j:3.1
+  # ports:
+  #   - 9090:7474
+  #   - 7687:7687
   volumes:
     - ${VOLUMES_PREFIX}_graphdata:/data
   environment:
     NEO4J_AUTH: neo4j/chooseapassword
+    # NEO4J_dbms_memory_pagecache_size: 2048M
+    # NEO4J_dbms_memory_heap_maxSize: 4096M
