@@ -412,9 +412,9 @@ class EndpointResource(Resource):
         if isinstance(instance, dict):
             verify_attribute = dict.get
         if verify_attribute(instance, "uuid"):
-            id = instance.uuid
+            id = str(instance.uuid)
         elif verify_attribute(instance, "id"):
-            id = instance.id
+            id = str(instance.id)
         else:
             id = "-"
 
