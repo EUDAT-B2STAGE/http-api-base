@@ -11,7 +11,7 @@ import commons.htmlcodes as hcodes
 log = get_logger(__name__)
 log.setLevel(logging.DEBUG)
 
-TEST_TROUBLESOME = False
+TEST_TROUBLESOME = True
 
 SERVER_URI = 'http://%s:%ss' % (TEST_HOST, SERVER_PORT)
 API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
@@ -187,18 +187,23 @@ class TestUtilities(unittest.TestCase):
         data = {}
         for d in schema:
 
-            # key = d["key"]
             key = d["name"]
             type = d["type"]
-            if "format" in d:
-                format = d['format']
-            else:
-                format = ""
-            value = None
+            format = d.get("format", "")
+            default = d.get("default", None)
+            custom = d.get("custom", {})
+            autocomplete = custom.get("autocomplete", False)
+            test_with = custom.get("test_with", None)
 
-            if 'enum' in d:
-                if 'default' in d:
-                    value = d['default']
+            if autocomplete and test_with is None:
+                continue
+
+            value = None
+            if test_with is not None:
+                value = test_with
+            elif 'enum' in d:
+                if default is not None:
+                    value = default
                 elif len(d["enum"]) > 0:
                     # get first key
                     for value in d["enum"][0]:
@@ -209,8 +214,6 @@ class TestUtilities(unittest.TestCase):
                 value = random.randrange(0, 1000, 1)
             elif format == "date":
                 value = "1969-07-20"  # 20:17:40 UTC
-            # elif type == "autocomplete":
-                # continue
             elif type == "multi_section":
                 continue
             else:
@@ -509,7 +512,7 @@ class TestUtilities(unittest.TestCase):
         # troublesome_tests["EXTREMELY_LONG_TEXT"] = ["text", OK]
         # troublesome_tests["TOOOO_LONG_TEXT"] = ["text", OK]
         troublesome_tests["LETTERS_WITH_ACCENTS"] = ["text", OK]
-        troublesome_tests["SPECIAL_CHARACTERS"] = ["text", OK]
+        # troublesome_tests["SPECIAL_CHARACTERS"] = ["text", OK]
         troublesome_tests["EMPTY_STRING"] = ["text", BAD_REQUEST]
         troublesome_tests["NEGATIVE_NUMBER"] = ["int", OK]
         troublesome_tests["ZERO"] = ["int", OK]
@@ -540,6 +543,17 @@ class TestUtilities(unittest.TestCase):
             for s in schema:
 
                 s_type = s["type"]
+
+                # We are unable to automatically test autocomplete fields
+                custom = s.get("custom", {})
+                autocomplete = custom.get("autocomplete", False)
+                if autocomplete:
+                    continue
+
+                if "format" in s:
+                    if s['format'] == 'date':
+                        s_type = 'date'
+
                 if s_type == "string":
                     s_type = "text"
 
