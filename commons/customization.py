@@ -21,6 +21,8 @@ from .meta import Meta
 from .formats.yaml import YAML_EXT, load_yaml_file
 from .swagger import BeSwagger
 
+from commons import IS_BACKEND, IS_FRONTEND
+
 from .logs import get_logger
 log = get_logger(__name__)
 
@@ -52,9 +54,14 @@ class Customizer(object):
 
         # Do things
         self.do_config()
-        self.do_schema()
-        self.find_endpoints()
-        self.do_swagger()
+
+        if IS_BACKEND:
+            self.do_schema()
+            self.find_endpoints()
+            self.do_swagger()
+
+        if IS_FRONTEND:
+            self.read_frameworks()
 
     def do_config(self):
         ##################
@@ -160,6 +167,11 @@ class Customizer(object):
             raise AttributeError("Current swagger definition is invalid")
 
         self._definitions = swag_dict
+
+    def read_frameworks(self):
+
+        file = os.path.join("config", "frameworks.yaml")
+        self._frameworks = load_yaml_file(file)
 
     def lookup(self, endpoint, package, base_dir, endpoint_dir):
 
