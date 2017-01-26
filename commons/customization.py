@@ -9,9 +9,9 @@ from __future__ import absolute_import
 import os
 import re
 import glob
-from collections import OrderedDict
+# from collections import OrderedDict
 from . import (
-    JSON_EXT, json, CORE_DIR, USER_CUSTOM_DIR, DEFAULTS_PATH,
+    CORE_DIR, USER_CUSTOM_DIR, DEFAULTS_PATH,
     PATH, CONFIG_PATH, BLUEPRINT_KEY, API_URL, BASE_URLS,
 )
 from .attrs.api import EndpointElements, ExtraAttributes
@@ -61,15 +61,18 @@ class Customizer(object):
         # Reading configuration
 
         # Find out what is the active blueprint
-        bp_holder = self.load_json(BLUEPRINT_KEY, PATH, CONFIG_PATH)
-        blueprint = bp_holder[BLUEPRINT_KEY]
+        bp_file = os.path.join(CONFIG_PATH, PATH, '%s.init' % BLUEPRINT_KEY)
+        with open(bp_file) as bp_hd:
+            blueprint = bp_hd.read().strip()
 
         # Read the custom configuration from the active blueprint file
-        custom_config = self.load_json(blueprint, PATH, CONFIG_PATH)
+        custom_path = os.path.join(CONFIG_PATH, PATH)
+        custom_config = load_yaml_file(blueprint, path=custom_path)
         custom_config[BLUEPRINT_KEY] = blueprint
 
         # Read default configuration
-        defaults = self.load_json(BLUEPRINT_KEY, DEFAULTS_PATH, CONFIG_PATH)
+        defaults_path = os.path.join(CONFIG_PATH, DEFAULTS_PATH)
+        defaults = load_yaml_file(BLUEPRINT_KEY, path=defaults_path)
         if len(defaults) < 0:
             raise ValueError("Missing defaults for server configuration!")
 
@@ -279,50 +282,3 @@ class Customizer(object):
             raise KeyError("Unwanted keys: %s" % list(conf.keys()))
 
         return endpoint
-
-    # TODO: move json things into commons/formats/json.py
-    @staticmethod
-    def load_json(file, path, config_root='', skip_error=False, retfile=False):
-        """
-        Trying to avoid all the verbose error from commentjson
-        """
-
-        filepath = os.path.join(config_root, path, file + "." + JSON_EXT)
-        if retfile:
-            return filepath
-        log.verbose("Reading file %s" % filepath)
-
-        # Use also the original library
-        import json as original_json
-        error = None
-
-        # JSON load from this file
-        if os.path.exists(filepath):
-            with open(filepath) as fh:
-                try:
-                    return json.load(fh, object_pairs_hook=OrderedDict)
-                except json.commentjson.JSONLibraryException as e:
-                    error = e
-                except original_json.decoder.JSONDecodeError as e:
-                    error = e
-                except Exception as e:
-                    error = e
-        else:
-            error = 'File does not exist'
-
-        if error is not None:
-            # Make sense of the JSON parser error...
-            for line in str(error).split('\n')[::-1]:
-                if line.strip() != '':
-                    error = line
-                    break
-            error = ':\n%s' % error
-        else:
-            error = ''
-        message = "Failed to read JSON from '%s'%s" % (filepath, error)
-
-        if skip_error:
-            log.error(message)
-            return None
-        else:
-            raise Exception(message)

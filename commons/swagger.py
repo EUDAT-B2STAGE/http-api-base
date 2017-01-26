@@ -378,14 +378,14 @@ class BeSwagger(object):
         #     log.pp(swag_dict)
 
         try:
-            from commons import original_json
+            from commons import json
             # Fix jsonschema validation problem
             # expected string or bytes-like object
             # http://j.mp/2hEquZy
-            swag_dict = original_json.loads(original_json.dumps(swag_dict))
+            swag_dict = json.loads(json.dumps(swag_dict))
             # write it down
             with open('/tmp/test.json', 'w') as f:
-                original_json.dump(swag_dict, f)
+                json.dump(swag_dict, f)
         except Exception as e:
             raise e
             log.warning("Failed to json fix the swagger definition")
