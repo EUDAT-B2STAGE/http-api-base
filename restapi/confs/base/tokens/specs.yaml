@@ -6,7 +6,7 @@ class: Tokens
 # default is the same name of current file's directory holder
 file: endpoints
 # This points to 'restapi/confs/base/endpoints.py'
-# Custom files will be available in 'restapi/confs/custom/endpoints.py'
+# Custom files will be available in 'restapi/confs/custom/endpoints.py'
 
 # OPTIONAL: if the class depends on some environment variables
 # (usefull for dependencies on docker containers existence)
@@ -26,7 +26,7 @@ mapping:
   # It may contain directly nesting paths and various IDs
   # test: "/study/<string:id>/dataset/<test>"
 
-# OPTIONAL: descriptions for path ids
+# OPTIONAL: descriptions for path ids
 ids:
   token_id: uuid associated to the token you want to select
 

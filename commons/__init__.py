@@ -12,24 +12,20 @@ except:
     __version__ = 'unknown'
 
 #######################
-# TODO: move json things into commons/formats/json.py
 # Look for the best chance for json lib
-import json as original_json
-try:
-    import commentjson as json
-except:
-    try:
-        import simplejson as json
-        # import commentjson as json
-    except:
-        import json
 
+# import json as original_json
+# try:
+#     import simplejson as json
+#     # import commentjson as json
+# except:
+#     import json
+# JSON_EXT = 'json'
 
 #######################
 # Make a json and yaml test
-original_json.dumps({})
+import json
 json.dumps({})
-JSON_EXT = 'json'
 
 #######################
 # authors and license
