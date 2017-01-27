@@ -223,9 +223,11 @@ class Profile(EndpointResource):
             data["irods_user"] = current_user.irods_user
             if not data["irods_user"]:
                 data["irods_user"] = None
-            elif data["irods_user"] == '-':
+            elif data["irods_user"] == '':
                 data["irods_user"] = None
             elif data["irods_user"] == '0':
+                data["irods_user"] = None
+            elif data["irods_user"][0] == '-':
                 data["irods_user"] = None
 
         return data
