@@ -121,6 +121,19 @@ swagger:
 #   volumes:
 #       - restangulask_graphbased_elasticdata:/usr/share/elasticsearch/data
 
+# sql:
+#     image: postgres:9.6
+#     volumes:
+#         - ${VOLUMES_PREFIX}_sqldata:/var/lib/postgresql/data
+  # at init time, to create db and set permissions
+  # - ./confs/pgs_init.sh:/docker-entrypoint-initdb.d/setup-my-schema.sh:ro
+  # init file can be found at:
+  # https://github.com/EUDAT-B2STAGE/http-api/blob/master/confs/pgs_init.sh
+#     environment:
+#         POSTGRES_USER: myuser
+#         POSTGRES_PASSWORD: mypassword
+#         POSTGRES_DBS: mydb1 mydb2 ...
+
 gdb:
   # image: neo4j  # 3.0 to be tested
   image: neo4j:2.3.3

@@ -5,9 +5,12 @@ SQL Alchemy:
 sqllite, MySQL or Postgres
 """
 
-# from __future__ import absolute_import
+from __future__ import absolute_import
+
+import os
 from commons.services import ServiceFarm
 from commons.logs import get_logger
+from ..detect import SQL_PROD_AVAILABLE
 
 log = get_logger(__name__)
 
@@ -28,6 +31,21 @@ class SQLFarm(ServiceFarm):
         return 'sql'
 
     def init_connection(self, app):
+
+        if SQL_PROD_AVAILABLE:
+            prefix = "SQLDB_"
+
+            HOST = os.environ.get(prefix + 'NAME').split('/').pop()
+            PORT = os.environ.get(prefix + 'PORT').split(':').pop()
+            USER = os.environ.get(prefix + 'ENV_POSTGRES_USER')
+            PW = os.environ.get(prefix + 'ENV_POSTGRES_PASSWORD')
+            DB = 'SQL_API'
+
+            # dialect+driver://username:password@host:port/database
+            # postgresql://scott:tiger@localhost/mydatabase
+            link = 'postgresql://%s:%s@%s:%s/%s' % (USER, PW, HOST, PORT, DB)
+            app.config['SQLALCHEMY_DATABASE_URI'] = link
+            log.info("Production database located")
 
         uri = app.config.get('SQLALCHEMY_DATABASE_URI')
         self.get_instance()

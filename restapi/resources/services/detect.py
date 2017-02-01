@@ -11,6 +11,7 @@ Services:
 # from __future__ import absolute_import
 
 import os
+from commons import PRODUCTION
 from commons.logs import get_logger
 
 log = get_logger(__name__)
@@ -21,18 +22,23 @@ farm_queue = []
 
 #######################################################
 # RELATIONAL DATABASE
+
 SQL_AVAILABLE = False
 
-# TO FIX: If postgres/mysql detect them
-# and distinguish from the simple sqllite base
+# Note: with SQL_PROD_AVAILABLE we refer to a real database container
+# running and linked (e.g. Mysql or Postgres)
+# Not considering sqllite for this variable
+SQL_PROD_AVAILABLE = 'SQLDB_NAME' in os.environ and PRODUCTION
 
-if 'BACKEND_AUTH_SERVICE' in os.environ:
-    if os.environ['BACKEND_AUTH_SERVICE'] == 'relationaldb':
-        SQL_AVAILABLE = True
-        from .sql.alchemy import SQLFarm as service
-        # log.debug("Created SQLAlchemy relational DB object")
-        farm_queue.append(service)
-        # services['sql'] = service
+if SQL_PROD_AVAILABLE:
+    SQL_AVAILABLE = True
+
+if os.environ.get('BACKEND_AUTH_SERVICE', '') == 'relationaldb':
+    SQL_AVAILABLE = True
+    from .sql.alchemy import SQLFarm as service
+    # log.debug("Created SQLAlchemy relational DB object")
+    farm_queue.append(service)
+    # services['sql'] = service
 
 #######################################################
 # GRAPH DATABASE
