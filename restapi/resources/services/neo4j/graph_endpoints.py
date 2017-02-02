@@ -271,8 +271,6 @@ def catch_graph_exceptions(func):
             return returnError(self, label=None, error=e)
 
         # TOFIX: to be specified with new neomodel exceptions
-        except Exception as e:
-            return returnError(self, label=None, error=e)
         # except ConstraintViolation as e:
             # return returnError(self, label=None, error=e)
         # except (GraphError) as e:
