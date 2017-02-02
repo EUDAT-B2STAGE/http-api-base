@@ -179,6 +179,15 @@ class TestUtilities(unittest.TestCase):
 
         return random_string
 
+    def getInputSchema(self, endpoint, headers):
+        """
+            Retrieve a swagger-like data schema associated with a endpoint
+        """
+        r = self.app.get(API_URI + '/schemas/' + endpoint, headers=headers)
+        self.assertEqual(r.status_code, OK)
+        content = json.loads(r.data.decode('utf-8'))
+        return content['Response']['data']
+
     def buildData(self, schema):
         """
             Input: a Swagger-like schema
@@ -388,7 +397,7 @@ class TestUtilities(unittest.TestCase):
             (disabled when error=False)
             It returns content['Response']['data']
             When parse_response=True the returned response
-            is parsed using self.parseResponse mnethod
+            is parsed using self.parseResponse method
         """
 
         uri = "%s/%s/%s" % (SERVER_URI, API_URL, endpoint)
@@ -493,6 +502,7 @@ class TestUtilities(unittest.TestCase):
             Test several troublesome conditions based on field types
                 (obtained from json schema)
             If POST call returns a 200 OK PUT and DELETE are also called
+            (by using second_definition and second_endpoint parameters)
 
             returned status code can be overwritten by providing a
                 status_configuration dictionary, e.g:
