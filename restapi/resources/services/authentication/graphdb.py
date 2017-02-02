@@ -122,6 +122,7 @@ instead of here
                 'email': self.default_user,
                 'authmethod': 'credentials',
                 'name': 'Default', 'surname': 'User',
+                'name_surname': 'Default#_#User',
                 'password': self.hash_password(self.default_password)
             }, roles=self.default_roles)
 
