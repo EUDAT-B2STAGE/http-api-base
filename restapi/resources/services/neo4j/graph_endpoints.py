@@ -42,25 +42,28 @@ class GraphBaseOperations(EndpointResource):
 
         try:
 
-            if field == 'accession':
-                return Model.nodes.get(accession=identifier)
+            filter = {field: identifier}
+            return Model.nodes.get(**filter)
 
-            if field == 'id':
-                return Model.nodes.get(id=identifier)
+            # if field == 'accession':
+            #     return Model.nodes.get(accession=identifier)
 
-            if field == 'uuid':
-                return Model.nodes.get(uuid=identifier)
+            # if field == 'id':
+            #     return Model.nodes.get(id=identifier)
 
-            if field == 'taxon_id':
-                return Model.nodes.get(taxon_id=identifier)
+            # if field == 'uuid':
+            #     return Model.nodes.get(uuid=identifier)
 
-            return Model.nodes.get(accession=identifier)
+            # if field == 'taxon_id':
+            #     return Model.nodes.get(taxon_id=identifier)
+
+            # return Model.nodes.get(accession=identifier)
 
         except Model.DoesNotExist:
             return None
 
     def countNodes(self, type):
-        query = "MATCH (a: " + type + ") RETURN count(a) as count"
+        query = "MATCH (a:%s) RETURN count(a) as count" % type
 
         records = self.graph.cypher(query)
         for record in records:
