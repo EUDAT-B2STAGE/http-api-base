@@ -398,10 +398,11 @@ class EndpointResource(Resource):
 
     def getJsonResponse(self, instance,
                         fields=[], resource_type=None, skip_missing_ids=False,
-                        only_public=False,
+                        view_public_only=False,
                         relationship_depth=0, max_relationship_depth=1):
         """
         Lots of meta introspection to guess the JSON specifications
+        Very important: this method only works with customized neo4j models
         """
 
         if resource_type is None:
@@ -439,13 +440,21 @@ class EndpointResource(Resource):
         # Attributes
         if len(fields) < 1:
 
-            if only_public:
-                field_name = '_public_fields_to_show'
-            else:
-                field_name = '_fields_to_show'
+            function_name = 'show_fields'
+            if hasattr(instance, function_name):
+                fn = getattr(instance, function_name)
+                fields = fn(view_public_only=view_public_only)
 
-            if hasattr(instance, field_name):
-                fields = getattr(instance, field_name)
+            else:
+
+                if view_public_only:
+                    field_name = '_public_fields_to_show'
+                else:
+                    field_name = '_fields_to_show'
+
+                if hasattr(instance, field_name):
+                    log.warning("Obsolete use of %s into models" % field_name)
+                    fields = getattr(instance, field_name)
 
         for key in fields:
             if verify_attribute(instance, key):
@@ -470,12 +479,22 @@ class EndpointResource(Resource):
         if relationship_depth < max_relationship_depth:
             linked = {}
             relationships = []
-            if only_public:
-                field_name = '_public_relationships_to_follow'
+
+            function_name = 'follow_relationships'
+            if hasattr(instance, function_name):
+                fn = getattr(instance, function_name)
+                relationships = fn(view_public_only=view_public_only)
+
             else:
-                field_name = '_relationships_to_follow'
-            if hasattr(instance, field_name):
-                relationships = getattr(instance, field_name)
+
+                if view_public_only:
+                    field_name = '_public_relationships_to_follow'
+                else:
+                    field_name = '_relationships_to_follow'
+
+                if hasattr(instance, field_name):
+                    log.warning("Obsolete use of %s into models" % field_name)
+                    relationships = getattr(instance, field_name)
 
             for relationship in relationships:
                 subrelationship = []
@@ -486,7 +505,7 @@ class EndpointResource(Resource):
                         subrelationship.append(
                             self.getJsonResponse(
                                 node,
-                                only_public=only_public,
+                                view_public_only=view_public_only,
                                 skip_missing_ids=skip_missing_ids,
                                 relationship_depth=relationship_depth + 1,
                                 max_relationship_depth=max_relationship_depth))
