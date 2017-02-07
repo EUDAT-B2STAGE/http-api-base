@@ -60,6 +60,10 @@ class MyGraph(ServiceObject):
             from neomodel import config
             config.DATABASE_URL = "bolt://%s:%s@%s" % \
                 (USER, PW, HOST)
+
+            # Ensure all DateTimes are provided with a timezone
+            # before being serialised to UTC epoch
+            config.FORCE_TIMEZONE = True  # default False
             log.debug("Neo4j connection socket is set")
         except:
             raise EnvironmentError("Missing URL to connect to graph")
