@@ -247,12 +247,20 @@ class StructuredNode(originalStructuredNode):
 
 class IdentifiedNode(StructuredNode):
 
+    """
+        A StructuredNode identified by an uuid
+    """
+
     # TO FIX: now we should use:
     # uuid = UniqueIdProperty
     uuid = StringProperty(default=getUUID, unique_index=True)
 
 
 class TimestampedNode(IdentifiedNode):
+
+    """
+        An IdentifiedNode with creation and modification dates
+    """
 
     created = DateTimeProperty(default_now=True, show=True)
     modified = DateTimeProperty(default_now=True, show=True)

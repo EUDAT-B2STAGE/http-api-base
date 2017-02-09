@@ -43,8 +43,7 @@ class Irods2Graph(object):
 
         current_collection = None
         try:
-            current_collection = \
-                self._graph.createNode(self._graph.Collection, properties)
+            current_collection = self._graph.Collection(**properties).save()
         except (GraphError, RequiredProperty,
                 UniqueProperty, ConstraintViolation):
             current_collection = \
@@ -155,8 +154,7 @@ TO BE FIXED
         try:
             current_dobj = self._graph.DataObject.nodes.get(location=location)
         except self._graph.DataObject.DoesNotExist:
-            current_dobj = self._graph.createNode(
-                self._graph.DataObject, properties)
+            current_dobj = self._graph.DataObject(**properties).save()
         # Connect the object
         current_dobj.located.connect(current_zone)
         log.info("Created and connected data object %s" % filename)

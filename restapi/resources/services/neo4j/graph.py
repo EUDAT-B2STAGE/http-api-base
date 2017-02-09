@@ -96,6 +96,8 @@ class MyGraph(ServiceObject):
             and applying the given attributes
         """
 
+        log.warning("Obsolete call to function createNode")
+
         node = model()
         uuid = getUUID()
 

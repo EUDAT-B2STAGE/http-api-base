@@ -15,7 +15,7 @@ from __future__ import absolute_import
 
 import pytz
 from datetime import datetime, timedelta
-from commons.services.uuid import getUUID
+# from commons.services.uuid import getUUID
 from commons.logs import get_logger
 from . import BaseAuthentication
 from ..detect import GRAPHDB_AVAILABLE
@@ -118,7 +118,7 @@ instead of here
         if not len(self._graph.User.nodes) > 0:
             log.warning("No users inside graphdb. Injecting default.")
             self.create_user({
-                'uuid': getUUID(),
+                # 'uuid': getUUID(),
                 'email': self.default_user,
                 'authmethod': 'credentials',
                 'name': 'Default', 'surname': 'User',
@@ -255,7 +255,7 @@ instead of here
         except self._graph.User.DoesNotExist:
 ## TO BE VERIFIED
             user_node = self.create_user(userdata={
-                'uuid': getUUID(),
+                # 'uuid': getUUID(),
                 'email': email,
                 'authmethod': 'oauth2'
             })
