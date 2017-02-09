@@ -19,6 +19,8 @@ from neomodel import OneOrMore, ZeroOrMore, ZeroOrOne
 class User(IdentifiedNode):
     # uuid = StringProperty(required=True, unique_index=True)
     email = EmailProperty(required=True, unique_index=True, show=True)
+    name = StringProperty(required=True, show=True)
+    surname = StringProperty(required=True, show=True)
     authmethod = StringProperty(required=True)
     password = StringProperty()  # Hashed from a custom function
     tokens = RelationshipTo('Token', 'HAS_TOKEN', cardinality=ZeroOrMore)
