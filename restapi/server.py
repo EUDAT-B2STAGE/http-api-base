@@ -128,6 +128,7 @@ def create_app(name=__name__, debug=False,
     # Disable security if launching celery workers
     if worker_mode:
         enable_security = False
+        skip_endpoint_mapping = True
 
     # Set app internal testing mode if create_app received the parameter
     if testing_mode:
