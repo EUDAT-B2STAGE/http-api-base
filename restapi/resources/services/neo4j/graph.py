@@ -90,36 +90,6 @@ class MyGraph(ServiceObject):
         log.warning("Removing all data")
         return self.cypher("MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r")
 
-    def createNode(self, model, attributes={}):
-        """
-            Generic create of a graph node based on the give model
-            and applying the given attributes
-        """
-
-        log.warning("Obsolete call to function createNode")
-
-        node = model()
-        uuid = getUUID()
-
-        if hasattr(node, 'id'):
-            setattr(node, 'id', uuid)
-
-        if hasattr(node, 'uuid'):
-            setattr(node, 'uuid', uuid)
-
-        if hasattr(node, 'created'):
-            setattr(node, 'created', datetime.now(pytz.utc))
-
-        if hasattr(node, 'modified'):
-            setattr(node, 'modified', datetime.now(pytz.utc))
-
-        for key in attributes:
-            setattr(node, key, attributes[key])
-
-        node.save()
-
-        return node
-
 
 #######################
 # Farm to get Graph instances
