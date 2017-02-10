@@ -50,12 +50,20 @@ class MyGraph(ServiceObject):
     def connect(self):
         """ Connection http descriptor """
         try:
-            os.environ["NEO4J_REST_URL"] = \
-                PROTOCOL + "://" + USER + ":" + PW + "@" + \
-                HOST + ":" + PORT + "/db/data"
+            # os.environ["NEO4J_REST_URL"] = \
+            #     PROTOCOL + "://" + USER + ":" + PW + "@" + \
+            #     HOST + ":" + PORT + "/db/data"
 
             # os.environ["NEO4J_BOLT_URL"] = "bolt://%s:%s@%s" % \
             #     (USER, PW, HOST)
+
+            from neomodel import config
+            config.DATABASE_URL = "bolt://%s:%s@%s" % \
+                (USER, PW, HOST)
+
+            # Ensure all DateTimes are provided with a timezone
+            # before being serialised to UTC epoch
+            config.FORCE_TIMEZONE = True  # default False
             log.debug("Neo4j connection socket is set")
         except:
             raise EnvironmentError("Missing URL to connect to graph")
@@ -81,34 +89,6 @@ class MyGraph(ServiceObject):
     def clean_all(self):
         log.warning("Removing all data")
         return self.cypher("MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r")
-
-    def createNode(self, model, attributes={}):
-        """
-            Generic create of a graph node based on the give model
-            and applying the given attributes
-        """
-
-        node = model()
-        uuid = getUUID()
-
-        if hasattr(node, 'id'):
-            setattr(node, 'id', uuid)
-
-        if hasattr(node, 'uuid'):
-            setattr(node, 'uuid', uuid)
-
-        if hasattr(node, 'created'):
-            setattr(node, 'created', datetime.now(pytz.utc))
-
-        if hasattr(node, 'modified'):
-            setattr(node, 'modified', datetime.now(pytz.utc))
-
-        for key in attributes:
-            setattr(node, key, attributes[key])
-
-        node.save()
-
-        return node
 
 
 #######################

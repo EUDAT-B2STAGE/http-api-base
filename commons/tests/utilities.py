@@ -11,6 +11,8 @@ import commons.htmlcodes as hcodes
 log = get_logger(__name__)
 log.setLevel(logging.DEBUG)
 
+TEST_TROUBLESOME = True
+
 SERVER_URI = 'http://%s:%ss' % (TEST_HOST, SERVER_PORT)
 API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
 AUTH_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
@@ -79,22 +81,18 @@ class TestUtilities(unittest.TestCase):
 
         method = method.lower()
         status_code = str(status_code)
-        self.assertIn(method, definition)
-        self.assertIn("responses", definition[method])
 
-        for code in definition[method]["responses"]:
-            if code != status_code:
-                continue
+        try:
+            # self.assertIn(method, definition)
+            # self.assertIn("responses", definition[method])
+            # self.assertIn(status_code, definition[method]["responses"])
 
-            msg = definition[method]["responses"][status_code]
-            self.assertIn("description", msg)
+            status_message = definition[method]["responses"][status_code]
+            # self.assertIn("description", status_message)
 
-            return msg["description"]
-        log.error(
-            "Status code %s not found for %s %s "
-            % (status_code, method, "_endpoint_?")
-        )
-        return None
+            return status_message["description"]
+        except:
+            return None
 
     def save(self, variable, value, read_only=False):
         """
@@ -181,6 +179,15 @@ class TestUtilities(unittest.TestCase):
 
         return random_string
 
+    def getInputSchema(self, endpoint, headers):
+        """
+            Retrieve a swagger-like data schema associated with a endpoint
+        """
+        r = self.app.get(API_URI + '/schemas/' + endpoint, headers=headers)
+        self.assertEqual(r.status_code, OK)
+        content = json.loads(r.data.decode('utf-8'))
+        return content['Response']['data']
+
     def buildData(self, schema):
         """
             Input: a Swagger-like schema
@@ -189,14 +196,23 @@ class TestUtilities(unittest.TestCase):
         data = {}
         for d in schema:
 
-            # key = d["key"]
             key = d["name"]
             type = d["type"]
-            value = None
+            format = d.get("format", "")
+            default = d.get("default", None)
+            custom = d.get("custom", {})
+            autocomplete = custom.get("autocomplete", False)
+            test_with = custom.get("test_with", None)
 
-            if 'enum' in d:
-                if 'default' in d:
-                    value = d['default']
+            if autocomplete and test_with is None:
+                continue
+
+            value = None
+            if test_with is not None:
+                value = test_with
+            elif 'enum' in d:
+                if default is not None:
+                    value = default
                 elif len(d["enum"]) > 0:
                     # get first key
                     for value in d["enum"][0]:
@@ -205,10 +221,8 @@ class TestUtilities(unittest.TestCase):
                     value = "NOT_FOUND"
             elif type == "int":
                 value = random.randrange(0, 1000, 1)
-            elif type == "date":
+            elif format == "date":
                 value = "1969-07-20"  # 20:17:40 UTC
-            # elif type == "autocomplete":
-                # continue
             elif type == "multi_section":
                 continue
             else:
@@ -305,7 +319,8 @@ class TestUtilities(unittest.TestCase):
             if not hasattr(response[0], "_" + r):
                 self.assertIn(r, [])
 
-    def _test_endpoint(self, definition, endpoint, headers=None):
+    def _test_endpoint(
+            self, definition, endpoint, headers=None, status_code=None):
 
         """
             Make standard tests on endpoint based on Swagger definition
@@ -318,10 +333,11 @@ class TestUtilities(unittest.TestCase):
 
         # # # TEST GET # # #
         r = self.app.get(uri)
+        code = OK if status_code is None else status_code
         if get not in definition:
             self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[get]:
-            self.assertEqual(r.status_code, OK)
+            self.assertEqual(r.status_code, code)
         else:
 
             # testing only tokens... we should verify that:
@@ -329,43 +345,46 @@ class TestUtilities(unittest.TestCase):
             self.assertEqual(r.status_code, UNAUTHORIZED)
 
             r = self.app.get(uri, headers=headers)
-            self.assertEqual(r.status_code, OK)
+            self.assertEqual(r.status_code, code)
 
         # # # TEST POST # # #
         r = self.app.post(uri)
+        code = BAD_REQUEST if status_code is None else status_code
         if post not in definition:
             self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[post]:
-            self.assertEqual(r.status_code, OK)
+            self.assertEqual(r.status_code, code)
         else:
             self.assertEqual(r.status_code, UNAUTHORIZED)
 
             r = self.app.post(uri, headers=headers)
-            self.assertEqual(r.status_code, OK)
+            self.assertEqual(r.status_code, code)
 
         # # # TEST PUT # # #
         r = self.app.put(uri)
+        code = BAD_REQUEST if status_code is None else status_code
         if put not in definition:
             self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[put]:
-            self.assertEqual(r.status_code, BAD_REQUEST)
+            self.assertEqual(r.status_code, code)
         else:
             self.assertEqual(r.status_code, UNAUTHORIZED)
 
             r = self.app.put(uri, headers=headers)
-            self.assertEqual(r.status_code, BAD_REQUEST)
+            self.assertEqual(r.status_code, code)
 
         # # # TEST DELETE # # #
         r = self.app.delete(uri)
+        code = BAD_REQUEST if status_code is None else status_code
         if delete not in definition:
             self.assertEqual(r.status_code, NOT_ALLOWED)
         elif 'security' not in definition[delete]:
-            self.assertEqual(r.status_code, BAD_REQUEST)
+            self.assertEqual(r.status_code, code)
         else:
             self.assertEqual(r.status_code, UNAUTHORIZED)
 
             r = self.app.delete(uri, headers=headers)
-            self.assertEqual(r.status_code, BAD_REQUEST)
+            self.assertEqual(r.status_code, code)
 
     # headers should be optional, if auth is not required
     def _test_method(self, definition, method, endpoint, headers,
@@ -378,7 +397,7 @@ class TestUtilities(unittest.TestCase):
             (disabled when error=False)
             It returns content['Response']['data']
             When parse_response=True the returned response
-            is parsed using self.parseResponse mnethod
+            is parsed using self.parseResponse method
         """
 
         uri = "%s/%s/%s" % (SERVER_URI, API_URL, endpoint)
@@ -411,10 +430,18 @@ class TestUtilities(unittest.TestCase):
             error = force_error
         elif check_error:
             error = self.get_error_message(definition, method, status)
+            if error is None:
+                log.critical(
+                    "Unable to find a valid message for " +
+                    "status = %s, method = %s, endpoint = %s"
+                    % (status, method, endpoint)
+                )
+
+            # if error is None, it will give errors in the next error assert
         else:
             error = None
 
-        if error is not None:
+        if check_error:
             errors = content['Response']['errors']
             if errors is not None:
                 self.assertEqual(errors[0], error)
@@ -467,10 +494,15 @@ class TestUtilities(unittest.TestCase):
                                  headers, schema,
                                  second_definition, second_endpoint=None,
                                  status_configuration={}):
+
+        if not TEST_TROUBLESOME:
+            log.critical("---- SKIPPING TROUBLESOME TESTS ----")
+            return
         """
             Test several troublesome conditions based on field types
                 (obtained from json schema)
             If POST call returns a 200 OK PUT and DELETE are also called
+            (by using second_definition and second_endpoint parameters)
 
             returned status code can be overwritten by providing a
                 status_configuration dictionary, e.g:
@@ -490,7 +522,7 @@ class TestUtilities(unittest.TestCase):
         # troublesome_tests["EXTREMELY_LONG_TEXT"] = ["text", OK]
         # troublesome_tests["TOOOO_LONG_TEXT"] = ["text", OK]
         troublesome_tests["LETTERS_WITH_ACCENTS"] = ["text", OK]
-        troublesome_tests["SPECIAL_CHARACTERS"] = ["text", OK]
+        # troublesome_tests["SPECIAL_CHARACTERS"] = ["text", OK]
         troublesome_tests["EMPTY_STRING"] = ["text", BAD_REQUEST]
         troublesome_tests["NEGATIVE_NUMBER"] = ["int", OK]
         troublesome_tests["ZERO"] = ["int", OK]
@@ -521,6 +553,17 @@ class TestUtilities(unittest.TestCase):
             for s in schema:
 
                 s_type = s["type"]
+
+                # We are unable to automatically test autocomplete fields
+                custom = s.get("custom", {})
+                autocomplete = custom.get("autocomplete", False)
+                if autocomplete:
+                    continue
+
+                if "format" in s:
+                    if s['format'] == 'date':
+                        s_type = 'date'
+
                 if s_type == "string":
                     s_type = "text"
 

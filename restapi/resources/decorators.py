@@ -218,10 +218,10 @@ def apimethod(func):
 
 #####################################################################
 # Error handling with custom methods
-def exceptionError(self, label, e, code):
+def exceptionError(self, e, code):
     error = str(e)
     log.error(error)
-    return self.send_errors(label, error, code=code)
+    return self.send_errors(message=error, code=code)
 
 
 def error_handler(func, self, some_exception,
@@ -229,14 +229,14 @@ def error_handler(func, self, some_exception,
 
     out = None
     # print(func, self, some_exception, label, args, kwargs)
-    default_label = 'Server error'
-    if label is None:
-        label = default_label
+    # default_label = 'Server error'
+    # if label is None:
+    #     label = default_label
     try:
         out = func(self, *args, **kwargs)
     # Catch the single exception that the user requested
     except some_exception as e:
-        return exceptionError(self, label, e, error_code)
+        return exceptionError(self, e, error_code)
 # TODO: check with @mdantonio
     # except Exception as e:
     #     log.warning(

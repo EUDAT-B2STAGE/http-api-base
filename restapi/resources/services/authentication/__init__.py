@@ -289,6 +289,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             create_user(
                 email=self.DEFAULT_USER,
                 name="Whatever", surname="YouLike",
+                name_surname="Whatever#_#YouLike",
                 password=self.DEFAULT_PASSWORD,
                 roles=DEFAULT_ROLES)
         """

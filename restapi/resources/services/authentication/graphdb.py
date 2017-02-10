@@ -118,10 +118,11 @@ instead of here
         if not len(self._graph.User.nodes) > 0:
             log.warning("No users inside graphdb. Injecting default.")
             self.create_user({
-                'uuid': getUUID(),
+                # 'uuid': getUUID(),
                 'email': self.default_user,
                 'authmethod': 'credentials',
                 'name': 'Default', 'surname': 'User',
+                'name_surname': 'Default#_#User',
                 'password': self.hash_password(self.default_password)
             }, roles=self.default_roles)
 
@@ -254,7 +255,7 @@ instead of here
         except self._graph.User.DoesNotExist:
 ## TO BE VERIFIED
             user_node = self.create_user(userdata={
-                'uuid': getUUID(),
+                # 'uuid': getUUID(),
                 'email': email,
                 'authmethod': 'oauth2'
             })
