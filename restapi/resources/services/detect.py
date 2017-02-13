@@ -113,5 +113,5 @@ if CELERY_AVAILABLE:
 # Create the dictionary of services
 for farm in farm_queue:
     service_name = farm.define_service_name()
-    log.debug("Adding service '%s'" % service_name)
+    log.debug("Adding service '%s' to available array" % service_name)
     services[service_name] = farm
