@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# TODO: move into base dir
+# TODO: move into base dir?
 
 """ Models for graph database """
 

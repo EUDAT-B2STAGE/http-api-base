@@ -47,7 +47,18 @@ GRAPHDB_AVAILABLE = 'GDB_NAME' in os.environ
 if GRAPHDB_AVAILABLE:
     # DO something and inject into 'services'
     from .neo4j.graph import GraphFarm as service
-    # services['neo4j'] = service
+    farm_queue.append(service)
+
+#######################################################
+# MONGO DB
+MONGO_AVAILABLE = 'MONGO_NAME' in os.environ
+
+if MONGO_AVAILABLE:
+    # External service if using user/password?
+    # TODO: write example into docker-compose production
+
+    # DO something and inject into 'services'
+    from .mongo.mongodb import MongoFarm as service
     farm_queue.append(service)
 
 #######################################################
