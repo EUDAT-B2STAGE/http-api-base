@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-Main server factory.
-We create all the components here!
+Sql handling authentication process
 """
 
 from __future__ import absolute_import

@@ -99,7 +99,7 @@ class ServiceFarm(metaclass=abc.ABCMeta):
                 if counter % 5 == 0:
                     sleep_time += sleep_time * 2
                 log.warning("%s: Not reachable yet. Sleeping %s."
-                               % (name, sleep_time))
+                            % (name, sleep_time))
                 log.critical("Error was %s" % str(e))
                 time.sleep(sleep_time)
 
@@ -134,8 +134,6 @@ class ServiceFarm(metaclass=abc.ABCMeta):
         This is not going to be used by the abstract class.
         The user MUST define where to load it!
         """
-
-        # print("CHECK MONGO?")
 
         # Load base models
         base_models = cls.load_base_models()

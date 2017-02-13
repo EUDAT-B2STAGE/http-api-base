@@ -7,14 +7,10 @@ from pymodm import MongoModel, fields
 
 
 class User(MongoModel):
-    test = fields.CharField()
-
-    class Meta:
-        connection_alias = 'peppe'
-        write_concern = WriteConcern(j=True)
-
     # # uuid = StringProperty(required=True, unique_index=True)
     # email = EmailProperty(required=True, unique_index=True, show=True)
+    email = fields.EmailField()
+    test = fields.CharField()
     # name = StringProperty(required=True, show=True)
     # surname = StringProperty(required=True, show=True)
     # authmethod = StringProperty(required=True)
@@ -24,3 +20,7 @@ class User(MongoModel):
     #     'Role', 'HAS_ROLE', cardinality=ZeroOrMore, show=True)
     # externals = RelationshipTo(
     #     'ExternalAccounts', 'HAS_AUTHORIZATION', cardinality=OneOrMore)
+
+    class Meta:
+        write_concern = WriteConcern(j=True)
+        connection_alias = 'auth'
