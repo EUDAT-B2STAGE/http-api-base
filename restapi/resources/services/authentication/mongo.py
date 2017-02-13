@@ -7,7 +7,7 @@ Mongodb based implementation
 from __future__ import absolute_import
 
 # from datetime import datetime, timedelta
-# from commons.services.uuid import getUUID
+from commons.services.uuid import getUUID
 from ..detect import MONGO_AVAILABLE
 from . import BaseAuthentication
 
@@ -26,21 +26,17 @@ class Authentication(BaseAuthentication):
         # Read init credentials and configuration
         self.myinit()
         # Get the instance for mongodb
-        print("TEST", __name__)
-        self._db = services.get('mongo').get_instance()
-        print("UFF")
-        exit(1)
+        name = __name__.split('.')[::-1][0]  # returns 'mongo'
+        self._db = services.get(name).get_instance(dbname='auth')
 
-#     def fill_custom_payload(self, userobj, payload):
-#         """
-# # // TO FIX
+    def fill_custom_payload(self, userobj, payload):
+        """
+        TO FIX: should probably be implemented inside vanilla
+        """
+        return payload
 
-# This method should be implemented inside the vanilla folder,
-# instead of here
-#         """
-#         return payload
-
-#     def get_user_object(self, username=None, payload=None):
+    def get_user_object(self, username=None, payload=None):
+        raise NotImplementedError("to do")
 #         user = None
 #         if username is not None:
 #             user = self._db.User.query.filter_by(email=username).first()
@@ -49,7 +45,8 @@ class Authentication(BaseAuthentication):
 #                 uuid=payload['user_id']).first()
 #         return user
 
-#     def get_roles_from_user(self, userobj=None):
+    def get_roles_from_user(self, userobj=None):
+        raise NotImplementedError("to do")
 
 #         roles = []
 #         if userobj is None:
@@ -66,52 +63,68 @@ class Authentication(BaseAuthentication):
 # ###############
 # ## TO FIX
 # # see the same method in graphdb.py
-#     def create_user(self, userdata, roles=[]):
+    def create_user(self, userdata, roles=[]):
+        raise NotImplementedError("to do")
 #         if self.default_role not in roles:
 #             roles.append(self.default_role)
 #         return NotImplementedError("To do")
 # ## TO FIX
 # ###############
 
-#     def init_users_and_roles(self):
+    def init_users_and_roles(self):
 
-#         missing_role = missing_user = False
+        missing_role = missing_user = False
+        roles = []
+        transactions = []
 
-#         try:
-#             # if no roles
-#             missing_role = not self._db.Role.query.first()
-#             if missing_role:
-#                 log.warning("No roles inside db. Injected defaults.")
-#                 for role in self.default_roles:
-#                     sqlrole = self._db.Role(name=role, description="automatic")
-#                     self._db.session.add(sqlrole)
+        try:
 
-#             # if no users
-#             missing_user = not self._db.User.query.first()
-#             if missing_user:
-#                 log.warning("No users inside db. Injected default.")
-#                 user = self._db.User(
-#                     uuid=getUUID(),
-#                     email=self.default_user,
-#                     authmethod='credentials',
-#                     name='Default', surname='User',
-#                     password=self.hash_password(self.default_password))
+            # if no roles
+            cursor = self._db.Role.objects.all()
+            missing_role = len(list(cursor)) < 1
 
-#                 # link roles into users
-#                 for role in self.default_roles:
-#                     sqlrole = self._db.Role.query.filter_by(name=role).first()
-#                     user.roles.append(sqlrole)
-#                 self._db.session.add(user)
+            for role in self.default_roles:
+                role = self._db.Role(name=role, description="automatic")
+                if missing_role:
+                    transactions.append(role)
+                roles.append(role)
 
-#         except sqlalchemy.exc.OperationalError:
-#             raise AttributeError("Existing SQL tables are not consistent " +
-#                                  "to existing models. Please consider " +
-#                                  "rebuilding your DB.")
+            if missing_role:
+                log.warning("No roles inside mongo. Injected defaults.")
 
-#         if missing_user or missing_role:
-#             self._db.session.commit()
+            # if no users
+            cursor = self._db.User.objects.all()
+            missing_user = len(list(cursor)) < 1
 
-#     def save_token(self, user, token, jti):
+            if missing_user:
+                user = self._db.User(
+                    uuid=getUUID(),
+                    email=self.default_user,
+                    authmethod='credentials',
+                    name='Default', surname='User',
+                    password=self.hash_password(self.default_password))
+
+                # link roles into users
+                user.roles = roles
+                # for role in roles:
+                #     user.roles.append(role)
+
+                transactions.append(user)
+                log.warning("No users inside mongo. Injected default.")
+
+        except Exception as e:
+            raise AttributeError("Models for auth are wrong:\n%s" % e)
+
+        if missing_user or missing_role:
+            for transaction in transactions:
+                transaction.save()
+            print("SAVED", transactions)
+
+        print("DEBUG EXIT")
+        exit(1)
+
+    def save_token(self, user, token, jti):
+        raise NotImplementedError("to do")
 
 #         from flask import request
 #         import socket
@@ -143,7 +156,8 @@ class Authentication(BaseAuthentication):
 
 #         log.debug("Token stored inside the DB")
 
-#     def refresh_token(self, jti):
+    def refresh_token(self, jti):
+        raise NotImplementedError("to do")
 #         now = datetime.now()
 #         token_entry = self._db.Token.query.filter_by(jti=jti).first()
 #         if token_entry is None:
@@ -164,7 +178,8 @@ class Authentication(BaseAuthentication):
 
 #         return True
 
-#     def get_tokens(self, user=None, token_jti=None):
+    def get_tokens(self, user=None, token_jti=None):
+        raise NotImplementedError("to do")
 #         # TO FIX: TTL should be considered?
 
 #         list = []
@@ -192,7 +207,8 @@ class Authentication(BaseAuthentication):
 
 #         return list
 
-#     def invalidate_all_tokens(self, user=None):
+    def invalidate_all_tokens(self, user=None):
+        raise NotImplementedError("to do")
 #         """
 #             To invalidate all tokens the user uuid is changed
 #         """
@@ -204,7 +220,8 @@ class Authentication(BaseAuthentication):
 #         log.warning("User uuid changed to: %s" % user.uuid)
 #         return True
 
-#     def invalidate_token(self, token, user=None):
+    def invalidate_token(self, token, user=None):
+        raise NotImplementedError("to do")
 #         if user is None:
 #             user = self.get_user()
 
@@ -217,7 +234,8 @@ class Authentication(BaseAuthentication):
 
 #         return True
 
-#     def verify_token_custom(self, jti, user, payload):
+    def verify_token_custom(self, jti, user, payload):
+        raise NotImplementedError("to do")
 #         token_entry = self._db.Token.query.filter_by(jti=jti).first()
 #         if token_entry is None:
 #             return False
@@ -226,7 +244,8 @@ class Authentication(BaseAuthentication):
 
 #         return True
 
-#     def destroy_token(self, token_id):
+    def destroy_token(self, token_id):
+        raise NotImplementedError("to do")
 #         token = self._db.Token.query.filter_by(jti=token_id).first()
 
 #         if token is None:
@@ -237,7 +256,8 @@ class Authentication(BaseAuthentication):
 #         self._db.session.commit()
 #         return True
 
-#     def store_oauth2_user(self, current_user, token):
+    def store_oauth2_user(self, current_user, token):
+        raise NotImplementedError("to do")
 #         """
 #         Allow external accounts (oauth2 credentials)
 #         to be connected to internal local user
@@ -318,7 +338,8 @@ class Authentication(BaseAuthentication):
 
 #         return internal_user, external_user
 
-#     def store_proxy_cert(self, external_user, proxy):
+    def store_proxy_cert(self, external_user, proxy):
+        raise NotImplementedError("to do")
 #         if external_user is None:
 #             return False
 #         external_user.proxyfile = proxy
@@ -326,23 +347,25 @@ class Authentication(BaseAuthentication):
 #         self._db.session.commit()
 #         return True
 
-#     def oauth_from_token(self, token):
-# ## // TO FIX ## make this abstract for graphdb too?
+# TO FIX: make this methods below abstract for graph and others too?
+
+    def oauth_from_token(self, token):
+        raise NotImplementedError("to do")
 #         extus = self._db.ExternalAccounts.query.filter_by(token=token).first()
 #         intus = extus.main_user
 #         # print(token, intus, extus)
 #         return intus, extus
 
-#     def associate_object_to_attr(self, obj, key, value):
-# ## // TO FIX ## make this abstract for graphdb too?
+    def associate_object_to_attr(self, obj, key, value):
+        raise NotImplementedError("to do")
 
 #         setattr(obj, key, value)
 #         self._db.session.commit()
 #         return
 
-# ## // TO FIX ## to be cached
-#     def oauth_from_local(self, internal_user):
-# ## // TO FIX ## make this abstract for graphdb too?
+# ## TO DO: should be cached?
+    def oauth_from_local(self, internal_user):
+        raise NotImplementedError("to do")
 
 #         accounts = self._db.ExternalAccounts
 #         external_user = accounts.query.filter(

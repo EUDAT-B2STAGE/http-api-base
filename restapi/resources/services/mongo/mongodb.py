@@ -123,7 +123,6 @@ class MongoFarm(ServiceFarm):
 
         if MongoFarm._mongo is None:
             MongoFarm._mongo = MyMongoDb(db=dbname)
-            print("TEST MONGO MODELS on db " + dbname)
             if use_models:
                 cls.load_models()
                 # Remove the ones which developers do not want

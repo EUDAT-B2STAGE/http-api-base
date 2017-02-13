@@ -1,25 +1,41 @@
 # -*- coding: utf-8 -*-
 
-""" Base Models for mongo database """
+"""
+Base Models for mongo database
+
+CharField
+NumField?
+EmailField
+DateTimeField
+BooleanField
+ReferenceField
+EmbeddedDocumentListField
+
+"""
 
 from pymongo.write_concern import WriteConcern
 from pymodm import MongoModel, fields
 
 
+class Role(MongoModel):
+    # id = db.Column(db.Integer(), primary_key=True)
+    name = fields.CharField(primary_key=True)
+    description = fields.CharField()
+
+    class Meta:
+        write_concern = WriteConcern(j=True)
+        connection_alias = 'auth'
+
+
 class User(MongoModel):
-    # # uuid = StringProperty(required=True, unique_index=True)
-    # email = EmailProperty(required=True, unique_index=True, show=True)
-    email = fields.EmailField()
-    test = fields.CharField()
-    # name = StringProperty(required=True, show=True)
-    # surname = StringProperty(required=True, show=True)
-    # authmethod = StringProperty(required=True)
-    # password = StringProperty()  # Hashed from a custom function
-    # tokens = RelationshipTo('Token', 'HAS_TOKEN', cardinality=ZeroOrMore)
-    # roles = RelationshipTo(
-    #     'Role', 'HAS_ROLE', cardinality=ZeroOrMore, show=True)
-    # externals = RelationshipTo(
-    #     'ExternalAccounts', 'HAS_AUTHORIZATION', cardinality=OneOrMore)
+    # id = db.Column(db.Integer, primary_key=True)
+    email = fields.EmailField(primary_key=True)
+    uuid = fields.CharField()  # note: this should be UNIQUE
+    name = fields.CharField()
+    surname = fields.CharField()
+    authmethod = fields.CharField()
+    password = fields.CharField()
+    roles = fields.EmbeddedDocumentListField(Role)
 
     class Meta:
         write_concern = WriteConcern(j=True)
