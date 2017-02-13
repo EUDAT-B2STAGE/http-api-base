@@ -193,7 +193,7 @@ class Customizer(object):
                 yaml_files[method] = file
 
         if len(yaml_files) < 1:
-            raise Exception("%s: methods undefined" % endpoint)
+            raise Exception("%s: no methods defined in any YAML" % endpoint)
         if conf is None or 'class' not in conf:
             raise ValueError("No 'class' defined for '%s'" % endpoint)
 
@@ -201,12 +201,12 @@ class Customizer(object):
         current.methods = yaml_files
         return current
 
-    def read_complex_config(self, configfile):
-        """ A more complex configuration is available in JSON format """
-        content = {}
-        with open(configfile) as fp:
-            content = json.load(fp)
-        return content
+    # def read_complex_config(self, configfile):
+    #     """ A more complex configuration is available in JSON format """
+    #     content = {}
+    #     with open(configfile) as fp:
+    #         content = json.load(fp)
+    #     return content
 
     def load_endpoint(self, default_uri, dir_name, package_name, conf):
 

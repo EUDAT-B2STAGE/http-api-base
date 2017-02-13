@@ -54,9 +54,9 @@ class MyMongoDb(ServiceObject):
 
     DEFAULTDB = 'test'
 
-    def __init__(self):
+    def __init__(self, db=None):
         super(MyMongoDb, self).__init__()
-        self.connect()
+        self.connect(db=db)
 
     def connect(self, db=None):
 
@@ -67,6 +67,7 @@ class MyMongoDb(ServiceObject):
         if db == self.DEFAULTDB:
             connect(uri)
         else:
+            log.debug("Connected to db %s" % db)
             connect(uri, alias=db)
 
 
@@ -76,7 +77,7 @@ class MyMongoDb(ServiceObject):
 
 class MongoFarm(ServiceFarm):
 
-    """ Making some Graphs """
+    """ Making some Mongos """
 
     _mongo = None
 
@@ -97,6 +98,7 @@ class MongoFarm(ServiceFarm):
         # http://api.mongodb.com/python/current/
         #   faq.html#how-do-i-change-the-timeout-value-for-cursors
         list(db.posts.find(no_cursor_timeout=True))
+        # db.posts.insert_one({'prova': 'test'}).inserted_id
         client.close()
 
         ################################
@@ -114,13 +116,14 @@ class MongoFarm(ServiceFarm):
             raise EnvironmentError("Failed to test mongo connection")
 
         log.debug("pymongo+pyodm: checked active connection")
+        del self._mongo
 
     @classmethod
     def get_instance(cls, models2skip=[], use_models=True, dbname=None):
 
         if MongoFarm._mongo is None:
             MongoFarm._mongo = MyMongoDb(db=dbname)
-            print("TEST MONGO MODELS on db" + dbname)
+            print("TEST MONGO MODELS on db " + dbname)
             if use_models:
                 cls.load_models()
                 # Remove the ones which developers do not want

@@ -57,7 +57,7 @@ class ServiceObject(object):
 
         for model in models:
             # Save attribute inside class with the same name
-            log.verbose("Injecting GraphDB model '%s'" % model.__name__)
+            log.verbose("Injecting model '%s'" % model.__name__)
             setattr(self, model.__name__, model)
 
 
@@ -134,6 +134,8 @@ class ServiceFarm(metaclass=abc.ABCMeta):
         This is not going to be used by the abstract class.
         The user MUST define where to load it!
         """
+
+        # print("CHECK MONGO?")
 
         # Load base models
         base_models = cls.load_base_models()
