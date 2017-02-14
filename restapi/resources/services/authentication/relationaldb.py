@@ -12,17 +12,12 @@ from datetime import datetime, timedelta
 from commons.services.uuid import getUUID
 from ..detect import SQL_AVAILABLE
 from . import BaseAuthentication
-from .... import myself, lic
 from commons.logs import get_logger
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 if not SQL_AVAILABLE:
-    logger.critical("No SQLalchemy service found for auth")
+    log.critical("No SQLalchemy service found for auth")
     exit(1)
 
 
@@ -34,6 +29,7 @@ class Authentication(BaseAuthentication):
         I will recover initial instance from the Flask app services.
         """
 
+        self.myinit()
         self._db = services.get('sql').get_instance()
 
     def fill_custom_payload(self, userobj, payload):
@@ -61,7 +57,7 @@ instead of here
             try:
                 userobj = self.get_user()
             except Exception as e:
-                logger.warning("Roles check: invalid current user.\n%s" % e)
+                log.warning("Roles check: invalid current user.\n%s" % e)
                 return roles
 
         for role in userobj.roles:
@@ -72,8 +68,8 @@ instead of here
 ## TO FIX
 # see the same method in graphdb.py
     def create_user(self, userdata, roles=[]):
-        if self.DEFAULT_ROLE not in roles:
-            roles.append(self.DEFAULT_ROLE)
+        if self.default_role not in roles:
+            roles.append(self.default_role)
         return NotImplementedError("To do")
 ## TO FIX
 ###############
@@ -86,24 +82,24 @@ instead of here
             # if no roles
             missing_role = not self._db.Role.query.first()
             if missing_role:
-                logger.warning("No roles inside db. Injected defaults.")
-                for role in self.DEFAULT_ROLES:
+                log.warning("No roles inside db. Injected defaults.")
+                for role in self.default_roles:
                     sqlrole = self._db.Role(name=role, description="automatic")
                     self._db.session.add(sqlrole)
 
             # if no users
             missing_user = not self._db.User.query.first()
             if missing_user:
-                logger.warning("No users inside db. Injected default.")
+                log.warning("No users inside db. Injected default.")
                 user = self._db.User(
                     uuid=getUUID(),
-                    email=self.DEFAULT_USER,
+                    email=self.default_user,
                     authmethod='credentials',
                     name='Default', surname='User',
-                    password=self.hash_password(self.DEFAULT_PASSWORD))
+                    password=self.hash_password(self.default_password))
 
                 # link roles into users
-                for role in self.DEFAULT_ROLES:
+                for role in self.default_roles:
                     sqlrole = self._db.Role.query.filter_by(name=role).first()
                     user.roles.append(sqlrole)
                 self._db.session.add(user)
@@ -146,7 +142,7 @@ instead of here
         self._db.session.add(token_entry)
         self._db.session.commit()
 
-        logger.debug("Token stored inside the DB")
+        log.debug("Token stored inside the DB")
 
     def refresh_token(self, jti):
         now = datetime.now()
@@ -156,7 +152,7 @@ instead of here
 
         if now > token_entry.expiration:
             self.invalidate_token(token=token_entry.token)
-            logger.critical("This token is no longer valid")
+            log.critical("This token is no longer valid")
             return False
 
         exp = now + timedelta(seconds=self.shortTTL)
@@ -206,7 +202,7 @@ instead of here
         user.uuid = getUUID()
         self._db.session.add(user)
         self._db.session.commit()
-        logger.warning("User uuid changed to: %s" % user.uuid)
+        log.warning("User uuid changed to: %s" % user.uuid)
         return True
 
     def invalidate_token(self, token, user=None):
@@ -218,7 +214,16 @@ instead of here
             token_entry.emitted_for = None
             self._db.session.commit()
         else:
-            logger.warning("Could not invalidate token")
+            log.warning("Could not invalidate token")
+
+        return True
+
+    def verify_token_custom(self, jti, user, payload):
+        token_entry = self._db.Token.query.filter_by(jti=jti).first()
+        if token_entry is None:
+            return False
+        if token_entry.emitted_for is None or token_entry.emitted_for != user:
+            return False
 
         return True
 
@@ -270,10 +275,10 @@ instead of here
         if len(internal_users) > 0:
             # Should never happen, please
             if len(internal_users) > 1:
-                logger.critical("Multiple users?")
+                log.critical("Multiple users?")
                 return None, "Server misconfiguration"
             internal_user = internal_users.pop()
-            logger.debug("Existing internal user: %s" % internal_user)
+            log.debug("Existing internal user: %s" % internal_user)
             # A user already locally exists with another authmethod. Not good.
             if internal_user.authmethod != 'oauth2':
                 return None, "Creating a user which locally already exists"
@@ -284,10 +289,10 @@ instead of here
                 uuid=getUUID(), email=email, authmethod='oauth2')
             # link default role into users
             internal_user.roles.append(
-                self._db.Role.query.filter_by(name=self.DEFAULT_ROLE).first())
+                self._db.Role.query.filter_by(name=self.default_role).first())
             self._db.session.add(internal_user)
             self._db.session.commit()
-            logger.info("Created internal user %s" % internal_user)
+            log.info("Created internal user %s" % internal_user)
 
         # Get ExternalAccount for the oauth2 data if exists
         external_user = self._db.ExternalAccounts \
@@ -300,7 +305,7 @@ instead of here
             external_user.main_user = internal_user
             # Note: for pre-production release
             # we allow only one external account per local user
-            logger.info("Created external user %s" % external_user)
+            log.info("Created external user %s" % external_user)
 
         # Update external user data to latest info received
         external_user.email = email
@@ -310,7 +315,7 @@ instead of here
 
         self._db.session.add(external_user)
         self._db.session.commit()
-        logger.debug("Updated external user %s" % external_user)
+        log.debug("Updated external user %s" % external_user)
 
         return internal_user, external_user
 

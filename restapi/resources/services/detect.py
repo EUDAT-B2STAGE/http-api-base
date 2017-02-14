@@ -8,11 +8,13 @@ Services:
 # graphdb, rethinkdb, elasticsearch, irods and so on
 """
 
-from __future__ import absolute_import
+# from __future__ import absolute_import
+
 import os
+from commons import PRODUCTION
 from commons.logs import get_logger
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 #################
 services = {}
@@ -20,19 +22,23 @@ farm_queue = []
 
 #######################################################
 # RELATIONAL DATABASE
+
 SQL_AVAILABLE = False
 
-#// TO FIX:
-# If we have postgres/mysql,
-# you must detect them and distinguish from the simple sqllite base
+# Note: with SQL_PROD_AVAILABLE we refer to a real database container
+# running and linked (e.g. Mysql or Postgres)
+# Not considering sqllite for this variable
+SQL_PROD_AVAILABLE = 'SQLDB_NAME' in os.environ and PRODUCTION
 
-if 'BACKEND_AUTH_SERVICE' in os.environ:
-    if os.environ['BACKEND_AUTH_SERVICE'] == 'relationaldb':
-        SQL_AVAILABLE = True
-        from .sql.alchemy import SQLFarm as service
-        # logger.debug("Created SQLAlchemy relational DB object")
-        farm_queue.append(service)
-        # services['sql'] = service
+if SQL_PROD_AVAILABLE:
+    SQL_AVAILABLE = True
+
+if os.environ.get('BACKEND_AUTH_SERVICE', '') == 'relationaldb':
+    SQL_AVAILABLE = True
+    from .sql.alchemy import SQLFarm as service
+    # log.debug("Created SQLAlchemy relational DB object")
+    farm_queue.append(service)
+    # services['sql'] = service
 
 #######################################################
 # GRAPH DATABASE
@@ -41,7 +47,18 @@ GRAPHDB_AVAILABLE = 'GDB_NAME' in os.environ
 if GRAPHDB_AVAILABLE:
     # DO something and inject into 'services'
     from .neo4j.graph import GraphFarm as service
-    # services['neo4j'] = service
+    farm_queue.append(service)
+
+#######################################################
+# MONGO DB
+MONGO_AVAILABLE = 'MONGO_NAME' in os.environ
+
+if MONGO_AVAILABLE:
+    # External service if using user/password?
+    # TODO: write example into docker-compose production
+
+    # DO something and inject into 'services'
+    from .mongo.mongodb import MongoFarm as service
     farm_queue.append(service)
 
 #######################################################
@@ -96,5 +113,5 @@ if CELERY_AVAILABLE:
 # Create the dictionary of services
 for farm in farm_queue:
     service_name = farm.define_service_name()
-    logger.debug("Adding service '%s'" % service_name)
+    log.debug("Adding service '%s' to available array" % service_name)
     services[service_name] = farm

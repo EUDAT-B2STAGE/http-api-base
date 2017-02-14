@@ -4,13 +4,13 @@
 Oauth handling
 """
 
-from __future__ import division, absolute_import
-from commons.logs import  get_logger
+# from __future__ import absolute_import
 from flask_oauthlib.client import OAuth
+from commons.logs import get_logger
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 ####################################
 # Oauth2
 oauth = OAuth()
-logger.debug("Oauth2 object created")
+log.debug("Oauth2 object created")

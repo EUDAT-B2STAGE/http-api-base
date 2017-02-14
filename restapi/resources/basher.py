@@ -9,9 +9,11 @@ http://plumbum.readthedocs.org/en/latest/index.html#
 
 """
 
-from commons.logs import get_logger
+# from __future__ import absolute_import
 from plumbum.commands.processes import ProcessExecutionError
-logger = get_logger(__name__)
+
+from commons.logs import get_logger
+log = get_logger(__name__)
 
 
 class BashCommands(object):
@@ -27,9 +29,10 @@ class BashCommands(object):
         self._shell = myshell
 
         super(BashCommands, self).__init__()
-        logger.debug("Internal shell initialized")
+        log.very_verbose("Internal shell initialized")
 
-    def execute_command(self, command, parameters=[], env=None, parseException=False, raisedException=BaseException):
+    def execute_command(self, command, parameters=[], env=None,
+                        parseException=False, raisedException=BaseException):
         try:
 
             """ Pattern in plumbum library for executing a shell command """
@@ -37,20 +40,23 @@ class BashCommands(object):
             # Specify different environment variables
             if env is not None:
                 command = command.with_env(**env)
+            log.verbose("Executing command %s %s" % (command, parameters))
             return command(parameters)
 
         except ProcessExecutionError as e:
             if not parseException:
                 raise(e)
             else:
-                #argv = e.argv
-                #retcode = e.retcode
-                #stdout = e.stdout
+                # argv = e.argv
+                # retcode = e.retcode
+                # stdout = e.stdout
                 stderr = e.stderr
 
                 raise raisedException(stderr)
 
-    def execute_command_advanced(self, command, parameters=[], retcodes=(), parseException=False, raisedException=BaseException):
+    def execute_command_advanced(self, command, parameters=[],
+                                 retcodes=(), parseException=False,
+                                 raisedException=BaseException):
         try:
 
             """ Pattern in plumbum library for executing a shell command """
@@ -58,6 +64,7 @@ class BashCommands(object):
     # TO FIX: does not work if parameters is bigger than one element
             comout = \
                 self._shell[command][parameters].run(retcode=retcodes)
+            log.verbose("Executed command %s %s" % (command, parameters))
             # # NOTE: comout is equal to (status, stdin, stdout)
             return comout
 
@@ -65,12 +72,13 @@ class BashCommands(object):
             if not parseException:
                 raise(e)
             else:
-                #argv = e.argv
-                #retcode = e.retcode
-                #stdout = e.stdout
+                # argv = e.argv
+                # retcode = e.retcode
+                # stdout = e.stdout
                 stderr = e.stderr
 
                 raise raisedException(stderr)
+
     ###################
     # BASE COMMANDS
     def create_empty(self, path, directory=False, ignore_existing=False):
@@ -84,7 +92,7 @@ class BashCommands(object):
                 args.append("-p")
         # Debug
         self.execute_command(com, args)
-        logger.debug("Created %s" % path)
+        log.debug("Created %s" % path)
 
     def remove(self, path, recursive=False, force=False):
 
@@ -99,7 +107,7 @@ class BashCommands(object):
         # Execute
         self.execute_command(com, args)
         # Debug
-        logger.debug("Removed %s" % path)
+        log.debug("Removed %s" % path)
 
     ###################
     # DIRECTORIES

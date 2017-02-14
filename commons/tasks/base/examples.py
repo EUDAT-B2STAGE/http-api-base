@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import absolute_import
-from ...services.celery import celery_app
+
 from flask import current_app
+from ...services.celery import celery_app
 from commons.logs import get_logger
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 ####################
@@ -13,12 +14,12 @@ logger = get_logger(__name__)
 
 @celery_app.task
 def foo():
-    logger.debug("Test debug")
-    logger.info("Test info")
+    log.debug("Test debug")
+    log.info("Test info")
 
 
 @celery_app.task
 def foo_in_context(arg):
     with current_app.app_context():
-        logger.debug("Test debug '%s'" % arg)
-        logger.info("Test info '%s'" % arg)
+        log.debug("Test debug '%s'" % arg)
+        log.info("Test info '%s'" % arg)

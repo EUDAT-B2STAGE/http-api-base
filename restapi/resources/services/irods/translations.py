@@ -1,19 +1,17 @@
 # -*- coding: utf-8 -*-
 
-"""
-Converting irods data into GraphDB models
-"""
+""" Converting irods data into GraphDB models """
 
 import os
-from commons.logs import get_logger
 
-# TO MOVE?
+# TO FIX: should we move this import?
 from py2neo.error import GraphError
 from py2neo.cypher.error.schema import ConstraintViolation
 from neomodel.exception import RequiredProperty
 from neomodel.exception import UniqueProperty
 
-logger = get_logger(__name__)
+from commons.logs import get_logger
+log = get_logger(__name__)
 
 
 class AccountsToIrodsUsers(object):
@@ -45,8 +43,7 @@ class Irods2Graph(object):
 
         current_collection = None
         try:
-            current_collection = \
-                self._graph.createNode(self._graph.Collection, properties)
+            current_collection = self._graph.Collection(**properties).save()
         except (GraphError, RequiredProperty,
                 UniqueProperty, ConstraintViolation):
             current_collection = \
@@ -67,7 +64,7 @@ class Irods2Graph(object):
         for collection, path in collections:
 
             collection_counter += 1
-            logger.debug("Collection %s" % collection)
+            log.debug("Collection %s" % collection)
             current_collection = self.collection2node(
                 collection, path, current_zone)
 
@@ -141,7 +138,7 @@ TO BE FIXED
 
         # Eudat URL
         location = self._icom.current_location(ifile)
-        logger.debug("Location: %s" % location)
+        log.debug("Location: %s" % location)
 
         ##################################
         # Store Data Object
@@ -157,11 +154,10 @@ TO BE FIXED
         try:
             current_dobj = self._graph.DataObject.nodes.get(location=location)
         except self._graph.DataObject.DoesNotExist:
-            current_dobj = self._graph.createNode(
-                self._graph.DataObject, properties)
+            current_dobj = self._graph.DataObject(**properties).save()
         # Connect the object
         current_dobj.located.connect(current_zone)
-        logger.info("Created and connected data object %s" % filename)
+        log.info("Created and connected data object %s" % filename)
 
         ##################################
         # Connect to irods user
@@ -199,7 +195,7 @@ TO BE FIXED
         resources = self._icom.get_resource_from_dataobject(ifile)
 
         for resource_name in resources:
-            logger.debug("Resource %s" % resource_name)
+            log.debug("Resource %s" % resource_name)
             current_resource = \
                 self._graph.Resource.get_or_create(
                     {'name': resource_name}).pop()

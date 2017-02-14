@@ -10,31 +10,15 @@ Which breaks the clients who expect JSON back even in case of errors.
 source: http://flask.pocoo.org/snippets/83/
 """
 
-from __future__ import division, absolute_import
-from . import myself, lic
-from commons.logs import get_logger
+# from __future__ import absolute_import
 
 # from flask import jsonify, make_response
 # from werkzeug.exceptions import HTTPException
 from commons import htmlcodes as hcodes
+from commons import json
 
-# Look for the best chance for json lib
-try:
-    import commentjson as json
-except:
-    try:
-        import simplejson as json
-        # import commentjson as json
-    except:
-        import json
-## // TO FIX:
-# this 'json' should be imported from anyone from this class
-
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
-logger = get_logger(__name__)
+# from commons.logs import get_logger
+# log = get_logger(__name__)
 
 
 def test_json(message):
@@ -63,7 +47,7 @@ def test_json(message):
 
 # def log_exception(sender, exception, **extra):
 #     """ Log an exception to our logging framework """
-#     sender.logger.error(
+#     sender.log.error(
 #         'Got exception during processing:' +
 #         '\nSender "%s"\nException "%s"' % (sender, exception))
 

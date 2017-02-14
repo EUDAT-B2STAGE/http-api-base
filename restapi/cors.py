@@ -5,16 +5,11 @@ Main server factory.
 We create all the components here!
 """
 
-from __future__ import division, absolute_import
-from . import myself, lic
-from commons.logs import get_logger
+# from __future__ import absolute_import
 from flask_cors import CORS
+from commons.logs import get_logger
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 # ####################################
@@ -24,7 +19,7 @@ logger = get_logger(__name__)
 cors = CORS(
     allow_headers=['Content-Type', 'Authorization', 'X-Requested-With'],
     methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'])
-logger.debug("Flask: creating CORS")
+log.verbose("Created CORS requests")
 
 # # WARNING: in case 'cors' write too much, you could fix it like this
 # import logging

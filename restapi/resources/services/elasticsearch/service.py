@@ -32,7 +32,7 @@ PORT = os.environ['EL_PORT'].split(':').pop()
 
 ES_SERVICE = {"hosts": [{'host': HOST, 'port': PORT}], 'timeout': 5}
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 #######################
@@ -90,7 +90,7 @@ class BeElastic(ServiceObject):
         obj = DocumentClass.get(id=id, ignore=404)
         # print("Check", id, check)
         if obj is None:
-            logger.debug("Creating a new document '%s'" % id)
+            log.debug("Creating a new document '%s'" % id)
 
             # Put the id in place
             args['meta'] = {'id': id}
@@ -129,7 +129,7 @@ class BeElastic(ServiceObject):
             DocumentClass, {attribute: suggestion}, forced_id=id)
 
     def clean_all(self):
-        logger.warning("Removing all data")
+        log.warning("Removing all data")
 
         for index in self._connection.indices.get_aliases().keys():
             self._connection.indices.delete(index)
@@ -199,7 +199,7 @@ class BeElastic(ServiceObject):
                 .execute_suggest()
 
         except Exception as e:
-            logger.warning("Suggestion error:\n%s" % e)
+            log.warning("Suggestion error:\n%s" % e)
             raise e
         # finally:
         #     if suggest is None or 'data' not in suggest:
@@ -231,7 +231,7 @@ class ElasticFarm(ServiceFarm):
 
         name = self.define_service_name()
 
-        # Elasticsearch logger to be silenced
+        # Elasticsearch log to be silenced
         # in checking the existing connection
         loggerES = logging.getLogger('elasticsearch')
         loggerES.setLevel(logging.CRITICAL)
@@ -241,11 +241,11 @@ class ElasticFarm(ServiceFarm):
         # CHECK 1: verify the library
 
         # self._instance = BeElastic()
-        # logger.debug("Plugging '%s' service" % name)
+        # log.debug("Plugging '%s' service" % name)
         self.get_instance()
 
         self._instance._connection.ping()
-        logger.debug("'%s' service seems plugged" % name)
+        log.debug("'%s' service seems plugged" % name)
 
         # # CHECK 2: test the models
         # from elasticsearch_dsl import DocType, String

@@ -30,7 +30,7 @@ from commons.certificates import Certificates
 # from . import string_generator
 from commons.logs import get_logger
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 IRODS_USER_ALIAS = 'clientUserName'
 CERTIFICATES_DIR = Certificates._dir
@@ -88,7 +88,7 @@ class IrodsException(RestApiException):
 
     def parse_SYS_INVALID_INPUT_PARAM(
             self, utility, error_string, error_code, error_label, role='user'):
-        return "Invalid system path"
+        return "One input parameters is invalid (resource, file, etc.)"
 
     def parse_SYS_LINK_CNT_EXCEEDED_ERR(
             self, utility, error_string, error_code, error_label, role='user'):
@@ -104,7 +104,7 @@ class IrodsException(RestApiException):
 
     def parseIrodsError(self, error):
         error = str(error)
-        logger.debug("*%s*" % error)
+        log.debug("*%s*" % error)
 # // TO FIX:
 # this gets called twice
 
@@ -182,8 +182,7 @@ class ICommands(BashCommands):
     _current_environment = None
     _base_dir = ''
 
-
-    first_resource = 'demoResc'
+    first_resource = 'myResc'
     second_resource = 'replicaResc'
 
     def __init__(self, user=None, proxy=False, become_admin=False):
@@ -204,18 +203,18 @@ class ICommands(BashCommands):
             raise ValueError("Cannot raise privileges in external service")
         return self.change_user(IRODS_DEFAULT_ADMIN)
 
-    def get_resources(self):
+    def get_resources_admin(self):
         resources = []
         out = self.admin(command='lr')
         if isinstance(out, str):
             resources = out.strip().split('\n')
         return resources
 
-    def get_default_resource(self, skip=['bundleResc']):
+    def get_default_resource_admin(self, skip=['bundleResc']):
 # // TO FIX:
 # find out the right way to get the default irods resource
 # note: we could use ienv
-        resources = self.get_resources()
+        resources = self.get_resources_admin()
         if len(resources) > 0:
             # Remove strange resources
             for element in skip:
@@ -315,7 +314,8 @@ class ICommands(BashCommands):
             ###############################
             # USER PEMs: Private (key) and Public (Cert)
             elif os.path.isdir(CERTIFICATES_DIR + '/' + user):
-                logger.debug("Using standard x509 certificates")
+                log.debug(
+                    "Using standard x509 certificates (user %s)" % user)
                 irods_env['X509_USER_CERT'] = \
                     CERTIFICATES_DIR + '/' + user + '/usercert.pem'
                 irods_env['X509_USER_KEY'] = \
@@ -324,7 +324,7 @@ class ICommands(BashCommands):
             # PROXY CERTIFICATE (myproxy)
 # NOTE: this is way too long, it should be splitted in subfunctions
             else:
-                logger.debug("Using proxy certificates")
+                log.debug("Using proxy certificates (user %s)" % user)
                 proxy_cert_file = CERTIFICATES_DIR + '/' + user + '.pem'
 
                 if not os.path.isfile(proxy_cert_file):
@@ -350,7 +350,7 @@ class ICommands(BashCommands):
                 ##################
                 # Proxy file does not exist or expired
                 if not valid:
-                    logger.warning("Invalid proxy for %s refresh" % user)
+                    log.warning("Invalid proxy for %s refresh" % user)
                     try:
                         from restapi.resources.custom.proxy_certificates \
                             import get_proxy_certificate
@@ -361,27 +361,27 @@ class ICommands(BashCommands):
                         parameters["env"] = irods_env
                         valid = get_proxy_certificate(**parameters)
                         if valid:
-                            logger.info(
+                            log.info(
                                 "Proxy refreshed for %s" % user)
                         else:
-                            logger.error(
+                            log.error(
                                 "Cannot refresh proxy for user %s" % user)
                     except Exception as e:
-                        logger.critical(
+                        log.critical(
                             "Cannot refresh proxy for user %s" % user)
-                        logger.critical(e)
+                        log.critical(e)
 
                 ##################
                 if valid:
                     irods_env['X509_USER_CERT'] = proxy_cert_file
                     irods_env['X509_USER_KEY'] = proxy_cert_file
                 else:
-                    logger.critical("Cannot find a valid certificate file")
+                    log.critical("Cannot find a valid certificate file")
 
         if schema == 'PAM':
             # irodsSSLCACertificateFile PATH/TO/chain.pem
             # irodsSSLVerifyServer      cert
-            logger.critical("PAM not IMPLEMENTED yet")
+            log.critical("PAM not IMPLEMENTED yet")
             return False
 
         # if user == IRODS_DEFAULT_ADMIN:
@@ -413,7 +413,7 @@ class ICommands(BashCommands):
             self.prepare_irods_environment(user, proxy=proxy)
 
         self._current_user = user
-        logger.debug("Switched to user '%s'" % user)
+        log.verbose("Switched to user '%s'" % user)
         # clean lru_cache because we changed user
         self.get_user_info.cache_clear()
 
@@ -461,10 +461,22 @@ class ICommands(BashCommands):
 
     ###################
     # ICOMs !!!
+    def list_resources(self):
+        com = 'ilsresc'
+        iout = self.basic_icom(com).strip()
+        log.debug("Resources %s" % iout)
+        return iout.split("\n")
+
+    def get_base_resource(self):
+        resources = self.list_resources()
+        if len(resources) > 0:
+            return resources[0]
+        return None
+
     def get_base_dir(self):
         com = "ipwd"
         iout = self.basic_icom(com).strip()
-        logger.debug("Base dir is %s" % iout)
+        log.very_verbose("Base dir is %s" % iout)
         return iout
 
     # def go_home(self):
@@ -485,13 +497,13 @@ class ICommands(BashCommands):
             # super call of create_tempy with file (touch)
             # icp / iput of that file
             # super call of remove for the original temporary file
-            logger.warning("NOT IMPLEMENTED for a file '%s'" %
+            log.warning("NOT IMPLEMENTED for a file '%s'" %
                            inspect.currentframe().f_code.co_name)
             return
 
         # This command does not give you any output
         self.basic_icom(com, args)
-        logger.debug("Created %s" % path)
+        log.debug("Created %s" % path)
 
         return self.handle_collection_path(path)
 
@@ -542,7 +554,7 @@ class ICommands(BashCommands):
         # Execute
         self.basic_icom(com, args)
         # Debug
-        logger.debug("Copyied file: %s -> %s" % (sourcepath, destpath))
+        log.debug("Copyied file: %s -> %s" % (sourcepath, destpath))
 
     def remove(self, path, recursive=False, force=False, resource=None):
         com = 'irm'
@@ -562,7 +574,7 @@ class ICommands(BashCommands):
         # Execute
         self.basic_icom(com, args)
         # Debug
-        logger.debug("Removed irods object: %s" % path)
+        log.debug("Removed irods object: %s" % path)
 
     def open(self, absolute_path, destination):
         com = 'iget'
@@ -571,7 +583,7 @@ class ICommands(BashCommands):
         # Execute
         iout = self.basic_icom(com, args)
         # Debug
-        logger.debug("Obtaining irods object: %s" % absolute_path)
+        log.debug("Obtaining irods object: %s" % absolute_path)
         return iout
 
     def save(self, path, destination=None, force=False, resource=None):
@@ -581,9 +593,13 @@ class ICommands(BashCommands):
             args.append('-f')
         if destination is not None:
             args.append(destination)
-        if resource is not None:
-            args.append('-R')
-            args.append(resource)
+
+        # Bug fix: currently irods does not use the default resource anymore?
+        if resource is None:
+            resource = self.get_base_resource()
+        args.append('-R')
+        args.append(resource)
+
         # Execute
         return self.basic_icom(com, args)
 
@@ -604,7 +620,7 @@ class ICommands(BashCommands):
         # Execute
         iout = self.basic_icom(com, args)
         # Debug
-        logger.debug("Obtaining irods object: %s" % absolute_path)
+        log.debug("Obtaining irods object: %s" % absolute_path)
         return iout
 
     def admin(self, command, user=None, extra=None):
@@ -619,7 +635,7 @@ class ICommands(BashCommands):
             args.append(user)
         if extra is not None:
             args.append(extra)
-        logger.debug("iRODS admininistration command '%s'" % command)
+        log.debug("iRODS admininistration command '%s'" % command)
         return self.basic_icom(com, args)
 
     def admin_list(self):
@@ -631,7 +647,7 @@ class ICommands(BashCommands):
     def create_user(self, user, admin=False):
 
         if user is None:
-            logger.error("Asking for NULL user...")
+            log.error("Asking for NULL user...")
             return False
 
         user_type = 'rodsuser'
@@ -643,7 +659,7 @@ class ICommands(BashCommands):
             return True
         except IrodsException as e:
             if 'CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME' in str(e):
-                logger.warning("User %s already exists in iRODS" % user)
+                log.warning("User %s already exists in iRODS" % user)
                 return False
             raise e
 
@@ -663,7 +679,7 @@ class ICommands(BashCommands):
         # Execute
         self.basic_icom(com, args)
         # Debug
-        logger.debug("Set inheritance %r to %s" % (inheritance, path))
+        log.debug("Set inheritance %r to %s" % (inheritance, path))
 
     def set_permissions(self, path, permission, userOrGroup, recursive=False):
         com = 'ichmod'
@@ -678,7 +694,7 @@ class ICommands(BashCommands):
         # Execute
         self.basic_icom(com, args)
         # Debug
-        logger.debug("Set %s permission to %s for %s" %
+        log.debug("Set %s permission to %s for %s" %
                      (permission, path, userOrGroup))
 
     def get_resources_from_file(self, filepath):
@@ -690,7 +706,7 @@ class ICommands(BashCommands):
                 continue
             resources.append(elements[2])
 
-        logger.debug("%s: found resources %s" % (filepath, resources))
+        log.debug("%s: found resources %s" % (filepath, resources))
         return resources
 
     def get_permissions(self, path):
@@ -706,7 +722,6 @@ class ICommands(BashCommands):
             }
         """
         iout = self.list(path=path, acl=True)
-        logger.debug(iout)
 
         data = {}
         for d in iout:
@@ -1023,7 +1038,7 @@ class ICommands(BashCommands):
         # print(first_lines)
 
         if first_lines.pop().endswith(':'):
-            logger.debug("Collection: %s" % path)
+            log.debug("Collection: %s" % path)
             return True
         return False
 
@@ -1031,7 +1046,7 @@ class ICommands(BashCommands):
         com = 'iquest'
         args = ["%s" % query]
         output = self.basic_icom(com, args)
-        logger.debug("%s query: [%s]\n%s" % (com, query, output))
+        log.debug("%s query: [%s]\n%s" % (com, query, output))
         if 'CAT_NO_ROWS_FOUND' in output:
             return None
         return output.split('\n')[0].lstrip("%s = " % key)
@@ -1044,7 +1059,7 @@ class ICommands(BashCommands):
         return self.query_user(where='USER_DN', field=dn)
 
     def user_exists(self, user):
-        return self.query_user(field=user)
+        return self.query_user(field=user) == user
 
 ################################################
 ################################################
@@ -1057,14 +1072,14 @@ class ICommands(BashCommands):
     #     Retcodes for this particular case, skip also error 4, no file found
     #     """
     #     (status, stdin, stdout) = self.list(path, False, retcodes)
-    #     logger.debug("Check %s with %s " % (path, status))
+    #     log.debug("Check %s with %s " % (path, status))
     #     return status == 0
 
     def search(self, path, like=True):
         com = "ilocate"
         if like:
             path += '%'
-        logger.debug("iRODS search for %s" % path)
+        log.debug("iRODS search for %s" % path)
         # Execute
         out = self.execute_command(com, path)
         content = out.strip().split('\n')
@@ -1156,8 +1171,8 @@ class IMetaCommands(ICommands):
 #                     except:
 #                         pass
 #             else:
-#                 logger.debug("No valid attributes specified for action %s" % action)
-#                 logger.debug("Attrib %s Val %s" % (attributes, values) )
+#                 log.debug("No valid attributes specified for action %s" % action)
+#                 log.debug("Attrib %s Val %s" % (attributes, values) )
 
 #         # Execute
 #         return self.execute_command(com, args)
@@ -1201,11 +1216,11 @@ class IMetaCommands(ICommands):
 #         args=[]
 #         if rule is not None:
 #             args.append(rule)
-#             logger.info("Executing irule %s" % rule)
+#             log.info("Executing irule %s" % rule)
 #         elif rule_file is not None:
 #             args.append('-F')
 #             args.append(rule_file)
-#             logger.debug("Irule execution from file %s" % rule_file)
+#             log.debug("Irule execution from file %s" % rule_file)
 
 #         # Execute
 #         return self.execute_command(com, args)
@@ -1231,7 +1246,7 @@ class IMetaCommands(ICommands):
 #         ifiles = super(EudatICommands, self).search(path, like)
 #         for ifile in ifiles:
 #             if '.metadata/' in ifile:
-#                 logger.debug("Skipping metadata file %s" % ifile)
+#                 log.debug("Skipping metadata file %s" % ifile)
 #                 ifiles.remove(ifile)
 #         return ifiles
 
@@ -1353,7 +1368,7 @@ class IMetaCommands(ICommands):
 #             metas = self.parse_rest_json(None, './tests/epic.pid.out')
 
 #         else:
-#             logger.debug("Epic client for %s " % args)
+#             log.debug("Epic client for %s " % args)
 #             json_data = self.execute_command(com, args).strip()
 #             if json_data.strip() == 'None':
 #                 return {}
@@ -1389,7 +1404,7 @@ class IMetaCommands(ICommands):
 #         return self.execute_rule_from_template('replica', context)
 
 #     def eudat_find_ppid(self, dataobj):
-#         logger.debug("***REPLICA EUDAT LIST NOT IMPLEMENTED YET ***")
+#         log.debug("***REPLICA EUDAT LIST NOT IMPLEMENTED YET ***")
 #         exit()
 
 
@@ -1401,7 +1416,7 @@ class IrodsFarm(ServiceFarm):
 
     def init_connection(self, app):
         self.get_instance()
-        logger.debug("iRODS seems online")
+        log.verbose("iRODS seems online")
 
     @classmethod
     def get_instance(cls, user=None, proxy=False, become_admin=False):
@@ -1414,7 +1429,7 @@ class IrodsFarm(ServiceFarm):
                 if IRODS_EXTERNAL:
                     raise KeyError("No iRODS user available")
                 else:
-                    logger.warning("Becoming iRODS admin")
+                    log.warning("Becoming iRODS admin")
 
 # We should check if here classmethod is the wrong option
         # cls._irods = IMetaCommands(user)

@@ -1,24 +1,31 @@
 # -*- coding: utf-8 -*-
 
+# TODO: move into base dir?
+
 """ Models for graph database """
 
 from __future__ import absolute_import
 
-from neomodel import StructuredNode, StringProperty, DateTimeProperty, \
-    RelationshipTo, RelationshipFrom, \
-    OneOrMore, ZeroOrMore, ZeroOrOne
-from ..logs import get_logger
+from ..neo4j.models import \
+    StructuredNode, IdentifiedNode, \
+    StringProperty, DateTimeProperty, EmailProperty, \
+    RelationshipTo, RelationshipFrom
+from neomodel import OneOrMore, ZeroOrMore, ZeroOrOne
 
-logger = get_logger(__name__)
+# from ..logs import get_logger
+# log = get_logger(__name__)
 
 
-class User(StructuredNode):
-    uuid = StringProperty(required=True, unique_index=True)
-    email = StringProperty(required=True, unique_index=True)
+class User(IdentifiedNode):
+    # uuid = StringProperty(required=True, unique_index=True)
+    email = EmailProperty(required=True, unique_index=True, show=True)
+    name = StringProperty(required=True, show=True)
+    surname = StringProperty(required=True, show=True)
     authmethod = StringProperty(required=True)
     password = StringProperty()  # Hashed from a custom function
     tokens = RelationshipTo('Token', 'HAS_TOKEN', cardinality=ZeroOrMore)
-    roles = RelationshipTo('Role', 'HAS_ROLE', cardinality=ZeroOrMore)
+    roles = RelationshipTo(
+        'Role', 'HAS_ROLE', cardinality=ZeroOrMore, show=True)
     externals = RelationshipTo(
         'ExternalAccounts', 'HAS_AUTHORIZATION', cardinality=OneOrMore)
 
@@ -35,13 +42,9 @@ class Token(StructuredNode):
 
 
 class Role(StructuredNode):
-    name = StringProperty(required=True, unique_index=True)
-    description = StringProperty(default='No description')
+    name = StringProperty(required=True, unique_index=True, show=True)
+    description = StringProperty(default='No description', show=True)
     privileged = RelationshipFrom(User, 'HAS_ROLE', cardinality=OneOrMore)
-
-    _fields_to_show = [
-        "name", "description"
-    ]
 
 
 class ExternalAccounts(StructuredNode):

@@ -11,19 +11,24 @@ import os
 # from json.decoder import JSONDecodeError
 from flask import Flask as OriginalFlask, request, g
 from .response import ResponseMaker
-from .confs.config import PRODUCTION, DEBUG as ENVVAR_DEBUG
+from .resources.services.oauth2clients import ExternalServicesLogin as oauth2
+from commons import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from commons.meta import Meta
-from commons.logs import get_logger, handle_log_output, MAX_CHAR_LEN
+from commons.customization import Customizer
+from commons.globals import mem
+from commons.logs import get_logger, \
+    handle_log_output, MAX_CHAR_LEN, set_global_log_level
 
-from . import myself, lic
+#############################
+# LOGS
+log = get_logger(__name__)
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
-logger = get_logger(__name__)
+# This is the first file to be imported in the project
+# We need to enable many things on a global level for logs
+set_global_log_level(package=__package__)
 
 
+#############################
 class Flask(OriginalFlask):
 
     def make_response(self, rv, response_log_max_len=MAX_CHAR_LEN):
@@ -39,16 +44,16 @@ class Flask(OriginalFlask):
             if len(out) > response_log_max_len:
                 out = out[:response_log_max_len] + ' ...'
 
-            logger.verbose("MAKE_RESPONSE: %s" % out)
+            log.very_verbose("MAKE_RESPONSE: %s" % out)
         except:
-            logger.debug("MAKE_RESPONSE: [UNREADABLE OBJ]")
+            log.debug("MAKE_RESPONSE: [UNREADABLE OBJ]")
         responder = ResponseMaker(rv)
 
         # Avoid duplicating the response generation
         # or the make_response replica.
         # This happens with Flask exceptions
         if responder.already_converted():
-            logger.debug("Response was already converted")
+            log.verbose("Response was already converted")
             # # Note: this response could be a class ResponseElements
             # return rv
 
@@ -62,18 +67,24 @@ class Flask(OriginalFlask):
         return super().make_response(response)
 
 
-def create_auth_instance(module, internal_services, microservice):
+def create_auth_instance(module, services, app, first_call=False):
+
     # This is the main object that drives authentication
     # inside our Flask server.
     # Note: to be stored inside the flask global context
-    custom_auth = module.Authentication(internal_services)
+    custom_auth = module.Authentication(services)
 
-    # Verify if we can inject oauth2 services into this module
-    from .resources.services.oauth2clients import ExternalServicesLogin
-    oauth2 = ExternalServicesLogin(microservice.config['TESTING'])
-    custom_auth.set_oauth2_services(oauth2._available_services)
+    # If oauth services are available, set them before every request
+    if first_call or oauth2._check_if_services_exist():
+        ext_auth = oauth2(app.config['TESTING'])
+        custom_auth.set_oauth2_services(ext_auth._available_services)
 
-    custom_auth.import_secret(microservice.config['SECRET_KEY_FILE'])
+    secret = 'IaMvERYsUPERsECRET'
+    if not app.config['TESTING']:
+        secret = str(custom_auth.import_secret(app.config['SECRET_KEY_FILE']))
+
+    # Install app secret for oauth2
+    app.secret_key = secret + '_app'
 
     return custom_auth
 
@@ -87,6 +98,11 @@ def create_app(name=__name__, debug=False,
                skip_endpoint_mapping=False,
                **kwargs):
     """ Create the server istance for Flask application """
+
+    #############################
+    # Initialize reading of all files
+    # TO FIX: remove me
+    mem.customizer = Customizer(__package__, testing_mode, PRODUCTION)
 
     #################################################
     # Flask app instance
@@ -112,6 +128,7 @@ def create_app(name=__name__, debug=False,
     # Disable security if launching celery workers
     if worker_mode:
         enable_security = False
+        skip_endpoint_mapping = True
 
     # Set app internal testing mode if create_app received the parameter
     if testing_mode:
@@ -127,25 +144,16 @@ def create_app(name=__name__, debug=False,
             tmp = str(ENVVAR_DEBUG).lower() == 'true'
         debug = tmp  # bool(tmp)
     microservice.config['DEBUG'] = debug
-
-    # Set the new level of debugging
-    logger = get_logger(__name__, debug)
-    logger.info("FLASKING! Created application")
+    log.info("Flask application generated")
 
     ##############################
     if PRODUCTION:
 
-        logger.info("Production server ON")
+        log.info("Production server mode is ON")
 
-## // TO FIX or CHECK
+        # TO FIX: random secrety key in production
         # # Check and use a random file a secret key.
         # install_secret_key(microservice)
-
-        # probably useless
-        # # http://stackoverflow.com/a/26636880/2114395
-        # microservice.config.update(
-        #     dict(PREFERRED_URL_SCHEME = 'https')
-        # )
 
         # # To enable exceptions printing inside uWSGI
         # # http://stackoverflow.com/a/17839750/2114395
@@ -160,13 +168,13 @@ def create_app(name=__name__, debug=False,
     # Cors
     from .cors import cors
     cors.init_app(microservice)
-    logger.info("FLASKING! Injected CORS")
+    log.debug("FLASKING! Injected CORS")
 
     ##############################
     # DATABASE/SERVICEs CHECKS
     from .resources.services.detect import services as internal_services
     for service, myclass in internal_services.items():
-        logger.info("Available service %s" % service)
+        log.debug("Available service %s" % service)
         myclass(check_connection=True, app=microservice)
 
     ##############################
@@ -183,13 +191,17 @@ def create_app(name=__name__, debug=False,
         module_base = __package__ + ".resources.services.authentication"
         auth_service = os.environ.get('BACKEND_AUTH_SERVICE', '')
         module_name = module_base + '.' + auth_service
-        logger.debug("Trying to load the module %s" % module_name)
+        log.debug("Trying to load the module %s" % module_name)
         module = meta.get_module_from_string(module_name)
 
+        # At init time, verify and build Oauth services if any
         init_auth = create_auth_instance(
-            module, internal_services, microservice)
+            module, internal_services, microservice, first_call=True)
 
-        # Global namespace inside the Flask server
+        # Enabling also OAUTH library
+        from .oauth import oauth
+        oauth.init_app(microservice)
+
         @microservice.before_request
         def enable_authentication_per_request():
             """ Save auth object """
@@ -201,16 +213,7 @@ def create_app(name=__name__, debug=False,
             # Save globally across the code
             g._custom_auth = custom_auth
 
-        # OLD BAD
-        # def enable_global_authentication():
-        #     """ Save auth object """
-        #     g._custom_auth = custom_auth
-
-        # Enabling also OAUTH library
-        from .oauth import oauth
-        oauth.init_app(microservice)
-
-        logger.info("FLASKING! Injected security internal module")
+        log.info("FLASKING! Injected security internal module")
 
     if not worker_mode:
         # Global namespace inside the Flask server
@@ -223,11 +226,39 @@ def create_app(name=__name__, debug=False,
     # Restful plugin
     if not skip_endpoint_mapping:
         from .rest import Api, EndpointsFarmer, create_endpoints
-        # Defining AUTOMATIC Resources
+        # Triggering automatic mapping of REST endpoints
         current_endpoints = \
             create_endpoints(EndpointsFarmer(Api), enable_security, debug)
         # Restful init of the app
         current_endpoints.rest_api.init_app(microservice)
+
+    ##############################
+    # Clean app routes
+    ignore_verbs = {"HEAD", "OPTIONS"}
+
+    for rule in microservice.url_map.iter_rules():
+
+        rulename = str(rule)
+        # Skip rules for exposing schemas
+        if '/schemas/' in rulename:
+            continue
+
+        endpoint = microservice.view_functions[rule.endpoint]
+        if not hasattr(endpoint, 'view_class'):
+            continue
+        newmethods = ignore_verbs.copy()
+
+        for verb in rule.methods - ignore_verbs:
+            method = verb.lower()
+            if method in mem.customizer._original_paths[rulename]:
+                # remove from flask mapping
+                # to allow 405 response
+                newmethods.add(verb)
+            else:
+                log.verbose("Removed method %s.%s from mapping" %
+                            (rulename, verb))
+
+        rule.methods = newmethods
 
     ##############################
     # Init objects inside the app context
@@ -236,7 +267,6 @@ def create_app(name=__name__, debug=False,
 
             # Set global objects for celery workers
             if worker_mode:
-                from commons.globals import mem
                 mem.services = internal_services
 
             # Note:
@@ -253,7 +283,7 @@ def create_app(name=__name__, debug=False,
                 from .resources.custom import services as custom_services
                 custom_services.init(internal_services, enable_security)
             except:
-                logger.debug("No custom init available for mixed services")
+                log.debug("No custom init available for mixed services")
 
     ##############################
     # Logging responses
@@ -273,8 +303,8 @@ def create_app(name=__name__, debug=False,
             except IndexError:
                 pass
 
-        logger.info("{} {} {} {}".format(
-                    request.method, request.url, data, response))
+        log.info("{} {} {} {}".format(
+                 request.method, request.url, data, response))
         return response
 
     ##############################
@@ -284,6 +314,17 @@ def create_app(name=__name__, debug=False,
         for callback in getattr(g, 'after_request_callbacks', ()):
             callback(response)
         return response
+
+    # ##############################
+    # log.critical("test")
+    # log.error("test")
+    # log.warning("test")
+    # log.info("test")
+    # log.debug("test")
+    # log.verbose("test")
+    # log.very_verbose("test")
+    # log.pp(microservice)
+    # log.critical_exit("test")
 
     ##############################
     # App is ready

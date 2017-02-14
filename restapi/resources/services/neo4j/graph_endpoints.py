@@ -4,22 +4,19 @@ import re
 from datetime import datetime
 import pytz
 from functools import wraps
-from neomodel import db as transaction
-from py2neo.error import GraphError
-from py2neo.cypher.error.schema import ConstraintViolation
-from neomodel.exception import RequiredProperty
-from neomodel.exception import UniqueProperty
+# from py2neo.error import GraphError
+# from py2neo.cypher.error.schema import ConstraintViolation
 from restapi.resources.exceptions import RestApiException
-from restapi.resources.base import ExtendedApiResource
+from ...rest.definition import EndpointResource
 from commons import htmlcodes as hcodes
 
 from commons.logs import get_logger
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 __author__ = "Mattia D'Antonio (m.dantonio@cineca.it)"
 
 
-class GraphBaseOperations(ExtendedApiResource):
+class GraphBaseOperations(EndpointResource):
 
     def initGraph(self):
         self.graph = self.global_get_service('neo4j')
@@ -45,25 +42,28 @@ class GraphBaseOperations(ExtendedApiResource):
 
         try:
 
-            if field == 'accession':
-                return Model.nodes.get(accession=identifier)
+            filter = {field: identifier}
+            return Model.nodes.get(**filter)
 
-            if field == 'id':
-                return Model.nodes.get(id=identifier)
+            # if field == 'accession':
+            #     return Model.nodes.get(accession=identifier)
 
-            if field == 'uuid':
-                return Model.nodes.get(uuid=identifier)
+            # if field == 'id':
+            #     return Model.nodes.get(id=identifier)
 
-            if field == 'taxon_id':
-                return Model.nodes.get(taxon_id=identifier)
+            # if field == 'uuid':
+            #     return Model.nodes.get(uuid=identifier)
 
-            return Model.nodes.get(accession=identifier)
+            # if field == 'taxon_id':
+            #     return Model.nodes.get(taxon_id=identifier)
+
+            # return Model.nodes.get(accession=identifier)
 
         except Model.DoesNotExist:
             return None
 
     def countNodes(self, type):
-        query = "MATCH (a: " + type + ") RETURN count(a) as count"
+        query = "MATCH (a:%s) RETURN count(a) as count" % type
 
         records = self.graph.cypher(query)
         for record in records:
@@ -87,6 +87,8 @@ class GraphBaseOperations(ExtendedApiResource):
 
     def readProperty(self, schema, values, checkRequired=True):
 
+        log.warning("This method is deprecated, use read_properties instead")
+
         properties = {}
         for field in schema:
             if 'islink' in field:
@@ -106,10 +108,44 @@ class GraphBaseOperations(ExtendedApiResource):
 
     def updateProperties(self, instance, schema, properties):
 
+        log.warning("This method is deprecated, use update_properties instead")
+
         for field in schema:
             if 'islink' in field:
                 continue
             key = field["key"]
+            if key in properties:
+                instance.__dict__[key] = properties[key]
+
+    def read_properties(self, schema, values, checkRequired=True):
+
+        properties = {}
+        for field in schema:
+            if 'custom' in field:
+                if 'islink' in field['custom']:
+                    if field['custom']['islink']:
+                        continue
+
+            k = field["name"]
+            if k in values:
+                properties[k] = values[k]
+
+            # this field is missing but required!
+            elif checkRequired and field["required"]:
+                raise myGraphError(
+                    'Missing field: %s' % k,
+                    status_code=hcodes.HTTP_BAD_REQUEST)
+
+        return properties
+
+    def update_properties(self, instance, schema, properties):
+
+        for field in schema:
+            if 'custom' in field:
+                if 'islink' in field['custom']:
+                    if field['custom']['islink']:
+                        continue
+            key = field["name"]
             if key in properties:
                 instance.__dict__[key] = properties[key]
 
@@ -152,28 +188,39 @@ class myGraphError(RestApiException):
         self.status_code = status_code
 
 
-def returnError(self, label, error, code=hcodes.HTTP_BAD_NOTFOUND):
-    error = str(error)
-    logger.error(error)
-    return self.force_response(errors={label: error}, code=code)
+def returnError(self, label=None, error=None, code=hcodes.HTTP_BAD_NOTFOUND):
+
+    if label is not None:
+        log.warning(
+            "Dictionary errors are deprecated, " +
+            "send errors as a list of strings instead"
+        )
+
+    if error is None:
+        error = "Raised an error without any motivation..."
+    else:
+        error = str(error)
+    log.error(error)
+    return self.force_response(errors=[error], code=code)
 
 
 def graph_transactions(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
         try:
+            from neomodel import db as transaction
 
-            logger.debug("Neomodel transaction BEGIN")
+            log.verbose("Neomodel transaction BEGIN")
             transaction.begin()
 
             out = func(self, *args, **kwargs)
 
-            logger.debug("Neomodel transaction COMMIT")
+            log.verbose("Neomodel transaction COMMIT")
             transaction.commit()
 
             return out
         except Exception as e:
-            logger.debug("Neomodel transaction ROLLBACK")
+            log.verbose("Neomodel transaction ROLLBACK")
             try:
                 # Starting from neo4j 2.3.0 ClientErrors automatically
                 # rollback transactions and raise a 404 error:
@@ -182,7 +229,7 @@ def graph_transactions(func):
 
                 transaction.rollback()
             except Exception as rollback_exp:
-                logger.warning(
+                log.warning(
                     "Exception raised during rollback: %s" % rollback_exp)
             raise e
 
@@ -193,16 +240,20 @@ def catch_graph_exceptions(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
 
+        from neomodel.exception import RequiredProperty
+        from neomodel.exception import UniqueProperty
+
         try:
             return func(self, *args, **kwargs)
         except (myGraphError) as e:
-            if e.status_code == hcodes.HTTP_BAD_FORBIDDEN:
-                label = 'Forbidden'
-            elif e.status_code == hcodes.HTTP_BAD_NOTFOUND:
-                label = 'Not found'
-            else:
-                label = 'Bad request'
-            return returnError(self, label, e, code=e.status_code)
+            # if e.status_code == hcodes.HTTP_BAD_FORBIDDEN:
+            #     label = 'Forbidden'
+            # elif e.status_code == hcodes.HTTP_BAD_NOTFOUND:
+            #     label = 'Not found'
+            # else:
+            #     label = 'Bad request'
+            # return returnError(self, label, e, code=e.status_code)
+            return returnError(self, label=None, error=e, code=e.status_code)
 
         except (UniqueProperty) as e:
 
@@ -217,15 +268,17 @@ def catch_graph_exceptions(func):
                 parsedError = e
 
             return returnError(
-                self, 'Duplicated property',
-                parsedError, code=hcodes.HTTP_BAD_CONFLICT)
-        except ConstraintViolation as e:
-            return returnError(self, 'DB', e)
-        except (GraphError) as e:
+                self, label=None,
+                error=parsedError, code=hcodes.HTTP_BAD_CONFLICT)
+        except (RequiredProperty) as e:
+            return returnError(self, label=None, error=e)
+
+        # TOFIX: to be specified with new neomodel exceptions
+        # except ConstraintViolation as e:
+            # return returnError(self, label=None, error=e)
+        # except (GraphError) as e:
             # Also returned for duplicated fields...
             # UniqueProperty not catched?
-            return returnError(self, 'DB', e)
-        except (RequiredProperty) as e:
-            return returnError(self, 'DB', e)
+            # return returnError(self, label=None, error=e)
 
     return wrapper

@@ -18,7 +18,7 @@ from ..meta import Meta
 
 from ..logs import get_logger
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 BASE_MODELS_PATH = 'commons.models.'
 
@@ -35,13 +35,12 @@ def get_instance_from_services(services, service_name='relational', **kwargs):
     ####################
     # Build the object & get the Instance
 
-    # # If we want to use a new instance every time
+    # TO FIX: this decision should be made with a parameter for this function
+
+    # # OPTION 1: If we want to use a new instance every time
     # return obj().get_instance(**kwargs)
 
-# // TO FIX:
-# probably this decision should be made with a parameter for this function
-
-    # If we want to use a global connection pool for database instances
+    # OPTION 2: If we want a global connection pool for database instances
     return obj.get_instance(**kwargs)
 
 
@@ -58,7 +57,7 @@ class ServiceObject(object):
 
         for model in models:
             # Save attribute inside class with the same name
-            logger.debug("Injecting model '%s'" % model.__name__)
+            log.verbose("Injecting model '%s'" % model.__name__)
             setattr(self, model.__name__, model)
 
 
@@ -90,18 +89,18 @@ class ServiceFarm(metaclass=abc.ABCMeta):
                 obj = self.init_connection(app)
                 del obj
                 testdb = False
-                logger.info("Instance of '%s' was connected" % name)
+                log.info("Instance of '%s' was connected" % name)
             except AttributeError as e:
                 # Give the developer a way to stop this cycle if critical
-                logger.critical("An attribute error:\n%s" % e)
+                log.critical("An attribute error:\n%s" % e)
                 raise e
             except Exception as e:
                 counter += 1
                 if counter % 5 == 0:
                     sleep_time += sleep_time * 2
-                logger.warning("%s: Not reachable yet. Sleeping %s."
+                log.warning("%s: Not reachable yet. Sleeping %s."
                                % (name, sleep_time))
-                logger.critical("Error was %s" % str(e))
+                log.critical("Error was %s" % str(e))
                 time.sleep(sleep_time)
 
     @classmethod
@@ -116,13 +115,13 @@ class ServiceFarm(metaclass=abc.ABCMeta):
     @classmethod
     def load_base_models(cls):
         module_path = BASE_MODELS_PATH + cls.define_service_name()
-        logger.debug("Loading base models")
+        log.debug("Loading base models")
         return cls.load_generic_models(module_path)
 
     @classmethod
     def load_custom_models(cls):
         module_path = BASE_MODELS_PATH + 'custom.' + cls.define_service_name()
-        logger.debug("Loading custom models")
+        log.debug("Loading custom models")
         return cls.load_generic_models(module_path)
 
     @classmethod
@@ -135,6 +134,8 @@ class ServiceFarm(metaclass=abc.ABCMeta):
         This is not going to be used by the abstract class.
         The user MUST define where to load it!
         """
+
+        # print("CHECK MONGO?")
 
         # Load base models
         base_models = cls.load_base_models()
@@ -149,13 +150,13 @@ class ServiceFarm(metaclass=abc.ABCMeta):
                 original_model = base_models[key]
                 # Override
                 if issubclass(model, original_model):
-                    logger.debug("Overriding model %s" % key)
+                    log.debug("Overriding model %s" % key)
                     cls._models[key] = model
                     continue
             # Otherwise just append
             cls._models[key] = model
 
-        logger.debug("Loaded service models")
+        log.debug("Loaded service models")
         return cls._models
 
     @staticmethod

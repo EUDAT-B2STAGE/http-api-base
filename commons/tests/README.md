@@ -24,14 +24,14 @@ This collection of utilities is meant to simplify the writing of endpoints tests
 
 - endpoints should return responses using a standard json as describe in http://jsonapi.org
 - endpoint should accept GET/POST/PUT and DELETE calls with no parameters and return respectively 200 400 400 400 status codes
-- POST endpoints when successfull should return and created entity id. This id should be valid for further PUT and DELETE calls 
+- POST endpoints when successfull should return and created entity id. This id should be valid for further PUT and DELETE calls
 - PUT and DELETE endpoints should respond on the same endpoints of POST method with the addition of the entity id, e.g.:
 	- POST /api/myendpoint
 	- PUT /api/myendpoint/_id_
 	- DELETE /api/myendpoint/_id_
 - Successfully should returns 200 OK (if GET or POST) and 204 NO CONTENT (if PUT and DELETE)
 
-	
+
 
 ## How to use the Test Utilities ##
 
@@ -51,14 +51,14 @@ Your own test class should import and extend test utilities
 	self.save("my-variable", my_var)
 	...
 	previous_info = self.get("my-variable")
-	
+
 ### Make login and save tokens and headers for further calls
 
 	from restapi.confs.config import USER, PWD
 	headers, token = self.do_login(USER, PWD)
 	self.save("headers", headers)
 	self.save("token", token)
-	
+
 ### Make basic test on endpoints
 
 	self._test_endpoint(
@@ -69,7 +69,7 @@ Your own test class should import and extend test utilities
 		private_put=None,
 		private_delete=True
 	)
-	
+
 - private=False -> test if the method exists
 	- GET -> 200 OK
 	- POST/PUT/DELETE -> 400 BAD REQUEST
@@ -82,32 +82,32 @@ Your own test class should import and extend test utilities
 In the previous example GET is tested as public, POST and DELETE as private and PUT as not implemented.
 Expected returned status code are
 - GET: 200
-- POST: 401 wihout token and 400 with token
-- PUT: 405 
-- DELETE: 401 wihout token and 400 with token
- 
+- POST: 401 without token and 400 with token
+- PUT: 405
+- DELETE: 401 without token and 400 with token
+
 ### Build random data to test POST and PUT endpoints
 
 Your APIs should return a json schema as described above. Once you obtained the json schema you can build random data by using the buildData utility
 
 	data = self.buildData(schema)
-	
+
 To test endpoint behaviours when receiving partial data you can use the getPartialData utility
 
 	partial_data = self.buildData(schema, data)
-	
+
 This method takes as input both json schema and built data and remove one of the required fields
 
 ### Test endpoints with specific conditions
 
-You can test your endpoints by simulating your own conditions by using the utility methods: 
+You can test your endpoints by simulating your own conditions by using the utility methods:
  - _test_get
  - _test_create
  - _test_update
  - _test_delete
-  
-All methods take as input the endpoint, the headers (should be made optional, now is a required input) and a return status. As optional a returned errors can also be provided. 
-Create and update also require a pre-built data dictionary. 
+
+All methods take as input the endpoint, the headers (should be made optional, now is a required input) and a return status. As optional a returned errors can also be provided.
+Create and update also require a pre-built data dictionary.
 As option delete can take as input the data dictionary.
 
 This utility returns a response content (content['Response']['data'])3
@@ -136,64 +136,64 @@ INPUT:
 
 	{
                 "attributes": {
-                    "access_type": "inherit", 
-                    "accession": "CRD00000013493", 
-                    "created": "1466659830", 
-                    "description": "test", 
-                    "modified": "1467103075", 
-                    "name": "My name", 
+                    "access_type": "inherit",
+                    "accession": "CRD00000013493",
+                    "created": "1466659830",
+                    "description": "test",
+                    "modified": "1467103075",
+                    "name": "My name",
                     "nfiles": 0
-                }, 
-                "id": "1724c562-8cab-4178-8b19-3823e1725d46", 
+                },
+                "id": "1724c562-8cab-4178-8b19-3823e1725d46",
                 "relationships": {
                     "ownership": [
                         {
                             "attributes": {
-                                "email": "myself@myemail.com", 
-                                "name": "MyName", 
+                                "email": "myself@myemail.com",
+                                "name": "MyName",
                                 "surname": "MySurname"
-                            }, 
-                            "id": "-", 
+                            },
+                            "id": "-",
                             "type": "user"
                         }
                     ],
                     "sample": [
                         {
                             "attributes": {
-                                "accession": "CRN00000014466", 
-                                "age": 89, 
-                                "cell": "-", 
-                                "description": "sample descr", 
-                                "name": "sample name", 
+                                "accession": "CRN00000014466",
+                                "age": 89,
+                                "cell": "-",
+                                "description": "sample descr",
+                                "name": "sample name",
                                 "tissue": "-"
-                            }, 
-                            "id": "716e0883-2459-4136-88bd-88aaaece35fd", 
+                            },
+                            "id": "716e0883-2459-4136-88bd-88aaaece35fd",
                             "relationships": {
-                                "father": [], 
-                                "mother": [], 
+                                "father": [],
+                                "mother": [],
                                 "organism": [
                                     {
                                         "attributes": {
-                                            "common_name": "House mouse", 
-                                            "scientific_name": "Mus Musculus", 
-                                            "short_name": "mouse", 
+                                            "common_name": "House mouse",
+                                            "scientific_name": "Mus Musculus",
+                                            "short_name": "mouse",
                                             "taxon_id": 10090
-                                        }, 
-                                        "id": "-", 
+                                        },
+                                        "id": "-",
                                         "type": "organism"
                                     }
-                                ], 
+                                ],
                                 "son": []
-                            }, 
+                            },
                             "type": "sample"
                         }
-                    ], 
-                }, 
+                    ],
+                },
                 "type": "dataset"
         }
-            
-            
-            
+
+
+
 OUTPUT:
 
 	obj.type = "dataset"
@@ -205,17 +205,17 @@ OUTPUT:
 	obj.attributes.modified = "1467103075"
 	obj.attributes.name = My name"
 	obj.attributes.nfiles= 0
-	
+
 	obj._ownership.type = "user"
 	obj._ownership.id = "-"
 	obj._ownership.attributes.email = "myself@myemail.com"
 	obj._ownership.attributes.name = "MyName"
 	obj._ownership.attributes.surname = "MySurname"
-	
+
 	obj._sample.type = "sample"
 	obj._sample.id = "716e0883-2459-4136-88bd-88aaaece35fd"
 	obj._sample.attributes.accession = "CRN00000014466"
-	obj._sample.attributes.age = 89, 
+	obj._sample.attributes.age = 89,
 	obj._sample.attributes.cell = "-"
 	obj._sample.attributes.description = "sample descr"
 	obj._sample.attributes.name = "sample name"
@@ -235,7 +235,7 @@ You can verify that the response returned by your endpoint, contains expected fi
 	required_fields = ['accession', 'name', 'description', 'nfiles', 'created', 'modified', 'access_type']
 	required_relationships = ['ownership', 'sample']
 	self.checkResponse(response, required_fields, required_relationships)
-	
+
 ### Automatic verification of troublesome conditions
 
 Based on the input field type POST and PUT method can be can be overwhelmed by particular inputs (for example strings contained quotes or very long numbers)
@@ -247,5 +247,5 @@ When POST calls return a 200 OK PUT and DELETE are also called
 	status_conf = {}
 	status_conf["NEGATIVE_NUMBER"] = BAD_REQUEST
 	status_conf["LONG_NUMBER"] = BAD_REQUEST
-	
+
 	self._test_troublesome_create(my_endpoint, headers, schema, status_conf)

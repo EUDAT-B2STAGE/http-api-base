@@ -16,7 +16,7 @@ probably based on click
 from __future__ import absolute_import
 
 from commons.logs import get_logger
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 #########################
 # OPERATION ON SOME SERVICE?

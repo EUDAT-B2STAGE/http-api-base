@@ -5,17 +5,21 @@ The most basic (and standard) Rest Resource
 we could provide back then
 """
 
+from __future__ import absolute_import
+
 import pytz
 import dateutil.parser
 from datetime import datetime
 from flask import g
 from flask_restful import request, Resource, reqparse
-from ..confs.config import API_URL  # , STACKTRACE
-from ..response import ResponseElements
+
+from ...confs.config import API_URL  # , STACKTRACE
+from ...response import ResponseElements
 from commons import htmlcodes as hcodes
+from commons.globals import mem
 from commons.logs import get_logger
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 ###################
 # Paging costants
@@ -28,29 +32,68 @@ DEFAULT_PERPAGE = 10
 ###################
 # Extending the concept of rest generic resource
 
-class ExtendedApiResource(Resource):
+class EndpointResource(Resource):
     """
     Implements a generic Resource for our Restful APIs model
     """
 
     myname = __name__
-    _latest_headers = {}
-    endpoint = None
-    endkey = None
-    endtype = None
     hcode = hcodes.HTTP_OK_BASIC
     base_url = API_URL
 
     def __init__(self):
-        super(ExtendedApiResource, self).__init__()
+        super(EndpointResource, self).__init__()
 
-        # Apply decision about the url of endpoint
-        self.set_endpoint()
         # Make sure you can parse arguments at every call
         self._args = {}
         self._json_args = {}
         self._params = {}
+
+        # Query parameters
         self._parser = reqparse.RequestParser()
+
+        # use self to get the classname
+        k1 = self.myname()
+        # use request to recover uri and method
+        k2 = str(request.url_rule)
+        k3 = request.method.lower()
+        # recover from the global mem parameters query parameters
+        current_params = mem.customizer._query_params \
+            .get(k1, {}).get(k2, {}).get(k3, {})
+
+        if len(current_params) > 0:
+
+            # Basic options
+            basevalue = str  # Python3
+            # basevalue = unicode  #Python2
+            act = 'store'  # store is normal, append is a list
+            loc = ['headers', 'values']  # multiple locations
+            trim = True
+
+            for param, data in current_params.items():
+
+                # TO FIX: Add a method to convert types swagger <-> flask
+                tmptype = data.get('type', 'string')
+                if tmptype == 'boolean':
+                    mytype = bool
+                if tmptype == 'number':
+                    mytype = int
+                else:
+                    mytype = basevalue
+
+                # TO CHECK: I am creating an option to handle arrays
+                if tmptype == 'select':
+                    act = 'append'
+
+                self._parser.add_argument(
+                    param, type=mytype,
+                    default=data.get('default', None),
+                    required=data.get('required', False),
+                    trim=trim, action=act, location=loc)
+
+                log.very_verbose("Accept param '%s' type %s" % (param, mytype))
+
+        # TODO: should I check body parameters?
 
     @staticmethod
     def clean_parameter(param=""):
@@ -61,32 +104,13 @@ class ExtendedApiResource(Resource):
 
     def parse(self):
         """
-        Parameters may be necessary at any method.
-        Parse args.
+        Parameters may be necessary at any method: Parse them all.
         """
 
         self._args = self._parser.parse_args()
-
-        # if len(self._args) < 1:
-        #     try:
-        #         self._args = request.get_json(force=forcing)
-        #     except Exception as e:
-        #         logger.warning("Fail: get JSON for current req: '%s'" % e)
-
-        if len(self._args) > 0:
-            logger.debug("Parsed parameters: %s" % self._args)
-
         return self._args
 
-    def set_endpoint(self):
-        if self.endpoint is None:
-            self.endpoint = \
-                type(self).__name__.lower().replace("resource", "")
-
-    def get_endpoint(self):
-        return (self.endpoint, self.endkey, self.endtype)
-
-    def get_input(self, forcing=True, single_parameter=None):
+    def get_input(self, forcing=True, single_parameter=None, default=None):
         """
         Recover parameters from current requests.
 
@@ -98,100 +122,38 @@ class ExtendedApiResource(Resource):
         while JSON parameters may be already saved from another previous call
         """
 
+        self.parse()
+
         if len(self._json_args) < 1:
             try:
                 self._json_args = request.get_json(force=forcing)
-                for key, value in self._json_args.items():
-                    if value is None:
-                        continue
-                    # if isinstance(value, str) and value == 'None':
-                    #     continue
-                    if key in self._args and self._args[key] is not None:
-                        # print("Key", key, "Value", value, self._args[key])
-                        key += '_json'
-                    self._args[key] = value
             except Exception:  # as e:
-                # logger.critical("Cannot get JSON for req: '%s'" % e)
+                # log.critical("Cannot get JSON for req: '%s'" % e)
                 pass
 
+            # json payload and formData cannot co-exist
+            if len(self._json_args) < 1:
+                self._json_args = request.form
+
+            for key, value in self._json_args.items():
+                if value is None:
+                    continue
+                # if isinstance(value, str) and value == 'None':
+                #     continue
+                if key in self._args and self._args[key] is not None:
+                    # print("Key", key, "Value", value, self._args[key])
+                    key += '_json'
+                self._args[key] = value
+
         if single_parameter is not None:
-            return self._args.get(single_parameter)
+            return self._args.get(single_parameter, default)
 
         if len(self._args) > 0:
-            logger.info("Parameters %s" % self._args)
+            log.verbose("Parameters %s" % self._args)
         return self._args
 
     def myname(self):
         return self.__class__.__name__
-
-    def add_parameter(self, name, method,
-                      mytype=str, default=None, required=False):
-        """
-        Save a parameter inside the class
-
-        Note: parameters are specific to the method
-        (and not to the whole class as before) using subarrays
-        """
-
-        # Class name as a key
-        classname = self.myname()
-
-        if classname not in self._params:
-            self._params[classname] = {}
-
-        if method not in self._params[classname]:
-            self._params[classname][method] = {}
-
-        # Avoid if already exists?
-        if name not in self._params[classname][method]:
-            self._params[classname][method][name] = [mytype, default, required]
-
-    def apply_parameters(self, method):
-        """ Use parameters received via decoration """
-
-        classname = self.myname()
-        if classname not in self._params:
-            return False
-        if method not in self._params[classname]:
-            return False
-        p = self._params[classname][method]
-
-        ##############################
-        # Basic options
-        basevalue = str  # Python3
-        # basevalue = unicode  #Python2
-        act = 'store'  # store is normal, append is a list
-        loc = ['headers', 'values']  # multiple locations
-        trim = True
-
-## // TO FIX?
-# when should I apply parameters for paging?
-# let the developer specify with a dedicated decorator?
-        # p[PERPAGE_KEY] = (int, DEFAULT_PERPAGE, False)
-        # p[CURRENTPAGE_KEY] = (int, DEFAULT_CURRENTPAGE, False)
-
-        if len(p.keys()) < 1:
-            return False
-
-        for param, (param_type, param_default, param_required) in p.items():
-
-            # Decide what is left for this parameter
-            if param_type is None:
-                param_type = basevalue
-
-            # I am creating an option to handle arrays:
-            if param_type == 'makearray':
-                param_type = basevalue
-                act = 'append'
-
-            # Really add the parameter
-            self._parser.add_argument(
-                param, type=param_type,
-                default=param_default, required=param_required,
-                trim=trim, action=act, location=loc)
-            logger.debug("Accept param '%s', type %s" % (param, param_type))
-
-        return True
 
     def set_method_id(self, name='myid', idtype='string'):
         """ How to have api/method/:id route possible"""
@@ -206,7 +168,7 @@ class ExtendedApiResource(Resource):
                          api_output, get_all=False,
                          get_error=False, get_status=False, get_meta=False):
 
-        from ..response import get_content_from_response
+        from ...response import get_content_from_response
         content, err, meta, code = get_content_from_response(api_output)
 
         if get_error:
@@ -219,14 +181,6 @@ class ExtendedApiResource(Resource):
             return content, err, code
 
         return content
-
-# BAD PRACTICE
-    # def set_latest_token(self, token):
-    #     self.global_get('custom_auth')._latest_token = token
-
-    # def get_latest_token(self):
-    #     return self.global_get('custom_auth')._latest_token
-# BAD PRACTICE
 
     def get_current_token(self):
         from ..auth import HTTPTokenAuth
@@ -264,7 +218,7 @@ class ExtendedApiResource(Resource):
             **kwargs)
 
     def method_not_allowed(self, methods=['GET']):
-## IS IT USED?
+        # TO FIX: is it used?
 
         methods.append('HEAD')
         methods.append('OPTIONS')
@@ -285,7 +239,7 @@ class ExtendedApiResource(Resource):
 
         Build a ResponseElements instance.
         """
-        # logger.debug("Force response:\nargs[%s] kwargs[%s]" % (args, kwargs))
+        # log.debug("Force response:\nargs[%s] kwargs[%s]" % (args, kwargs))
 
         # If args has something, it should be one simple element
         # That element is the content and nothing else
@@ -318,36 +272,43 @@ class ExtendedApiResource(Resource):
         return self.force_response(
             defined_content=defined_content, errors=errors, code=code)
 
-    def send_errors(self, label="Error", message=None, errors=None, code=None):
+    def send_errors(self,
+                    label=None, message=None, errors=None,
+                    code=None, headers=None):
         """
         Setup an error message and
         """
-
+        if label is not None:
+            log.warning(
+                "Dictionary errors are deprecated, " +
+                "send errors as a list of strings instead"
+            )
         # Bug fix: if errors was initialized above, I received old errors...
         if errors is None:
-            errors = {}
+            errors = []
 
         # See if we have the main message
-        error = {}
+        # error = {}
         if message is not None:
-            error = {label: message}
+            # error = {label: message}
+            errors.append(message)
 
         # Extend existing errors
-        if isinstance(errors, dict) and len(error) > 0:
-            errors.update(error)
+        # if isinstance(errors, dict) and len(error) > 0:
+            # errors.update(error)
 
         if code is None or code < hcodes.HTTP_BAD_REQUEST:
             # default error
             code = hcodes.HTTP_SERVER_ERROR
 
-        return self.force_response(errors=errors, code=code)
+        return self.force_response(errors=errors, code=code, headers=headers)
 
     def report_generic_error(self,
                              message=None, current_response_available=True):
 
         if message is None:
             message = "Something BAD happened somewhere..."
-        logger.critical(message)
+        log.critical(message)
 
         user_message = "Server unable to respond."
         code = hcodes.HTTP_SERVER_ERROR
@@ -362,7 +323,7 @@ class ExtendedApiResource(Resource):
         Define a standard response to give a Bearer token back.
         Also considering headers.
         """
-## // TO FIX
+        # TODO: write it and use it in EUDAT
         return NotImplementedError("To be written")
 
     @staticmethod
@@ -403,14 +364,14 @@ class ExtendedApiResource(Resource):
         for instance in instances:
             json_data["content"].append(self.getJsonResponse(instance))
 
-## // TO FIX:
-# get pages FROM SELF ARGS?
+        # TO FIX: get pages FROM SELF ARGS?
         # json_data["links"]["next"] = \
         #     endpoint + '?currentpage=2&perpage=1',
         # json_data["links"]["last"] = \
         #     endpoint + '?currentpage=' + str(len(instances)) + '&perpage=1',
 
         return json_data
+
     @staticmethod
     def dateFromString(date, format="%d/%m/%Y"):
 
@@ -423,7 +384,7 @@ class ExtendedApiResource(Resource):
             return dateutil.parser.parse(date)
 
     @staticmethod
-# To mattia: can we stop using java-like camelCase? XD
+# TO FIX: can we stop using java-like camelCase? XD
     def stringFromTimestamp(timestamp):
         if timestamp == "":
             return ""
@@ -431,16 +392,17 @@ class ExtendedApiResource(Resource):
             date = datetime.fromtimestamp(float(timestamp))
             return date.isoformat()
         except:
-            logger.warning(
+            log.warning(
                 "Errors parsing %s" % timestamp)
             return ""
 
     def getJsonResponse(self, instance,
                         fields=[], resource_type=None, skip_missing_ids=False,
-                        only_public=False,
+                        view_public_only=False,
                         relationship_depth=0, max_relationship_depth=1):
         """
         Lots of meta introspection to guess the JSON specifications
+        Very important: this method only works with customized neo4j models
         """
 
         if resource_type is None:
@@ -451,9 +413,9 @@ class ExtendedApiResource(Resource):
         if isinstance(instance, dict):
             verify_attribute = dict.get
         if verify_attribute(instance, "uuid"):
-            id = instance.uuid
+            id = str(instance.uuid)
         elif verify_attribute(instance, "id"):
-            id = instance.id
+            id = str(instance.id)
         else:
             id = "-"
 
@@ -478,13 +440,21 @@ class ExtendedApiResource(Resource):
         # Attributes
         if len(fields) < 1:
 
-            if only_public:
-                field_name = '_public_fields_to_show'
-            else:
-                field_name = '_fields_to_show'
+            function_name = 'show_fields'
+            if hasattr(instance, function_name):
+                fn = getattr(instance, function_name)
+                fields = fn(view_public_only=view_public_only)
 
-            if hasattr(instance, field_name):
-                fields = getattr(instance, field_name)
+            else:
+
+                if view_public_only:
+                    field_name = '_public_fields_to_show'
+                else:
+                    field_name = '_fields_to_show'
+
+                if hasattr(instance, field_name):
+                    log.warning("Obsolete use of %s into models" % field_name)
+                    fields = getattr(instance, field_name)
 
         for key in fields:
             if verify_attribute(instance, key):
@@ -509,23 +479,33 @@ class ExtendedApiResource(Resource):
         if relationship_depth < max_relationship_depth:
             linked = {}
             relationships = []
-            if only_public:
-                field_name = '_public_relationships_to_follow'
+
+            function_name = 'follow_relationships'
+            if hasattr(instance, function_name):
+                fn = getattr(instance, function_name)
+                relationships = fn(view_public_only=view_public_only)
+
             else:
-                field_name = '_relationships_to_follow'
-            if hasattr(instance, field_name):
-                relationships = getattr(instance, field_name)
+
+                if view_public_only:
+                    field_name = '_public_relationships_to_follow'
+                else:
+                    field_name = '_relationships_to_follow'
+
+                if hasattr(instance, field_name):
+                    log.warning("Obsolete use of %s into models" % field_name)
+                    relationships = getattr(instance, field_name)
 
             for relationship in relationships:
                 subrelationship = []
-                # logger.debug("Investigate relationship %s" % relationship)
+                # log.debug("Investigate relationship %s" % relationship)
 
                 if hasattr(instance, relationship):
                     for node in getattr(instance, relationship).all():
                         subrelationship.append(
                             self.getJsonResponse(
                                 node,
-                                only_public=only_public,
+                                view_public_only=view_public_only,
                                 skip_missing_ids=skip_missing_ids,
                                 relationship_depth=relationship_depth + 1,
                                 max_relationship_depth=max_relationship_depth))
@@ -537,7 +517,42 @@ class ExtendedApiResource(Resource):
 
         return data
 
-# # Set default response
-# set_response(
-#     original=False,  # first_call=True,
-#     custom_method=ExtendedApiResource().default_response)
+    def get_endpoint_definition(self, key=None,
+                                is_schema_url=False, method=None):
+
+        url = request.url_rule.rule
+        if is_schema_url:
+            url = mem.customizer._schemas_map[url]
+
+        if url not in mem.customizer._definitions["paths"]:
+            return None
+
+        if method is None:
+            method = request.method
+        method = method.lower()
+        if method not in mem.customizer._definitions["paths"][url]:
+            return None
+
+        tmp = mem.customizer._definitions["paths"][url][method]
+
+        if key is None:
+            return tmp
+        if key not in tmp:
+            return None
+
+        return tmp[key]
+
+    def get_endpoint_custom_definition(self, is_schema_url=False, method=None):
+
+        url = request.url_rule.rule
+        if is_schema_url:
+            url = mem.customizer._schemas_map[url]
+
+        if method is None:
+            method = request.method
+        method = method.lower()
+
+        if method not in mem.customizer._parameter_schemas[url]:
+            return None
+        else:
+            return mem.customizer._parameter_schemas[url][method]

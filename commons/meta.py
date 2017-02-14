@@ -12,7 +12,7 @@ import pkgutil
 import inspect
 from .logs import get_logger
 
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 ################################
@@ -35,7 +35,7 @@ class Meta(object):
                 in pkgutil.iter_modules(package.__path__):
             if not ispkg:
                 self._submodules.append(modname)
-                logger.debug("Found %s submodule inside %s" %
+                log.debug("Found %s submodule inside %s" %
                              (modname, package.__name__))
         return self._submodules
 
@@ -52,7 +52,7 @@ class Meta(object):
                            for name, cls in module.__dict__.items()
                            if isinstance(cls, type)])
         except AttributeError:
-            logger.warning("Could not find any class inside your module")
+            log.warning("Could not find any class inside your module")
 
         self.set_latest_classes(classes)
         return self.get_latest_classes()
@@ -82,7 +82,7 @@ class Meta(object):
             # Meta language for dinamically import
             module = import_module(modulestring)
         except ImportError as e:
-            logger.critical("Failed to load resource: " + str(e))
+            log.critical("Failed to load resource: " + str(e))
         return module
 
     def import_submodules_from_package(self, package_name):
@@ -92,7 +92,7 @@ class Meta(object):
 
         for module_name in self.get_submodules_from_package(package):
             module_path = package_name + '.' + module_name
-            logger.debug("Loading module '%s'" % module_path)
+            log.debug("Loading module '%s'" % module_path)
             submodules.append(
                 self.get_module_from_string(module_path))
         return submodules
@@ -116,7 +116,7 @@ class Meta(object):
             # Meta language for dinamically import
             myclass = getattr(module, classname)
         except AttributeError as e:
-            logger.critical("Failed to load resource: " + str(e))
+            log.critical("Failed to load resource: " + str(e))
 
         return myclass
 

@@ -12,29 +12,26 @@ MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a
 """
 
 from __future__ import absolute_import
+
 import pytz
 from datetime import datetime, timedelta
 from commons.services.uuid import getUUID
 from commons.logs import get_logger
 from . import BaseAuthentication
 from ..detect import GRAPHDB_AVAILABLE
-from .... import myself, lic
 
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
-logger = get_logger(__name__)
+log = get_logger(__name__)
 
 
 if not GRAPHDB_AVAILABLE:
-    logger.critical("No GraphDB service found for auth")
+    log.critical("No GraphDB service found for auth")
     exit(1)
 
 
 class Authentication(BaseAuthentication):
 
     def __init__(self, services=None):
+        self.myinit()
         self._graph = services.get('neo4j').get_instance()
 
     def get_user_object(self, username=None, payload=None):
@@ -46,7 +43,7 @@ class Authentication(BaseAuthentication):
             if payload is not None and 'user_id' in payload:
                 user = self._graph.User.nodes.get(uuid=payload['user_id'])
         except self._graph.User.DoesNotExist:
-            logger.warning("Could not find user for '%s'" % username)
+            log.warning("Could not find user for '%s'" % username)
         return user
 
     def get_roles_from_user(self, userobj=None):
@@ -56,7 +53,7 @@ class Authentication(BaseAuthentication):
             try:
                 userobj = self.get_user()
             except Exception as e:
-                logger.warning("Roles check: invalid current user.\n%s" % e)
+                log.warning("Roles check: invalid current user.\n%s" % e)
                 return roles
 
         for role in userobj.roles.all():
@@ -73,20 +70,20 @@ instead of here
 
     def create_user(self, userdata, roles=[]):
 
-        if self.DEFAULT_ROLE not in roles:
-            roles.append(self.DEFAULT_ROLE)
+        if self.default_role not in roles:
+            roles.append(self.default_role)
 
         user_node = self._graph.User(**userdata)
         try:
             user_node.save()
         except Exception as e:
             message = "Can't create user %s:\n%s" % (userdata['email'], e)
-            logger.error(message)
+            log.error(message)
             raise AttributeError(message)
 
         # Link the new external account to at least at the very default Role
         for role in roles:
-            logger.debug("Adding role %s" % role)
+            log.debug("Adding role %s" % role)
             try:
                 role_obj = self._graph.Role.nodes.get(name=role)
             except self._graph.Role.DoesNotExist:
@@ -108,7 +105,7 @@ instead of here
         for role in current_roles_objs:
             current_roles.append(role.name)
 
-        for role in self.DEFAULT_ROLES:
+        for role in self.default_roles:
             if role not in current_roles:
                 self.create_role(role)
 
@@ -119,14 +116,15 @@ instead of here
 
         # Default user (if no users yet available)
         if not len(self._graph.User.nodes) > 0:
-            logger.warning("No users inside graphdb. Injecting default.")
+            log.warning("No users inside graphdb. Injecting default.")
             self.create_user({
-                'uuid': getUUID(),
-                'email': self.DEFAULT_USER,
+                # 'uuid': getUUID(),
+                'email': self.default_user,
                 'authmethod': 'credentials',
                 'name': 'Default', 'surname': 'User',
-                'password': self.hash_password(self.DEFAULT_PASSWORD)
-            }, roles=self.DEFAULT_ROLES)
+                'name_surname': 'Default#_#User',
+                'password': self.hash_password(self.default_password)
+            }, roles=self.default_roles)
 
     def save_token(self, user, token, jti):
 
@@ -147,7 +145,7 @@ instead of here
         token_node.save()
         token_node.emitted_for.connect(user)
 
-        logger.debug("Token stored in graphDB")
+        log.debug("Token stored in graphDB")
 
     def verify_token_custom(self, jti, user, payload):
         try:
@@ -166,7 +164,7 @@ instead of here
 
             if now > token_node.expiration:
                 self.invalidate_token(token=token_node.token)
-                logger.critical("This token is not longer valid")
+                log.critical("This token is not longer valid")
                 return False
 
             exp = now + timedelta(seconds=self.shortTTL)
@@ -178,7 +176,7 @@ instead of here
 
             return True
         except self._graph.Token.DoesNotExist:
-            logger.warning("Token %s not found" % jti)
+            log.warning("Token %s not found" % jti)
             return False
 
     def get_tokens(self, user=None, token_jti=None):
@@ -217,6 +215,7 @@ instead of here
 
         user.uuid = getUUID()
         user.save()
+        return True
 
     def invalidate_token(self, token, user=None):
         if user is None:
@@ -225,7 +224,9 @@ instead of here
             token_node = self._graph.Token.nodes.get(token=token)
             token_node.emitted_for.disconnect(user)
         except self._graph.Token.DoesNotExist:
-            logger.warning("Could not invalidate token")
+            log.warning("Could not invalidate token")
+            return False
+        return True
 
     def destroy_token(self, token_id):
         try:
@@ -254,7 +255,7 @@ instead of here
         except self._graph.User.DoesNotExist:
 ## TO BE VERIFIED
             user_node = self.create_user(userdata={
-                'uuid': getUUID(),
+                # 'uuid': getUUID(),
                 'email': email,
                 'authmethod': 'oauth2'
             })
