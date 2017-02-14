@@ -133,6 +133,19 @@ class BeSwagger(object):
             if 'parameters' not in specs:
                 specs['parameters'] = []
 
+            ###########################
+            # Read Form Data Custom parameters
+            cparam = specs.pop('custom_parameters', None)
+            if cparam is not None:
+                for fdp in cparam:
+                    params = self._fdp.get(fdp)
+                    if params is None:
+                        log.critical_exit("No custom form data '%s'" % fdp)
+                    else:
+                        specs['parameters'].extend(params)
+
+            ###########################
+            # Read normal parameters
             for parameter in pattern.findall(uri):
 
                 # create parameters
@@ -308,6 +321,7 @@ class BeSwagger(object):
             ]
         }
 
+        ###################
         # Set existing values
         proj = self._customizer._configurations['project']
         if 'version' in proj:
@@ -315,6 +329,13 @@ class BeSwagger(object):
         if 'title' in proj:
             output['info']['title'] = proj['title']
 
+        ###################
+        output['definitions'] = self.read_definitions()
+        output['consumes'] = [JSON_APPLICATION]
+        output['produces'] = [JSON_APPLICATION]
+
+        ###################
+        # Read endpoints swagger files
         for key, endpoint in enumerate(self._endpoints):
 
             endpoint.custom['methods'] = {}
@@ -329,11 +350,6 @@ class BeSwagger(object):
         # Save query parameters globally
         self._customizer._query_params = self._qparams
         self._customizer._parameter_schemas = self._parameter_schemas
-
-        ###################
-        output['definitions'] = self.read_definitions()
-        output['consumes'] = [JSON_APPLICATION]
-        output['produces'] = [JSON_APPLICATION]
         output['paths'] = self._paths
 
         ###################
@@ -356,13 +372,15 @@ class BeSwagger(object):
         data = load_yaml_file(path)
 
         # CUSTOM definitions
-        # They may override existing ones
         file = '%s.%s' % (filename, YAML_EXT)
         path = os.path.join(models_dir, USER_CUSTOM_DIR, file)
         override = load_yaml_file(path, skip_error=True)
+        # They may override existing ones
         if override is not None and isinstance(override, dict):
             for key, value in override.items():
                 data[key] = value
+
+        self._fdp = data.pop('FormDataParameters')
 
         return data
 
