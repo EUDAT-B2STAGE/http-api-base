@@ -7,14 +7,31 @@ Celery tasks
 import os
 from celery import Celery
 
-REDIS_HOST = os.environ.get('QUEUE_NAME').split('/')[::-1][0]
-REDIS_PORT = int(os.environ.get('QUEUE_PORT').split(':')[::-1][0])
-REDIS_BROKER_URL = 'redis://%s:%s/0' % (REDIS_HOST, REDIS_PORT)
+from commons.logs import get_logger
+
+log = get_logger(__name__)
+
+# QUEUE_NAME=/telethon_worker_1/queue
+# QUEUE_PORT=tcp://172.17.0.9:6379
+HOST = os.environ.get('QUEUE_NAME').split('/')[::-1][0]
+PORT = int(os.environ.get('QUEUE_PORT').split(':')[::-1][0])
+
+if os.environ.get('RABBIT_1_NAME', None) is not None:
+
+    # BROKER_URL = 'amqp://guest:guest@%s:%s/0' % (HOST, PORT)
+    BROKER_URL = 'amqp://%s:%s' % (HOST, PORT)
+    BROKER_URL = 'amqp://%s' % (HOST)
+    BACKEND_URL = 'rpc://%s:%s/0' % (HOST, PORT)
+    log.info("RabbitMQ Found %s" % BROKER_URL)
+else:
+    BROKER_URL = 'redis://%s:%s/0' % (HOST, PORT)
+    BACKEND_URL = 'redis://%s:%s/0' % (HOST, PORT)
+    log.info("REDIS Found %s" % BROKER_URL)
 
 celery_app = Celery(
     'RestApiQueue',
-    backend=REDIS_BROKER_URL,
-    broker=REDIS_BROKER_URL,
+    backend=BACKEND_URL,
+    broker=BROKER_URL,
 )
 
 # Skip initial warnings, avoiding pickle format (deprecated)
