@@ -6,9 +6,9 @@ Mongodb based implementation
 
 from __future__ import absolute_import
 
-# from datetime import datetime, timedelta
-from json import JSONEncoder
-from uuid import UUID
+from datetime import datetime, timedelta
+# from json import JSONEncoder
+# from uuid import UUID
 from ..detect import MONGO_AVAILABLE
 from . import BaseAuthentication
 
@@ -21,9 +21,8 @@ if not MONGO_AVAILABLE:
     log.critical("No Mongo service found available currently for auth")
     exit(1)
 
-'''
-Dealing with no UUID serialization support in json
-'''
+"""
+# Dealing with no UUID serialization support in json
 
 JSONEncoder_olddefault = JSONEncoder.default
 
@@ -35,6 +34,7 @@ def JSONEncoder_newdefault(self, o):
 
 
 JSONEncoder.default = JSONEncoder_newdefault
+"""
 
 
 class Authentication(BaseAuthentication):
@@ -74,30 +74,18 @@ class Authentication(BaseAuthentication):
         return user
 
     def get_roles_from_user(self, userobj=None):
-        raise NotImplementedError("to do")
 
-#         roles = []
-#         if userobj is None:
-#             try:
-#                 userobj = self.get_user()
-#             except Exception as e:
-#                 log.warning("Roles check: invalid current user.\n%s" % e)
-#                 return roles
+        roles = []
+        if userobj is None:
+            try:
+                userobj = self.get_user()
+            except Exception as e:
+                log.warning("Roles check: invalid current user.\n%s" % e)
+                return roles
 
-#         for role in userobj.roles:
-#             roles.append(role.name)
-#         return roles
-
-# ###############
-# ## TO FIX
-# # see the same method in graphdb.py
-    def create_user(self, userdata, roles=[]):
-        raise NotImplementedError("to do")
-#         if self.default_role not in roles:
-#             roles.append(self.default_role)
-#         return NotImplementedError("To do")
-# ## TO FIX
-# ###############
+        for role in userobj.roles:
+            roles.append(role.name)
+        return roles
 
     def init_users_and_roles(self):
 
@@ -149,137 +137,122 @@ class Authentication(BaseAuthentication):
             log.info("Saved init transactions")
 
     def save_token(self, user, token, jti):
-        raise NotImplementedError("to do")
 
-#         from flask import request
-#         import socket
-#         ip = request.remote_addr
-#         try:
-#             hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
-#         except Exception:
-#             hostname = ""
+        from flask import request
+        import socket
+        ip = request.remote_addr
+        try:
+            hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
+        except Exception:
+            hostname = ""
 
-#         now = datetime.now()
-# # // TO FIX:
-# # How to generate a token that never expires for admin tests?
-#         exp = now + timedelta(seconds=self.shortTTL)
+        # TO FIX: generate a token that never expires for admin tests
+        now = datetime.now()
+        exp = now + timedelta(seconds=self.shortTTL)
 
-#         token_entry = self._db.Token(
-#             jti=jti,
-#             token=token,
-#             creation=now,
-#             last_access=now,
-#             expiration=exp,
-#             IP=ip,
-#             hostname=hostname
-#         )
+        if user is None:
+            log.error("Trying to save an empty token")
+        else:
+            self._db.Token(
+                jti=jti, token=token,
+                creation=now, last_access=now, expiration=exp,
+                IP=ip, hostname=hostname,
+                user_id=user
+            ).save()
 
-#         token_entry.emitted_for = user
-
-#         self._db.session.add(token_entry)
-#         self._db.session.commit()
-
-#         log.debug("Token stored inside the DB")
+            log.debug("Token stored inside mongo")
 
     def refresh_token(self, jti):
-        raise NotImplementedError("to do")
-#         now = datetime.now()
-#         token_entry = self._db.Token.query.filter_by(jti=jti).first()
-#         if token_entry is None:
-#             return False
 
-#         if now > token_entry.expiration:
-#             self.invalidate_token(token=token_entry.token)
-#             log.critical("This token is no longer valid")
-#             return False
+        try:
+            token_entry = self._db.Token.objects.raw({'jti': jti}).first()
+        except self._db.Token.DoesNotExist:
+            return False
 
-#         exp = now + timedelta(seconds=self.shortTTL)
+        now = datetime.now()
+        if now > token_entry.expiration:
+            self.invalidate_token(token=token_entry.token)
+            log.critical("This token is no longer valid")
+            return False
 
-#         token_entry.last_access = now
-#         token_entry.expiration = exp
+        exp = now + timedelta(seconds=self.shortTTL)
+        token_entry.last_access = now
+        token_entry.expiration = exp
 
-#         self._db.session.add(token_entry)
-#         self._db.session.commit()
-
-#         return True
+        token_entry.save()
+        return True
 
     def get_tokens(self, user=None, token_jti=None):
-        raise NotImplementedError("to do")
-#         # TO FIX: TTL should be considered?
 
-#         list = []
-#         tokens = None
+        returning_tokens = []
+        tokens = []
 
-#         if user is not None:
-#             tokens = user.tokens.all()
-#         elif token_jti is not None:
-#             tokens = [self._db.Token.query.filter_by(jti=token_jti).first()]
+        if user is not None:
+            try:
+                tokens = self._db.Token.objects.raw(
+                    {'user_id': user.email}).all()
+            except self._db.Token.DoesNotExist:
+                pass
+        elif token_jti is not None:
+            try:
+                tokens.append(self._db.Token.objects.
+                              raw({'jti': token_jti}).first())
+            except self._db.Token.DoesNotExist:
+                pass
 
-#         if tokens is not None:
-#             for token in tokens:
+        for token in tokens:
+            t = {}
+            t["id"] = token.jti
+            t["token"] = token.token
+            t["emitted"] = token.creation.strftime('%s')
+            t["last_access"] = token.last_access.strftime('%s')
+            if token.expiration is not None:
+                t["expiration"] = token.expiration.strftime('%s')
+            t["IP"] = token.IP
+            t["hostname"] = token.hostname
+            returning_tokens.append(t)
 
-#                 t = {}
-
-#                 t["id"] = token.jti
-#                 t["token"] = token.token
-#                 t["emitted"] = token.creation.strftime('%s')
-#                 t["last_access"] = token.last_access.strftime('%s')
-#                 if token.expiration is not None:
-#                     t["expiration"] = token.expiration.strftime('%s')
-#                 t["IP"] = token.IP
-#                 t["hostname"] = token.hostname
-#                 list.append(t)
-
-#         return list
+        return returning_tokens
 
     def invalidate_all_tokens(self, user=None):
-        raise NotImplementedError("to do")
-#         """
-#             To invalidate all tokens the user uuid is changed
-#         """
-#         if user is None:
-#             user = self._user
-#         user.uuid = getUUID()
-#         self._db.session.add(user)
-#         self._db.session.commit()
-#         log.warning("User uuid changed to: %s" % user.uuid)
-#         return True
+        """
+            To invalidate all tokens the user uuid is changed
+        """
+        if user is None:
+            user = self._user
+        user.uuid = getUUID()
+        user.save()
+        log.warning("User uuid changed to: %s" % user.uuid)
+        return True
 
     def invalidate_token(self, token, user=None):
-        raise NotImplementedError("to do")
-#         if user is None:
-#             user = self.get_user()
+        if user is None:
+            user = self.get_user()
 
-#         token_entry = self._db.Token.query.filter_by(token=token).first()
-#         if token_entry is not None:
-#             token_entry.emitted_for = None
-#             self._db.session.commit()
-#         else:
-#             log.warning("Could not invalidate token")
+        try:
+            token_entry = self._db.Token.objects.raw({'token': token}).first()
+            token_entry.user_id = None
+            token_entry.save()
+        except self._db.Token.DoesNotExist:
+            log.warning("Could not invalidate non-existing token")
 
-#         return True
+        return True
 
     def verify_token_custom(self, jti, user, payload):
-        raise NotImplementedError("to do")
-#         token_entry = self._db.Token.query.filter_by(jti=jti).first()
-#         if token_entry is None:
-#             return False
-#         if token_entry.emitted_for is None or token_entry.emitted_for != user:
-#             return False
 
-#         return True
+        try:
+            token = self._db.Token.objects.raw({'jti': jti}).first()
+        except self._db.Token.DoesNotExist:
+            return False
+
+        if token.user_id is None or token.user_id.email != user.email:
+            return False
+
+        return True
 
     def destroy_token(self, token_id):
-        raise NotImplementedError("to do")
-#         token = self._db.Token.query.filter_by(jti=token_id).first()
-
-#         if token is None:
-#             return False
-
-#         token.emitted_for = None    # required?
-#         self._db.session.delete(token)
-#         self._db.session.commit()
-#         return True
+        # TO FIX: remove invalidate and use this one
+        return NotImplementedError("This should be the only method")
 
     def store_oauth2_user(self, current_user, token):
         raise NotImplementedError("to do")
@@ -372,8 +345,6 @@ class Authentication(BaseAuthentication):
 #         self._db.session.commit()
 #         return True
 
-# TO FIX: make this methods below abstract for graph and others too?
-
     def oauth_from_token(self, token):
         raise NotImplementedError("to do")
 #         extus = self._db.ExternalAccounts.query.filter_by(token=token).first()
@@ -388,11 +359,13 @@ class Authentication(BaseAuthentication):
 #         self._db.session.commit()
 #         return
 
-# ## TO DO: should be cached?
     def oauth_from_local(self, internal_user):
-        raise NotImplementedError("to do")
 
-#         accounts = self._db.ExternalAccounts
-#         external_user = accounts.query.filter(
-#             accounts.main_user.has(id=internal_user.id)).first()
-#         return internal_user, external_user
+        log.pp(internal_user, prefix_line="internal")
+        accounts = self._db.ExternalAccounts
+        try:
+            external_user = accounts.objects.raw(
+                {'user_id': internal_user.email}).first()
+        except self._db.ExternalAccounts.DoesNotExist:
+            external_user = None
+        return internal_user, external_user

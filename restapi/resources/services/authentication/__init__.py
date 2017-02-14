@@ -19,6 +19,7 @@ import socket
 from commons.services.uuid import getUUID
 from datetime import datetime, timedelta
 from flask import current_app, request
+from commons import PRODUCTION
 from commons.globals import mem
 from commons.logs import get_logger
 
@@ -51,10 +52,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     @classmethod
     def myinit(cls):
-
-        # TODO: force changing base credentials in production...
-        # I may check here somehow if credentials in production
-        # are the same as defaults, which is not good at all
 
         credentials = mem.customizer._configurations \
             .get('variables', {}) \
@@ -254,7 +251,8 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             return False
 
         if not self.verify_token_custom(
-           jti=self._payload['jti'], user=self._user, payload=self._payload):
+           user=self._user,
+           jti=self._payload['jti'], payload=self._payload):
             return False
         # e.g. for graph: verify the (token <- user) link
 
@@ -276,6 +274,17 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     def save_token(self, user, token, jti):
         log.debug("Token is not saved in base authentication")
 
+    def avoid_defaults():
+        """
+        Check in production if using the default user...
+        """
+
+        user = self.get_user_object(username=self.default_user)
+        if user is not None and user.email == self.default_user:
+            if user.password == self.hash_password(self.default_password):
+                return True
+        return False
+
     @abc.abstractmethod
     def init_users_and_roles(self):
         """
@@ -295,7 +304,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         """
         return
 
-    @abc.abstractmethod
+    # @abc.abstractmethod
     def create_user(self, userdata, roles=[]):
         """
         A method to create a new user following some standards.
@@ -361,6 +370,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     @abc.abstractmethod
     def destroy_token(self, token_id):
+        # TO FIX: remove invalidate and use this one
         """
             Destroy a token by removing all references in DB
         """

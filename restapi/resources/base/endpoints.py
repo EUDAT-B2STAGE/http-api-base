@@ -71,7 +71,7 @@ class Login(EndpointResource):
 
         if username is None or password is None:
             return self.send_errors(
-                "Credentials", "Missing 'username' and/or 'password'",
+                message="Credentials: missing 'username' and/or 'password'",
                 code=bad_code)
 
         # auth instance from the global namespace
@@ -79,7 +79,7 @@ class Login(EndpointResource):
         token, jti = auth.make_login(username, password)
         if token is None:
             return self.send_errors(
-                "Credentials", "Invalid username and/or password",
+                message="Credentials: invalid username and/or password",
                 code=bad_code)
 
         auth.save_token(auth._user, token, jti)
@@ -133,7 +133,7 @@ class Tokens(EndpointResource):
 
         if user is None:
             return self.send_errors(
-                "Invalid", "Bad username", code=hcodes.HTTP_BAD_REQUEST)
+                message="Invalid: bad username", code=hcodes.HTTP_BAD_REQUEST)
 
         tokens = auth.get_tokens(user=user)
 
@@ -144,10 +144,10 @@ class Tokens(EndpointResource):
             if token["id"] == token_id:
                 return token
 
-        errorMessage = "This token has not emitted to your account " + \
-                       "or does not exist"
+        errorMessage = "Either this token was not emitted for your account " + \
+                       "or it does not exist"
         return self.send_errors(
-            "Token not found", errorMessage, code=hcodes.HTTP_BAD_NOTFOUND)
+            message=errorMessage, code=hcodes.HTTP_BAD_NOTFOUND)
 
     def delete(self, token_id=None):
         """
@@ -159,7 +159,7 @@ class Tokens(EndpointResource):
         user = self.get_user(auth)
         if user is None:
             return self.send_errors(
-                "Invalid", "Bad username", code=hcodes.HTTP_BAD_REQUEST)
+                message="Invalid: bad username", code=hcodes.HTTP_BAD_REQUEST)
 
         tokens = auth.get_tokens(user=user)
         invalidated = False
@@ -169,7 +169,7 @@ class Tokens(EndpointResource):
             if token_id is None or token["id"] == token_id:
                 done = auth.invalidate_token(token=token["token"], user=user)
                 if not done:
-                    return self.send_errors("Failed", "token: '%s'" % token)
+                    return self.send_errors(message="Failed '%s'" % token)
                 else:
                     log.debug("Invalidated %s" % token['id'])
                     invalidated = True
@@ -185,9 +185,10 @@ class Tokens(EndpointResource):
         # SPECIFIC
         else:
             if not invalidated:
-                message = "Not emitted for your account or does not exist"
+                message = "Token not found: " + \
+                    "not emitted for your account or does not exist"
                 return self.send_errors(
-                    "Token not found", message, code=hcodes.HTTP_BAD_NOTFOUND)
+                    message=message, code=hcodes.HTTP_BAD_NOTFOUND)
 
         return self.empty_response()
 
@@ -242,8 +243,7 @@ class Profile(EndpointResource):
             user = self.get_current_user()
             if user.uuid != uuid:
                 return self.send_errors(
-                    "Invalid uuid",
-                    "Identifier specified does not match current user",
+                    message="Invalid uuid: not matching current user",
                 )
 
             data = request.get_json(force=True)
@@ -251,7 +251,7 @@ class Profile(EndpointResource):
             key = "newpassword"
             if key not in data:
                 return self.send_errors(
-                    "Invalid request", "Missing %s value" % key,
+                    message="Invalid request: missing %s value" % key,
                     code=hcodes.HTTP_BAD_REQUEST
                 )
             user.password = BaseAuthentication.hash_password(data[key])
@@ -267,7 +267,7 @@ class Profile(EndpointResource):
 
         except:
             return self.send_errors(
-                "Error", "Unknown error, please contact administrators",
+                message="Unknown error, please contact administrators",
                 code=hcodes.HTTP_BAD_REQUEST
             )
 

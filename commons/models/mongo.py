@@ -13,10 +13,10 @@ https://docs.mongodb.com/manual/applications/data-models-relationships
 
 from pymongo.write_concern import WriteConcern
 from pymodm import MongoModel, fields
-from commons.services.uuid import getUUID
+# from commons.services.uuid import getUUID
 
 
-# TO FIX: inheritance?
+# TO FIX: inheritance? Not working at the moment
 # ####################
 # # Templates
 # class AuthModel(MongoModel):
@@ -44,7 +44,8 @@ class Role(MongoModel):
 
 class User(MongoModel):
     email = fields.EmailField(primary_key=True)
-    uuid = fields.UUIDField(default=getUUID())
+    uuid = fields.CharField()
+    # uuid = fields.UUIDField(default=getUUID())
     name = fields.CharField()
     surname = fields.CharField()
     authmethod = fields.CharField()
@@ -63,9 +64,9 @@ class Token(MongoModel):
     expiration = fields.DateTimeField()
     last_access = fields.DateTimeField()
     IP = fields.CharField()
-    hostname = fields.CharField()
-    user_id = fields.ReferenceField(User)
-    emitted_for = fields.EmbeddedDocumentField(User)
+    hostname = fields.CharField(blank=True)
+    user_id = fields.ReferenceField(User, blank=True)
+    # emitted_for = fields.EmbeddedDocumentField(User, blank=True)
 
     class Meta:
         write_concern = WriteConcern(j=True)
@@ -73,21 +74,19 @@ class Token(MongoModel):
 
 
 class ExternalAccounts(MongoModel):
-    pass
-#     username = db.Column(db.String(60), primary_key=True)
-#     token = db.Column(db.Text())
-#     token_expiration = db.Column(db.DateTime)
-#     email = db.Column(db.String(255))
-#     certificate_cn = db.Column(db.String(255))
-#     certificate_dn = db.Column(db.Text())
-#     proxyfile = db.Column(db.Text())
-#     description = db.Column(db.String(255))
-#     user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-# # Note: for pre-production release
-# # we allow only one external account per local user
-#     main_user = db.relationship(
-#         'User', backref=db.backref('authorization', lazy='dynamic'))
+    username = fields.CharField(primary_key=True)
+    token = fields.CharField()
+    token_expiration = fields.DateTimeField()
+    email = fields.EmailField()
+    certificate_cn = fields.CharField()
+    certificate_dn = fields.CharField()
+    proxyfile = fields.CharField()
+    description = fields.CharField(blank=True)
+    user_id = fields.ReferenceField(User)
+    # NOTE: in the pre-production release we allow only 1 ext_account per user
+    # TO FIX: probably using user_id instead of main_user
+    main_user = fields.EmbeddedDocumentField(User)
 
-    # class Meta:
-    #     write_concern = WriteConcern(j=True)
-    #     connection_alias = 'auth'
+    class Meta:
+        write_concern = WriteConcern(j=True)
+        connection_alias = 'auth'

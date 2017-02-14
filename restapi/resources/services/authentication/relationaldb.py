@@ -63,15 +63,11 @@ instead of here
             roles.append(role.name)
         return roles
 
-###############
-## TO FIX
-# see the same method in graphdb.py
-    def create_user(self, userdata, roles=[]):
-        if self.default_role not in roles:
-            roles.append(self.default_role)
-        return NotImplementedError("To do")
-## TO FIX
-###############
+    # def create_user(self, userdata, roles=[]):
+    # """ UNUSED, should be removed """
+    #     if self.default_role not in roles:
+    #         roles.append(self.default_role)
+    #     return NotImplementedError("To do")
 
     def init_users_and_roles(self):
 
@@ -121,9 +117,8 @@ instead of here
         except Exception:
             hostname = ""
 
+        # TO FIX: generate a token that never expires for admin tests
         now = datetime.now()
-# // TO FIX:
-# How to generate a token that never expires for admin tests?
         exp = now + timedelta(seconds=self.shortTTL)
 
         token_entry = self._db.Token(
@@ -227,15 +222,8 @@ instead of here
         return True
 
     def destroy_token(self, token_id):
-        token = self._db.Token.query.filter_by(jti=token_id).first()
-
-        if token is None:
-            return False
-
-        token.emitted_for = None    # required?
-        self._db.session.delete(token)
-        self._db.session.commit()
-        return True
+        # TO FIX: remove invalidate and use this one
+        return NotImplementedError("This should be the only method")
 
     def store_oauth2_user(self, current_user, token):
         """
@@ -326,24 +314,21 @@ instead of here
         self._db.session.commit()
         return True
 
+# TO FIX: make this methods below abstract for graph and others too?
+
     def oauth_from_token(self, token):
-## // TO FIX ## make this abstract for graphdb too?
         extus = self._db.ExternalAccounts.query.filter_by(token=token).first()
         intus = extus.main_user
         # print(token, intus, extus)
         return intus, extus
 
     def associate_object_to_attr(self, obj, key, value):
-## // TO FIX ## make this abstract for graphdb too?
-
         setattr(obj, key, value)
         self._db.session.commit()
         return
 
-## // TO FIX ## to be cached
+    # TO FIX: to be cached
     def oauth_from_local(self, internal_user):
-## // TO FIX ## make this abstract for graphdb too?
-
         accounts = self._db.ExternalAccounts
         external_user = accounts.query.filter(
             accounts.main_user.has(id=internal_user.id)).first()
