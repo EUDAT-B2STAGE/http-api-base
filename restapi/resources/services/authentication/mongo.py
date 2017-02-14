@@ -7,10 +7,12 @@ Mongodb based implementation
 from __future__ import absolute_import
 
 # from datetime import datetime, timedelta
-from commons.services.uuid import getUUID
+from json import JSONEncoder
+from uuid import UUID
 from ..detect import MONGO_AVAILABLE
 from . import BaseAuthentication
 
+from commons.services.uuid import getUUID
 from commons.logs import get_logger
 
 log = get_logger(__name__)
@@ -18,6 +20,21 @@ log = get_logger(__name__)
 if not MONGO_AVAILABLE:
     log.critical("No Mongo service found available currently for auth")
     exit(1)
+
+'''
+Dealing with no UUID serialization support in json
+'''
+
+JSONEncoder_olddefault = JSONEncoder.default
+
+
+def JSONEncoder_newdefault(self, o):
+    if isinstance(o, UUID):
+        return str(o)
+    return JSONEncoder_olddefault(self, o)
+
+
+JSONEncoder.default = JSONEncoder_newdefault
 
 
 class Authentication(BaseAuthentication):
@@ -36,14 +53,25 @@ class Authentication(BaseAuthentication):
         return payload
 
     def get_user_object(self, username=None, payload=None):
-        raise NotImplementedError("to do")
-#         user = None
-#         if username is not None:
-#             user = self._db.User.query.filter_by(email=username).first()
-#         if payload is not None and 'user_id' in payload:
-#             user = self._db.User.query.filter_by(
-#                 uuid=payload['user_id']).first()
-#         return user
+
+        user = None
+
+        if username is not None:
+            # NOTE: email is the key, so to query use _id
+            try:
+                user = self._db.User.objects.raw({'_id': username}).first()
+            except self._db.User.DoesNotExist:
+                # don't do things, user will remain 'None'
+                pass
+
+        if payload is not None and 'user_id' in payload:
+            try:
+                user = self._db.User.objects.raw(
+                    {'uuid': payload['user_id']}).first()
+            except self._db.User.DoesNotExist:
+                pass
+
+        return user
 
     def get_roles_from_user(self, userobj=None):
         raise NotImplementedError("to do")
@@ -118,10 +146,7 @@ class Authentication(BaseAuthentication):
         if missing_user or missing_role:
             for transaction in transactions:
                 transaction.save()
-            print("SAVED", transactions)
-
-        print("DEBUG EXIT")
-        exit(1)
+            log.info("Saved init transactions")
 
     def save_token(self, user, token, jti):
         raise NotImplementedError("to do")
