@@ -49,12 +49,18 @@ backend:
 ###############################
 #################################
 # REDIS key/value store
-redqueue:
-  image: redis:alpine
-  command: redis-server --appendonly yes
-  hostname: myqueue
+# redqueue:
+#   image: redis:alpine
+#   command: redis-server --appendonly yes
+#   hostname: myqueue
+#   volumes:
+#     - ${VOLUMES_PREFIX}_redisdata:/data
+
+rabbit:
+  image: rabbitmq:latest
+  hostname: rabbit
   volumes:
-    - ${VOLUMES_PREFIX}_redisdata:/data
+    - ${VOLUMES_PREFIX}_redisdata:/var/lib/rabbitmq
 
 worker:
   extends:
