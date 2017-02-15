@@ -338,15 +338,22 @@ class ICommands(BashCommands):
                 irods_env['X509_USER_CERT'] = certfile
                 irods_env['X509_USER_KEY'] = keyfile
 
-                valid, not_after, not_before = \
-                    check_certificate_validity(certfile)
-                log.critical(user)
-                log.critical(certfile)
-                log.critical(not_after)
-                log.critical(valid)
+                valid, not_before, not_after = \
+                    self.check_certificate_validity(certfile)
+
+                if not valid:
+                    # log.critical(user)
+                    # log.critical(certfile)
+                    # log.critical(not_before)
+                    # log.critical(not_after)
+                    # log.critical(valid)
+                    raise IrodsException(
+                        "GSI certificate (%s) is expired on %s"
+                        % (user, not_after)
+                    )
             ###############################
             # PROXY CERTIFICATE (myproxy)
-# NOTE: this is way too long, it should be splitted in subfunctions
+            # NOTE: this is way too long, it should be splitted in subfunctions
             else:
                 log.debug("Using proxy certificates (user %s)" % user)
                 proxy_cert_file = CERTIFICATES_DIR + '/' + user + '.pem'
@@ -371,8 +378,8 @@ class ICommands(BashCommands):
 
                     # valid = not_after > now
 
-                    valid, not_after, not_before = \
-                        check_certificate_validity(proxy_cert_file)
+                    valid, not_before, not_after = \
+                        self.check_certificate_validity(proxy_cert_file)
 
                 ##################
                 # Proxy file does not exist or expired
