@@ -36,8 +36,8 @@ class Role(db.Model):
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     uuid = db.Column(db.String(36), unique=True)
-    # name = db.Column(db.String(255))
-    # surname = db.Column(db.String(255))
+    name = db.Column(db.String(255))
+    surname = db.Column(db.String(255))
     email = db.Column(db.String(100), unique=True)
     authmethod = db.Column(db.String(20))
     password = db.Column(db.String(255))
