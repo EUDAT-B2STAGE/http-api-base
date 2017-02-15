@@ -221,10 +221,6 @@ instead of here
 
         return True
 
-    def destroy_token(self, token_id):
-        # TO FIX: remove invalidate and use this one
-        return NotImplementedError("This should be the only method")
-
     def store_oauth2_user(self, current_user, token):
         """
         Allow external accounts (oauth2 credentials)

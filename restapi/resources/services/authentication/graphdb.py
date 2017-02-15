@@ -139,6 +139,8 @@ instead of here
         token_node.expiration = exp
 
         ip, hostname = self.get_host_info()
+        # log.critical(ip)
+        # log.critical(hostname)
         token_node.IP = ip
         token_node.hostname = hostname
 
@@ -223,19 +225,12 @@ instead of here
         try:
             token_node = self._graph.Token.nodes.get(token=token)
             token_node.emitted_for.disconnect(user)
+            # TO FIX: in my opinion the above line should be replaced with:
+            # token_node.delete()
         except self._graph.Token.DoesNotExist:
             log.warning("Could not invalidate token")
             return False
         return True
-
-    def destroy_token(self, token_id):
-        try:
-            token = self._graph.Token.nodes.get(jti=token_id)
-            token.delete()
-            return True
-
-        except self._graph.Token.DoesNotExist:
-            return False
 
     def store_oauth2_user(self, current_user, token):
         """
