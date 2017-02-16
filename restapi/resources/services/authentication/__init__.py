@@ -174,7 +174,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         if current_app.config['TESTING'] and ip is None:
             pass
-        else:
+        elif PRODUCTION:
             try:
                 # note: this will return the ip if hostname is not available
                 hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
