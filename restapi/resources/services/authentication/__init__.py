@@ -162,7 +162,15 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         ###############
         hostname = ""
-        ip = request.remote_addr
+
+        if 'X-Forwarded-For' in request.headers:
+            forwarded_ips = request.headers['X-Forwarded-For']
+            ip = current_app.wsgi_app.get_remote_addr(forwarded_ips)
+        else:
+            ip = request.remote_addr
+            if PRODUCTION:
+                log.warning(
+                    "Server in production X-Forwarded-For header is missing")
 
         if current_app.config['TESTING'] and ip is None:
             pass
@@ -172,7 +180,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
                 hostname, aliaslist, ipaddrlist = socket.gethostbyaddr(ip)
             except Exception as e:
                 log.warning(
-                    "Hostname from '%s' solving:\nerror '%s'" % (ip, e))
+                    "Error solving '%s': '%s'" % (ip, e))
         return ip, hostname
 
     def create_token(self, payload):
