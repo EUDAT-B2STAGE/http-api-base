@@ -368,14 +368,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         """
         return
 
-    @abc.abstractmethod
-    def destroy_token(self, token_id):
-        # TO FIX: remove invalidate and use this one
-        """
-            Destroy a token by removing all references in DB
-        """
-        return
-
     def fill_custom_payload(self, userobj, payload):
         """
             This method can be implemented by specific Authentication Methods

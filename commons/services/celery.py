@@ -22,11 +22,11 @@ if os.environ.get('RABBIT_1_NAME', None) is not None:
     BROKER_URL = 'amqp://%s:%s' % (HOST, PORT)
     BROKER_URL = 'amqp://%s' % (HOST)
     BACKEND_URL = 'rpc://%s:%s/0' % (HOST, PORT)
-    log.info("RabbitMQ Found %s" % BROKER_URL)
+    log.info("Found RabbitMQ as Celery broker %s" % BROKER_URL)
 else:
     BROKER_URL = 'redis://%s:%s/0' % (HOST, PORT)
     BACKEND_URL = 'redis://%s:%s/0' % (HOST, PORT)
-    log.info("REDIS Found %s" % BROKER_URL)
+    log.info("Found Redis as Celery broker %s" % BROKER_URL)
 
 celery_app = Celery(
     'RestApiQueue',

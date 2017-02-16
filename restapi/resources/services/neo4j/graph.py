@@ -87,6 +87,9 @@ class MyGraph(ServiceObject):
         return self.cypher("MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a")
 
     def clean_all(self):
+        # NOTE: now neomodel has a utility function to
+        # deletes all nodes and relationships: clear_neo4j_database(db)
+        # described here: http://neomodel.readthedocs.io/en/latest/cypher.html
         log.warning("Removing all data")
         return self.cypher("MATCH (n) OPTIONAL MATCH (n)-[r]-() DELETE n,r")
 

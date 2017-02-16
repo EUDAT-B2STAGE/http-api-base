@@ -306,6 +306,13 @@ if CELERY_AVAILABLE:
             revoked_tasks = workers.revoked()
             scheduled_tasks = workers.scheduled()
 
+            if active_tasks is None:
+                active_tasks = []
+            if revoked_tasks is None:
+                revoked_tasks = []
+            if scheduled_tasks is None:
+                scheduled_tasks = []
+
             for worker in active_tasks:
                 tasks = active_tasks[worker]
                 for task in tasks:

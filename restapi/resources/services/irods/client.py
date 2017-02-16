@@ -271,6 +271,23 @@ class ICommands(BashCommands):
             path += filename
         return path
 
+    def check_certificate_validity(self, certfile, validity_interval=1):
+        args = ["x509", "-in", certfile, "-text"]
+        output = self.execute_command("openssl", args)
+
+        pattern = re.compile(
+            r"Validity.*\n\s*Not Before: (.*)\n" +
+            r"\s*Not After *: (.*)")
+        validity = pattern.search(output).groups()
+
+        not_before = dateutil.parser.parse(validity[0])
+        not_after = dateutil.parser.parse(validity[1])
+        now = datetime.now(pytz.utc) - timedelta(hours=validity_interval)
+
+        valid = (not_after > now) and (not_before < now)
+
+        return valid, not_before, not_after
+
     def prepare_irods_environment(self, user, schema='GSI', proxy=False):
         """
         Prepare the OS variables environment
@@ -314,15 +331,29 @@ class ICommands(BashCommands):
             ###############################
             # USER PEMs: Private (key) and Public (Cert)
             elif os.path.isdir(CERTIFICATES_DIR + '/' + user):
-                log.debug(
-                    "Using standard x509 certificates (user %s)" % user)
-                irods_env['X509_USER_CERT'] = \
-                    CERTIFICATES_DIR + '/' + user + '/usercert.pem'
-                irods_env['X509_USER_KEY'] = \
-                    CERTIFICATES_DIR + '/' + user + '/userkey.pem'
+                log.debug("Using standard x509 certificates (user %s)" % user)
+
+                certfile = CERTIFICATES_DIR + '/' + user + '/usercert.pem'
+                keyfile = CERTIFICATES_DIR + '/' + user + '/userkey.pem'
+                irods_env['X509_USER_CERT'] = certfile
+                irods_env['X509_USER_KEY'] = keyfile
+
+                valid, not_before, not_after = \
+                    self.check_certificate_validity(certfile)
+
+                if not valid:
+                    # log.critical(user)
+                    # log.critical(certfile)
+                    # log.critical(not_before)
+                    # log.critical(not_after)
+                    # log.critical(valid)
+                    raise IrodsException(
+                        "GSI certificate (%s) is expired on %s"
+                        % (user, not_after)
+                    )
             ###############################
             # PROXY CERTIFICATE (myproxy)
-# NOTE: this is way too long, it should be splitted in subfunctions
+            # NOTE: this is way too long, it should be splitted in subfunctions
             else:
                 log.debug("Using proxy certificates (user %s)" % user)
                 proxy_cert_file = CERTIFICATES_DIR + '/' + user + '.pem'
@@ -332,20 +363,23 @@ class ICommands(BashCommands):
                     valid = False
                 else:
                     # Proxy exists, verify validity
-                    args = ["x509", "-in", proxy_cert_file, "-text"]
-                    output = self.execute_command("openssl", args)
+                    # args = ["x509", "-in", proxy_cert_file, "-text"]
+                    # output = self.execute_command("openssl", args)
 
-                    pattern = re.compile(
-                        r"Validity.*\n\s*Not Before: (.*)\n" +
-                        r"\s*Not After *: (.*)")
-                    validity = pattern.search(output).groups()
+                    # pattern = re.compile(
+                    #     r"Validity.*\n\s*Not Before: (.*)\n" +
+                    #     r"\s*Not After *: (.*)")
+                    # validity = pattern.search(output).groups()
 
-                    # not_before = dateutil.parser.parse(validity[0])
-                    not_after = dateutil.parser.parse(validity[1])
-                    # NOW - 1 hour
-                    now = datetime.now(pytz.utc) - timedelta(hours=1)
+                    # # not_before = dateutil.parser.parse(validity[0])
+                    # not_after = dateutil.parser.parse(validity[1])
+                    # # NOW - 1 hour
+                    # now = datetime.now(pytz.utc) - timedelta(hours=1)
 
-                    valid = not_after > now
+                    # valid = not_after > now
+
+                    valid, not_before, not_after = \
+                        self.check_certificate_validity(proxy_cert_file)
 
                 ##################
                 # Proxy file does not exist or expired

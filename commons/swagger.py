@@ -381,6 +381,7 @@ class BeSwagger(object):
                 data[key] = value
 
         self._fdp = data.pop('FormDataParameters', [])
+        # self._fdp = data.pop('FormDataParameters', None)
 
         return data
 
