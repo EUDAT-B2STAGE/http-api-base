@@ -165,7 +165,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         if 'X-Forwarded-For' in request.headers:
             forwarded_ips = request.headers['X-Forwarded-For']
-            ip = current_app.wsgi_app.get_remote_addr(forwarded_ips)
+            ip = current_app.wsgi_app.get_remote_addr([forwarded_ips])
         else:
             ip = request.remote_addr
             if PRODUCTION:
