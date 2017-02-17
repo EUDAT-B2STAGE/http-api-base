@@ -23,6 +23,7 @@ class User(IdentifiedNode):
     surname = StringProperty(required=True, show=True)
     authmethod = StringProperty(required=True)
     password = StringProperty()  # Hashed from a custom function
+    last_password_change = DateTimeProperty(show=True)
     tokens = RelationshipTo('Token', 'HAS_TOKEN', cardinality=ZeroOrMore)
     roles = RelationshipTo(
         'Role', 'HAS_ROLE', cardinality=ZeroOrMore, show=True)
