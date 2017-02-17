@@ -74,9 +74,6 @@ class GraphBaseOperations(EndpointResource):
 
         return record.count
 
-    def getCurrentDate(self):
-        return datetime.now(pytz.utc)
-
     # HANDLE INPUT PARAMETERS
 
     @staticmethod
