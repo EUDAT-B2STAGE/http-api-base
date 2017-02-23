@@ -278,6 +278,13 @@ def create_app(name=__name__, debug=False,
             if enable_security:
                 init_auth.init_users_and_roles()
 
+            ####################
+                # TODO: check this piece of code
+                if PRODUCTION and init_auth.check_if_user_defaults():
+                    raise AttributeError(
+                        "Starting production mode with default admin user")
+            ####################
+
             # Allow a custom method for mixed services init
             try:
                 from .resources.custom import services as custom_services
