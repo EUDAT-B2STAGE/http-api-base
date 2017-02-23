@@ -138,11 +138,17 @@ class BeSwagger(object):
             cparam = specs.pop('custom_parameters', None)
             if cparam is not None:
                 for fdp in cparam:
+
                     params = self._fdp.get(fdp)
                     if params is None:
                         log.critical_exit("No custom form data '%s'" % fdp)
                     else:
-                        specs['parameters'].extend(params)
+                        # Unable to extend with list by using extends() because
+                        # it add references to the original object and do not
+                        # create copies. Without copying, the same objects will
+                        # be modified several times leading to errors
+                        for p in params:
+                            specs['parameters'].append(p.copy())
 
             ###########################
             # Read normal parameters

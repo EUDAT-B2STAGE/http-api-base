@@ -7,6 +7,9 @@ And a Farm: How to create endpoints into REST service.
 
 from __future__ import absolute_import
 
+import pytz
+from datetime import datetime
+
 from flask import jsonify, current_app
 from ..rest.definition import EndpointResource
 from ..services.detect import CELERY_AVAILABLE
@@ -250,6 +253,7 @@ class Profile(EndpointResource):
                     code=hcodes.HTTP_BAD_REQUEST
                 )
             user.password = BaseAuthentication.hash_password(data[key])
+            user.last_password_change = datetime.now(pytz.utc)
             user.save()
 
             auth = self.global_get('custom_auth')

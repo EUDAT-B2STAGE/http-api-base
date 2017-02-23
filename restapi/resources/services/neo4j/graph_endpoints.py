@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import re
-from datetime import datetime
-import pytz
+# from datetime import datetime
+# import pytz
 from functools import wraps
 # from py2neo.error import GraphError
 # from py2neo.cypher.error.schema import ConstraintViolation
@@ -41,23 +41,8 @@ class GraphBaseOperations(EndpointResource):
     def getNode(self, Model, identifier, field='accession'):
 
         try:
-
             filter = {field: identifier}
             return Model.nodes.get(**filter)
-
-            # if field == 'accession':
-            #     return Model.nodes.get(accession=identifier)
-
-            # if field == 'id':
-            #     return Model.nodes.get(id=identifier)
-
-            # if field == 'uuid':
-            #     return Model.nodes.get(uuid=identifier)
-
-            # if field == 'taxon_id':
-            #     return Model.nodes.get(taxon_id=identifier)
-
-            # return Model.nodes.get(accession=identifier)
 
         except Model.DoesNotExist:
             return None
@@ -73,9 +58,6 @@ class GraphBaseOperations(EndpointResource):
                 return 0
 
         return record.count
-
-    def getCurrentDate(self):
-        return datetime.now(pytz.utc)
 
     # HANDLE INPUT PARAMETERS
 
@@ -222,11 +204,6 @@ def graph_transactions(func):
         except Exception as e:
             log.verbose("Neomodel transaction ROLLBACK")
             try:
-                # Starting from neo4j 2.3.0 ClientErrors automatically
-                # rollback transactions and raise a 404 error:
-                # HTTP DELETE returned response 404
-                # https://github.com/neo4j/neo4j/issues/5806
-
                 transaction.rollback()
             except Exception as rollback_exp:
                 log.warning(

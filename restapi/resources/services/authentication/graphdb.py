@@ -224,11 +224,9 @@ instead of here
             user = self.get_user()
         try:
             token_node = self._graph.Token.nodes.get(token=token)
-            token_node.emitted_for.disconnect(user)
-            # TO FIX: in my opinion the above line should be replaced with:
-            # token_node.delete()
+            token_node.delete()
         except self._graph.Token.DoesNotExist:
-            log.warning("Could not invalidate token")
+            log.warning("Unable to invalidate, token not found: %s" % token)
             return False
         return True
 

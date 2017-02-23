@@ -1,5 +1,7 @@
 # NEOMODEL BASE CLASSES EXTENSION #
 import inspect
+import pytz
+from datetime import datetime
 from neomodel import StringProperty as originalStringProperty
 from neomodel import IntegerProperty as originalIntegerProperty
 from neomodel import FloatProperty as originalFloatProperty
@@ -264,7 +266,7 @@ class TimestampedNode(IdentifiedNode):
 
     created = DateTimeProperty(default_now=True, show=True)
     modified = DateTimeProperty(default_now=True, show=True)
-    # created = DateTimeProperty(
-    #     required=True, default=lambda: datetime.now(pytz.utc), show=True)
-    # modified = DateTimeProperty(
-    #     required=True, default=lambda: datetime.now(pytz.utc), show=True)
+
+    def save(self, *args, **kwargs):
+        self.modified = datetime.now(pytz.utc)
+        return super(TimestampedNode, self).save(*args, **kwargs)

@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import os
 # from json.decoder import JSONDecodeError
 from flask import Flask as OriginalFlask, request, g
+from werkzeug.contrib.fixers import ProxyFix
 from .response import ResponseMaker
 from .resources.services.oauth2clients import ExternalServicesLogin as oauth2
 from commons import PRODUCTION, DEBUG as ENVVAR_DEBUG
@@ -109,6 +110,7 @@ def create_app(name=__name__, debug=False,
     #################################################
     from .confs import config
     microservice = Flask(name, **kwargs)
+    microservice.wsgi_app = ProxyFix(microservice.wsgi_app)
 
     ##############################
     # @microservice.before_first_request

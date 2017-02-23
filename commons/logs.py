@@ -185,6 +185,7 @@ def set_global_log_level(package=None, app_level=None):
         logging.getLogger('neo4j'),
         logging.getLogger('neomodel'),
         logging.getLogger('httpstream'),
+        logging.getLogger('amqp')
     ]
 
     for logger in external_packages:
