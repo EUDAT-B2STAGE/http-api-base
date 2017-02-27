@@ -1,15 +1,16 @@
 
 ### GUIDELINES ####
 - Python 3.6
-  PEP compliant
-- Unittest: nose2
-  test driven
-  how about Stoplight Scenarios?
-- Based on docker environment
-  debug / development / production configuration
+  Code written as PEP compliant as possible
 - Swagger
   configuration via aggregated YAML files
-  automatic python validation
+  automatic python validation?
+- Unittest: nose2
+  test driven development (TDD)
+  Stoplight Scenarios?
+- Based on docker environment
+  debug / development / production configuration
+  - swarm mode
 
 Available SERVICES:
  - Irods virtual resources
