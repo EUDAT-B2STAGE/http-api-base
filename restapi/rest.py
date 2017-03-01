@@ -77,11 +77,6 @@ def create_endpoints(epo, security=False, debug=False):
     if len(resources) < 1:
         log.warning("No custom endpoints found!")
 
-        # # DEPRECATED
-        # from .resources import exampleservices as mymodule
-        # epo.many_from_module(mymodule)
-        # log.debug("Loaded example class instead")
-
         raise AttributeError("Follow the docs and define your endpoints")
 
     log.debug("Using resources defined within swagger")
