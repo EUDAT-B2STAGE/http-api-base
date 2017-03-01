@@ -318,7 +318,7 @@ class EndpointResource(Resource):
             # flask-like
             return (user_message, code)
 
-    def send_crentials(self, token, extra=None, meta=None):
+    def send_credentials(self, token, extra=None, meta=None):
         """
         Define a standard response to give a Bearer token back.
         Also considering headers.

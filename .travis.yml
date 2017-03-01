@@ -1,12 +1,12 @@
 language: python
 sudo: required
 python:
-  - "3.4"
+  - "3.6"
 services:
   - docker
   - docker-compose
 install:
   # - sudo apt-get update
-  
+
 script:
-  - docker exec httpapi_rest_1 nosetests
+  - docker-compose exec rest nosetests

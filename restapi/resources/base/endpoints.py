@@ -89,11 +89,6 @@ class Login(EndpointResource):
 
         # TO FIX: split response as above in access_token and token_type?
         # # The right response should be the following
-        # return self.force_response({
-        #     'access_token': token,
-        #     'token_type': auth.token_type
-        # })
-        # OR
         # {
         #   "scope": "https://b2stage.cineca.it/api/.*",
         #   "access_token": "EEwJ6tF9x5WCIZDYzyZGaz6Khbw7raYRIBV_WxVvgmsG",
@@ -101,7 +96,7 @@ class Login(EndpointResource):
         #   "user": "pippo",
         #   "expires_in": 28800
         # }
-        # TO FIX: also set headers
+        # TO FIX: also set headers in a standard way if it exists
 
         return {'token': token}
 

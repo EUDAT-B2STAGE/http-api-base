@@ -386,7 +386,8 @@ class BeSwagger(object):
             for key, value in override.items():
                 data[key] = value
 
-        self._fdp = data.pop('FormDataParameters', None)
+        self._fdp = data.pop('FormDataParameters', [])
+        # self._fdp = data.pop('FormDataParameters', None)
 
         return data
 
