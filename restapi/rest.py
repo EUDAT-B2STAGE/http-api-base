@@ -9,8 +9,8 @@ from __future__ import absolute_import
 from flask_restful import Api as RestFulApi
 from .resources.farm import EndpointsFarmer
 
-from commons.globals import mem
-from commons.logs import get_logger
+from restapi.utils.globals import mem
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

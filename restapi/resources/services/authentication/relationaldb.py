@@ -8,10 +8,10 @@ from __future__ import absolute_import
 import sqlalchemy
 # import pytz
 from datetime import datetime, timedelta
-from commons.services.uuid import getUUID
+from restapi.utils.services.uuid import getUUID
 from ..detect import SQL_AVAILABLE
 from . import BaseAuthentication
-from commons.logs import get_logger
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

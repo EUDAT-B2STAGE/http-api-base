@@ -12,8 +12,8 @@ from restapi.confs.config import TEST_HOST, \
 from restapi.response import get_content_from_response
 from restapi.jsonify import json
 from restapi.resources.services.authentication import BaseAuthentication as ba
-import commons.htmlcodes as hcodes
-from commons.logs import get_logger, set_global_log_level
+from restapi.utils import htmlcodes as hcodes
+from restapi.utils.logs import get_logger, set_global_log_level
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 

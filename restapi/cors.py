@@ -7,7 +7,7 @@ We create all the components here!
 
 # from __future__ import absolute_import
 from flask_cors import CORS
-from commons.logs import get_logger
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

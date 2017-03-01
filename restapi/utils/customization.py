@@ -21,7 +21,7 @@ from .meta import Meta
 from .formats.yaml import YAML_EXT, load_yaml_file
 from .swagger import BeSwagger
 
-from commons import IS_BACKEND, IS_FRONTEND
+from restapi.utils import IS_BACKEND, IS_FRONTEND
 
 from .logs import get_logger
 log = get_logger(__name__)

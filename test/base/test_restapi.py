@@ -10,7 +10,7 @@ from __future__ import absolute_import
 import json
 # import logging
 from .. import RestTestsBase
-from commons.logs import get_logger
+from restapi.utils.logs import get_logger
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 log = get_logger(__name__)

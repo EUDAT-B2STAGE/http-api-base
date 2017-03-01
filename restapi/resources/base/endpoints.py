@@ -14,9 +14,9 @@ from flask import jsonify, current_app
 from ..rest.definition import EndpointResource
 from ..services.detect import CELERY_AVAILABLE
 from ..services.authentication import BaseAuthentication
-from commons import htmlcodes as hcodes
-from commons.globals import mem
-from commons.logs import get_logger
+from restapi.utils import htmlcodes as hcodes
+from restapi.utils.globals import mem
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 
@@ -39,7 +39,7 @@ class SwaggerSpecifications(EndpointResource):
         swagjson = mem.customizer._definitions
 
         # NOTE: changing dinamically options, based on where the client lies
-        from commons import get_api_url
+        from restapi.utils import get_api_url
         api_url, _ = get_api_url()
         scheme, host = api_url.rstrip('/').split('://')
         swagjson['host'] = host
@@ -290,7 +290,7 @@ class Admin(EndpointResource):
 # In case you have celery queue,
 # you get a queue endpoint for free
 if CELERY_AVAILABLE:
-    from commons.services.celery import celery_app
+    from restapi.utils.services.celery import celery_app
 
     class Queue(EndpointResource):
 

@@ -4,7 +4,7 @@ from __future__ import absolute_import
 
 from flask import current_app
 from ...services.celery import celery_app
-from commons.logs import get_logger
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

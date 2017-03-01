@@ -38,7 +38,7 @@ This collection of utilities is meant to simplify the writing of endpoints tests
 Your own test class should import and extend test utilities
 
 
-	from commons.tests.utilities import TestUtilities
+	from restapi.utils.tests.utilities import TestUtilities
 
 
 		class YourTests(TestUtilities):

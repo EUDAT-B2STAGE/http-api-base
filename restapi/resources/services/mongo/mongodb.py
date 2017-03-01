@@ -18,8 +18,8 @@ from pymodm import MongoModel, fields
 #     # Python 2.x
 #     from urllib import quote_plus
 
-from commons.services import ServiceFarm, ServiceObject
-from commons.logs import get_logger
+from restapi.utils.services import ServiceFarm, ServiceObject
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

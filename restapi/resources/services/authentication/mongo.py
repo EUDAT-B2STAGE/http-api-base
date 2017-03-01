@@ -12,8 +12,8 @@ from datetime import datetime, timedelta
 from ..detect import MONGO_AVAILABLE
 from . import BaseAuthentication
 
-from commons.services.uuid import getUUID
-from commons.logs import get_logger
+from restapi.utils.services.uuid import getUUID
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

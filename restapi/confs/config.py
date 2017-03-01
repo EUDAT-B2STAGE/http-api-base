@@ -11,8 +11,8 @@ import re
 import sys
 import argparse
 
-from commons import API_URL, AUTH_URL
-from commons.logs import get_logger
+from restapi.utils import API_URL, AUTH_URL
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 log.verbose("base URL[%s] - auth URL[%s]" % (API_URL, AUTH_URL))

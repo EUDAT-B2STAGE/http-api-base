@@ -8,9 +8,9 @@ from functools import wraps
 # from py2neo.cypher.error.schema import ConstraintViolation
 from restapi.resources.exceptions import RestApiException
 from ...rest.definition import EndpointResource
-from commons import htmlcodes as hcodes
+from restapi.utils import htmlcodes as hcodes
 
-from commons.logs import get_logger
+from restapi.utils.logs import get_logger
 log = get_logger(__name__)
 
 __author__ = "Mattia D'Antonio (m.dantonio@cineca.it)"

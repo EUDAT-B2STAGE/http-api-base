@@ -12,7 +12,7 @@ TO FIX: this will be the new default very soon
 import os
 import irods
 from irods.session import iRODSSession
-from commons.logs import get_logger, silence_loggers
+from restapi.utils.logs import get_logger, silence_loggers
 
 log = get_logger(__name__)
 # Silence the irods debugger which adds some useless handler

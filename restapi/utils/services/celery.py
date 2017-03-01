@@ -6,7 +6,7 @@ Celery tasks
 
 
 import os
-from commons.logs import get_logger
+from restapi.utils.logs import get_logger
 from celery import Celery
 
 # TO FIX: since we are in commons and detect in restapi we cannot import here

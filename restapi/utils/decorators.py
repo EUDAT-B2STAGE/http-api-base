@@ -8,9 +8,9 @@ to write
 
 # import traceback
 from functools import wraps
-# from commons.globals import mem
-# from commons.meta import Meta
-from commons.logs import get_logger
+# from restapi.utils.globals import mem
+# from restapi.utils.meta import Meta
+from restapi.utils.logs import get_logger
 # from flask_restful import reqparse
 
 log = get_logger(__name__)

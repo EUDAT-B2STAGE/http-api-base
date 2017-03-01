@@ -16,12 +16,12 @@ import base64
 import pytz
 import socket
 
-from commons.services.uuid import getUUID
+from restapi.utils.services.uuid import getUUID
 from datetime import datetime, timedelta
 from flask import current_app, request
-from commons import PRODUCTION
-from commons.globals import mem
-from commons.logs import get_logger
+from restapi.utils import PRODUCTION
+from restapi.utils.globals import mem
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

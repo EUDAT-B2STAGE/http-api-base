@@ -9,7 +9,7 @@ from __future__ import absolute_import
 import os
 from .services.uuid import getUUID
 from OpenSSL import crypto
-from commons import htmlcodes as hcodes
+from restapi.utils import htmlcodes as hcodes
 from .logs import get_logger
 
 log = get_logger(__name__)

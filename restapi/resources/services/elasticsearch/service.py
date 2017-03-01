@@ -18,10 +18,10 @@ import logging
 # import pytz
 
 from collections import OrderedDict
-from commons.logs import get_logger
-from commons.services import ServiceFarm, ServiceObject
-# from commons.services.uuid import getUUID
-from commons.services.uuid import getUUIDfromString
+from restapi.utils.logs import get_logger
+from restapi.utils.services import ServiceFarm, ServiceObject
+# from restapi.utils.services.uuid import getUUID
+from restapi.utils.services.uuid import getUUIDfromString
 # from datetime import datetime
 from elasticsearch_dsl import Index
 from elasticsearch_dsl.connections import connections

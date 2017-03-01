@@ -40,7 +40,8 @@ IS_BACKEND = not IS_FRONTEND
 # IS_FRONTEND = not IS_BACKEND
 
 #######################
-PROJECT_DIR = __package__
+# PROJECT_DIR = __package__
+PROJECT_DIR = "restapi/utils"
 CONFIG_DIR = 'confs'
 LOGGING_CONFIG_FILE = 'logging_config.ini'
 LOG_CONFIG = os.path.join(PROJECT_DIR, CONFIG_DIR, LOGGING_CONFIG_FILE)

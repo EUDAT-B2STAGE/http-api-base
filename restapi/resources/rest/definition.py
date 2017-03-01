@@ -15,9 +15,9 @@ from flask_restful import request, Resource, reqparse
 
 from ...confs.config import API_URL  # , STACKTRACE
 from ...response import ResponseElements
-from commons import htmlcodes as hcodes
-from commons.globals import mem
-from commons.logs import get_logger
+from restapi.utils import htmlcodes as hcodes
+from restapi.utils.globals import mem
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 
@@ -211,7 +211,7 @@ class EndpointResource(Resource):
     def global_get_service(self,
                            service_name, object_name='services', **kwargs):
 
-        from commons.services import get_instance_from_services
+        from restapi.utils.services import get_instance_from_services
         return get_instance_from_services(
             self.global_get(object_name),   # services
             service_name,

@@ -4,9 +4,9 @@
 
 # from __future__ import absolute_import
 import os
-from commons.logs import get_logger
-from commons.services import ServiceFarm, ServiceObject
-from commons.services.uuid import getUUID
+from restapi.utils.logs import get_logger
+from restapi.utils.services import ServiceFarm, ServiceObject
+from restapi.utils.services.uuid import getUUID
 from datetime import datetime
 import pytz
 

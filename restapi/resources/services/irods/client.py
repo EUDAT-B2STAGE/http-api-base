@@ -24,11 +24,11 @@ from collections import OrderedDict
 from ...basher import BashCommands
 from ...exceptions import RestApiException
 from ..detect import IRODS_ENV, IRODS_EXTERNAL
-from commons.services import ServiceFarm
-from commons.certificates import Certificates
+from restapi.utils.services import ServiceFarm
+from restapi.utils.certificates import Certificates
 # from ..templating import Templa
 # from . import string_generator
-from commons.logs import get_logger
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

@@ -8,8 +8,8 @@ sqllite, MySQL or Postgres
 from __future__ import absolute_import
 
 import os
-from commons.services import ServiceFarm
-from commons.logs import get_logger
+from restapi.utils.services import ServiceFarm
+from restapi.utils.logs import get_logger
 from ..detect import SQL_PROD_AVAILABLE
 
 log = get_logger(__name__)

@@ -13,11 +13,11 @@ from flask import Flask as OriginalFlask, request, g
 from werkzeug.contrib.fixers import ProxyFix
 from .response import ResponseMaker
 from .resources.services.oauth2clients import ExternalServicesLogin as oauth2
-from commons import PRODUCTION, DEBUG as ENVVAR_DEBUG
-from commons.meta import Meta
-from commons.customization import Customizer
-from commons.globals import mem
-from commons.logs import get_logger, \
+from restapi.utils import PRODUCTION, DEBUG as ENVVAR_DEBUG
+from restapi.utils.meta import Meta
+from restapi.utils.customization import Customizer
+from restapi.utils.globals import mem
+from restapi.utils.logs import get_logger, \
     handle_log_output, MAX_CHAR_LEN, set_global_log_level
 
 #############################

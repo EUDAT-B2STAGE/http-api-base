@@ -34,9 +34,9 @@ from flask import Response, jsonify
 from werkzeug import exceptions as wsgi_exceptions
 from werkzeug.wrappers import Response as WerkzeugResponse
 from .resources.decorators import get_response, set_response
-from commons import htmlcodes as hcodes
-from commons.attrs.api import ResponseElements
-from commons.logs import get_logger
+from restapi.utils import htmlcodes as hcodes
+from restapi.utils.attrs.api import ResponseElements
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

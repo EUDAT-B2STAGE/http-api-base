@@ -5,8 +5,8 @@ a Farm: How to create endpoints into REST service.
 """
 
 # from __future__ import absolute_import
-# from commons.meta import Meta
-from commons.logs import get_logger
+# from restapi.utils.meta import Meta
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

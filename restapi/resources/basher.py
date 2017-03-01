@@ -12,7 +12,7 @@ http://plumbum.readthedocs.org/en/latest/index.html#
 # from __future__ import absolute_import
 from plumbum.commands.processes import ProcessExecutionError
 
-from commons.logs import get_logger
+from restapi.utils.logs import get_logger
 log = get_logger(__name__)
 
 

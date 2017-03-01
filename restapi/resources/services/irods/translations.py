@@ -10,7 +10,7 @@ from py2neo.cypher.error.schema import ConstraintViolation
 from neomodel.exception import RequiredProperty
 from neomodel.exception import UniqueProperty
 
-from commons.logs import get_logger
+from restapi.utils.logs import get_logger
 log = get_logger(__name__)
 
 

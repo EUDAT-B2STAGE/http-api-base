@@ -4,9 +4,9 @@ import json
 import string
 import logging
 
-from commons.logs import get_logger
+from restapi.utils.logs import get_logger
 from restapi.confs.config import TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
-import commons.htmlcodes as hcodes
+from restapi.utils import htmlcodes as hcodes
 
 log = get_logger(__name__)
 log.setLevel(logging.DEBUG)

@@ -21,10 +21,10 @@ from __future__ import absolute_import
 
 # import traceback
 from functools import wraps
-from commons import htmlcodes as hcodes
-from commons.globals import mem
-from commons.logs import get_logger
-# from commons.meta import Meta
+from restapi.utils import htmlcodes as hcodes
+from restapi.utils.globals import mem
+from restapi.utils.logs import get_logger
+# from restapi.utils.meta import Meta
 
 from .. import myself, lic
 

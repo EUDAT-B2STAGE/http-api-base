@@ -11,10 +11,10 @@ from __future__ import absolute_import
 import os
 from base64 import b64encode
 from ...oauth import oauth
-from commons import PRODUCTION, DEBUG as ENVVAR_DEBUG
-from commons.globals import mem
-from commons.meta import Meta
-from commons.logs import get_logger
+from restapi.utils import PRODUCTION, DEBUG as ENVVAR_DEBUG
+from restapi.utils.globals import mem
+from restapi.utils.meta import Meta
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

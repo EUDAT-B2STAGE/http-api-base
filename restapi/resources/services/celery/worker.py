@@ -12,11 +12,11 @@ So we made some improvement along the code.
 """
 
 # from restapi.resources.services.celery.tasks import MyCelery
-from commons.services.celery import celery_app
+from restapi.utils.services.celery import celery_app
 # TO FIX: can we import from __package__ instead?
 from restapi.server import create_app
-from commons.meta import Meta
-from commons.logs import get_logger
+from restapi.utils.meta import Meta
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

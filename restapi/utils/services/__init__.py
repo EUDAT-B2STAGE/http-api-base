@@ -20,7 +20,7 @@ from ..logs import get_logger
 
 log = get_logger(__name__)
 
-BASE_MODELS_PATH = 'commons.models.'
+BASE_MODELS_PATH = 'restapi.utils.models.'
 
 
 def get_instance_from_services(services, service_name='relational', **kwargs):

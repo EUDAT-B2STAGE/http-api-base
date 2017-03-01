@@ -19,9 +19,9 @@ def my_async_task(arg):
 
 # from __future__ import absolute_import
 
-from commons.services import ServiceFarm, ServiceObject
-from commons.services.celery import celery_app
-from commons.logs import get_logger
+from restapi.utils.services import ServiceFarm, ServiceObject
+from restapi.utils.services.celery import celery_app
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 
@@ -33,8 +33,8 @@ class MyCelery(ServiceObject):
 
     @staticmethod
     def get_service(service_name):
-        from commons.globals import mem
-        from commons.services import get_instance_from_services
+        from restapi.utils.globals import mem
+        from restapi.utils.services import get_instance_from_services
         return get_instance_from_services(mem.services, service_name)
 
     def make_celery(self, app):

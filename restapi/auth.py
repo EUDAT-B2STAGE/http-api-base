@@ -16,10 +16,10 @@ there is no client id nor is client authentication required.
 
 from functools import wraps
 from flask import request, g
-from commons import htmlcodes as hcodes
-from commons.meta import Meta
-from commons.decorators import class_method_decorator_with_optional_parameters
-from commons.logs import get_logger
+from restapi.utils import htmlcodes as hcodes
+from restapi.utils.meta import Meta
+from restapi.utils.decorators import class_method_decorator_with_optional_parameters
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

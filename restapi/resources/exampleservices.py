@@ -16,7 +16,7 @@ from __future__ import absolute_import
 from .base import ExtendedApiResource
 # from ..confs import config
 # from ..auth import authentication
-from commons.logs import get_logger
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

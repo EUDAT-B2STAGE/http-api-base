@@ -13,7 +13,7 @@ import re
 import os
 from bravado_core.spec import Spec
 # from bravado_core.validate import validate_object
-from commons import htmlcodes as hcodes
+from restapi.utils import htmlcodes as hcodes
 from . import CORE_DIR, USER_CUSTOM_DIR
 from .attrs.api import ExtraAttributes
 from .formats.yaml import load_yaml_file, YAML_EXT
@@ -370,7 +370,8 @@ class BeSwagger(object):
     def read_definitions(self, filename='swagger'):
         """ Read definitions from base/custom yaml files """
 
-        models_dir = os.path.join(__package__, 'models')
+        # models_dir = os.path.join(__package__, 'models')
+        models_dir = os.path.join('restapi', 'utils', 'models')
 
         # BASE definitions
         file = '%s.%s' % (filename, YAML_EXT)
@@ -403,7 +404,7 @@ class BeSwagger(object):
         #     log.pp(swag_dict)
 
         try:
-            from commons import json
+            from restapi.utils import json
             # Fix jsonschema validation problem
             # expected string or bytes-like object
             # http://j.mp/2hEquZy

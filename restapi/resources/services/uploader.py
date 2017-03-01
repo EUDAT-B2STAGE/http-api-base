@@ -21,10 +21,10 @@ import os
 # import subprocess as shell
 from flask import request, send_from_directory
 from werkzeug import secure_filename
-import commons.htmlcodes as hcodes
+from restapi.utils import htmlcodes as hcodes
 from ...confs.config import UPLOAD_FOLDER
 
-from commons.logs import get_logger
+from restapi.utils.logs import get_logger
 log = get_logger(__name__)
 
 
