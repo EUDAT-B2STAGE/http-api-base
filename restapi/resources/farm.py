@@ -24,7 +24,7 @@ class EndpointsFarmer(object):
     def add(self, resource):
         """ Adding a single restpoint from a Resource Class """
 
-        from ..auth import authentication
+        from restapi.auth import authentication
 
         # Apply authentication: if required from yaml configuration
         # Done per each method

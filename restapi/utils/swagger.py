@@ -370,17 +370,14 @@ class BeSwagger(object):
     def read_definitions(self, filename='swagger'):
         """ Read definitions from base/custom yaml files """
 
-        # models_dir = os.path.join(__package__, 'models')
-        models_dir = os.path.join('restapi', 'utils', 'models')
-
         # BASE definitions
         file = '%s.%s' % (filename, YAML_EXT)
-        path = os.path.join(models_dir, CORE_DIR, file)
+        path = os.path.join('restapi', CORE_DIR, 'models', file)
         data = load_yaml_file(path)
 
         # CUSTOM definitions
         file = '%s.%s' % (filename, YAML_EXT)
-        path = os.path.join(models_dir, USER_CUSTOM_DIR, file)
+        path = os.path.join('restapi', USER_CUSTOM_DIR, 'models', file)
         override = load_yaml_file(path, skip_error=True)
         # They may override existing ones
         if override is not None and isinstance(override, dict):

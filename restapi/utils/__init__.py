@@ -58,26 +58,12 @@ BASE_URLS = [API_URL, AUTH_URL]
 
 #################################
 # Directories for core code or user custom code
-CORE_DIR = 'base'
+CORE_DIR = 'core'
 USER_CUSTOM_DIR = 'custom'
 
-PATH = ""
-DEFAULTS_PATH = "defaults"
-CONFIG_PATH = ""
+DEFAULTS_PATH = os.path.join(BACKEND_PACKAGE, 'confs', 'defaults')
+
 BLUEPRINT_KEY = 'blueprint'
-
-if IS_FRONTEND:
-    # Main directory where all conf files are found
-    CONFIG_PATH = 'config'
-    PATH = 'specs'
-
-if IS_BACKEND:
-    CONFIG_PATH = os.path.join(BACKEND_PACKAGE, CONFIG_DIR)
-    PATH = 'main'
-
-# # FRAMEWORKS = ['materialize', 'bootstrap', 'foundation']
-# # CURRENT_FRAMEWORK = FRAMEWORKS.pop(0)
-# CURRENT_FRAMEWORK = 'bootstrap'
 
 # NOTE: this decides about final configuration
 DEBUG = True

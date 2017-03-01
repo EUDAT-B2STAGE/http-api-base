@@ -6,14 +6,11 @@
 
 from __future__ import absolute_import
 
-from ..neo4j.models import \
+from restapi.utils.neo4j.models import \
     StructuredNode, IdentifiedNode, \
     StringProperty, DateTimeProperty, EmailProperty, \
     RelationshipTo, RelationshipFrom
 from neomodel import OneOrMore, ZeroOrMore, ZeroOrOne
-
-# from ..logs import get_logger
-# log = get_logger(__name__)
 
 
 class User(IdentifiedNode):

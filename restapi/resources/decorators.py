@@ -24,9 +24,8 @@ from functools import wraps
 from restapi.utils import htmlcodes as hcodes
 from restapi.utils.globals import mem
 from restapi.utils.logs import get_logger
-# from restapi.utils.meta import Meta
 
-from .. import myself, lic
+from restapi.utils import myself, lic
 
 __author__ = myself
 __copyright__ = myself

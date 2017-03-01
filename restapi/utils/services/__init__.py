@@ -20,9 +20,6 @@ from ..logs import get_logger
 
 log = get_logger(__name__)
 
-BASE_MODELS_PATH = 'restapi.utils.models.'
-
-
 def get_instance_from_services(services, service_name='relational', **kwargs):
     """
     Recover an instance among many services factory
@@ -114,13 +111,14 @@ class ServiceFarm(metaclass=abc.ABCMeta):
 
     @classmethod
     def load_base_models(cls):
-        module_path = BASE_MODELS_PATH + cls.define_service_name()
+        module_path = 'restapi.core.models.' + cls.define_service_name()
         log.debug("Loading base models")
         return cls.load_generic_models(module_path)
 
     @classmethod
     def load_custom_models(cls):
-        module_path = BASE_MODELS_PATH + 'custom.' + cls.define_service_name()
+
+        module_path = 'restapi.custom.models.' + cls.define_service_name()
         log.debug("Loading custom models")
         return cls.load_generic_models(module_path)
 

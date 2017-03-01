@@ -386,7 +386,7 @@ class ICommands(BashCommands):
                 if not valid:
                     log.warning("Invalid proxy for %s refresh" % user)
                     try:
-                        from restapi.resources.custom.proxy_certificates \
+                        from restapi.custom.resources.proxy_certificates \
                             import get_proxy_certificate
 
                         parameters = {}

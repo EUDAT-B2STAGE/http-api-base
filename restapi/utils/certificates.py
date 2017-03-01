@@ -7,10 +7,10 @@ Using x509 certificates
 from __future__ import absolute_import
 
 import os
-from .services.uuid import getUUID
+from restapi.utils.services.uuid import getUUID
 from OpenSSL import crypto
 from restapi.utils import htmlcodes as hcodes
-from .logs import get_logger
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

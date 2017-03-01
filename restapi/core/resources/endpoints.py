@@ -11,9 +11,9 @@ import pytz
 from datetime import datetime
 
 from flask import jsonify, current_app
-from ..rest.definition import EndpointResource
-from ..services.detect import CELERY_AVAILABLE
-from ..services.authentication import BaseAuthentication
+from restapi.resources.rest.definition import EndpointResource
+from restapi.resources.services.detect import CELERY_AVAILABLE
+from restapi.resources.services.authentication import BaseAuthentication
 from restapi.utils import htmlcodes as hcodes
 from restapi.utils.globals import mem
 from restapi.utils.logs import get_logger

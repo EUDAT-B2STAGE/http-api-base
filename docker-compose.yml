@@ -30,20 +30,27 @@ backend:
     # - restangulask_apilitedb:/dbs
     # Base code
     - ../backend:/code
+    # Vanilla dir
+    - ..:/code/restapi/custom
+
     # Project configuration
-    - ../specs:/code/restapi/confs/main
+    # - ../specs:/code/restapi/confs/main
+    
     # Swagger API definition
-    - ../swagger:/code/restapi/confs/custom
+    # - ../swagger:/code/restapi/confs/custom
     # Rest API endpoints (code)
-    - ../apis:/code/restapi/resources/custom
+    # - ../apis:/code/restapi/resources/custom
     # Rest API services models
-    - ../models:/code/commons/models/custom
+    # - ../models:/code/commons/models/custom
+
+
+    # Celery Tasks
+    # - ../tasks:/code/commons/tasks/custom
+
     # JWT tokens secret
     - jwt_tokens:/jwt_tokens
     # Tests
     - ../tests/backend:/code/test/custom
-    # Celery Tasks
-    - ../tasks:/code/commons/tasks/custom
 
 
 ###############################

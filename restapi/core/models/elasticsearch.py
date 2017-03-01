@@ -5,7 +5,6 @@
 """ Models for elastic search """
 
 # from __future__ import absolute_import
-# from ..logs import get_logger
 
 from elasticsearch_dsl import DocType, String, Completion
 # Date, Nested, Boolean, \

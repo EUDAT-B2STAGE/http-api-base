@@ -20,7 +20,7 @@ from neomodel import RelationshipFrom as originalRelationshipFrom
 
 from neomodel.relationship_manager import RelationshipDefinition
 
-from ..services.uuid import getUUID
+from restapi.utils.services.uuid import getUUID
 
 
 def RelationshipTo(

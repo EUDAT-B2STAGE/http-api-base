@@ -11,8 +11,8 @@ import re
 import glob
 # from collections import OrderedDict
 from . import (
-    CORE_DIR, USER_CUSTOM_DIR, DEFAULTS_PATH,
-    PATH, CONFIG_PATH, BLUEPRINT_KEY, API_URL, BASE_URLS,
+    BACKEND_PACKAGE, CORE_DIR, USER_CUSTOM_DIR, DEFAULTS_PATH,
+    BLUEPRINT_KEY, API_URL, BASE_URLS,
 )
 from .attrs.api import EndpointElements, ExtraAttributes
 
@@ -67,19 +67,19 @@ class Customizer(object):
         ##################
         # Reading configuration
 
+        CUSTOM_CONFIG_PATH = os.path.join(BACKEND_PACKAGE, 'custom', 'specs')
+
         # Find out what is the active blueprint
-        bp_file = os.path.join(CONFIG_PATH, PATH, '%s.init' % BLUEPRINT_KEY)
+        bp_file = os.path.join(CUSTOM_CONFIG_PATH, '%s.init' % BLUEPRINT_KEY)
         with open(bp_file) as bp_hd:
             blueprint = bp_hd.read().strip()
 
         # Read the custom configuration from the active blueprint file
-        custom_path = os.path.join(CONFIG_PATH, PATH)
-        custom_config = load_yaml_file(blueprint, path=custom_path)
+        custom_config = load_yaml_file(blueprint, path=CUSTOM_CONFIG_PATH)
         custom_config[BLUEPRINT_KEY] = blueprint
 
         # Read default configuration
-        defaults_path = os.path.join(CONFIG_PATH, DEFAULTS_PATH)
-        defaults = load_yaml_file(BLUEPRINT_KEY, path=defaults_path)
+        defaults = load_yaml_file(BLUEPRINT_KEY, path=DEFAULTS_PATH)
         if len(defaults) < 0:
             raise ValueError("Missing defaults for server configuration!")
 
@@ -91,12 +91,6 @@ class Customizer(object):
             for label, element in elements.items():
                 if label not in custom_config[key]:
                     custom_config[key][label] = element
-
-        # # FRONTEND?
-        # TO FIX: see with @mdantonio what to do here
-        # custom_config['frameworks'] = \
-        #     self.load_json(CONFIG_PATH, "", "frameworks")
-        # auth = custom_config['variables']['containers']['authentication']
 
         # Save in memory all of the current configuration
         self._configurations = custom_config
@@ -133,18 +127,19 @@ class Customizer(object):
         ##################
         # Walk swagger directories looking for endpoints
 
-        # for base_dir in [CORE_DIR]:
+        # CUSTOM_CONFIG_PATH = os.path.join(BACKEND_PACKAGE, 'custom', 'specs')
+
         for base_dir in [CORE_DIR, USER_CUSTOM_DIR]:
 
-            current_dir = os.path.join(CONFIG_PATH, base_dir)
+            current_dir = os.path.join(BACKEND_PACKAGE, base_dir, 'swagger')
 
             for ep in os.listdir(current_dir):
 
-                endpoint_dir = os.path.join(CONFIG_PATH, base_dir, ep)
+                endpoint_dir = os.path.join(current_dir, ep)
                 if os.path.isfile(endpoint_dir):
                     log.debug(
-                        "Expected a swagger conf folder, found a file (%s/%s)"
-                        % (base_dir, ep)
+                        "Expected a swagger conf folder, found a file (%s)"
+                        % (endpoint_dir)
                     )
                     continue
                 current = self.lookup(
@@ -216,7 +211,7 @@ class Customizer(object):
         # Load the endpoint class defined in the YAML file
         file_name = conf.pop('file', default_uri)
         class_name = conf.pop('class')
-        name = '%s.%s.%s.%s' % (package_name, 'resources', dir_name, file_name)
+        name = '%s.%s.%s.%s' % (package_name, dir_name, 'resources', file_name)
         module = self._meta.get_module_from_string(name)
 
         if module is None:
