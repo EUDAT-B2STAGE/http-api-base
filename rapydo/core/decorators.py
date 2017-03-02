@@ -25,12 +25,6 @@ from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.globals import mem
 from rapydo.utils.logs import get_logger
 
-from rapydo.utils import myself, lic
-
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
-
 log = get_logger(__name__)
 
 

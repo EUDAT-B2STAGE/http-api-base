@@ -28,32 +28,6 @@ class Api(RestFulApi):
         so I am overriding it to JUST TO AVOID THE DECORATOR
         """
 
-        ##################################
-        # What we are skipping
-
-        # from functools import wraps
-        # from werkzeug.wrappers import Response as ResponseBase
-        # from flask_restful.utils import unpack
-
-        # @wraps(resource)
-        # def wrapper(*args, **kwargs):
-
-        #     print("REST IN")
-        #     resp = resource(*args, **kwargs)
-        #     print("REST OUT")
-
-        #     from rapydo.response import ResponseElements
-        #     if isinstance(resp, ResponseElements):
-        #         return resp
-
-        #     # There may be a better way to test
-        #     if isinstance(resp, ResponseBase):
-        #         return resp
-        #     data, code, headers = unpack(resp)
-        #     return self.make_response(data, code, headers=headers)
-        # return wrapper
-        ##################################
-
         return resource
 
 

@@ -11,7 +11,7 @@ import os
 # from json.decoder import JSONDecodeError
 from flask import Flask as OriginalFlask, request, g
 from werkzeug.contrib.fixers import ProxyFix
-from rapydo.response import ResponseMaker
+from rapydo.core.rest.response import ResponseMaker
 from rapydo.core.customization import Customizer
 from rapydo.core.services.oauth2clients import ExternalServicesLogin as oauth2
 from rapydo.utils import PRODUCTION, DEBUG as ENVVAR_DEBUG
@@ -181,7 +181,7 @@ def create_app(name=__name__, debug=False,
 
     ##############################
     # Enabling our internal Flask customized response
-    from rapydo.response import InternalResponse
+    from rapydo.core.rest.response import InternalResponse
     microservice.response_class = InternalResponse
 
     ##############################
@@ -227,7 +227,8 @@ def create_app(name=__name__, debug=False,
     ##############################
     # Restful plugin
     if not skip_endpoint_mapping:
-        from rapydo.rest import Api, EndpointsFarmer, create_endpoints
+        from rapydo.core.protocols.restful import \
+            Api, EndpointsFarmer, create_endpoints
         # Triggering automatic mapping of REST endpoints
         current_endpoints = \
             create_endpoints(EndpointsFarmer(Api), enable_security, debug)

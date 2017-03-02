@@ -9,7 +9,7 @@ import logging
 from rapydo.server import create_app
 from rapydo.utils import API_URL, AUTH_URL
 from rapydo.utils.confs.config import TEST_HOST, SERVER_PORT
-from rapydo.response import get_content_from_response
+from rapydo.core.rest.response import get_content_from_response
 from rapydo.core.services.authentication import BaseAuthentication as ba
 from rapydo.utils import json
 from rapydo.utils import htmlcodes as hcodes
