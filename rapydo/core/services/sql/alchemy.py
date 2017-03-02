@@ -68,7 +68,7 @@ class SQLFarm(ServiceFarm):
 
         # Create database and tables if they don't exist yet
         with app.app_context():
-            from rapydo.utils.confs import config
+            from rapydo.core.confs import config
 
             # TO FIX: this option should go inside the configuration file
             if config.REMOVE_DATA_AT_INIT_TIME:

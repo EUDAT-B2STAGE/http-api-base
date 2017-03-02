@@ -14,7 +14,7 @@ from werkzeug.contrib.fixers import ProxyFix
 from rapydo.core.rest.response import ResponseMaker
 from rapydo.core.customization import Customizer
 from rapydo.core.services.oauth2clients import ExternalServicesLogin as oauth2
-from rapydo.utils import PRODUCTION, DEBUG as ENVVAR_DEBUG
+from rapydo.core.confs import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from rapydo.utils.meta import Meta
 from rapydo.utils.globals import mem
 from rapydo.utils.logs import get_logger, \
@@ -108,7 +108,8 @@ def create_app(name=__name__, debug=False,
     #################################################
     # Flask app instance
     #################################################
-    from rapydo.utils.confs import config
+    # from rapydo.core.confs import config
+    import rapydo.core.confs as config
     microservice = Flask(name, **kwargs)
     microservice.wsgi_app = ProxyFix(microservice.wsgi_app)
 

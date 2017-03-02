@@ -29,7 +29,7 @@ force_response (base.py)    or              simple return
 from __future__ import absolute_import
 
 import attr
-from rapydo.utils import json
+import json
 from flask import Response, jsonify
 from werkzeug import exceptions as wsgi_exceptions
 from werkzeug.wrappers import Response as WerkzeugResponse

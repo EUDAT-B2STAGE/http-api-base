@@ -4,8 +4,8 @@ import json
 import string
 import logging
 
+from rapydo.core.confs import TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
 from rapydo.utils.logs import get_logger
-from rapydo.utils.confs.config import TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
 from rapydo.utils import htmlcodes as hcodes
 
 log = get_logger(__name__)

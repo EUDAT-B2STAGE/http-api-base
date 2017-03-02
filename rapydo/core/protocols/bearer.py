@@ -89,7 +89,6 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
             bad_code = hcodes.HTTP_BAD_UNAUTHORIZED
             # Internal API 'self' reference
             decorated_self = Meta.get_self_reference_from_args(*args)
-            print(decorated_self)
 
             if auth_type is None or auth_type.lower() != self._scheme.lower():
                 # Wrong authentication string

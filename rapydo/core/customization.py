@@ -9,8 +9,7 @@ from __future__ import absolute_import
 import os
 import re
 import glob
-# from collections import OrderedDict
-from rapydo.utils import (
+from rapydo.core.confs import (
     BACKEND_PACKAGE, CORE_DIR, USER_CUSTOM_DIR,
     BLUEPRINT_KEY, API_URL, BASE_URLS,
 )
@@ -64,7 +63,7 @@ class Customizer(object):
         CUSTOM_CONFIG_PATH = os.path.join(
             BACKEND_PACKAGE, USER_CUSTOM_DIR, 'specs')
         CORE_CONFIG_PATH = os.path.join(
-            BACKEND_PACKAGE, 'utils', 'confs')
+            BACKEND_PACKAGE, 'core', 'confs')
 
         # Find out what is the active blueprint
         bp_file = os.path.join(CUSTOM_CONFIG_PATH, '%s.init' % BLUEPRINT_KEY)

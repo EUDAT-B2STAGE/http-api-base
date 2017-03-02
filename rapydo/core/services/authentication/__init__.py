@@ -19,7 +19,7 @@ import socket
 from rapydo.utils.uuid import getUUID
 from datetime import datetime, timedelta
 from flask import current_app, request
-from rapydo.utils import PRODUCTION
+from rapydo.core.confs import PRODUCTION
 from rapydo.utils.globals import mem
 from rapydo.utils.logs import get_logger
 

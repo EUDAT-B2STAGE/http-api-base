@@ -11,10 +11,11 @@ from __future__ import absolute_import
 
 import re
 import os
+import json
 from bravado_core.spec import Spec
 # from bravado_core.validate import validate_object
 from rapydo.utils import htmlcodes as hcodes
-from rapydo.utils import BACKEND_PACKAGE, CORE_DIR, USER_CUSTOM_DIR
+from rapydo.core.confs import BACKEND_PACKAGE, CORE_DIR, USER_CUSTOM_DIR
 from rapydo.core.attributes import ExtraAttributes
 from rapydo.utils.formats.yaml import load_yaml_file, YAML_EXT
 from rapydo.utils.logs import get_logger
@@ -401,7 +402,6 @@ class BeSwagger(object):
         #     log.pp(swag_dict)
 
         try:
-            from rapydo.utils import json
             # Fix jsonschema validation problem
             # expected string or bytes-like object
             # http://j.mp/2hEquZy

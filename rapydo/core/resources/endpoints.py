@@ -39,7 +39,7 @@ class SwaggerSpecifications(EndpointResource):
         swagjson = mem.customizer._definitions
 
         # NOTE: changing dinamically options, based on where the client lies
-        from rapydo.utils import get_api_url
+        from rapydo.core.confs import get_api_url
         api_url, _ = get_api_url()
         scheme, host = api_url.rstrip('/').split('://')
         swagjson['host'] = host

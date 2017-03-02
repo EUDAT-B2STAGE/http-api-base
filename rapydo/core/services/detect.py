@@ -11,7 +11,7 @@ Services:
 # from __future__ import absolute_import
 
 import os
-from rapydo.utils import PRODUCTION
+from rapydo.core.confs import PRODUCTION
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)

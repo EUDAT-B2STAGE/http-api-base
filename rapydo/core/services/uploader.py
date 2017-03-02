@@ -22,7 +22,7 @@ import os
 from flask import request, send_from_directory
 from werkzeug import secure_filename
 from rapydo.utils import htmlcodes as hcodes
-from rapydo.utils.confs.config import UPLOAD_FOLDER
+from rapydo.core.confs import UPLOAD_FOLDER
 
 from rapydo.utils.logs import get_logger
 log = get_logger(__name__)

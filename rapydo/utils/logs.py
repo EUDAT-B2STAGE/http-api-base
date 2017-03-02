@@ -14,7 +14,7 @@ import logging
 
 from logging.config import fileConfig
 from json.decoder import JSONDecodeError
-from rapydo.utils import AVOID_COLORS_ENV_LABEL, LOG_CONFIG
+from rapydo.core.confs import AVOID_COLORS_ENV_LABEL
 
 #######################
 # DEBUG level is 10 (https://docs.python.org/3/howto/logging.html)
@@ -25,6 +25,8 @@ VERY_VERBOSE = 1
 MAX_CHAR_LEN = 200
 OBSCURE_VALUE = '****'
 OBSCURED_FIELDS = ['password', 'pwd', 'token', 'file', 'filename']
+
+LOG_CONFIG = os.path.join("rapydo/utils", 'logging_config.ini')
 
 
 def critical_exit(self, message, *args, **kws):
