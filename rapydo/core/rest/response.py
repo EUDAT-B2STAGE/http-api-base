@@ -40,12 +40,6 @@ from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
 
-# useful for pagination
-CURRENTPAGE_KEY = 'currentpage'
-DEFAULT_CURRENTPAGE = 1
-PERPAGE_KEY = 'perpage'
-DEFAULT_PERPAGE = 10
-
 
 ########################
 # Flask custom response
