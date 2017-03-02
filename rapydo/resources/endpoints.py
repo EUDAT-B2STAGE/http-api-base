@@ -5,8 +5,6 @@ Base endpoints: authorization, status, checks.
 And a Farm: How to create endpoints into REST service.
 """
 
-from __future__ import absolute_import
-
 import pytz
 from datetime import datetime
 from flask import jsonify, current_app

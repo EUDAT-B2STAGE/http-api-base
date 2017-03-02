@@ -26,8 +26,6 @@ force_response (base.py)    or              simple return
 
 """
 
-from __future__ import absolute_import
-
 import attr
 import json
 from flask import Response, jsonify

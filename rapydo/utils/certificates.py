@@ -4,8 +4,6 @@
 Using x509 certificates
 """
 
-from __future__ import absolute_import
-
 import os
 from OpenSSL import crypto
 from rapydo.utils import htmlcodes as hcodes

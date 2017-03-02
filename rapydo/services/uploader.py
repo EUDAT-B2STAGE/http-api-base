@@ -14,8 +14,6 @@ http://stackoverflow.com/a/9533843/2114395
 
 """
 
-from __future__ import absolute_import
-
 import os
 # import shutil
 # import subprocess as shell

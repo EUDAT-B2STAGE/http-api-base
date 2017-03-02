@@ -4,8 +4,6 @@
 
 """ Models for elastic search """
 
-# from __future__ import absolute_import
-
 from elasticsearch_dsl import DocType, String, Completion
 # Date, Nested, Boolean, \
 # analyzer, InnerObjectWrapper,

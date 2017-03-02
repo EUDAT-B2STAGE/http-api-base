@@ -6,8 +6,6 @@ Move here the logic for any log.
 IMPORTANT: log level must be read as the very first possible thing...
 """
 
-from __future__ import absolute_import
-
 import os
 import json
 import logging

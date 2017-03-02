@@ -9,7 +9,6 @@ http://plumbum.readthedocs.org/en/latest/index.html#
 
 """
 
-# from __future__ import absolute_import
 from plumbum.commands.processes import ProcessExecutionError
 
 from rapydo.utils.logs import get_logger

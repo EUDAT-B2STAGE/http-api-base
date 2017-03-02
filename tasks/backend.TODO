@@ -1,5 +1,7 @@
 
-### GUIDELINES ####
+TO FIX: this file can be removed :D
+
+Guidelines:
 - Python 3.6
   Code written as PEP compliant as possible
 - Swagger
@@ -22,8 +24,3 @@ Available SERVICES:
  - Elasticsearch
  - Celery
    - Redis
-
---- ✄ -----------------------
-
-tasks:
-  - server.py:281

@@ -11,8 +11,6 @@ MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a
 
 """
 
-from __future__ import absolute_import
-
 import pytz
 from datetime import datetime, timedelta
 from rapydo.utils.uuid import getUUID

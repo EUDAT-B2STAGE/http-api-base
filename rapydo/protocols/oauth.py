@@ -4,7 +4,6 @@
 Oauth handling
 """
 
-# from __future__ import absolute_import
 from flask_oauthlib.client import OAuth
 from rapydo.utils.logs import get_logger
 

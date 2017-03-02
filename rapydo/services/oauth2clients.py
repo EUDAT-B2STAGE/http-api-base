@@ -6,8 +6,6 @@ Take care of authenticatin with External Service with Oauth2 protocol.
 Testend against GitHub, then worked off B2ACCESS (EUDAT oauth service)
 """
 
-from __future__ import absolute_import
-
 import os
 from base64 import b64encode
 from rapydo.protocols.oauth import oauth

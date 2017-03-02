@@ -8,7 +8,6 @@ TO FIX: this will be the new default very soon
 
 """
 
-# from __future__ import absolute_import
 import os
 import irods
 from irods.session import iRODSSession

@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
 
+## TO FIX: compose v3 does not provide this variables
 """
 Detect which services are running,
 by testing environment variables set by container links
-
-Services:
-# graphdb, rethinkdb, elasticsearch, irods and so on
 """
-
-# from __future__ import absolute_import
 
 import os
 from rapydo.confs import PRODUCTION

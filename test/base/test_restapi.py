@@ -5,10 +5,7 @@ Tests for http api base
 (mostly authentication)
 """
 
-from __future__ import absolute_import
-
 import json
-# import logging
 from test import RestTestsBase
 from rapydo.utils.logs import get_logger
 

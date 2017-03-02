@@ -7,8 +7,6 @@ https://raw.githubusercontent.com/gangverk/flask-swagger/master/flask_swagger.py
 
 """
 
-from __future__ import absolute_import
-
 import re
 import os
 import json

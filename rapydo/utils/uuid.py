@@ -4,7 +4,6 @@
 Handling IDs in a more secure way
 """
 
-# from __future__ import absolute_import
 import uuid
 
 
