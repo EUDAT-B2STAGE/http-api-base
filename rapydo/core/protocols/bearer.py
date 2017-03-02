@@ -18,7 +18,6 @@ from functools import wraps
 from flask import request, g
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.meta import Meta
-from rapydo.utils.decorators import class_method_decorator_with_optional_parameters
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
@@ -79,9 +78,6 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
 
         return auth_type, token
 
-    # TODO: check if we can now remove this decorator
-    # to use authorization_required as a simple decorator
-    @class_method_decorator_with_optional_parameters
     def authorization_required(self, f, roles=[], from_swagger=False):
         @wraps(f)
         def decorated(*args, **kwargs):
@@ -93,6 +89,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
             bad_code = hcodes.HTTP_BAD_UNAUTHORIZED
             # Internal API 'self' reference
             decorated_self = Meta.get_self_reference_from_args(*args)
+            print(decorated_self)
 
             if auth_type is None or auth_type.lower() != self._scheme.lower():
                 # Wrong authentication string
