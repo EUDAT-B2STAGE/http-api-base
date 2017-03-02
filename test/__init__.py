@@ -8,9 +8,9 @@ import unittest
 import json
 import logging
 from rapydo.server import create_app
-from rapydo.core.confs import API_URL, AUTH_URL, TEST_HOST, SERVER_PORT
-from rapydo.core.rest.response import get_content_from_response
-from rapydo.core.services.authentication import BaseAuthentication as ba
+from rapydo.confs import API_URL, AUTH_URL, TEST_HOST, SERVER_PORT
+from rapydo.rest.response import get_content_from_response
+from rapydo.services.authentication import BaseAuthentication as ba
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.logs import get_logger, set_global_log_level
 

@@ -10,10 +10,10 @@ from __future__ import absolute_import
 import os
 from flask import Flask as OriginalFlask, request, g
 from werkzeug.contrib.fixers import ProxyFix
-from rapydo.core.rest.response import ResponseMaker
-from rapydo.core.customization import Customizer
-from rapydo.core.services.oauth2clients import ExternalServicesLogin as oauth2
-from rapydo.core.confs import PRODUCTION, DEBUG as ENVVAR_DEBUG
+from rapydo.rest.response import ResponseMaker
+from rapydo.customization import Customizer
+from rapydo.services.oauth2clients import ExternalServicesLogin as oauth2
+from rapydo.confs import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from rapydo.utils.meta import Meta
 from rapydo.utils.globals import mem
 from rapydo.utils.logs import get_logger, \
@@ -102,13 +102,13 @@ def create_app(name=__name__, debug=False,
     #############################
     # Initialize reading of all files
     # TO FIX: remove me
-    mem.customizer = Customizer(__package__, testing_mode, PRODUCTION)
+    mem.customizer = Customizer(testing_mode, PRODUCTION)
 
     #################################################
     # Flask app instance
     #################################################
-    # from rapydo.core.confs import config
-    import rapydo.core.confs as config
+    # from rapydo.confs import config
+    import rapydo.confs as config
     microservice = Flask(name, **kwargs)
     microservice.wsgi_app = ProxyFix(microservice.wsgi_app)
 
@@ -168,20 +168,20 @@ def create_app(name=__name__, debug=False,
 
     ##############################
     # Cors
-    from rapydo.core.protocols.cors import cors
+    from rapydo.protocols.cors import cors
     cors.init_app(microservice)
     log.debug("FLASKING! Injected CORS")
 
     ##############################
     # DATABASE/SERVICEs CHECKS
-    from rapydo.core.services.detect import services as internal_services
+    from rapydo.services.detect import services as internal_services
     for service, myclass in internal_services.items():
         log.debug("Available service %s" % service)
         myclass(check_connection=True, app=microservice)
 
     ##############################
     # Enabling our internal Flask customized response
-    from rapydo.core.rest.response import InternalResponse
+    from rapydo.rest.response import InternalResponse
     microservice.response_class = InternalResponse
 
     ##############################
@@ -190,7 +190,7 @@ def create_app(name=__name__, debug=False,
 
         # Dynamically load the authentication service
         meta = Meta()
-        module_base = __package__ + ".core.services.authentication"
+        module_base = __package__ + ".services.authentication"
         auth_service = os.environ.get('BACKEND_AUTH_SERVICE', '')
         module_name = module_base + '.' + auth_service
         log.debug("Trying to load the module %s" % module_name)
@@ -201,7 +201,7 @@ def create_app(name=__name__, debug=False,
             module, internal_services, microservice, first_call=True)
 
         # Enabling also OAUTH library
-        from rapydo.core.protocols.oauth import oauth
+        from rapydo.protocols.oauth import oauth
         oauth.init_app(microservice)
 
         @microservice.before_request
@@ -227,7 +227,7 @@ def create_app(name=__name__, debug=False,
     ##############################
     # Restful plugin
     if not skip_endpoint_mapping:
-        from rapydo.core.protocols.restful import \
+        from rapydo.protocols.restful import \
             Api, EndpointsFarmer, create_endpoints
         # Triggering automatic mapping of REST endpoints
         current_endpoints = \
@@ -290,7 +290,7 @@ def create_app(name=__name__, debug=False,
 
             # Allow a custom method for mixed services init
             try:
-                from rapydo.core.custom import services as custom_services
+                from custom import services as custom_services
                 custom_services.init(internal_services, enable_security)
             except:
                 log.debug("No custom init available for mixed services")

@@ -9,10 +9,10 @@ RESTful API Python 3 Flask server
 
 import time
 import os
-from rapydo.core.confs import PRODUCTION
+from rapydo.confs import PRODUCTION
 from rapydo.utils.logs import get_logger
 from rapydo.server import create_app
-from rapydo.core.confs import SERVER_HOSTS, SERVER_PORT, args
+from rapydo.confs import SERVER_HOSTS, SERVER_PORT, args
 
 log = get_logger(__name__)
 
