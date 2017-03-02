@@ -108,7 +108,7 @@ def create_app(name=__name__, debug=False,
     #################################################
     # Flask app instance
     #################################################
-    from rapydo.confs import config
+    from rapydo.utils.confs import config
     microservice = Flask(name, **kwargs)
     microservice.wsgi_app = ProxyFix(microservice.wsgi_app)
 

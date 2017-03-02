@@ -57,7 +57,7 @@ USER_CUSTOM_DIR = 'custom'
 CORE_PACKAGE = BACKEND_PACKAGE + '.' + CORE_DIR
 CUSTOM_PACKAGE = BACKEND_PACKAGE + '.' + USER_CUSTOM_DIR
 
-DEFAULTS_PATH = os.path.join(BACKEND_PACKAGE, 'confs', 'defaults')
+# DEFAULTS_PATH = os.path.join(BACKEND_PACKAGE, 'confs', 'defaults')
 
 BLUEPRINT_KEY = 'blueprint'
 

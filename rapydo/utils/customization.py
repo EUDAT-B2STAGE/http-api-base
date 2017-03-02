@@ -11,7 +11,7 @@ import re
 import glob
 # from collections import OrderedDict
 from rapydo.utils import (
-    BACKEND_PACKAGE, CORE_DIR, USER_CUSTOM_DIR, DEFAULTS_PATH,
+    BACKEND_PACKAGE, CORE_DIR, USER_CUSTOM_DIR,
     BLUEPRINT_KEY, API_URL, BASE_URLS,
 )
 from .attrs.api import EndpointElements, ExtraAttributes
@@ -63,6 +63,8 @@ class Customizer(object):
 
         CUSTOM_CONFIG_PATH = os.path.join(
             BACKEND_PACKAGE, USER_CUSTOM_DIR, 'specs')
+        CORE_CONFIG_PATH = os.path.join(
+            BACKEND_PACKAGE, 'utils', 'confs')
 
         # Find out what is the active blueprint
         bp_file = os.path.join(CUSTOM_CONFIG_PATH, '%s.init' % BLUEPRINT_KEY)
@@ -74,7 +76,7 @@ class Customizer(object):
         custom_config[BLUEPRINT_KEY] = blueprint
 
         # Read default configuration
-        defaults = load_yaml_file(BLUEPRINT_KEY, path=DEFAULTS_PATH)
+        defaults = load_yaml_file('defaults', path=CORE_CONFIG_PATH)
         if len(defaults) < 0:
             raise ValueError("Missing defaults for server configuration!")
 

@@ -13,7 +13,7 @@ from datetime import datetime
 from flask import g
 from flask_restful import request, Resource, reqparse
 
-from ...confs.config import API_URL  # , STACKTRACE
+from rapydo.utils import API_URL
 from ...response import ResponseElements
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.globals import mem

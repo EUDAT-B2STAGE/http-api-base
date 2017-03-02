@@ -12,7 +12,7 @@ import os
 from rapydo.utils import myself, lic, PRODUCTION
 from rapydo.utils.logs import get_logger
 from rapydo.server import create_app
-from rapydo.confs.config import SERVER_HOSTS, SERVER_PORT, args
+from rapydo.utils.confs.config import SERVER_HOSTS, SERVER_PORT, args
 
 __author__ = myself
 __copyright__ = myself

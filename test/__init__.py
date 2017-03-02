@@ -7,7 +7,7 @@ Test base
 import unittest
 import logging
 from rapydo.server import create_app
-from rapydo.confs.config import TEST_HOST, \
+from rapydo.utils.confs.config import TEST_HOST, \
     SERVER_PORT, API_URL, AUTH_URL
 from rapydo.response import get_content_from_response
 from rapydo.resources.services.authentication import BaseAuthentication as ba
