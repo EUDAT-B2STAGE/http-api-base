@@ -8,7 +8,7 @@ from __future__ import absolute_import
 import sqlalchemy
 # import pytz
 from datetime import datetime, timedelta
-from rapydo.utils.services.uuid import getUUID
+from rapydo.utils.uuid import getUUID
 from ..detect import SQL_AVAILABLE
 from . import BaseAuthentication
 from rapydo.utils.logs import get_logger

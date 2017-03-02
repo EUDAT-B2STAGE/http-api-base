@@ -15,7 +15,7 @@ from __future__ import absolute_import
 
 import pytz
 from datetime import datetime, timedelta
-from rapydo.utils.services.uuid import getUUID
+from rapydo.utils.uuid import getUUID
 from rapydo.utils.logs import get_logger
 from . import BaseAuthentication
 from ..detect import GRAPHDB_AVAILABLE

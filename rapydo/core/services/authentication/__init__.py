@@ -16,7 +16,7 @@ import base64
 import pytz
 import socket
 
-from rapydo.utils.services.uuid import getUUID
+from rapydo.utils.uuid import getUUID
 from datetime import datetime, timedelta
 from flask import current_app, request
 from rapydo.utils import PRODUCTION

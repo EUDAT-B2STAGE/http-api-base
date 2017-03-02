@@ -7,9 +7,9 @@ Using x509 certificates
 from __future__ import absolute_import
 
 import os
-from rapydo.utils.services.uuid import getUUID
 from OpenSSL import crypto
 from rapydo.utils import htmlcodes as hcodes
+from rapydo.utils.uuid import getUUID
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)

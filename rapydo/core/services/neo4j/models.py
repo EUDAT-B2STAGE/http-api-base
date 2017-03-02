@@ -20,7 +20,7 @@ from neomodel import RelationshipFrom as originalRelationshipFrom
 
 from neomodel.relationship_manager import RelationshipDefinition
 
-from rapydo.utils.services.uuid import getUUID
+from rapydo.utils.uuid import getUUID
 
 
 def RelationshipTo(

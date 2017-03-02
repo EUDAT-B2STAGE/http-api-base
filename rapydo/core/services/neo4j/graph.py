@@ -6,9 +6,6 @@
 import os
 from rapydo.utils.logs import get_logger
 from rapydo.utils.services import ServiceFarm, ServiceObject
-from rapydo.utils.services.uuid import getUUID
-from datetime import datetime
-import pytz
 
 log = get_logger(__name__)
 
@@ -24,14 +21,13 @@ PW = USER
 
 try:
 
-# TO FIX:
-# should we make a function in commons for this docker variables splits?
+    # TO FIX: should we make a function for this docker variables splits?
     HOST = os.environ['GDB_NAME'].split('/').pop()
     PORT = os.environ['GDB_PORT_7474_TCP_PORT'].split(':').pop()
     USER, PW = os.environ['GDB_ENV_NEO4J_AUTH'].split('/')
 except Exception as e:
-    log.critical("Cannot find a Graph database inside the environment\n" +
-                    "Please check variable GDB_NAME")
+    log.critical(
+        "Graph database not found in environment. Check variable GDB_NAME")
     # raise e
     exit(1)
 
