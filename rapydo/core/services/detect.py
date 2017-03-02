@@ -35,7 +35,7 @@ if SQL_PROD_AVAILABLE:
 
 if os.environ.get('BACKEND_AUTH_SERVICE', '') == 'relationaldb':
     SQL_AVAILABLE = True
-    from .sql.alchemy import SQLFarm as service
+    from rapydo.core.services.sql.alchemy import SQLFarm as service
     # log.debug("Created SQLAlchemy relational DB object")
     farm_queue.append(service)
     # services['sql'] = service
@@ -58,7 +58,7 @@ if MONGO_AVAILABLE:
     # TODO: write example into docker-compose production
 
     # DO something and inject into 'services'
-    from .mongo.mongodb import MongoFarm as service
+    from rapydo.core.services.mongo.mongodb import MongoFarm as service
     farm_queue.append(service)
 
 #######################################################
@@ -83,7 +83,7 @@ if IRODS_AVAILABLE:
         IRODS_EXTERNAL = True
 
     # DO something and inject into 'services'
-    from .irods.client import IrodsFarm as service
+    from rapydo.core.services.irods.client import IrodsFarm as service
     # services['irods'] = service
     farm_queue.append(service)
 
@@ -93,7 +93,7 @@ if IRODS_AVAILABLE:
 ELASTIC_AVAILABLE = 'EL_NAME' in os.environ
 
 if ELASTIC_AVAILABLE:
-    from .elasticsearch.service import ElasticFarm as service
+    from rapydo.core.services.elasticsearch.service import ElasticFarm as service
     farm_queue.append(service)
 
 
@@ -103,7 +103,7 @@ if ELASTIC_AVAILABLE:
 CELERY_AVAILABLE = 'QUEUE_NAME' in os.environ
 
 if CELERY_AVAILABLE:
-    from .celery.tasks import CeleryFarm as service
+    from rapydo.core.services.celery.tasks import CeleryFarm as service
     farm_queue.append(service)
 
 
