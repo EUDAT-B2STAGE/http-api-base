@@ -183,7 +183,7 @@ class EndpointResource(Resource):
         return content
 
     def get_current_token(self):
-        from rapydo.auth import HTTPTokenAuth
+        from rapydo.core.protocols.bearer import HTTPTokenAuth
         _, token = HTTPTokenAuth.get_authentication_from_headers()
         return token
 

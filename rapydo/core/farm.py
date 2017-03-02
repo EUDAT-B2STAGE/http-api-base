@@ -22,7 +22,7 @@ class EndpointsFarmer(object):
     def add(self, resource):
         """ Adding a single restpoint from a Resource Class """
 
-        from rapydo.auth import authentication
+        from rapydo.core.protocols.bearer import authentication
 
         # Apply authentication: if required from yaml configuration
         # Done per each method

@@ -168,7 +168,7 @@ def create_app(name=__name__, debug=False,
 
     ##############################
     # Cors
-    from rapydo.cors import cors
+    from rapydo.core.protocols.cors import cors
     cors.init_app(microservice)
     log.debug("FLASKING! Injected CORS")
 
@@ -201,7 +201,7 @@ def create_app(name=__name__, debug=False,
             module, internal_services, microservice, first_call=True)
 
         # Enabling also OAUTH library
-        from rapydo.oauth import oauth
+        from rapydo.core.protocols.oauth import oauth
         oauth.init_app(microservice)
 
         @microservice.before_request

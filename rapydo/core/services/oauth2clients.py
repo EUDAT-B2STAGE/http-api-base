@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 import os
 from base64 import b64encode
-from rapydo.oauth import oauth
+from rapydo.core.protocols.oauth import oauth
 from rapydo.utils import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from rapydo.utils.globals import mem
 from rapydo.utils.meta import Meta
