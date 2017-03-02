@@ -7,7 +7,7 @@
 from __future__ import absolute_import
 
 # import datetime
-from rapydo.resources.services.alchemy import db
+from rapydo.core.services.alchemy import db
 
 
 ####################################

@@ -74,7 +74,7 @@ worker:
     file: docker-compose.yml
     service: backend
   hostname: celworker
-  command: celery worker -c 1 -A rapydo.resources.services.celery.worker.celery_app
+  command: celery worker -c 1 -A rapydo.core.services.celery.worker.celery_app
 
 #################################
 # Database administration

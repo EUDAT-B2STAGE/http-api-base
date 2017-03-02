@@ -33,7 +33,7 @@ from rapydo.utils import json
 from flask import Response, jsonify
 from werkzeug import exceptions as wsgi_exceptions
 from werkzeug.wrappers import Response as WerkzeugResponse
-from rapydo.resources.decorators import get_response, set_response
+from rapydo.core.decorators import get_response, set_response
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.attrs.api import ResponseElements
 from rapydo.utils.logs import get_logger

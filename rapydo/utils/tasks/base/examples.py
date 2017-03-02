@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 
 from flask import current_app
-from ...services.celery import celery_app
+from rapydo.core.services.celery import celery_app
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)

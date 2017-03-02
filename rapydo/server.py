@@ -12,7 +12,7 @@ import os
 from flask import Flask as OriginalFlask, request, g
 from werkzeug.contrib.fixers import ProxyFix
 from rapydo.response import ResponseMaker
-from rapydo.resources.services.oauth2clients import ExternalServicesLogin as oauth2
+from rapydo.core.services.oauth2clients import ExternalServicesLogin as oauth2
 from rapydo.utils import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from rapydo.utils.meta import Meta
 from rapydo.utils.customization import Customizer
@@ -174,7 +174,7 @@ def create_app(name=__name__, debug=False,
 
     ##############################
     # DATABASE/SERVICEs CHECKS
-    from rapydo.resources.services.detect import services as internal_services
+    from rapydo.core.services.detect import services as internal_services
     for service, myclass in internal_services.items():
         log.debug("Available service %s" % service)
         myclass(check_connection=True, app=microservice)
@@ -190,7 +190,7 @@ def create_app(name=__name__, debug=False,
 
         # Dynamically load the authentication service
         meta = Meta()
-        module_base = __package__ + ".resources.services.authentication"
+        module_base = __package__ + ".core.services.authentication"
         auth_service = os.environ.get('BACKEND_AUTH_SERVICE', '')
         module_name = module_base + '.' + auth_service
         log.debug("Trying to load the module %s" % module_name)
@@ -289,7 +289,7 @@ def create_app(name=__name__, debug=False,
 
             # Allow a custom method for mixed services init
             try:
-                from rapydo.resources.custom import services as custom_services
+                from rapydo.core.custom import services as custom_services
                 custom_services.init(internal_services, enable_security)
             except:
                 log.debug("No custom init available for mixed services")

@@ -6,8 +6,8 @@ import re
 from functools import wraps
 # from py2neo.error import GraphError
 # from py2neo.cypher.error.schema import ConstraintViolation
-from rapydo.resources.exceptions import RestApiException
-from ...rest.definition import EndpointResource
+from rapydo.core.exceptions import RestApiException
+from rapydo.core.rest.definition import EndpointResource
 from rapydo.utils import htmlcodes as hcodes
 
 from rapydo.utils.logs import get_logger

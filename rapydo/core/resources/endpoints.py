@@ -11,9 +11,9 @@ import pytz
 from datetime import datetime
 
 from flask import jsonify, current_app
-from rapydo.resources.rest.definition import EndpointResource
-from rapydo.resources.services.detect import CELERY_AVAILABLE
-from rapydo.resources.services.authentication import BaseAuthentication
+from rapydo.core.rest.definition import EndpointResource
+from rapydo.core.services.detect import CELERY_AVAILABLE
+from rapydo.core.services.authentication import BaseAuthentication
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.globals import mem
 from rapydo.utils.logs import get_logger
