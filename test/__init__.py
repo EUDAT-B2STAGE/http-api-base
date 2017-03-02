@@ -10,8 +10,8 @@ from rapydo.server import create_app
 from rapydo.confs.config import TEST_HOST, \
     SERVER_PORT, API_URL, AUTH_URL
 from rapydo.response import get_content_from_response
-from rapydo.jsonify import json
 from rapydo.resources.services.authentication import BaseAuthentication as ba
+from rapydo.utils import json
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.logs import get_logger, set_global_log_level
 
