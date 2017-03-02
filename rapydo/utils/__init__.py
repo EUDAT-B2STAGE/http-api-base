@@ -33,13 +33,6 @@ myself = "Paolo D'Onorio De Meo <p.donoriodemeo@gmail.com>"
 lic = "MIT"
 
 #######################
-IS_FRONTEND = os.getenv("PYTHON_SERVER_CATEGORY", "").lower() == 'frontend'
-IS_BACKEND = not IS_FRONTEND
-
-# IS_BACKEND = os.getenv("HOSTNAME", "").lower() == 'api'
-# IS_FRONTEND = not IS_BACKEND
-
-#######################
 # PROJECT_DIR = __package__
 PROJECT_DIR = "rapydo/utils"
 CONFIG_DIR = 'confs'
@@ -92,13 +85,6 @@ else:
 # TO BE USED TO REDIRECT AUTHENTICATION FROM FRONTEND TO BACKEND
 BACKEND_PRIVATE_PORT = \
     os.environ.get('BACKEND_1_PORT', "8080").split(':').pop()
-
-if IS_FRONTEND:
-    # TO FIX: @mdantonio change names, use inside frontend config/__init__.py
-    # URL = 'http://%s:%s' % (BACKEND_NAME, BACKEND_PRIVATE_PORT)
-    # API_URL = URL + '/api/'
-    # AUTH_URL = URL + '/auth/'
-    pass
 
 #################################
 # THE APP

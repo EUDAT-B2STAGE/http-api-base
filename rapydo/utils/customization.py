@@ -21,8 +21,6 @@ from .meta import Meta
 from .formats.yaml import YAML_EXT, load_yaml_file
 from .swagger import BeSwagger
 
-from rapydo.utils import IS_BACKEND, IS_FRONTEND
-
 from rapydo.utils.logs import get_logger
 log = get_logger(__name__)
 
@@ -55,13 +53,9 @@ class Customizer(object):
         # Do things
         self.do_config()
 
-        if IS_BACKEND:
-            self.do_schema()
-            self.find_endpoints()
-            self.do_swagger()
-
-        if IS_FRONTEND:
-            self.read_frameworks()
+        self.do_schema()
+        self.find_endpoints()
+        self.do_swagger()
 
     def do_config(self):
         ##################

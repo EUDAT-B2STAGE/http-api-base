@@ -23,8 +23,8 @@ backend:
   # fix permissions (e.g. sqllite directory)
   user: root
   working_dir: /code
-  environment:
-    PYTHON_SERVER_CATEGORY: backend
+  # environment:
+  #   PYTHON_SERVER_CATEGORY: backend
   volumes:
     # # Sql lite database
     # - restangulask_apilitedb:/dbs
