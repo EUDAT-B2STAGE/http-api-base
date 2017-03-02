@@ -12,10 +12,10 @@ import os
 from flask import Flask as OriginalFlask, request, g
 from werkzeug.contrib.fixers import ProxyFix
 from rapydo.response import ResponseMaker
+from rapydo.core.customization import Customizer
 from rapydo.core.services.oauth2clients import ExternalServicesLogin as oauth2
 from rapydo.utils import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from rapydo.utils.meta import Meta
-from rapydo.utils.customization import Customizer
 from rapydo.utils.globals import mem
 from rapydo.utils.logs import get_logger, \
     handle_log_output, MAX_CHAR_LEN, set_global_log_level
