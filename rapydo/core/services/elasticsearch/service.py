@@ -17,7 +17,7 @@ import logging
 
 from collections import OrderedDict
 from rapydo.utils.logs import get_logger
-from rapydo.utils.services import ServiceFarm, ServiceObject
+from rapydo.core.services import ServiceFarm, ServiceObject
 from rapydo.utils.uuid import getUUIDfromString
 from elasticsearch_dsl import Index
 from elasticsearch_dsl.connections import connections

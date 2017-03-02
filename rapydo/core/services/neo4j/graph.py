@@ -5,7 +5,7 @@
 # from __future__ import absolute_import
 import os
 from rapydo.utils.logs import get_logger
-from rapydo.utils.services import ServiceFarm, ServiceObject
+from rapydo.core.services import ServiceFarm, ServiceObject
 
 log = get_logger(__name__)
 

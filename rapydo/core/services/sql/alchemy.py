@@ -8,7 +8,7 @@ sqllite, MySQL or Postgres
 from __future__ import absolute_import
 
 import os
-from rapydo.utils.services import ServiceFarm
+from rapydo.core.services import ServiceFarm
 from rapydo.utils.logs import get_logger
 from rapydo.core.services.detect import SQL_PROD_AVAILABLE
 

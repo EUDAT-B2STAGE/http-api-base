@@ -24,7 +24,7 @@ from collections import OrderedDict
 from rapydo.core.basher import BashCommands
 from rapydo.core.exceptions import RestApiException
 from rapydo.core.services.detect import IRODS_ENV, IRODS_EXTERNAL
-from rapydo.utils.services import ServiceFarm
+from rapydo.core.services import ServiceFarm
 from rapydo.utils.certificates import Certificates
 from rapydo.utils.logs import get_logger
 

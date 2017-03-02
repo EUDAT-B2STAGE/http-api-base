@@ -20,7 +20,7 @@ def my_async_task(arg):
 # from __future__ import absolute_import
 
 from rapydo.core.services.celery.celery import celery_app
-from rapydo.utils.services import ServiceFarm, ServiceObject
+from rapydo.core.services import ServiceFarm, ServiceObject
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
@@ -34,7 +34,7 @@ class MyCelery(ServiceObject):
     @staticmethod
     def get_service(service_name):
         from rapydo.utils.globals import mem
-        from rapydo.utils.services import get_instance_from_services
+        from rapydo.core.services import get_instance_from_services
         return get_instance_from_services(mem.services, service_name)
 
     def make_celery(self, app):

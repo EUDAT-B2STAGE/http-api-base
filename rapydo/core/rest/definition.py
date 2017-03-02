@@ -211,7 +211,7 @@ class EndpointResource(Resource):
     def global_get_service(self,
                            service_name, object_name='services', **kwargs):
 
-        from rapydo.utils.services import get_instance_from_services
+        from rapydo.core.services import get_instance_from_services
         return get_instance_from_services(
             self.global_get(object_name),   # services
             service_name,

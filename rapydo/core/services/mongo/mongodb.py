@@ -18,7 +18,7 @@ from pymodm import MongoModel, fields
 #     # Python 2.x
 #     from urllib import quote_plus
 
-from rapydo.utils.services import ServiceFarm, ServiceObject
+from rapydo.core.services import ServiceFarm, ServiceObject
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
