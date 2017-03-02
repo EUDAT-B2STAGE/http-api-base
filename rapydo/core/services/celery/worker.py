@@ -11,8 +11,8 @@ So we made some improvement along the code.
 
 """
 
-from rapydo.utils.services.celery import celery_app
 from rapydo.server import create_app
+from rapydo.core.services.celery.celery import celery_app
 from rapydo.utils.meta import Meta
 from rapydo.utils.logs import get_logger
 

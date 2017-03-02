@@ -9,8 +9,8 @@ from __future__ import absolute_import
 
 import pytz
 from datetime import datetime
-
 from flask import jsonify, current_app
+
 from rapydo.core.rest.definition import EndpointResource
 from rapydo.core.services.detect import CELERY_AVAILABLE
 from rapydo.core.services.authentication import BaseAuthentication
@@ -290,7 +290,7 @@ class Admin(EndpointResource):
 # In case you have celery queue,
 # you get a queue endpoint for free
 if CELERY_AVAILABLE:
-    from rapydo.utils.services.celery import celery_app
+    from rapydo.core.services.celery.celery import celery_app
 
     class Queue(EndpointResource):
 
