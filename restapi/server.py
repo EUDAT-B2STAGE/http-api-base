@@ -11,8 +11,8 @@ import os
 # from json.decoder import JSONDecodeError
 from flask import Flask as OriginalFlask, request, g
 from werkzeug.contrib.fixers import ProxyFix
-from .response import ResponseMaker
-from .resources.services.oauth2clients import ExternalServicesLogin as oauth2
+from restapi.response import ResponseMaker
+from restapi.resources.services.oauth2clients import ExternalServicesLogin as oauth2
 from restapi.utils import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from restapi.utils.meta import Meta
 from restapi.utils.customization import Customizer
@@ -108,7 +108,7 @@ def create_app(name=__name__, debug=False,
     #################################################
     # Flask app instance
     #################################################
-    from .confs import config
+    from restapi.confs import config
     microservice = Flask(name, **kwargs)
     microservice.wsgi_app = ProxyFix(microservice.wsgi_app)
 
@@ -168,20 +168,20 @@ def create_app(name=__name__, debug=False,
 
     ##############################
     # Cors
-    from .cors import cors
+    from restapi.cors import cors
     cors.init_app(microservice)
     log.debug("FLASKING! Injected CORS")
 
     ##############################
     # DATABASE/SERVICEs CHECKS
-    from .resources.services.detect import services as internal_services
+    from restapi.resources.services.detect import services as internal_services
     for service, myclass in internal_services.items():
         log.debug("Available service %s" % service)
         myclass(check_connection=True, app=microservice)
 
     ##############################
     # Enabling our internal Flask customized response
-    from .response import InternalResponse
+    from restapi.response import InternalResponse
     microservice.response_class = InternalResponse
 
     ##############################
@@ -201,7 +201,7 @@ def create_app(name=__name__, debug=False,
             module, internal_services, microservice, first_call=True)
 
         # Enabling also OAUTH library
-        from .oauth import oauth
+        from restapi.oauth import oauth
         oauth.init_app(microservice)
 
         @microservice.before_request
@@ -227,7 +227,7 @@ def create_app(name=__name__, debug=False,
     ##############################
     # Restful plugin
     if not skip_endpoint_mapping:
-        from .rest import Api, EndpointsFarmer, create_endpoints
+        from restapi.rest import Api, EndpointsFarmer, create_endpoints
         # Triggering automatic mapping of REST endpoints
         current_endpoints = \
             create_endpoints(EndpointsFarmer(Api), enable_security, debug)
@@ -289,7 +289,7 @@ def create_app(name=__name__, debug=False,
 
             # Allow a custom method for mixed services init
             try:
-                from .resources.custom import services as custom_services
+                from restapi.resources.custom import services as custom_services
                 custom_services.init(internal_services, enable_security)
             except:
                 log.debug("No custom init available for mixed services")

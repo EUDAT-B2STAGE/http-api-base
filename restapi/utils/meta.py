@@ -10,7 +10,7 @@ http://python-3-patterns-idioms-test.readthedocs.org/en/latest/Metaprogramming.h
 from importlib import import_module
 import pkgutil
 import inspect
-from .logs import get_logger
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 

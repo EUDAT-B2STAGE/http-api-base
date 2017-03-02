@@ -7,7 +7,7 @@ App specifications
 from __future__ import absolute_import
 
 from flask_restful import Api as RestFulApi
-from .resources.farm import EndpointsFarmer
+from restapi.resources.farm import EndpointsFarmer
 
 from restapi.utils.globals import mem
 from restapi.utils.logs import get_logger
@@ -42,7 +42,7 @@ class Api(RestFulApi):
         #     resp = resource(*args, **kwargs)
         #     print("REST OUT")
 
-        #     from .response import ResponseElements
+        #     from restapi.response import ResponseElements
         #     if isinstance(resp, ResponseElements):
         #         return resp
 

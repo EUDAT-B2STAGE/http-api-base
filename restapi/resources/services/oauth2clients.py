@@ -10,7 +10,7 @@ from __future__ import absolute_import
 
 import os
 from base64 import b64encode
-from ...oauth import oauth
+from restapi.oauth import oauth
 from restapi.utils import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from restapi.utils.globals import mem
 from restapi.utils.meta import Meta

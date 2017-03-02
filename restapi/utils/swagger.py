@@ -17,7 +17,7 @@ from restapi.utils import htmlcodes as hcodes
 from . import CORE_DIR, USER_CUSTOM_DIR
 from .attrs.api import ExtraAttributes
 from .formats.yaml import load_yaml_file, YAML_EXT
-from .logs import get_logger
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
 JSON_APPLICATION = 'application/json'

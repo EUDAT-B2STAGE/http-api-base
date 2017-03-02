@@ -16,9 +16,10 @@ import abc
 import time
 from ..meta import Meta
 
-from ..logs import get_logger
+from restapi.utils.logs import get_logger
 
 log = get_logger(__name__)
+
 
 def get_instance_from_services(services, service_name='relational', **kwargs):
     """

@@ -29,11 +29,11 @@ force_response (base.py)    or              simple return
 from __future__ import absolute_import
 
 import attr
-from .jsonify import json
+from restapi.jsonify import json
 from flask import Response, jsonify
 from werkzeug import exceptions as wsgi_exceptions
 from werkzeug.wrappers import Response as WerkzeugResponse
-from .resources.decorators import get_response, set_response
+from restapi.resources.decorators import get_response, set_response
 from restapi.utils import htmlcodes as hcodes
 from restapi.utils.attrs.api import ResponseElements
 from restapi.utils.logs import get_logger

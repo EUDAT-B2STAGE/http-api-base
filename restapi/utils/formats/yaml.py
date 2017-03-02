@@ -10,7 +10,7 @@ import yaml
 import os
 # from functools import lru_cache
 
-from ..logs import get_logger
+from restapi.utils.logs import get_logger
 log = get_logger(__name__)
 
 YAML_EXT = 'yaml'
