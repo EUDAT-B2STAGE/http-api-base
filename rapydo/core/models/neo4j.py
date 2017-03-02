@@ -6,7 +6,7 @@
 
 from __future__ import absolute_import
 
-from rapydo.utils.neo4j.models import \
+from rapydo.core.services.neo4j.models import \
     StructuredNode, IdentifiedNode, \
     StringProperty, DateTimeProperty, EmailProperty, \
     RelationshipTo, RelationshipFrom
