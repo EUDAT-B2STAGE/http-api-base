@@ -6,7 +6,7 @@ Add schema endpoint if you have models to expose
 
 from __future__ import absolute_import
 
-from .definition import EndpointResource
+from rapydo.core.rest.definition import EndpointResource
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)

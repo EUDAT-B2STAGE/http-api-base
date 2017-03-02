@@ -14,7 +14,7 @@ from flask import g
 from flask_restful import request, Resource, reqparse
 
 from rapydo.utils import API_URL
-from ...response import ResponseElements
+from rapydo.response import ResponseElements
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.globals import mem
 from rapydo.utils.logs import get_logger
@@ -168,7 +168,7 @@ class EndpointResource(Resource):
                          api_output, get_all=False,
                          get_error=False, get_status=False, get_meta=False):
 
-        from ...response import get_content_from_response
+        from rapydo.response import get_content_from_response
         content, err, meta, code = get_content_from_response(api_output)
 
         if get_error:
@@ -183,7 +183,7 @@ class EndpointResource(Resource):
         return content
 
     def get_current_token(self):
-        from ..auth import HTTPTokenAuth
+        from rapydo.auth import HTTPTokenAuth
         _, token = HTTPTokenAuth.get_authentication_from_headers()
         return token
 

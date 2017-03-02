@@ -14,8 +14,7 @@ to let the user access a new connection.
 from __future__ import absolute_import
 import abc
 import time
-from ..meta import Meta
-
+from rapydo.utils.meta import Meta
 from rapydo.utils import CORE_PACKAGE, CUSTOM_PACKAGE
 from rapydo.utils.logs import get_logger
 

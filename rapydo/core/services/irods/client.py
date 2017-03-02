@@ -446,7 +446,7 @@ class ICommands(BashCommands):
 
         self._current_user = user
         log.verbose("Switched to user '%s'" % user)
-        # clean lru_cache because we changed user
+        # clean lru_cache because we changed user
         self.get_user_info.cache_clear()
 
         # If i want to check
@@ -465,11 +465,12 @@ class ICommands(BashCommands):
         """
 ## // TO BE DEPRECATED
         """
-        from .translations import AccountsToIrodsUsers
+        from rapydo.core.services.irods.translations import \
+            importAccountsToIrodsUsers
         return AccountsToIrodsUsers.email2iuser(user)
 
     def translate_graph_user(self, graph, graph_user):
-        from .translations import Irods2Graph
+        from rapydo.core.services.irods.translations import Irods2Graph
         return Irods2Graph(graph, self).graphuser2irodsuser(graph_user)
 
     ###################

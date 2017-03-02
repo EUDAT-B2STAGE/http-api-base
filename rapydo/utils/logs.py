@@ -14,7 +14,7 @@ import logging
 
 from logging.config import fileConfig
 from json.decoder import JSONDecodeError
-from . import AVOID_COLORS_ENV_LABEL, LOG_CONFIG
+from rapydo.utils import AVOID_COLORS_ENV_LABEL, LOG_CONFIG
 
 #######################
 # DEBUG level is 10 (https://docs.python.org/3/howto/logging.html)

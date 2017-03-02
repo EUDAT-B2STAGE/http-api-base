@@ -17,8 +17,8 @@ import pytz
 from datetime import datetime, timedelta
 from rapydo.utils.uuid import getUUID
 from rapydo.utils.logs import get_logger
-from . import BaseAuthentication
-from ..detect import GRAPHDB_AVAILABLE
+from rapydo.core.services.authentication import BaseAuthentication
+from rapydo.core.services.detect import GRAPHDB_AVAILABLE
 
 log = get_logger(__name__)
 

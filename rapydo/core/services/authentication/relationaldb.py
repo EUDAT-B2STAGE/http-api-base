@@ -9,8 +9,8 @@ import sqlalchemy
 # import pytz
 from datetime import datetime, timedelta
 from rapydo.utils.uuid import getUUID
-from ..detect import SQL_AVAILABLE
-from . import BaseAuthentication
+from rapydo.core.services.detect import SQL_AVAILABLE
+from rapydo.core.services.authentication import BaseAuthentication
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)

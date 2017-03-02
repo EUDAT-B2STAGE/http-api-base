@@ -10,7 +10,7 @@ from __future__ import absolute_import
 import os
 from rapydo.utils.services import ServiceFarm
 from rapydo.utils.logs import get_logger
-from ..detect import SQL_PROD_AVAILABLE
+from rapydo.core.services.detect import SQL_PROD_AVAILABLE
 
 log = get_logger(__name__)
 

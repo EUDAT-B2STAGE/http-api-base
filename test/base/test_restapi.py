@@ -9,7 +9,7 @@ from __future__ import absolute_import
 
 import json
 # import logging
-from .. import RestTestsBase
+from test import RestTestsBase
 from rapydo.utils.logs import get_logger
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"

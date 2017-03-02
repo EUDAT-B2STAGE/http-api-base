@@ -12,7 +12,7 @@ lic = "MIT"
 
 ################
 # From the directory where the app is launched
-PROJECT_DIR = __package__
+# PROJECT_DIR = __package__
 
 # ######################
 # # TO FIX: remove this below when fixed swagger...

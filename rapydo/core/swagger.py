@@ -437,7 +437,7 @@ class BeSwagger(object):
         # TODO: it works with body parameters,
         # to be investigated with other types
 
-        # from .globals import mem
+        # from rapydo.utils.globals import mem
 
         # Car = mem.customizer._definitions['definitions']['Car']
         # # self is rest/definitions.py:EndpointResource

@@ -9,8 +9,8 @@ from __future__ import absolute_import
 from datetime import datetime, timedelta
 # from json import JSONEncoder
 # from uuid import UUID
-from ..detect import MONGO_AVAILABLE
-from . import BaseAuthentication
+from rapydo.core.services.detect import MONGO_AVAILABLE
+from rapydo.core.services.authentication import BaseAuthentication
 
 from rapydo.utils.uuid import getUUID
 from rapydo.utils.logs import get_logger
