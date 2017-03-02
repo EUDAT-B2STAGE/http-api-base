@@ -14,11 +14,11 @@ from rapydo.utils import (
     BACKEND_PACKAGE, CORE_DIR, USER_CUSTOM_DIR,
     BLUEPRINT_KEY, API_URL, BASE_URLS,
 )
-from rapydo.utils.attrs.api import EndpointElements, ExtraAttributes
 
 # TO FIX: should be imported after reading logger level from conf
 from rapydo.utils.meta import Meta
 from rapydo.utils.formats.yaml import YAML_EXT, load_yaml_file
+from rapydo.utils.attrs.api import EndpointElements, ExtraAttributes
 from rapydo.core.swagger import BeSwagger
 
 from rapydo.utils.logs import get_logger
