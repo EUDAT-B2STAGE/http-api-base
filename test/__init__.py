@@ -6,14 +6,14 @@ Test base
 
 import unittest
 import logging
-from restapi.server import create_app
-from restapi.confs.config import TEST_HOST, \
+from rapydo.server import create_app
+from rapydo.confs.config import TEST_HOST, \
     SERVER_PORT, API_URL, AUTH_URL
-from restapi.response import get_content_from_response
-from restapi.jsonify import json
-from restapi.resources.services.authentication import BaseAuthentication as ba
-from restapi.utils import htmlcodes as hcodes
-from restapi.utils.logs import get_logger, set_global_log_level
+from rapydo.response import get_content_from_response
+from rapydo.jsonify import json
+from rapydo.resources.services.authentication import BaseAuthentication as ba
+from rapydo.utils import htmlcodes as hcodes
+from rapydo.utils.logs import get_logger, set_global_log_level
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 
@@ -21,7 +21,7 @@ __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 TEST_DEBUGGING_LEVEL = logging.DEBUG
 
 #####################
-set_global_log_level('restapi', TEST_DEBUGGING_LEVEL)
+set_global_log_level('rapydo', TEST_DEBUGGING_LEVEL)
 log = get_logger(__name__)
 
 

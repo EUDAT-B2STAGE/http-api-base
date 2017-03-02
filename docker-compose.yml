@@ -31,7 +31,7 @@ backend:
     # Base code
     - ../backend:/code
     # Vanilla dir
-    - ..:/code/restapi/custom
+    - ..:/code/rapydo/custom
 
     # Project configuration
     # - ../specs:/code/restapi/confs/main
@@ -74,7 +74,7 @@ worker:
     file: docker-compose.yml
     service: backend
   hostname: celworker
-  command: celery worker -c 1 -A restapi.resources.services.celery.worker.celery_app
+  command: celery worker -c 1 -A rapydo.resources.services.celery.worker.celery_app
 
 #################################
 # Database administration

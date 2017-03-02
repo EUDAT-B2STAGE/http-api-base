@@ -9,14 +9,14 @@ export TESTING_FLASK="True"
 # nosetests \
 #     --stop \
 #     --with-coverage \
-#     --cover-erase --cover-package=restapi \
+#     --cover-erase --cover-package=rapydo \
 #     --cover-html --cover-html-dir=/tmp/coverage
 
 # Coverage + stop on first failure
 com="nose2 -F"
 option="-s test"
 cov_reports=" --coverage-report term --coverage-report html"
-cov_options="-C --coverage restapi $cov_reports"
+cov_options="-C --coverage rapydo $cov_reports"
 
 # Basic tests, written for the http-api-base sake
 $com $option/base --log-capture
