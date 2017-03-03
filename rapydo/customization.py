@@ -121,19 +121,26 @@ class Customizer(object):
 
         for base_dir in [BACKEND_PACKAGE, CUSTOM_PACKAGE]:
 
-            current_dir = os.path.join(base_dir, 'swagger')
+            swagger_dir = os.path.join(base_dir, 'swagger')
 
-            for ep in os.listdir(current_dir):
+            for ep in os.listdir(swagger_dir):
 
-                endpoint_dir = os.path.join(current_dir, ep)
-                if os.path.isfile(endpoint_dir):
+                swagger_endpoint_dir = os.path.join(swagger_dir, ep)
+                if os.path.isfile(swagger_endpoint_dir):
                     log.debug(
                         "Expected a swagger conf folder, found a file (%s)"
-                        % (endpoint_dir)
+                        % (swagger_endpoint_dir)
                     )
                     continue
+
+                isbase = base_dir == BACKEND_PACKAGE
+                if isbase:
+                    apiclass_module = '%s.%s' % (base_dir, 'resources')
+                else:
+                    apiclass_module = '%s.%s' % (base_dir, 'apis')
+
                 current = self.lookup(
-                    ep, base_dir, endpoint_dir)
+                    ep, apiclass_module, swagger_endpoint_dir, isbase)
                 if current.exists:
                     # Add endpoint to REST mapping
                     self._endpoints.append(current)
@@ -158,14 +165,14 @@ class Customizer(object):
         file = os.path.join("config", "frameworks.yaml")
         self._frameworks = load_yaml_file(file)
 
-    def lookup(self, endpoint, base_dir, endpoint_dir):
+    def lookup(self, endpoint, apiclass_module, swagger_endpoint_dir, isbase):
 
         log.verbose("Found endpoint dir: '%s'" % endpoint)
 
         # Find yaml files
         conf = None
         yaml_files = {}
-        yaml_listing = os.path.join(endpoint_dir, "*.%s" % YAML_EXT)
+        yaml_listing = os.path.join(swagger_endpoint_dir, "*.%s" % YAML_EXT)
         for file in glob.glob(yaml_listing):
             if file.endswith('specs.%s' % YAML_EXT):
                 # load configuration and find file and class
@@ -182,7 +189,7 @@ class Customizer(object):
         if conf is None or 'class' not in conf:
             raise ValueError("No 'class' defined for '%s'" % endpoint)
 
-        current = self.load_endpoint(endpoint, base_dir, conf)
+        current = self.load_endpoint(endpoint, apiclass_module, conf, isbase)
         current.methods = yaml_files
         return current
 
@@ -193,7 +200,7 @@ class Customizer(object):
     #         content = json.load(fp)
     #     return content
 
-    def load_endpoint(self, default_uri, dir_name, conf):
+    def load_endpoint(self, default_uri, apiclass_module, conf, isbase):
 
         endpoint = EndpointElements(custom={})
 
@@ -201,7 +208,7 @@ class Customizer(object):
         # Load the endpoint class defined in the YAML file
         file_name = conf.pop('file', default_uri)
         class_name = conf.pop('class')
-        name = '%s.%s.%s' % (dir_name, 'resources', file_name)
+        name = '%s.%s' % (apiclass_module, file_name)
         module = self._meta.get_module_from_string(name)
 
         if module is None:
@@ -224,7 +231,7 @@ class Customizer(object):
             endpoint.exists = True
 
         # Is this a base or a custom class?
-        endpoint.isbase = dir_name == 'base'
+        endpoint.isbase = isbase
 
         # DEPRECATED
         # endpoint.instance = endpoint.cls()
