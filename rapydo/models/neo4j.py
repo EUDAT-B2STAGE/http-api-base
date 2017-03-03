@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# TODO: move into base dir?
-
 """ Models for graph database """
-
-from __future__ import absolute_import
 
 from rapydo.services.neo4j.models import \
     StructuredNode, IdentifiedNode, \

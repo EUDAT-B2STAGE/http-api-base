@@ -5,7 +5,6 @@ Main server factory.
 We create all the components here!
 """
 
-# from __future__ import absolute_import
 from flask_cors import CORS
 from rapydo.utils.logs import get_logger
 

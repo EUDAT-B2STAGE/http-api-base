@@ -5,8 +5,6 @@ The most basic (and standard) Rest Resource
 we could provide back then
 """
 
-from __future__ import absolute_import
-
 import pytz
 import dateutil.parser
 from datetime import datetime

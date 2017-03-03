@@ -2,7 +2,6 @@
 
 """ Graph DB abstraction from neo4j server """
 
-# from __future__ import absolute_import
 import os
 from rapydo.utils.logs import get_logger
 from rapydo.services import ServiceFarm, ServiceObject

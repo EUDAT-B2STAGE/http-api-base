@@ -4,7 +4,6 @@
 Sql handling authentication process
 """
 
-from __future__ import absolute_import
 import sqlalchemy
 # import pytz
 from datetime import datetime, timedelta

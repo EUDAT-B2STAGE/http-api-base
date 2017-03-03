@@ -5,8 +5,6 @@ SECURITY ENDPOINTS CHECK
 Add auth checks called /checklogged and /testadmin
 """
 
-from __future__ import absolute_import
-
 import os
 import abc
 import jwt

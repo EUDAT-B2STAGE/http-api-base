@@ -4,8 +4,6 @@
 Customization based on configuration 'blueprint' files
 """
 
-from __future__ import absolute_import
-
 import os
 import re
 import glob

@@ -4,8 +4,6 @@
 App specifications
 """
 
-from __future__ import absolute_import
-
 from flask_restful import Api as RestFulApi
 from rapydo.farm import EndpointsFarmer
 

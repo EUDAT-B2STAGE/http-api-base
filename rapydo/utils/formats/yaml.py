@@ -4,8 +4,6 @@
 Loading YAML format
 """
 
-from __future__ import absolute_import
-
 import yaml
 import os
 # from functools import lru_cache

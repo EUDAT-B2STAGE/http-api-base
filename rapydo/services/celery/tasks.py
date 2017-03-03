@@ -17,8 +17,6 @@ def my_async_task(arg):
 
 """
 
-# from __future__ import absolute_import
-
 from rapydo.services.celery.celery import celery_app
 from rapydo.services import ServiceFarm, ServiceObject
 from rapydo.utils.logs import get_logger

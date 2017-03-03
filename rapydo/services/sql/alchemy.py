@@ -5,8 +5,6 @@ SQL Alchemy:
 sqllite, MySQL or Postgres
 """
 
-from __future__ import absolute_import
-
 import os
 from rapydo.services import ServiceFarm
 from rapydo.utils.logs import get_logger

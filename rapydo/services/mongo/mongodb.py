@@ -2,10 +2,7 @@
 
 """ MongoDB abstraction for core http api driver connector """
 
-# from __future__ import absolute_import
-
 import os
-
 # from pymongo import MongoClient
 from pymodm import connect
 # from pymongo.write_concern import WriteConcern

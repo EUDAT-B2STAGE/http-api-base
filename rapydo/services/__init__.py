@@ -11,7 +11,6 @@ to let the user access a new connection.
 
 """
 
-from __future__ import absolute_import
 import abc
 import time
 from rapydo.confs import BACKEND_PACKAGE

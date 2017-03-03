@@ -5,8 +5,6 @@ Main server factory.
 We create all the internal flask  components here!
 """
 
-from __future__ import absolute_import
-
 import os
 from flask import Flask as OriginalFlask, request, g
 from werkzeug.contrib.fixers import ProxyFix

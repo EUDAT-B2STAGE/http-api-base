@@ -17,8 +17,6 @@ I didn't manage so far to have it working in the way the documentation require.
 
 """
 
-from __future__ import absolute_import
-
 # import traceback
 from functools import wraps
 from rapydo.utils import htmlcodes as hcodes
