@@ -90,7 +90,8 @@ for prefix, service in services.items():
         # from rapydo.services.sql.alchemy import SQLFarm as service
         farm = getattr(module, 'MyFarm')
         # print("imported", module, farm)
-        farm()
+        args = {'user': 'guest'}
+        farm(**args)
 
         ###################
         # and pass previous variables
