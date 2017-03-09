@@ -15,8 +15,32 @@ log = get_logger(__name__)
 
 class Certificates(object):
 
-    _dir = '/opt/certificates'
+    _dir = os.environ.get('CERTDIR')
+    _hostdn = None
     _proxyfile = 'userproxy.crt'
+
+    @classmethod
+    def get_dn_from_cert(cls, user, certfilename, ext='pem'):
+
+        dn = None
+        host_certificate = user == 'host'
+        if host_certificate:
+            dn = os.environ.get('IRODS_DN')
+
+        if dn is None:
+            dn = ''
+            cpath = os.path.join(cls._dir, user, "%s.%s" % (certfilename, ext))
+            content = open(cpath).read()
+            cert = crypto.load_certificate(crypto.FILETYPE_PEM, content)
+            sub = cert.get_subject()
+
+            for tup in sub.get_components():
+                dn += '/' + tup[0].decode() + '=' + tup[1].decode()
+
+        if host_certificate:
+            cls._hostdn = dn
+            log.verbose("Host DN is %s", dn)
+        return dn
 
     @classmethod
     def get_proxy_filename(cls, user, dir=False):
