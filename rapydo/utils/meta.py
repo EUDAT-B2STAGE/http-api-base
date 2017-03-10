@@ -142,7 +142,6 @@ class Meta(object):
         (when it's there)
         """
 
-        import inspect
         if len(args) > 0:
             candidate_as_self = args[0]
             cls_attribute = getattr(candidate_as_self, '__class__', None)

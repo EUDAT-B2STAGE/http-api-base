@@ -19,10 +19,11 @@ if [ "$APP_MODE" == "debug" ]; then
     sleep infinity
 elif [ "$APP_MODE" == "production" ]; then
 
-# NOTE: in production we use /init which calls uWSGI + nginx
-    echo "Production !"
-    # GUNICORN
-    $gserver
+    # NOTE: in production we use /init which calls uWSGI + nginx
+    echo "Production mode should not be enabled with this script"
+    # # GUNICORN
+    # $gserver
+    exit 1
 else
     echo "Development"
     # API_DEBUG="true" $main_command

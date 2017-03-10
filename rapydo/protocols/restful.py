@@ -5,7 +5,7 @@ App specifications
 """
 
 from flask_restful import Api as RestFulApi
-from rapydo.farm import EndpointsFarmer
+from rapydo.rest.farmer import EndpointsFarmer
 
 from rapydo.utils.globals import mem
 from rapydo.utils.logs import get_logger

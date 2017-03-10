@@ -1,20 +1,113 @@
 # -*- coding: utf-8 -*-
 
-## TO FIX: compose v3 does not provide this variables
 """
 Detect which services are running,
 by testing environment variables set by container links
 """
 
 import os
-from rapydo.confs import PRODUCTION
+from rapydo.confs import PRODUCTION, BACKEND_PACKAGE
+from rapydo.utils.meta import Meta
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
-
-#################
 services = {}
 farm_queue = []
+
+
+"""
+# Refactor "detection"
+due to compose v2/v3 not providing anymore env vars
+from linked containers
+
+--
+
+- read from host variables
+    - set variables in .env (for now)
+        - note: .env may not work in swarm deploy mode
+    - read from configuration and set them with do.py (in the future)
+- variables are needed to ENABLE a service
+    - services/dbs should have standard names
+
+--
+
+graph
+alchemy
+mongo
+elastic
+celery
+redis
+
+"""
+
+services = {
+    'irods': "rpc",
+    'relationaldb': "sqlalchemy",
+    # "graph",
+    # "mongo",
+    # "elastic",
+    # "celery",
+    # "redis",
+}
+
+auth_service = os.environ.get('AUTH_SERVICE')
+if auth_service is None:
+    raise ValueError("You MUST specify a service for authentication")
+meta = Meta()
+
+
+for prefix, service in services.items():
+
+    prefix += '_'
+    enable_var = prefix.upper() + 'ENABLE'
+
+    if os.environ.get(enable_var, False):
+        log.info("Service %s enabled" % service)
+
+        ###################
+        # Read variables
+        variables = {}
+        for var, value in os.environ.items():
+            if var == enable_var:
+                continue
+            var = var.lower()
+            if var.startswith(prefix):
+                key = var[len(prefix):]
+                variables[key] = value
+
+        # print("Variables", variables)
+
+        ###################
+        # Create farm instance for this service
+        # loading the module in services
+        name = '%s.%s.%s.%s' % (
+            BACKEND_PACKAGE, 'services', 'connectors', service
+        )
+        module = meta.get_module_from_string(name)
+        if module is None:
+            raise AttributeError("No internal module for service %s" % service)
+
+        # from rapydo.services.sql.alchemy import SQLFarm as service
+        farm = getattr(module, 'MyFarm')
+        # print("imported", module, farm)
+        args = {'user': 'guest'}
+        farm(**args)
+
+        ###################
+        # and pass previous variables
+
+        # # MOVE THIS INTO FARM
+        # # Is this service optional?
+        # variables.get('optional', False)
+        # print(variables)
+
+        # Save into mem
+
+        ###################
+        print("\n\nEXIT DEBUG")
+        exit(1)
+
+exit(1)
 
 #######################################################
 # RELATIONAL DATABASE
@@ -111,3 +204,6 @@ for farm in farm_queue:
     service_name = farm.define_service_name()
     log.debug("Adding service '%s' to available array" % service_name)
     services[service_name] = farm
+
+print("SERVICES", services)
+exit(1)
