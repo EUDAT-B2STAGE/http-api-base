@@ -12,6 +12,9 @@ from rapydo.services.detect import SQL_PROD_AVAILABLE
 
 log = get_logger(__name__)
 
+# Since SQLalchemy is already the handler on the high level
+# we do not need to implement the "ServiceObject"
+
 
 class SQLFarm(ServiceFarm):
     """

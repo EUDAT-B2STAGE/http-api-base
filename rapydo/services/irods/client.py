@@ -1469,8 +1469,4 @@ class IrodsFarm(ServiceFarm):
                 else:
                     log.warning("Becoming iRODS admin")
 
-# We should check if here classmethod is the wrong option
-        # cls._irods = IMetaCommands(user)
-        # return cls._irods
-
         return IMetaCommands(user, proxy=proxy, become_admin=become_admin)

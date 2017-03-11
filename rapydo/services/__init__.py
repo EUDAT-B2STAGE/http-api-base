@@ -73,21 +73,17 @@ class ServiceFarm(metaclass=abc.ABCMeta):
     def __init__(self, check_connection=False, app=None):
 
         self._service_name = self.define_service_name()
-
-        if not check_connection:
-            return
-
-        name = self.__class__.__name__
         testdb = True
         counter = 0
         sleep_time = 1
 
-        while testdb:
+        while check_connection:
             try:
                 obj = self.init_connection(app)
                 del obj
                 testdb = False
-                log.info("Instance of '%s' was connected" % name)
+                log.info("Instance of '%s' was connected"
+                         % self._service_name)
             except AttributeError as e:
                 # Give the developer a way to stop this cycle if critical
                 log.critical("An attribute error:\n%s" % e)
@@ -97,9 +93,22 @@ class ServiceFarm(metaclass=abc.ABCMeta):
                 if counter % 5 == 0:
                     sleep_time += sleep_time * 2
                 log.warning("%s: Not reachable yet. Sleeping %s."
-                            % (name, sleep_time))
+                            % (self._service_name, sleep_time))
                 log.critical("Error was %s" % str(e))
                 time.sleep(sleep_time)
+
+    @staticmethod
+    @abc.abstractmethod
+    def define_service_name():
+        """
+        Please define a name for the current implementation
+        """
+        return
+
+    @classmethod
+    @abc.abstractmethod
+    def get_instance(cls, *args):
+        return
 
     @classmethod
     def load_generic_models(cls, module_path):
@@ -157,19 +166,6 @@ class ServiceFarm(metaclass=abc.ABCMeta):
         log.debug("Loaded service models")
         return cls._models
 
-    @staticmethod
-    @abc.abstractmethod
-    def define_service_name():
-        """
-        Please define a name for the current implementation
-        """
-        return
-
     @abc.abstractmethod
     def init_connection(self, app):
-        return
-
-    @classmethod
-    @abc.abstractmethod
-    def get_instance(cls, *args):
         return

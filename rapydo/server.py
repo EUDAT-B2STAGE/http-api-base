@@ -97,6 +97,14 @@ def create_app(name=__name__, debug=False,
                **kwargs):
     """ Create the server istance for Flask application """
 
+# # REMOVE ME
+    debug = True
+#     print("TEST 0")
+#     from rapydo.services.detect import services as internal_services
+#     print("TEST 1")
+#     exit(1)
+# # REMOVE ME
+
     #############################
     # Initialize reading of all files
     # TO FIX: remove me
@@ -165,22 +173,43 @@ def create_app(name=__name__, debug=False,
     #################################################
 
     ##############################
+    # DATABASE/SERVICEs CHECKS
+
+# TO FIX: move this as early as possible,
+# before reading custom configuration?
+    from rapydo.services.detect import services as internal_services
+    log.pp(internal_services)
+    for name, service in internal_services.items():
+        print(name, service)
+        service.init_app(microservice)
+
+# # RE ENABLE
+#     for service, myclass in internal_services.items():
+#         log.debug("Available service %s" % service)
+#         myclass(check_connection=True, app=microservice)
+
+    ##############################
     # Cors
     from rapydo.protocols.cors import cors
     cors.init_app(microservice)
     log.debug("FLASKING! Injected CORS")
 
     ##############################
-    # DATABASE/SERVICEs CHECKS
-    from rapydo.services.detect import services as internal_services
-    for service, myclass in internal_services.items():
-        log.debug("Available service %s" % service)
-        myclass(check_connection=True, app=microservice)
-
-    ##############################
     # Enabling our internal Flask customized response
     from rapydo.rest.response import InternalResponse
     microservice.response_class = InternalResponse
+
+    @microservice.route('/')
+    def justatest():
+        session = service.connection.session()
+        print("TEST neo4j session", session)
+        return "hello world"
+
+    return microservice
+
+    # define quick endpoint and return your app
+
+    exit(1)
 
     ##############################
     # Flask security

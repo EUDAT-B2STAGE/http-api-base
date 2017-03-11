@@ -10,13 +10,16 @@ from datetime import datetime
 from flask import jsonify, current_app
 
 from rapydo.rest.definition import EndpointResource
-from rapydo.services.detect import CELERY_AVAILABLE
+# from rapydo.services.detect import CELERY_AVAILABLE
 from rapydo.services.authentication import BaseAuthentication
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.globals import mem
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
+
+# TO FIX: read from mem
+CELERY_AVAILABLE = False
 
 
 class Status(EndpointResource):

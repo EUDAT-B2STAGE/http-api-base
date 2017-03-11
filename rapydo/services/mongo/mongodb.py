@@ -3,26 +3,12 @@
 """ MongoDB abstraction for core http api driver connector """
 
 import os
-# from pymongo import MongoClient
 from pymodm import connect
-# from pymongo.write_concern import WriteConcern
 from pymodm import MongoModel, fields
-
-# try:
-#     # Python 3.x
-#     from urllib.parse import quote_plus
-# except ImportError:
-#     # Python 2.x
-#     from urllib import quote_plus
-
 from rapydo.services import ServiceFarm, ServiceObject
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
-
-# uri = "mongodb://%s:%s@%s" % (
-#     quote_plus(user), quote_plus(password), host)
-# client = MongoClient(uri)
 
 # Default values, will be overwritten if i find some envs
 PROTOCOL = 'mongodb'
@@ -47,7 +33,6 @@ except Exception as e:
 ########################
 
 class MyMongoDb(ServiceObject):
-    """" A graph db neo4j instance """
 
     DEFAULTDB = 'test'
 
