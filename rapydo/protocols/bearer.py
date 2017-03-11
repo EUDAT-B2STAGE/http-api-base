@@ -12,8 +12,6 @@ Note that anyone can validate a token as it is a bearer token:
 there is no client id nor is client authentication required.
 """
 
-# from __future__ import division, absolute_import
-
 from functools import wraps
 from flask import request, g
 from rapydo.utils import htmlcodes as hcodes
