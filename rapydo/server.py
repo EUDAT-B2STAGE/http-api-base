@@ -210,16 +210,26 @@ def create_app(name=__name__, debug=False,
 ###################################
 # QUICK PROTOTYPE
 ###################################
+
     from injector import inject
     from flask_neo4j import Neo4J
+    from flask_restful import Api, Resource
+    api = Api(microservice)
 
-    @microservice.route('/')
-    @inject(db=Neo4J)
-    def justatest(db):
-        print("TEST neo4j connection", db.connection)
-        session = db.connection.session()
-        print("TEST neo4j session", session)
-        return "hello world"
+    class HelloWorld(Resource):
+
+        @inject(db=Neo4J)
+        def __init__(self, db):
+            print("API resource init", db)
+            self.db = db
+
+        def get(self):
+            print("TEST neo4j connection", self.db.connection)
+            session = self.db.connection.session()
+            print("TEST neo4j session", session)
+            return {'hello': 'world'}
+
+    api.add_resource(HelloWorld, '/foo')
 
     from flask_injector import FlaskInjector
     FlaskInjector(app=microservice, modules=modules)
