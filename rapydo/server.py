@@ -175,16 +175,23 @@ def create_app(name=__name__, debug=False,
     ##############################
     # DATABASE/SERVICEs CHECKS
 
-# # RE ENABLE
-# # TO FIX: move this as early as possible,
-# # before reading custom configuration?
-#     from rapydo.services.detect import services as internal_services
-#     log.pp(internal_services)
-#     for name, service in internal_services.items():
-#         print(name, service)
-#         service.init_app(microservice)
+# TO FIX: move this as early as possible,
+# before reading custom configuration?
+    modules = []
+    from rapydo.services.detect import services as internal_services
+    log.pp(internal_services)
 
-# # RE ENABLE
+    # for name, service in internal_services.items():
+    for name, ConfigureInjection in internal_services.items():
+        # print(name, service)
+
+        # # This is done by the configurator
+        # service.init_app(microservice)
+
+        # The final trick
+        modules.append(ConfigureInjection(microservice))
+
+# # RE ENABLE? Or injection will do this for us?
 #     for service, myclass in internal_services.items():
 #         log.debug("Available service %s" % service)
 #         myclass(check_connection=True, app=microservice)
@@ -201,19 +208,10 @@ def create_app(name=__name__, debug=False,
     microservice.response_class = InternalResponse
 
 ###################################
+# QUICK PROTOTYPE
 ###################################
-    from injector import inject, singleton, Module
-    from flask_injector import FlaskInjector
+    from injector import inject
     from flask_neo4j import Neo4J
-
-    class ConfigurationModule(Module):
-
-        def __init__(self, app):
-            self.app = app
-
-        def configure(self, binder):
-            neo = Neo4J(self.app)
-            binder.bind(Neo4J, to=neo, scope=singleton)
 
     @microservice.route('/')
     @inject(db=Neo4J)
@@ -223,17 +221,12 @@ def create_app(name=__name__, debug=False,
         print("TEST neo4j session", session)
         return "hello world"
 
-    FlaskInjector(
-        app=microservice,
-        modules=[ConfigurationModule(microservice)]
-    )
+    from flask_injector import FlaskInjector
+    FlaskInjector(app=microservice, modules=modules)
 
     return microservice
 ###################################
 ###################################
-
-    # define quick endpoint and return your app
-
     exit(1)
 
     ##############################

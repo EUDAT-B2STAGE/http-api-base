@@ -90,12 +90,18 @@ for prefix, service in services_configuration.items():
 
         ###################
         module = meta.get_module_from_string(service['extension'])
-        MyClass = getattr(module, service['class'])
-        instance = MyClass(
-            variables=variables,
-            logger=get_logger('flask-' + service['name']))
+        Configurator = getattr(module, 'InjectorConfiguration')
+        Configurator.set_variables(variables)
 
-        # # instance.init_app(app)
+        # # OLD
+        # MyClass = getattr(module, service['class'])
+        # instance = MyClass(
+        #     variables=variables,
+        #     logger=get_logger('flask-' + service['name']))
+
+        ###################
+        # Use a connection retrial system like original flask-neo4j
+
         # print("TEST", instance)
         # exit(1)
 
@@ -124,7 +130,8 @@ for prefix, service in services_configuration.items():
         # # print(variables)
 
         # Save into mem
-        services[service['name']] = instance
+        services[service['name']] = Configurator
+        # services[service['name']] = instance
         # mem._extensions[service['name']] = instance
 
         # ###################
