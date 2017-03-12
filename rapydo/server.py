@@ -175,13 +175,14 @@ def create_app(name=__name__, debug=False,
     ##############################
     # DATABASE/SERVICEs CHECKS
 
-# TO FIX: move this as early as possible,
-# before reading custom configuration?
-    from rapydo.services.detect import services as internal_services
-    log.pp(internal_services)
-    for name, service in internal_services.items():
-        print(name, service)
-        service.init_app(microservice)
+# # RE ENABLE
+# # TO FIX: move this as early as possible,
+# # before reading custom configuration?
+#     from rapydo.services.detect import services as internal_services
+#     log.pp(internal_services)
+#     for name, service in internal_services.items():
+#         print(name, service)
+#         service.init_app(microservice)
 
 # # RE ENABLE
 #     for service, myclass in internal_services.items():
@@ -199,13 +200,37 @@ def create_app(name=__name__, debug=False,
     from rapydo.rest.response import InternalResponse
     microservice.response_class = InternalResponse
 
+###################################
+###################################
+    from injector import inject, singleton, Module
+    from flask_injector import FlaskInjector
+    from flask_neo4j import Neo4J
+
+    class ConfigurationModule(Module):
+
+        def __init__(self, app):
+            self.app = app
+
+        def configure(self, binder):
+            neo = Neo4J(self.app)
+            binder.bind(Neo4J, to=neo, scope=singleton)
+
     @microservice.route('/')
-    def justatest():
-        session = service.connection.session()
+    @inject(db=Neo4J)
+    def justatest(db):
+        print("TEST neo4j connection", db.connection)
+        session = db.connection.session()
         print("TEST neo4j session", session)
         return "hello world"
 
+    FlaskInjector(
+        app=microservice,
+        modules=[ConfigurationModule(microservice)]
+    )
+
     return microservice
+###################################
+###################################
 
     # define quick endpoint and return your app
 
