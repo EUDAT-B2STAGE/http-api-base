@@ -346,8 +346,8 @@ class ICommands(BashCommands):
                     # log.critical(not_after)
                     # log.critical(valid)
                     raise IrodsException(
-                        "GSI certificate (%s) is expired on %s"
-                        % (user, not_after)
+                        "Invalid GSI certificate (%s). Validity: %s - %s"
+                        % (user, not_before, not_after)
                     )
             ###############################
             # PROXY CERTIFICATE (myproxy)
