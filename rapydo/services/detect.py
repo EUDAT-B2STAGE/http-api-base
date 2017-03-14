@@ -69,13 +69,19 @@ meta = Meta()
 
 for prefix, service in services_configuration.items():
 
-    print("DETECTED...", prefix, service)
-
     prefix += '_'
+    print("Detected", prefix, service)
+
+    # Is this service enabled?
     enable_var = prefix.upper() + 'ENABLE'
 
     if os.environ.get(enable_var, False):
         log.info("Service *%s* requested for enabling" % service['name'])
+
+        # Is this service external?
+        external_var = prefix.upper() + 'EXTERNAL'
+        if os.environ.get(external_var) is None:
+            os.environ[external_var] = "False"
 
         ###################
         # Read variables
@@ -92,18 +98,6 @@ for prefix, service in services_configuration.items():
         module = meta.get_module_from_string(service['extension'])
         Configurator = getattr(module, 'InjectorConfiguration')
         Configurator.set_variables(variables)
-
-        # # OLD
-        # MyClass = getattr(module, service['class'])
-        # instance = MyClass(
-        #     variables=variables,
-        #     logger=get_logger('flask-' + service['name']))
-
-        ###################
-        # Use a connection retrial system like original flask-neo4j
-
-        # print("TEST", instance)
-        # exit(1)
 
         # ###################
         # # Create farm instance for this service
@@ -129,9 +123,9 @@ for prefix, service in services_configuration.items():
         # # variables.get('optional', False)
         # # print(variables)
 
+        # ###################
         # Save into mem
         services[service['name']] = Configurator
-        # services[service['name']] = instance
         # mem._extensions[service['name']] = instance
 
         # ###################
