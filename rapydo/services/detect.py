@@ -69,7 +69,7 @@ meta = Meta()
 
 for prefix, service in services_configuration.items():
 
-    print(prefix, service)
+    print("DETECTED...", prefix, service)
 
     prefix += '_'
     enable_var = prefix.upper() + 'ENABLE'

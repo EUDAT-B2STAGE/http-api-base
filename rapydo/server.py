@@ -212,7 +212,7 @@ def create_app(name=__name__, debug=False,
 ###################################
 
     from injector import inject
-    from flask_neo4j import Neo4J
+    from flask_neo4j import Neo4J  # this is a strong requirement
     from flask_restful import Api, Resource
     api = Api(microservice)
 
@@ -220,13 +220,13 @@ def create_app(name=__name__, debug=False,
 
         @inject(db=Neo4J)
         def __init__(self, db):
-            print("API resource init", db)
             self.db = db
 
         def get(self):
             print("TEST neo4j connection", self.db.connection)
-            session = self.db.connection.session()
-            print("TEST neo4j session", session)
+            from rapydo.models.neo4j import Role
+            test = Role(name="pippo").save()
+            print("testing neomodel:", test)
             return {'hello': 'world'}
 
     api.add_resource(HelloWorld, '/foo')
