@@ -139,7 +139,7 @@ class Customizer(object):
 
                 current = self.lookup(
                     ep, apiclass_module, swagger_endpoint_dir, isbase)
-                if current.exists:
+                if current is not None and current.exists:
                     # Add endpoint to REST mapping
                     self._endpoints.append(current)
 
@@ -167,10 +167,15 @@ class Customizer(object):
 
         log.verbose("Found endpoint dir: '%s'" % endpoint)
 
+        if os.path.exists(os.path.join(swagger_endpoint_dir, 'SKIP')):
+            log.info("Skipping: %s" % endpoint)
+            return None
+
         # Find yaml files
         conf = None
         yaml_files = {}
         yaml_listing = os.path.join(swagger_endpoint_dir, "*.%s" % YAML_EXT)
+
         for file in glob.glob(yaml_listing):
             if file.endswith('specs.%s' % YAML_EXT):
                 # load configuration and find file and class
