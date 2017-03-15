@@ -223,21 +223,24 @@ def create_app(name=__name__, debug=False,
 
     class HelloWorld(Resource):
 
-        @inject(icom=IrodsPythonClient, neo=NeoModel)
-        def __init__(self, neo, icom):
-            self.db = neo
-            self.i = icom
+        # @inject(services=[NeoModel, IrodsPythonClient])
+        @inject(irods=IrodsPythonClient, neo4j=NeoModel)
+        # def __init__(self, irods, neo4j):
+        def __init__(self, **kwargs):
+            print("Services:", kwargs)
+            self.irods = kwargs['irods']
+            self.neo4j = kwargs['neo4j']
 
         def get(self):
 
             ####################
-            # print("TEST neo4j connection", self.db.connection)
+            print("neomodel connection:", self.neo4j.connection)
             from rapydo.models.neo4j import Role
             test = Role(name="pippo").save()
-            print("neomodel:", test)
+            print("neomodel test:", test)
 
             ####################
-            coll = self.i.connection.collections.get('/tempZone')
+            coll = self.irods.connection.collections.get('/tempZone')
             print("root object:", coll)
             for col in coll.subcollections:
                 print("collection:", col)
