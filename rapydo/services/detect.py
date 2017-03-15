@@ -42,18 +42,30 @@ redis
 
 services_configuration = {
     # neo4j graphdb ORM
+    # TODO: how to load models
     'graphdb': {
         'name': 'neo4j',
         'library': "neomodel",
         'extension': "flask_neo4j",
-        'class': "Neo4J",
+        'class': "NeoModel",
+    },
+    # irods commands
+    # TODO: how to avoid loading models
+    'irods': {
+        'name': "irods",
+        'library': "python-irodsclient",
+        'extension': "flask_irods",
+        'class': "IrodsPythonClient",
     }
-    # 'graphdb': "neomodel",
 
+    ##############################
+    # neo4j graphdb ORM
+    # 'graphdb': "neomodel",
     # # irods commands (no models)
     # 'irods': "rpc",
     # # sqllite / mysql / postgres ORM
     # 'relationaldb': "sqlalchemy",
+    ##############################
     # # OTHERS?
     # "mongo",
     # "elastic",
@@ -69,8 +81,10 @@ meta = Meta()
 
 for prefix, service in services_configuration.items():
 
+    log.very_verbose("Service: %s" % prefix)
+    log.pp(service)
+
     prefix += '_'
-    print("Detected", prefix, service)
 
     # Is this service enabled?
     enable_var = prefix.upper() + 'ENABLE'
@@ -95,7 +109,9 @@ for prefix, service in services_configuration.items():
                 variables[key] = value
 
         ###################
-        module = meta.get_module_from_string(service['extension'])
+        module = meta.get_module_from_string(
+            'flask_ext.' + service['extension'])
+        Class = getattr(module, service['class'])
         Configurator = getattr(module, 'InjectorConfiguration')
         Configurator.set_variables(variables)
 

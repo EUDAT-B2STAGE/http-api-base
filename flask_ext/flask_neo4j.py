@@ -5,23 +5,16 @@
 import time
 from flask import _app_ctx_stack as stack
 # from flask import current_app
-from injector import singleton, Module
-# from neo4j.v1 import GraphDatabase
+from flask_ext import get_logger, BaseInjector
 
-####################
-# TO FIX: # how to use logs inside this extensions?
-# should we make a Flask extension or a Python package out of logging?
-import logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-####################
+log = get_logger(__name__)
 
 
-class Neo4J(object):
+class NeoModel(object):
 
     graph_db = None
 
-    def __init__(self, app=None, variables={}, models=[], logger=None):
+    def __init__(self, app=None, variables={}, models=[]):
 
         import neomodel as neomodel_package
         self.neo = neomodel_package
@@ -29,13 +22,11 @@ class Neo4J(object):
         self.app = app
         # print("Init service object with Injection", app, self)
         self.variables = variables
-        self.log = logger
 
         if app is not None:
             self.init_app(app)
 
-        if self.log is not None:
-            self.log.debug("Vars: %s" % variables)
+        log.very_verbose("Vars: %s" % variables)
 
     def init_app(self, app):
         # print("\n\n\nflask.ext.Neo4j init_app called\n\n\n")
@@ -54,11 +45,11 @@ class Neo4J(object):
                 self.variables.get('host'),
                 self.variables.get('port'),
             )
-        logger.debug("Connection uri: %s" % self.uri)
+        log.debug("Connection uri: %s" % self.uri)
 
         # Try until it's connected
         self.retry()
-        logger.info("Connected! %s" % self.neo.db)
+        log.info("Connected! %s" % self.neo.db)
 
         return self.neo.db
 
@@ -67,23 +58,23 @@ class Neo4J(object):
         while max_retries != 0 or retry_count < max_retries:
             retry_count += 1
             if retry_count > 1:
-                logger.verbose("testing again")
+                log.verbose("testing again")
             if self.test_connection():
                 break
             else:
-                logger.info("Service not available")
+                log.info("Service not available")
                 time.sleep(retry_interval)
+
+    def package_connection(self):
+        self.neo.config.DATABASE_URL = self.uri
+        self.neo.db.url = self.uri
+        self.neo.db.set_connection(self.uri)
 
     def test_connection(self, retry_interval=5, max_retries=0):
         try:
-            self.neo.config.DATABASE_URL = self.uri
-            self.neo.db.url = self.uri
-            self.neo.db.set_connection(self.uri)
+            self.package_connection()
             return True
-        # except Exception as e:
         except:
-            # raise e
-            # print("Error", e)
             return False
 
     def teardown(self, exception):
@@ -102,24 +93,10 @@ class Neo4J(object):
             return ctx.graph_db
 
 
-class InjectorConfiguration(Module):
-
-    _variables = {}
-    _models = {}
-
-    def __init__(self, app):
-        self.app = app
+class InjectorConfiguration(BaseInjector):
 
     def configure(self, binder):
-        neo = Neo4J(self.app, self._variables, self._models)
+        neo = NeoModel(self.app, self._variables, self._models)
         # test connection the first time
         neo.connect()
-        binder.bind(Neo4J, to=neo, scope=singleton)
-
-    @classmethod
-    def set_models(cls, models):
-        cls._models = models
-
-    @classmethod
-    def set_variables(cls, envvars):
-        cls._variables = envvars
+        binder.bind(NeoModel, to=neo, scope=self.singleton)

@@ -212,21 +212,37 @@ def create_app(name=__name__, debug=False,
 ###################################
 
     from injector import inject
-    from flask_neo4j import Neo4J  # this is a strong requirement
+
+    # *this is a strong requirement*
+    from flask_ext.flask_neo4j import NeoModel
+    from flask_ext.flask_irods import IrodsPythonClient
+    # *this is a strong requirement*
+
     from flask_restful import Api, Resource
     api = Api(microservice)
 
     class HelloWorld(Resource):
 
-        @inject(db=Neo4J)
-        def __init__(self, db):
-            self.db = db
+        @inject(icom=IrodsPythonClient, neo=NeoModel)
+        def __init__(self, neo, icom):
+            self.db = neo
+            self.i = icom
 
         def get(self):
-            print("TEST neo4j connection", self.db.connection)
+
+            ####################
+            # print("TEST neo4j connection", self.db.connection)
             from rapydo.models.neo4j import Role
             test = Role(name="pippo").save()
-            print("testing neomodel:", test)
+            print("neomodel:", test)
+
+            ####################
+            coll = self.i.connection.collections.get('/tempZone')
+            print("root object:", coll)
+            for col in coll.subcollections:
+                print("collection:", col)
+
+            ####################
             return {'hello': 'world'}
 
     api.add_resource(HelloWorld, '/foo')
