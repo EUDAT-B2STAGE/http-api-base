@@ -265,7 +265,7 @@ def create_app(name=__name__, debug=False,
         # Dynamically load the authentication service
         meta = Meta()
         module_base = __package__ + ".services.authentication"
-        auth_service = os.environ.get('BACKEND_AUTH_SERVICE', '')
+        auth_service = os.environ.get('AUTH_SERVICE', '')
         module_name = module_base + '.' + auth_service
         log.debug("Trying to load the module %s" % module_name)
         module = meta.get_module_from_string(module_name)

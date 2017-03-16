@@ -93,7 +93,7 @@ class NeoModel(object):
             return ctx.graph_db
 
 
-class InjectorConfiguration(BaseInjector):
+class InjectNeo(BaseInjector):
 
     def configure(self, binder):
         neo = NeoModel(self.app, self._variables, self._models)

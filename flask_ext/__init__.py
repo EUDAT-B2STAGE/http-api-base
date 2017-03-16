@@ -33,8 +33,11 @@ class BaseInjector(Module):
         return binder
 
     @classmethod
-    def set_models(cls, models):
-        cls._models = models
+    def set_models(cls, base, custom):
+        # load module from base string
+        # load module from custom string
+        pass
+        # cls._models = models
 
     @classmethod
     def set_variables(cls, envvars):

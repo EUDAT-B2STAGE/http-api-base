@@ -126,7 +126,7 @@ class IrodsPythonClient(object):
             return ctx.rpc
 
 
-class InjectorConfiguration(BaseInjector):
+class RPCInjector(BaseInjector):
 
     def configure(self, binder):
         rpc = IrodsPythonClient(self.app, self._variables, self._models)

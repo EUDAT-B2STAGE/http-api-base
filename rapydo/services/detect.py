@@ -4,15 +4,15 @@
 Detect which services are running,
 by testing environment variables set by container links
 """
+
 import os
-# from rapydo.confs import PRODUCTION, BACKEND_PACKAGE
 from rapydo.utils.meta import Meta
-# from rapydo.utils.globals import mem
+from rapydo.confs import BACKEND_PACKAGE
+from rapydo.utils.formats.yaml import load_yaml_file
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
 services = {}
-farm_queue = []
 
 
 """
@@ -28,69 +28,34 @@ from linked containers
     - read from configuration and set them with do.py (in the future)
 - variables are needed to ENABLE a service
     - services/dbs should have standard names
-
---
-
-graph
-alchemy
-mongo
-elastic
-celery
-redis
+    - variables also set if a service is external
 
 """
 
-services_configuration = {
-    # neo4j graphdb ORM
-    # TODO: how to load models
-    'graphdb': {
-        'name': 'neo4j',
-        'library': "neomodel",
-        'extension': "flask_neo4j",
-        'class': "NeoModel",
-    },
-    # irods commands
-    # TODO: how to avoid loading models
-    'irods': {
-        'name': "irods",
-        'library': "python-irodsclient",
-        'extension': "flask_irods",
-        'class': "IrodsPythonClient",
-    }
-
-    ##############################
-    # neo4j graphdb ORM
-    # 'graphdb': "neomodel",
-    # # irods commands (no models)
-    # 'irods': "rpc",
-    # # sqllite / mysql / postgres ORM
-    # 'relationaldb': "sqlalchemy",
-    ##############################
-    # # OTHERS?
-    # "mongo",
-    # "elastic",
-    # "celery",
-    # "redis",
-}
+CORE_CONFIG_PATH = os.path.join(BACKEND_PACKAGE, 'confs')
+services_configuration = load_yaml_file('services', path=CORE_CONFIG_PATH)
+# log.pp(services_configuration)
 
 auth_service = os.environ.get('AUTH_SERVICE')
 if auth_service is None:
     raise ValueError("You MUST specify a service for authentication")
+else:
+    log.verbose("Authe service '%s'" % auth_service)
+
 meta = Meta()
-# mem._extensions = {}
 
-for prefix, service in services_configuration.items():
+for service in services_configuration:
 
-    log.very_verbose("Service: %s" % prefix)
-    log.pp(service)
-
-    prefix += '_'
+    name = service.get('name')
+    prefix = service.get('prefix') + '_'
+    log.very_verbose("Service: %s" % name)
+    # log.pp(service)
 
     # Is this service enabled?
     enable_var = prefix.upper() + 'ENABLE'
 
     if os.environ.get(enable_var, False):
-        log.info("Service *%s* requested for enabling" % service['name'])
+        log.info("Service *%s* requested for enabling" % name)
 
         # Is this service external?
         external_var = prefix.upper() + 'EXTERNAL'
@@ -109,40 +74,29 @@ for prefix, service in services_configuration.items():
                 variables[key] = value
 
         ###################
+        # Load module and get class and configuration
         module = meta.get_module_from_string(
-            'flask_ext.' + service['extension'])
-        Class = getattr(module, service['class'])
-        Configurator = getattr(module, 'InjectorConfiguration')
+            'flask_ext.' + service.get('extension'))
+        print("TEST MODULE", module)
+        Class = getattr(module, service.get('class'))
+        Configurator = getattr(module, service.get('injector'))
         Configurator.set_variables(variables)
 
-        # ###################
-        # # Create farm instance for this service
-        # # loading the module in services
-        # name = '%s.%s.%s.%s' % (
-        #     BACKEND_PACKAGE, 'services', 'connectors', service
-        # )
-        # module = meta.get_module_from_string(name)
-        # if module is None:
-        #     raise AttributeError("No internal module for service %s" % service)
-
-        # # from rapydo.services.sql.alchemy import SQLFarm as service
-        # farm = getattr(module, 'MyFarm')
-        # # print("imported", module, farm)
-        # args = {'user': 'guest'}
-        # farm(**args)
+        # base_models_module = "rapydo.models.SOME"
+        # custom_models_module = "eudat.models.SOME"
+        # Configurator.set_models(base_models_module, custom_models_module)
 
         # ###################
-        # # and pass previous variables
-
         # # # MOVE THIS INTO FARM
         # # # Is this service optional?
         # # variables.get('optional', False)
         # # print(variables)
 
-        # ###################
         # Save into mem
-        services[service['name']] = Configurator
-        # mem._extensions[service['name']] = instance
+        services[name] = Configurator
+
+    else:
+        log.very_verbose("Skipping service %s" % name)
 
         # ###################
         # print("\n\nEXIT DEBUG")
@@ -150,6 +104,9 @@ for prefix, service in services_configuration.items():
 
 # log.pp(mem)
 # exit(1)
+#
+# #######################################################
+# farm_queue = []
 
 # #######################################################
 # # RELATIONAL DATABASE
