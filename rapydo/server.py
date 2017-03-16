@@ -212,21 +212,40 @@ def create_app(name=__name__, debug=False,
 ###################################
 
     from injector import inject
-    from flask_neo4j import Neo4J
+
+    # *this is a strong requirement*
+    from flask_ext.flask_neo4j import NeoModel
+    from flask_ext.flask_irods import IrodsPythonClient
+    # *this is a strong requirement*
+
     from flask_restful import Api, Resource
     api = Api(microservice)
 
     class HelloWorld(Resource):
 
-        @inject(db=Neo4J)
-        def __init__(self, db):
-            print("API resource init", db)
-            self.db = db
+        # @inject(services=[NeoModel, IrodsPythonClient])
+        @inject(irods=IrodsPythonClient, neo4j=NeoModel)
+        # def __init__(self, irods, neo4j):
+        def __init__(self, **kwargs):
+            print("Services:", kwargs)
+            self.irods = kwargs['irods']
+            self.neo4j = kwargs['neo4j']
 
         def get(self):
-            print("TEST neo4j connection", self.db.connection)
-            session = self.db.connection.session()
-            print("TEST neo4j session", session)
+
+            ####################
+            print("neomodel connection:", self.neo4j.connection)
+            from rapydo.models.neo4j import Role
+            test = Role(name="pippo").save()
+            print("neomodel test:", test)
+
+            ####################
+            coll = self.irods.connection.collections.get('/tempZone')
+            print("root object:", coll)
+            for col in coll.subcollections:
+                print("collection:", col)
+
+            ####################
             return {'hello': 'world'}
 
     api.add_resource(HelloWorld, '/foo')
@@ -246,7 +265,7 @@ def create_app(name=__name__, debug=False,
         # Dynamically load the authentication service
         meta = Meta()
         module_base = __package__ + ".services.authentication"
-        auth_service = os.environ.get('BACKEND_AUTH_SERVICE', '')
+        auth_service = os.environ.get('AUTH_SERVICE', '')
         module_name = module_base + '.' + auth_service
         log.debug("Trying to load the module %s" % module_name)
         module = meta.get_module_from_string(module_name)
