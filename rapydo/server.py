@@ -42,16 +42,16 @@ class Flask(OriginalFlask):
             if len(out) > response_log_max_len:
                 out = out[:response_log_max_len] + ' ...'
 
-            log.very_verbose("MAKE_RESPONSE: %s" % out)
+            log.verbose("Custom response built: %s" % out)
         except:
-            log.debug("MAKE_RESPONSE: [UNREADABLE OBJ]")
+            log.debug("Response: [UNREADABLE OBJ]")
         responder = ResponseMaker(rv)
 
         # Avoid duplicating the response generation
         # or the make_response replica.
         # This happens with Flask exceptions
         if responder.already_converted():
-            log.verbose("Response was already converted")
+            log.very_verbose("Response was already converted")
             # # Note: this response could be a class ResponseElements
             # return rv
 
@@ -179,16 +179,7 @@ def create_app(name=__name__, debug=False,
 # before reading custom configuration?
     modules = []
     from rapydo.services.detect import services as internal_services
-    log.pp(internal_services)
-
-    # for name, service in internal_services.items():
     for name, ConfigureInjection in internal_services.items():
-        # print(name, service)
-
-        # # This is done by the configurator
-        # service.init_app(microservice)
-
-        # The final trick
         modules.append(ConfigureInjection(microservice))
 
 # # RE ENABLE? Or injection will do this for us?
@@ -216,6 +207,7 @@ def create_app(name=__name__, debug=False,
     # *this is a strong requirement*
     from flask_ext.flask_neo4j import NeoModel
     from flask_ext.flask_irods import IrodsPythonClient
+    from flask_ext.flask_alchemy import SqlAlchemy
     # *this is a strong requirement*
 
     from flask_restful import Api, Resource
@@ -224,32 +216,44 @@ def create_app(name=__name__, debug=False,
     class HelloWorld(Resource):
 
         # @inject(services=[NeoModel, IrodsPythonClient])
-        @inject(irods=IrodsPythonClient, neo4j=NeoModel)
+        @inject(
+            irods=IrodsPythonClient,
+            neo4j=NeoModel,
+            sql=SqlAlchemy)
         # def __init__(self, irods, neo4j):
         def __init__(self, **kwargs):
             print("Services:", kwargs)
-            self.irods = kwargs['irods']
-            self.neo4j = kwargs['neo4j']
+            self.irods = kwargs.get('irods')
+            self.neo4j = kwargs.get('neo4j')
+            self.sql = kwargs.get('sql')
 
         def get(self):
 
             ####################
             print("neomodel connection:", self.neo4j.connection)
-            from rapydo.models.neo4j import Role
-            test = Role(name="pippo").save()
+            test = self.neo4j.Role(name="pippo").save()
             print("neomodel test:", test)
 
             ####################
+            print("irods connection:", self.irods.connection)
             coll = self.irods.connection.collections.get('/tempZone')
             print("root object:", coll)
             for col in coll.subcollections:
                 print("collection:", col)
 
             ####################
+            print("alchemy connection:", self.sql.connection)
+            res = None
+            res = self.sql.User.query.all()
+            print("tmp", res)
+
+            ####################
             return {'hello': 'world'}
 
     api.add_resource(HelloWorld, '/foo')
 
+    ##############################
+    # Enabling configuration modules for services to be injected
     from flask_injector import FlaskInjector
     FlaskInjector(app=microservice, modules=modules)
 

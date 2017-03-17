@@ -3,12 +3,10 @@
 """ iRODS file-system flask connector """
 
 import os
-import time
 import logging
 from irods.session import iRODSSession
-from flask import _app_ctx_stack as stack
-from flask_ext import get_logger, BaseInjector
 from rapydo.utils.certificates import Certificates
+from flask_ext import BaseInjector, BaseExtension, get_logger
 
 # Silence too much logging from irods
 irodslogger = logging.getLogger('irods')
@@ -17,40 +15,16 @@ irodslogger.setLevel(logging.INFO)
 log = get_logger(__name__)
 
 
-class IrodsPythonClient(object):
+class IrodsPythonClient(BaseExtension):
 
-    def __init__(self, app=None, variables={}, models=[]):
-
-        self.app = app
-        self.variables = variables
-
-        if app is not None:
-            self.init_app(app)
-
-        log.very_verbose("Vars: %s" % variables)
-
-    def init_app(self, app):
-        app.teardown_appcontext(self.teardown)
-
-    def connect(self, user=None):
-        # print("variables:", self.variables)
+    def prepare_session(self, user=None):
         if user is None:
+            self.user = self.variables.get('default_admin_user')
             # Note: 'user' is referring to the main user inside iCAT
             # self.user = self.variables.get('user')
-            self.user = self.variables.get('default_admin_user')
         else:
             self.user = user
 
-        ######################
-        # zone = self.variables['zone']
-        # if user is None:
-        #     user = self.variables.get('user')
-        # else:
-        #     # build new home
-        #     self.variables['home'] = '/%s/home/%s' % (zone, user)
-        # home = self.variables.get('home')
-
-        ######################
         # identity GSI
 
         # TO FIX: move this into certificates.py?
@@ -65,14 +39,8 @@ class IrodsPythonClient(object):
         self._hostdn = Certificates.get_dn_from_cert(
             user='host', certfilename='hostcert')
 
-        ######################
-        self.retry()
-        log.info("Connected! %s" % self.rpc)
-
-        return self.rpc
-
     def session(self):
-        self.rpc = iRODSSession(
+        irods_session = iRODSSession(
             user=self.user,
             zone=self.variables.get('zone'),
             # password='thisismypassword', # authentication_scheme='password',
@@ -81,49 +49,15 @@ class IrodsPythonClient(object):
             port=self.variables.get('port'),
             server_dn=self._hostdn,
         )
-
-    def retry(self, retry_interval=5, max_retries=-1):
-        retry_count = 0
-        while max_retries != 0 or retry_count < max_retries:
-            retry_count += 1
-            if retry_count > 1:
-                log.verbose("testing again")
-            if self.test_connection():
-                break
-            else:
-                log.info("Service not available")
-                time.sleep(retry_interval)
+        return irods_session
 
     def package_connection(self):
-        self.session()
+        self.prepare_session()
+        obj = self.session()
         # Do a simple query to test this session
         from irods.models import DataObject
-        self.rpc.query(DataObject.owner_name).all()
-
-    def test_connection(self, retry_interval=5, max_retries=0):
-        try:
-            self.package_connection()
-            return True
-        # except:
-        except Exception as e:
-            raise e
-            print("Error", e)
-            return False
-
-    def teardown(self, exception):
-        ctx = stack.top
-        if hasattr(ctx, 'rpc'):
-            # neo does not have an 'open' connection that needs closing
-            # ctx.rpc.close()
-            ctx.rpc = None
-
-    @property
-    def connection(self):
-        ctx = stack.top
-        if ctx is not None:
-            if not hasattr(ctx, 'rpc'):
-                ctx.rpc = self.connect()
-            return ctx.rpc
+        obj.query(DataObject.owner_name).all()
+        return obj
 
 
 class RPCInjector(BaseInjector):

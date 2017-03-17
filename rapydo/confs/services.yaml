@@ -1,7 +1,7 @@
 
+  # neo4j graphdb ORM
 - name: neo4j
-    # neo4j graphdb ORM
-    # TODO: how to load models
+  load_models: 1
   prefix: graphdb
   library: neomodel #useless?
   extension: flask_neo4j
@@ -9,22 +9,22 @@
   injector: InjectNeo
 
   # irods commands
-  # TODO: how to avoid loading models
 - name: irods
+  load_models: 0
   prefix: irods
   library: python-irodsclient
   extension: flask_irods
   class: IrodsPythonClient
   injector: RPCInjector
 
-  # # sqlalchemy
-  # # TODO: how to create a flask extension for an existing one?
-  # alchemy: {
-  #     name: sqlalchemy,
-  #     library: Flask-SQLalchemy,
-  #     extension: flask_alchemy,
-  #     class: SqlAlchemy,
-  # },
+  # sqlalchemy
+- name: sqlalchemy
+  load_models: 1
+  prefix: alchemy
+  library: Flask-SQLalchemy
+  extension: flask_alchemy
+  class: SqlAlchemy
+  injector: SqlInjector
 
 ##############################
 # # OTHERS?

@@ -2,7 +2,8 @@
 
 """ Models for the relational database """
 
-from rapydo.services.alchemy import db
+from flask_sqlalchemy import SQLAlchemy as OriginalAlchemy
+db = OriginalAlchemy()
 
 
 ####################################

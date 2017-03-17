@@ -82,7 +82,7 @@ class Meta(object):
             # Meta language for dinamically import
             module = import_module(modulestring)
         except ImportError as e:
-            log.critical("Failed to load resource: " + str(e))
+            log.warning("Failed to load resource: " + str(e))
         return module
 
     def import_submodules_from_package(self, package_name):
@@ -148,6 +148,28 @@ class Meta(object):
             if cls_attribute is not None and inspect.isclass(cls_attribute):
                 return args[0]
         return None
+
+    def models_module(self, name, package):
+        module_name = "%s.%s.%s" % (package, 'models', name)
+        return self.get_module_from_string(module_name)
+
+    def obj_from_models(self, obj_name, module_name, package):
+        module = self.models_module(module_name, package)
+        obj = getattr(module, obj_name, None)
+        return obj
+
+    def import_models(self, name, package, exit_on_fail=True):
+
+        models = {}
+        module = self.models_module(name, package)
+
+        if module is not None:
+            models = self.get_new_classes_from_module(module)
+        elif exit_on_fail:
+            log.error("Missing module associated to requested models")
+            exit(1)
+
+        return models
 
 
 ######################################################

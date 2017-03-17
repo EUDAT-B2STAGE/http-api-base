@@ -3,20 +3,8 @@
 """
 Detect which services are running,
 by testing environment variables set by container links
-"""
 
-import os
-from rapydo.utils.meta import Meta
-from rapydo.confs import BACKEND_PACKAGE
-from rapydo.utils.formats.yaml import load_yaml_file
-from rapydo.utils.logs import get_logger
-
-log = get_logger(__name__)
-services = {}
-
-
-"""
-# Refactor "detection"
+#### Refactor "detection"
 due to compose v2/v3 not providing anymore env vars
 from linked containers
 
@@ -32,6 +20,18 @@ from linked containers
 
 """
 
+import os
+from rapydo.utils.meta import Meta
+from rapydo.confs import BACKEND_PACKAGE, CUSTOM_PACKAGE
+from rapydo.utils.formats.yaml import load_yaml_file
+from rapydo.utils.logs import get_logger
+
+log = get_logger(__name__)
+
+# TO FIX: make this a class
+
+
+###########################
 CORE_CONFIG_PATH = os.path.join(BACKEND_PACKAGE, 'confs')
 services_configuration = load_yaml_file('services', path=CORE_CONFIG_PATH)
 # log.pp(services_configuration)
@@ -43,6 +43,7 @@ else:
     log.verbose("Authe service '%s'" % auth_service)
 
 meta = Meta()
+services = {}
 
 for service in services_configuration:
 
@@ -55,7 +56,7 @@ for service in services_configuration:
     enable_var = prefix.upper() + 'ENABLE'
 
     if os.environ.get(enable_var, False):
-        log.info("Service *%s* requested for enabling" % name)
+        log.debug("Service *%s* requested for enabling" % name)
 
         # Is this service external?
         external_var = prefix.upper() + 'EXTERNAL'
@@ -75,16 +76,38 @@ for service in services_configuration:
 
         ###################
         # Load module and get class and configuration
-        module = meta.get_module_from_string(
-            'flask_ext.' + service.get('extension'))
-        print("TEST MODULE", module)
-        Class = getattr(module, service.get('class'))
+        flaskext = service.get('extension')
+
+        # Try inside our extensions
+        module = meta.get_module_from_string('flask_ext.' + flaskext)
+
+        # Try inside normal flask extensions
+        if module is None:
+            module = meta.get_module_from_string(flaskext)
+            if module is None:
+                log.error("Missing %s for service %s" % (flaskext, name))
+                exit(1)
+            else:
+                log.very_verbose("Loaded external extension %s" % name)
+        else:
+            log.very_verbose("Loaded internal extension %s" % name)
+
         Configurator = getattr(module, service.get('injector'))
+        # TODO: do we need the class loading here?
+        # could this help in automatizing the injection?
+        # Class = getattr(module, service.get('class'))
+
+        # Passing variables
         Configurator.set_variables(variables)
 
-        # base_models_module = "rapydo.models.SOME"
-        # custom_models_module = "eudat.models.SOME"
-        # Configurator.set_models(base_models_module, custom_models_module)
+        # Passing models
+        if service.get('load_models'):
+            Configurator.set_models(
+                meta.import_models(name, BACKEND_PACKAGE),
+                meta.import_models(name, CUSTOM_PACKAGE, exit_on_fail=False)
+            )
+        else:
+            log.debug("Skipping models")
 
         # ###################
         # # # MOVE THIS INTO FARM
@@ -98,13 +121,10 @@ for service in services_configuration:
     else:
         log.very_verbose("Skipping service %s" % name)
 
-        # ###################
-        # print("\n\nEXIT DEBUG")
-        # exit(1)
-
-# log.pp(mem)
+# ###################
+# print("\n\nEXIT DEBUG")
 # exit(1)
-#
+
 # #######################################################
 # farm_queue = []
 

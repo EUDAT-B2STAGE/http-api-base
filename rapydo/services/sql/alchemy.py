@@ -64,8 +64,7 @@ class SQLFarm(ServiceFarm):
 
 # // TO FIX:
 # CHECK IF PASSWORD IS INSIDE THE STRING AND CENSOR IT
-        log.debug(
-            "App attached to '%s'" % uri)
+        log.debug("App attached to '%s'" % uri)
 
         # Create database and tables if they don't exist yet
         with app.app_context():
