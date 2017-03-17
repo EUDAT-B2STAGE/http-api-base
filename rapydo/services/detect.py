@@ -28,22 +28,21 @@ from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
 
-# TO FIX: make this a class
 
-
-###########################
 CORE_CONFIG_PATH = os.path.join(BACKEND_PACKAGE, 'confs')
 services_configuration = load_yaml_file('services', path=CORE_CONFIG_PATH)
 # log.pp(services_configuration)
 
+# TO FIX: move it from here?
 auth_service = os.environ.get('AUTH_SERVICE')
 if auth_service is None:
     raise ValueError("You MUST specify a service for authentication")
 else:
-    log.verbose("Authe service '%s'" % auth_service)
+    log.verbose("Auth service '%s'" % auth_service)
 
 meta = Meta()
 services = {}
+services_classes = {}
 
 for service in services_configuration:
 
@@ -93,9 +92,7 @@ for service in services_configuration:
             log.very_verbose("Loaded internal extension %s" % name)
 
         Configurator = getattr(module, service.get('injector'))
-        # TODO: do we need the class loading here?
-        # could this help in automatizing the injection?
-        # Class = getattr(module, service.get('class'))
+        Class = getattr(module, service.get('class'))
 
         # Passing variables
         Configurator.set_variables(variables)
@@ -115,8 +112,9 @@ for service in services_configuration:
         # # variables.get('optional', False)
         # # print(variables)
 
-        # Save into mem
+        # Save services
         services[name] = Configurator
+        services_classes[name] = Class
 
     else:
         log.very_verbose("Skipping service %s" % name)

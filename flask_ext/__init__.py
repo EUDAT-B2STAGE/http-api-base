@@ -26,7 +26,7 @@ log = get_logger(__name__)
 
 class BaseExtension(object):
 
-    def __init__(self, app=None, variables={}, models=[]):
+    def __init__(self, app=None, variables={}, models={}):
 
         # a different name for each extended object
         self.name = self.__class__.__name__.lower()

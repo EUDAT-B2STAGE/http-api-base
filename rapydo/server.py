@@ -175,17 +175,11 @@ def create_app(name=__name__, debug=False,
     ##############################
     # DATABASE/SERVICEs CHECKS
 
-# TO FIX: move this as early as possible,
-# before reading custom configuration?
+# TO FIX: move this as early as possible
     modules = []
     from rapydo.services.detect import services as internal_services
     for name, ConfigureInjection in internal_services.items():
         modules.append(ConfigureInjection(microservice))
-
-# # RE ENABLE? Or injection will do this for us?
-#     for service, myclass in internal_services.items():
-#         log.debug("Available service %s" % service)
-#         myclass(check_connection=True, app=microservice)
 
     ##############################
     # Cors
@@ -203,29 +197,18 @@ def create_app(name=__name__, debug=False,
 ###################################
 
     from injector import inject
-
-    # *this is a strong requirement*
-    from flask_ext.flask_neo4j import NeoModel
-    from flask_ext.flask_irods import IrodsPythonClient
-    from flask_ext.flask_alchemy import SqlAlchemy
-    # *this is a strong requirement*
-
+    from rapydo.services.detect import services_classes
     from flask_restful import Api, Resource
     api = Api(microservice)
 
     class HelloWorld(Resource):
 
-        # @inject(services=[NeoModel, IrodsPythonClient])
-        @inject(
-            irods=IrodsPythonClient,
-            neo4j=NeoModel,
-            sql=SqlAlchemy)
-        # def __init__(self, irods, neo4j):
+        @inject(**services_classes)
         def __init__(self, **kwargs):
-            print("Services:", kwargs)
+            # print("Services:", kwargs)
             self.irods = kwargs.get('irods')
             self.neo4j = kwargs.get('neo4j')
-            self.sql = kwargs.get('sql')
+            self.sql = kwargs.get('sqlalchemy')
 
         def get(self):
 

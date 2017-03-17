@@ -26,6 +26,15 @@
   class: SqlAlchemy
   injector: SqlInjector
 
+  # authentication
+- name: authentication
+  load_models: 0
+  prefix: auth
+  library: null
+  extension: flask_auth
+  class: Authenticator
+  injector: AuthInjector
+
 ##############################
 # # OTHERS?
 # "mongo",
