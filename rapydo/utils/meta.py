@@ -7,9 +7,10 @@ usefull documentation:
 http://python-3-patterns-idioms-test.readthedocs.org/en/latest/Metaprogramming.html
 """
 
-from importlib import import_module
 import pkgutil
 import inspect
+from importlib import import_module
+from rapydo.confs import BACKEND_PACKAGE, CUSTOM_PACKAGE
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
@@ -71,13 +72,16 @@ class Meta(object):
         self.set_latest_classes(classes)
         return self.get_latest_classes()
 
-    def get_module_from_string(self, modulestring):
+    def get_module_from_string(self, modulestring, prefix_package=False):
         """
         Getting a module import
         when your module is stored as a string in a variable
         """
 
         module = None
+        if prefix_package:
+            modulestring = BACKEND_PACKAGE + '.' + modulestring.lstrip('.')
+
         try:
             # Meta language for dinamically import
             module = import_module(modulestring)
@@ -158,9 +162,14 @@ class Meta(object):
         obj = getattr(module, obj_name, None)
         return obj
 
-    def import_models(self, name, package, exit_on_fail=True):
+    def import_models(self, name, custom=False, exit_on_fail=True):
 
         models = {}
+        if custom:
+            package = CUSTOM_PACKAGE
+            # exit_on_fail = False
+        else:
+            package = BACKEND_PACKAGE
         module = self.models_module(name, package)
 
         if module is not None:

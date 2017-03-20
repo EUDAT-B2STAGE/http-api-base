@@ -73,15 +73,14 @@ class ServiceFarm(metaclass=abc.ABCMeta):
     def __init__(self, check_connection=False, app=None):
 
         self._service_name = self.define_service_name()
-        testdb = True
         counter = 0
         sleep_time = 1
 
         while check_connection:
             try:
                 obj = self.init_connection(app)
+                obj  # avoid PEP error for variables 'not getting used'
                 del obj
-                testdb = False
                 log.info("Instance of '%s' was connected"
                          % self._service_name)
             except AttributeError as e:

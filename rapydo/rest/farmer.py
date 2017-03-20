@@ -46,6 +46,9 @@ class EndpointsFarmer(object):
             decorated = authentication.authorization_required(
                 original, roles=roles, from_swagger=True)
             setattr(resource.cls, method, decorated)
+
+            if len(roles) < 1:
+                roles = "'DEFAULT'"
             log.very_verbose("Auth on %s.%s for %s"
                              % (resource.cls.__name__, method, roles))
 

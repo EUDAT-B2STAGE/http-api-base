@@ -8,7 +8,7 @@ import os
 import re
 import glob
 from rapydo.confs import (
-    BACKEND_PACKAGE, CUSTOM_PACKAGE,
+    BACKEND_PACKAGE, CUSTOM_PACKAGE, CORE_CONFIG_PATH,
     BLUEPRINT_KEY, API_URL, BASE_URLS,
 )
 
@@ -58,7 +58,6 @@ class Customizer(object):
         # Reading configuration
 
         CUSTOM_CONFIG_PATH = os.path.join(CUSTOM_PACKAGE, 'specs')
-        CORE_CONFIG_PATH = os.path.join(BACKEND_PACKAGE, 'confs')
 
         # Find out what is the active blueprint
         bp_file = os.path.join(CUSTOM_CONFIG_PATH, '%s.init' % BLUEPRINT_KEY)

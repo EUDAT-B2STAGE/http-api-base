@@ -2,56 +2,34 @@
 
 """
 Detect which services are running,
-by testing environment variables set by container links
+by testing environment variables set
+with containers/docker-compose/do.py
 
-#### Refactor "detection"
-due to compose v2/v3 not providing anymore env vars
-from linked containers
-
---
-
-- read from host variables
-    - set variables in .env (for now)
-        - note: .env may not work in swarm deploy mode
-    - read from configuration and set them with do.py (in the future)
-- variables are needed to ENABLE a service
-    - services/dbs should have standard names
-    - variables also set if a service is external
-
+Note: links and automatic variables were removed as unsafe
 """
 
 import os
+from rapydo.confs import CORE_CONFIG_PATH
 from rapydo.utils.meta import Meta
-from rapydo.confs import BACKEND_PACKAGE, CUSTOM_PACKAGE
 from rapydo.utils.formats.yaml import load_yaml_file
 from rapydo.utils.logs import get_logger
 
+
 log = get_logger(__name__)
-
-
-CORE_CONFIG_PATH = os.path.join(BACKEND_PACKAGE, 'confs')
-services_configuration = load_yaml_file('services', path=CORE_CONFIG_PATH)
-# log.pp(services_configuration)
-
-# TO FIX: move it from here?
-auth_service = os.environ.get('AUTH_SERVICE')
-if auth_service is None:
-    raise ValueError("You MUST specify a service for authentication")
-else:
-    log.verbose("Auth service '%s'" % auth_service)
-
 meta = Meta()
 services = {}
 services_classes = {}
+services_configuration = load_yaml_file('services', path=CORE_CONFIG_PATH)
 
+# TO FIX: cycle only enabled in env??
+# Work off all available services
 for service in services_configuration:
 
     name = service.get('name')
     prefix = service.get('prefix') + '_'
     log.very_verbose("Service: %s" % name)
-    # log.pp(service)
 
-    # Is this service enabled?
+    # Was this service enabled from the developer?
     enable_var = prefix.upper() + 'ENABLE'
 
     if os.environ.get(enable_var, False):
@@ -100,17 +78,17 @@ for service in services_configuration:
         # Passing models
         if service.get('load_models'):
             Configurator.set_models(
-                meta.import_models(name, BACKEND_PACKAGE),
-                meta.import_models(name, CUSTOM_PACKAGE, exit_on_fail=False)
+                meta.import_models(name, custom=False),
+                meta.import_models(name, custom=True, exit_on_fail=False)
             )
         else:
             log.debug("Skipping models")
 
         # ###################
-        # # # MOVE THIS INTO FARM
-        # # # Is this service optional?
-        # # variables.get('optional', False)
-        # # print(variables)
+        # TO DO: elaborate this OPTIONAL concept
+        # # Is this service optional?
+        # variables.get('optional', False)
+        # print(variables)
 
         # Save services
         services[name] = Configurator

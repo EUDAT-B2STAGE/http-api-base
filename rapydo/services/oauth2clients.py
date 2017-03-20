@@ -25,7 +25,7 @@ B2ACCESS_PROD_URL = B2ACCESS_PROD_BASEURL + ":8443"
 B2ACCESS_PROD_CA_URL = B2ACCESS_PROD_BASEURL + ":8445"
 
 
-class ExternalServicesLogin(object):
+class ExternalLogins(object):
 
     _available_services = {}
 

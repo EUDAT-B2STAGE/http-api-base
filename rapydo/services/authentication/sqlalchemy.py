@@ -5,38 +5,28 @@ Sql handling authentication process
 """
 
 import sqlalchemy
-# import pytz
 from datetime import datetime, timedelta
 from rapydo.utils.uuid import getUUID
-from rapydo.services.detect import SQL_AVAILABLE
 from rapydo.services.authentication import BaseAuthentication
 from rapydo.utils.logs import get_logger
+from injector import inject
+from flask_ext.flask_alchemy import SqlAlchemy
 
 log = get_logger(__name__)
 
-if not SQL_AVAILABLE:
-    log.critical("No SQLalchemy service found for auth")
-    exit(1)
+# TO FIX: how to give error if the proposed service is not enabled?
+# must find a way with injector
+#
+# from rapydo.services.detect import SQL_AVAILABLE
+# if not SQL_AVAILABLE:
+#     log.critical("No SQLalchemy service found for auth")
+#     exit(1)
 
 
 class Authentication(BaseAuthentication):
 
-    def __init__(self, services=None):
-        """
-        SQLalchemy should be created only once.
-        I will recover initial instance from the Flask app services.
-        """
-
-        self.myinit()
-        self._db = services.get('sql').get_instance()
-
     def fill_custom_payload(self, userobj, payload):
-        """
-# // TO FIX
-
-This method should be implemented inside the vanilla folder,
-instead of here
-        """
+        # TO FIX: should be implemented as vanilla instead of here
         return payload
 
     def get_user_object(self, username=None, payload=None):

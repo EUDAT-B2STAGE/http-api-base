@@ -21,8 +21,9 @@ BASE_URLS = [API_URL, AUTH_URL]
 #################################
 # Directories for core code or user custom code
 BACKEND_PACKAGE = 'rapydo'
-
 CUSTOM_PACKAGE = os.environ.get('VANILLA_PACKAGE', 'custom')
+
+CORE_CONFIG_PATH = os.path.join(BACKEND_PACKAGE, 'confs')
 
 # DEFAULTS_PATH = os.path.join(BACKEND_PACKAGE, 'confs', 'defaults')
 

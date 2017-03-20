@@ -5,15 +5,16 @@ Main server factory.
 We create all the internal flask  components here!
 """
 
-import os
 from flask import Flask as OriginalFlask, request, g
 from werkzeug.contrib.fixers import ProxyFix
 from rapydo.rest.response import ResponseMaker
 from rapydo.customization import Customizer
-from rapydo.services.oauth2clients import ExternalServicesLogin as oauth2
 from rapydo.confs import PRODUCTION, DEBUG as ENVVAR_DEBUG
-from rapydo.utils.meta import Meta
 from rapydo.utils.globals import mem
+from rapydo.services.detect import \
+    services as internal_services, \
+    services_classes as injectable_services
+
 from rapydo.utils.logs import get_logger, \
     handle_log_output, MAX_CHAR_LEN, set_global_log_level
 
@@ -43,7 +44,7 @@ class Flask(OriginalFlask):
                 out = out[:response_log_max_len] + ' ...'
 
             log.verbose("Custom response built: %s" % out)
-        except:
+        except BaseException:
             log.debug("Response: [UNREADABLE OBJ]")
         responder = ResponseMaker(rv)
 
@@ -65,28 +66,6 @@ class Flask(OriginalFlask):
         return super().make_response(response)
 
 
-def create_auth_instance(module, services, app, first_call=False):
-
-    # This is the main object that drives authentication
-    # inside our Flask server.
-    # Note: to be stored inside the flask global context
-    custom_auth = module.Authentication(services)
-
-    # If oauth services are available, set them before every request
-    if first_call or oauth2._check_if_services_exist():
-        ext_auth = oauth2(app.config['TESTING'])
-        custom_auth.set_oauth2_services(ext_auth._available_services)
-
-    secret = 'IaMvERYsUPERsECRET'
-    if not app.config['TESTING']:
-        secret = str(custom_auth.import_secret(app.config['SECRET_KEY_FILE']))
-
-    # Install app secret for oauth2
-    app.secret_key = secret + '_app'
-
-    return custom_auth
-
-
 ########################
 # Flask App factory    #
 ########################
@@ -97,13 +76,9 @@ def create_app(name=__name__, debug=False,
                **kwargs):
     """ Create the server istance for Flask application """
 
-# # REMOVE ME
+# TO FIX: REMOVE ME
     debug = True
-#     print("TEST 0")
-#     from rapydo.services.detect import services as internal_services
-#     print("TEST 1")
-#     exit(1)
-# # REMOVE ME
+# REMOVE ME
 
     #############################
     # Initialize reading of all files
@@ -117,20 +92,6 @@ def create_app(name=__name__, debug=False,
     import rapydo.confs as config
     microservice = Flask(name, **kwargs)
     microservice.wsgi_app = ProxyFix(microservice.wsgi_app)
-
-    ##############################
-    # @microservice.before_first_request
-    # def first():
-    #     print("BEFORE THE VERY FIRST REQUEST", g)
-
-    # @microservice.before_request
-    # def before():
-    #     print("BEFORE EVERY REQUEST...")
-
-    # @microservice.after_request
-    # def after(response):
-    #     print("AFTER EVERY REQUEST...")
-    #     return response
 
     ##############################
     # Disable security if launching celery workers
@@ -148,7 +109,7 @@ def create_app(name=__name__, debug=False,
     if ENVVAR_DEBUG is not None:
         try:
             tmp = int(ENVVAR_DEBUG) == 1
-        except:
+        except BaseException:
             tmp = str(ENVVAR_DEBUG).lower() == 'true'
         debug = tmp  # bool(tmp)
     microservice.config['DEBUG'] = debug
@@ -173,11 +134,8 @@ def create_app(name=__name__, debug=False,
     #################################################
 
     ##############################
-    # DATABASE/SERVICEs CHECKS
-
-# TO FIX: move this as early as possible
+    # DATABASE/SERVICEs init and checks
     modules = []
-    from rapydo.services.detect import services as internal_services
     for name, ConfigureInjection in internal_services.items():
         modules.append(ConfigureInjection(microservice))
 
@@ -196,94 +154,83 @@ def create_app(name=__name__, debug=False,
 # QUICK PROTOTYPE
 ###################################
 
-    from injector import inject
-    from rapydo.services.detect import services_classes
-    from flask_restful import Api, Resource
-    api = Api(microservice)
+    # from injector import inject
+    # from flask_restful import Api, Resource
+    # api = Api(microservice)
 
-    class HelloWorld(Resource):
+    # from rapydo.protocols.bearer import authentication
 
-        @inject(**services_classes)
-        def __init__(self, **kwargs):
-            # print("Services:", kwargs)
-            self.irods = kwargs.get('irods')
-            self.neo4j = kwargs.get('neo4j')
-            self.sql = kwargs.get('sqlalchemy')
+    # class HelloWorld(Resource):
 
-        def get(self):
+    #     @inject(**injectable_services)
+    #     def __init__(self, **injected_services):
 
-            ####################
-            print("neomodel connection:", self.neo4j.connection)
-            test = self.neo4j.Role(name="pippo").save()
-            print("neomodel test:", test)
+    #         ################
+    #         # AUTH
+    #         self.auth = injected_services.pop('authentication').connection
+    #         # set here "services" for auth
+    #         self.auth.set_services(injected_services)
+    #         print("YEAH", self.auth._db)
+    #         return
+    #         ################
 
-            ####################
-            print("irods connection:", self.irods.connection)
-            coll = self.irods.connection.collections.get('/tempZone')
-            print("root object:", coll)
-            for col in coll.subcollections:
-                print("collection:", col)
+    #         self.auth = injected_services.pop('authentication')
+    #         # print("Services:", injected_services)
+    #         self.irods = injected_services.get('irods')
+    #         self.neo4j = injected_services.get('neo4j')
+    #         self.sql = injected_services.get('sqlalchemy')
 
-            ####################
-            print("alchemy connection:", self.sql.connection)
-            res = None
-            res = self.sql.User.query.all()
-            print("tmp", res)
+    #     def send_errors(self, **kwargs):
+    #         print("ERROR", kwargs)
+    #         return kwargs.get('message')
 
-            ####################
-            return {'hello': 'world'}
+    #     @authentication.authorization_required
+    #     def get(self):
 
-    api.add_resource(HelloWorld, '/foo')
+    #         return {'hello': 'world'}
+
+    #         ####################
+    #         print("authentication:", self.auth.connection)
+
+    #         ####################
+    #         print("neomodel connection:", self.neo4j.connection)
+    #         test = self.neo4j.Role(name="pippo").save()
+    #         print("neomodel test:", test)
+
+    #         ####################
+    #         print("irods connection:", self.irods.connection)
+    #         coll = self.irods.connection.collections.get('/tempZone')
+    #         print("root object:", coll)
+    #         for col in coll.subcollections:
+    #             print("collection:", col)
+
+    #         ####################
+    #         print("alchemy connection:", self.sql.connection)
+    #         res = None
+    #         res = self.sql.User.query.all()
+    #         print("tmp", res)
+
+    #         ####################
+    #         return {'hello': 'world'}
+
+    # api.add_resource(HelloWorld, '/foo')
 
     ##############################
     # Enabling configuration modules for services to be injected
     from flask_injector import FlaskInjector
     FlaskInjector(app=microservice, modules=modules)
 
-    return microservice
+    # return microservice
 ###################################
 ###################################
-    exit(1)
 
-    ##############################
-    # Flask security
-    if enable_security:
-
-        # Dynamically load the authentication service
-        meta = Meta()
-        module_base = __package__ + ".services.authentication"
-        auth_service = os.environ.get('AUTH_SERVICE', '')
-        module_name = module_base + '.' + auth_service
-        log.debug("Trying to load the module %s" % module_name)
-        module = meta.get_module_from_string(module_name)
-
-        # At init time, verify and build Oauth services if any
-        init_auth = create_auth_instance(
-            module, internal_services, microservice, first_call=True)
-
-        # Enabling also OAUTH library
-        from rapydo.protocols.oauth import oauth
-        oauth.init_app(microservice)
-
-        @microservice.before_request
-        def enable_authentication_per_request():
-            """ Save auth object """
-
-            # Authentication the right (per-instance) way
-            custom_auth = create_auth_instance(
-                module, internal_services, microservice)
-
-            # Save globally across the code
-            g._custom_auth = custom_auth
-
-        log.info("FLASKING! Injected security internal module")
-
-    if not worker_mode:
-        # Global namespace inside the Flask server
-        @microservice.before_request
-        def enable_global_services():
-            """ Save all databases/services """
-            g._services = internal_services
+# UHM ? WHY ?
+    # if not worker_mode:
+    #     # Global namespace inside the Flask server
+    #     @microservice.before_request
+    #     def enable_global_services():
+    #         """ Save all databases/services """
+    #         g._services = internal_services
 
     ##############################
     # Restful plugin
@@ -303,7 +250,7 @@ def create_app(name=__name__, debug=False,
     for rule in microservice.url_map.iter_rules():
 
         rulename = str(rule)
-        # Skip rules for exposing schemas
+        # Skip rules that are only exposing schemas
         if '/schemas/' in rulename:
             continue
 
@@ -324,37 +271,40 @@ def create_app(name=__name__, debug=False,
 
         rule.methods = newmethods
 
-    ##############################
-    # Init objects inside the app context
-    if not avoid_context:
-        with microservice.app_context():
 
-            # Set global objects for celery workers
-            if worker_mode:
-                mem.services = internal_services
+# UHM?
 
-            # Note:
-            # Databases are already initialized inside the instances farm
-            # Outside of the context
-            # p.s. search inside this file for 'myclass('
+    # ##############################
+    # # Init objects inside the app context
+    # if not avoid_context:
+    #     with microservice.app_context():
 
-            # Init users/roles for Security
-            if enable_security:
-                init_auth.init_users_and_roles()
+    #         # Set global objects for celery workers
+    #         if worker_mode:
+    #             mem.services = internal_services
 
-            ####################
-                # TODO: check this piece of code
-                if PRODUCTION and init_auth.check_if_user_defaults():
-                    raise AttributeError(
-                        "Starting production mode with default admin user")
-            ####################
+    #         # Note:
+    #         # Databases are already initialized inside the instances farm
+    #         # Outside of the context
+    #         # p.s. search inside this file for 'myclass('
 
-            # Allow a custom method for mixed services init
-            try:
-                from custom import services as custom_services
-                custom_services.init(internal_services, enable_security)
-            except:
-                log.debug("No custom init available for mixed services")
+    #         # Init users/roles for Security
+    #         if enable_security:
+    #             init_auth.init_users_and_roles()
+
+    #         ####################
+    #             # TODO: check this piece of code
+    #             if PRODUCTION and init_auth.check_if_user_defaults():
+    #                 raise AttributeError(
+    #                     "Starting production mode with default admin user")
+    #         ####################
+
+    #         # Allow a custom method for mixed services init
+    #         try:
+    #             from custom import services as custom_services
+    #             custom_services.init(internal_services, enable_security)
+    #         except BaseException:
+    #             log.debug("No custom init available for mixed services")
 
     ##############################
     # Logging responses

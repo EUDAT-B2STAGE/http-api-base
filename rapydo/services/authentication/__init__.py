@@ -5,7 +5,6 @@ SECURITY ENDPOINTS CHECK
 Add auth checks called /checklogged and /testadmin
 """
 
-import os
 import abc
 import jwt
 import hmac
@@ -48,8 +47,23 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     longTTL = 2592000     # 1 month in seconds
     shortTTL = 604800     # 1 week in seconds
 
+    def __init__(self, auth_service):
+        self.auth_service = auth_service
+        self.myinit()
+        print("auth init")
+
+    def set_services(self, services):
+        # self._ss = services
+        # log.very_verbose("Services recovered for auth")
+        self._db = services.get(self.auth_service)
+        log.verbose("Db %s for auth is set" % self._db.__class__.__name__)
+
     @classmethod
     def myinit(cls):
+        """
+        Note: converted as a classmethod to use inside unittests
+        # TODO: check if still necessary
+        """
 
         credentials = mem.customizer._configurations \
             .get('variables', {}) \
@@ -72,14 +86,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         ]
         if cls.default_role is None or None in cls.default_roles:
             raise AttributeError("Default roles are not available!")
-
-    @abc.abstractmethod
-    def __init__(self, services=None):
-        """
-        Make sure you can create an instance/connection,
-        or reuse one service from `server.py` operations.
-        """
-        return
 
     # ########################
     # # Configure Secret Key #
@@ -139,6 +145,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return hashed_password == proposed_password
 
     def get_user(self):
+        # UHM?
         return self._user
 
     def get_token(self):
@@ -417,13 +424,13 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             # Check if Oauth2 is enabled
             if user.authmethod != 'credentials':
                 return None, None
-        except:
+        except BaseException:
             # Missing authmethod as requested for authentication
             log.critical("Current authentication db models are broken!")
             return None, None
 
-# // TO FIX:
-# maybe payload should be some basic part + custom payload from the developer
+# // TO FIX:
+# maybe payload should be some basic part + custom payload from the developer
         if self.check_passwords(user.password, password):
             return self.create_token(self.fill_payload(user))
 

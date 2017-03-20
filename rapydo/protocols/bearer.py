@@ -30,10 +30,10 @@ HTTPAUTH_AUTH_FIELD = 'Authorization'
 
 class HTTPTokenAuth(object):
     """
-    Our class to implement a Generic Token (oauth2-like)
-    authentication. Some copy/paste from:
-https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
+    A class to implement a Generic Token (oauth2-like) authentication.
+    Started on a draft of the great miguel: http://bit.ly/2nTqQKA
     """
+
     def __init__(self, scheme=None, realm=None):
         self._scheme = scheme or HTTPAUTH_DEFAULT_SCHEME
         self._realm = realm or HTTPAUTH_DEFAULT_REALM
@@ -48,9 +48,7 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
 
     @staticmethod
     def get_authentication_from_headers():
-        """
-        Returns (auth, token)
-        """
+        """ Returns (auth, token) """
         return request.headers.get(HTTPAUTH_AUTH_FIELD).split(None, 1)
 
     def authenticate_roles(self, verify_roles_callback, roles):
@@ -87,6 +85,8 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
             bad_code = hcodes.HTTP_BAD_UNAUTHORIZED
             # Internal API 'self' reference
             decorated_self = Meta.get_self_reference_from_args(*args)
+            print("\n\n\nTO BE FIXED\n\n\n", decorated_self)
+            return {'TODO': 'integration of the new auth module'}
 
             if auth_type is None or auth_type.lower() != self._scheme.lower():
                 # Wrong authentication string
@@ -102,8 +102,10 @@ https://github.com/miguelgrinberg/Flask-HTTPAuth/blob/master/flask_httpauth.py
             # ignore headers and let go, avoid unwanted interactions with CORS
             if request.method != 'OPTIONS':
 
+                print("\n\n\nTO BE FIXED\n\n\n", decorated_self.auth)
                 # Check authentication
                 token_fn = g._custom_auth.verify_token
+# TO FIX: ^^^ use auth from decorated_self??
                 if not self.authenticate(token_fn, token):
                     # Clear TCP receive buffer of any pending data
                     request.data

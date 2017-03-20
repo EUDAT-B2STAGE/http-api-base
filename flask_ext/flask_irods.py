@@ -63,7 +63,8 @@ class IrodsPythonClient(BaseExtension):
 class RPCInjector(BaseInjector):
 
     def configure(self, binder):
-        rpc = IrodsPythonClient(self.app, self._variables, self._models)
+        # note: no models
+        rpc = IrodsPythonClient(self.app, self._variables)  # , self._models)
         # test connection the first time
         rpc.connect()
         binder.bind(IrodsPythonClient, to=rpc, scope=self.singleton)
