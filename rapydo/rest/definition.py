@@ -48,16 +48,17 @@ class EndpointResource(Resource):
 
     def inject_services(self, injected_services):
 
-            for name, service in injected_services.items():
-                obj = service.connection
-                print(service, obj)
-                try:
-                    setattr(self, service.injected_name, obj)
-                except AttributeError:
-                    log.error("Failed to inject %s" % obj)
+        # Let injected service be part of the self
+        for name, service in injected_services.items():
+            obj = service.connection
+            try:
+                setattr(self, service.injected_name, obj)
+            except AttributeError:
+                log.error("Failed to inject %s" % obj)
 
-            # AUTH
-            self.auth.set_services(injected_services)
+# TO FIX: to remove? use global mem instead?
+        # AUTH
+        self.auth.set_database(injected_services)
 
     def init_parameters(self):
         # Make sure you can parse arguments at every call

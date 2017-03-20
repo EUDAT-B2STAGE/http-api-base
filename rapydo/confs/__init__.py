@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import division
-
 import os
+import re
 import sys
 import argparse
+from flask import request
+from urllib.parse import urlparse
 #######################
 
 AVOID_COLORS_ENV_LABEL = 'TESTING_FLASK'
@@ -74,11 +75,6 @@ def get_api_url():
     Warning: it works only if called inside a Flask endpoint
     """
 
-    import re
-    from flask import request
-    from urllib.parse import urlparse
-
-    backend_port = BACKEND_PUBLIC_PORT
     api_url = request.url_root
 
     if PRODUCTION:
@@ -97,6 +93,9 @@ def get_api_url():
 
 
 def my_cli_arguments():
+
+    # TO FIX: use flask cli or flask-script
+
     arg = argparse.ArgumentParser(description='REST API server based on Flask')
     arg.add_argument("--no-security", action="store_false", dest='security',
                      help='force removal of login authentication on resources')

@@ -8,12 +8,13 @@ Celery tasks
 import os
 from rapydo.utils.logs import get_logger
 from celery import Celery
-
-from rapydo.services.detect import CELERY_AVAILABLE
+from rapydo.services.detect import available_services
 
 log = get_logger(__name__)
 
-if CELERY_AVAILABLE:
+
+if available_services.get('celery'):
+
     HOST = os.environ.get('QUEUE_NAME').split('/')[::-1][0]
     PORT = int(os.environ.get('QUEUE_PORT').split(':')[::-1][0])
 

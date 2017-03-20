@@ -85,8 +85,6 @@ class HTTPTokenAuth(object):
             bad_code = hcodes.HTTP_BAD_UNAUTHORIZED
             # Internal API 'self' reference
             decorated_self = Meta.get_self_reference_from_args(*args)
-            print("\n\n\nTO BE FIXED\n\n\n", decorated_self)
-            return {'TODO': 'integration of the new auth module'}
 
             if auth_type is None or auth_type.lower() != self._scheme.lower():
                 # Wrong authentication string
@@ -102,7 +100,7 @@ class HTTPTokenAuth(object):
             # ignore headers and let go, avoid unwanted interactions with CORS
             if request.method != 'OPTIONS':
 
-                print("\n\n\nTO BE FIXED\n\n\n", decorated_self.auth)
+                print("\n\nTO BE FIXED", decorated_self.auth)
                 # Check authentication
                 token_fn = g._custom_auth.verify_token
 # TO FIX: ^^^ use auth from decorated_self??

@@ -51,7 +51,7 @@ class IrodsPythonClient(BaseExtension):
         )
         return irods_session
 
-    def package_connection(self):
+    def custom_connection(self):
         self.prepare_session()
         obj = self.session()
         # Do a simple query to test this session
@@ -59,13 +59,13 @@ class IrodsPythonClient(BaseExtension):
         obj.query(DataObject.owner_name).all()
         return obj
 
+    def custom_initialization(self):
+        pass
+
 
 class RPCInjector(BaseInjector):
 
     def custom_configure(self):
         # note: no models
         rpc = IrodsPythonClient(self.app, self._variables)  # , self._models)
-        # test connection the first time
-        rpc.connect()
-
         return IrodsPythonClient, rpc

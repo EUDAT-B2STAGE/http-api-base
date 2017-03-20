@@ -10,7 +10,7 @@ log = get_logger(__name__)
 
 class NeoModel(BaseExtension):
 
-    def package_connection(self):
+    def custom_connection(self):
 
         self.uri = "bolt://%s:%s@%s:%s" % \
             (
@@ -28,12 +28,12 @@ class NeoModel(BaseExtension):
         db.set_connection(self.uri)
         return db
 
+    def custom_initialization(self):
+        pass
+
 
 class InjectNeo(BaseInjector):
 
     def custom_configure(self):
         neo = NeoModel(self.app, self._variables, self._models)
-        # test connection the first time
-        neo.connect()
-
         return NeoModel, neo

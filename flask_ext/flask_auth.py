@@ -18,7 +18,7 @@ class Authenticator(BaseExtension):
 
         return module
 
-    def package_connection(self):
+    def custom_connection(self):
 
         print("SHOULD BE CALLED ONLY ONCE")
 
@@ -52,22 +52,37 @@ class Authenticator(BaseExtension):
         from rapydo.protocols.oauth import oauth
         oauth.init_app(self.app)
 
+        self._custom_auth = custom_auth
         return custom_auth
 
-    def inizialization(self):
+    def custom_initialization(self):
 
-        print("TODO: inizialization for authentication!")
+        # # TODO: do init for auth
+        obj = self._custom_auth
+        from rapydo.utils.globals import mem
+        backend_database = self.variables.get('service')
+        obj._db = mem._services.get(backend_database)
+        obj.init_users_and_roles()
+        log.warning("Initialized auth")
 
-        pass
+        # ####################
+        # # TODO: check this piece of code
+        # if PRODUCTION and init_auth.check_if_user_defaults():
+        #     raise AttributeError(
+        #         "Starting production mode with default admin user")
+
+        # ####################
+        # # Allow a custom method for mixed services init
+        # try:
+        #     from custom import services as custom_services
+        #     custom_services.init(internal_services, enable_security)
+        # except BaseException:
+        #     log.debug("No custom init available for mixed services")
 
 
 class AuthInjector(BaseInjector):
 
     def custom_configure(self):
-
         # note: no models
         auth = Authenticator(self.app, self._variables)
-        # init
-        auth.inizialization()
-
         return Authenticator, auth

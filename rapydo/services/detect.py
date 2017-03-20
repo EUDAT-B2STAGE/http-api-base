@@ -73,14 +73,13 @@ for service in services_configuration:
             else:
                 log.very_verbose("Loaded external extension %s" % name)
         else:
-            log.very_verbose("Loaded internal extension %s" % name)
+            # log.very_verbose("Loaded internal extension %s" % name)
+            pass
 
+        ###################
         Configurator = getattr(module, service.get('injector'))
-        Class = getattr(module, service.get('class'))
-
         # Passing variables
         Configurator.set_variables(variables)
-
         # Passing models
         if service.get('load_models'):
             Configurator.set_models(
@@ -89,6 +88,9 @@ for service in services_configuration:
             )
         else:
             log.debug("Skipping models")
+
+        ###################
+        Class = getattr(module, service.get('class'))
 
         # ###################
         # TO DO: elaborate this OPTIONAL concept
@@ -102,6 +104,8 @@ for service in services_configuration:
 
     else:
         log.very_verbose("Skipping service %s" % name)
+
+# TODO: should we report error if missing authentication?
 
 # ###################
 # print("\n\nEXIT DEBUG")

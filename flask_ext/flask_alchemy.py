@@ -18,7 +18,7 @@ log = get_logger(__name__)
 
 class SqlAlchemy(BaseExtension):
 
-    def package_connection(self):
+    def custom_connection(self):
 
         uri = 'postgresql://%s:%s@%s:%s/%s' % (
             self.variables.get('user'),
@@ -63,22 +63,13 @@ class SqlAlchemy(BaseExtension):
 
         return self.mydb
 
+    def custom_initialization(self):
+        pass
+        # INIT like authentication?
+
 
 class SqlInjector(BaseInjector):
 
     def custom_configure(self):
         sql = SqlAlchemy(self.app, self._variables, self._models)
-        # test connection the first time
-        sql.connect()
-
-        # ########################
-        # from sqlalchemy import create_engine  # , MetaData
-        # from sqlalchemy.orm import scoped_session, sessionmaker
-
-        # engine = create_engine('sqlite:////tmp/testdb', convert_unicode=True)
-        # # metadata = MetaData()
-        # db_session = scoped_session(
-        #     sessionmaker(autocommit=False, autoflush=False, bind=engine))
-        # print("db", db_session)
-
         return SqlAlchemy, sql

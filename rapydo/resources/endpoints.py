@@ -24,7 +24,8 @@ class Status(EndpointResource):
 
     def get(self):
         # # A test for auth:
-        # print("YEAH", self.auth._db)
+        # print("YEAH", self.auth)
+        # print("YEAH", self.db.Role)
         return 'Server is alive!'
 
 

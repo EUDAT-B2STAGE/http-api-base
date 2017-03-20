@@ -46,5 +46,5 @@ if __name__ == "__main__":
     # NOTE: 'threaded' option avoid to see
     # angular request on this server dropping
     # and becoming slow if not totally frozen
-    log.info("*** Running Flask!")
+    log.info("Flask server is running")
     app.run(host=SERVER_HOSTS, port=SERVER_PORT, threaded=True)

@@ -50,13 +50,10 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     def __init__(self, auth_service):
         self.auth_service = auth_service
         self.myinit()
-        print("auth init")
 
-    def set_services(self, services):
-        # self._ss = services
-        # log.very_verbose("Services recovered for auth")
-        self._db = services.get(self.auth_service)
-        log.verbose("Db %s for auth is set" % self._db.__class__.__name__)
+    def set_database(self, services):
+        self._db = services.get(self.auth_service).connection
+        log.verbose("DB %s set for current auth" % self._db.__class__.__name__)
 
     @classmethod
     def myinit(cls):

@@ -9,6 +9,7 @@ import time
 import logging
 from flask import _app_ctx_stack as stack
 from injector import Module, singleton
+from rapydo.utils.globals import mem
 
 
 ####################
@@ -25,7 +26,7 @@ def get_logger(name=__name__, level=logging.DEBUG):
 log = get_logger(__name__)
 
 
-class BaseExtension(object):
+class BaseExtension(metaclass=abc.ABCMeta):
 
     def __init__(self, app=None, variables={}, models={}):
 
@@ -37,14 +38,14 @@ class BaseExtension(object):
         if app is not None:
             self.init_app(app)
 
+        self.models = models
         self.variables = variables
-        for name, model in models.items():
-            # Save attribute inside class with the same name
-            log.verbose("Injecting model '%s'" % name)
-            setattr(self, name, model)
-
-        # TO FIX: models?
         log.very_verbose("Vars: %s" % variables)
+
+        # for name, model in models.items():
+        #     # Save attribute inside class with the same name
+        #     log.verbose("Injecting model '%s'" % name)
+        #     setattr(self, name, model)
 
     def init_app(self, app):
         app.teardown_appcontext(self.teardown)
@@ -59,7 +60,7 @@ class BaseExtension(object):
             # raise e
             log.error(
                 "\nMissing extension connection.\n" +
-                "Did you write a 'package_connection' method inside " +
+                "Did you write a 'custom_connection' method inside " +
                 self.name + " internal extension?\n" +
                 "Did it return the connection object?\n" +
                 "\nLogs:\n" + str(e)
@@ -91,25 +92,40 @@ class BaseExtension(object):
         else:
             log.info("Connected! %s" % self.name)
 
+        return self.set_models_to_service(obj)
+
+    def set_models_to_service(self, obj):
+
+        for name, model in self.models.items():
+            # Save attribute inside class with the same name
+            log.verbose("Injecting model '%s'" % name)
+            setattr(obj, name, model)
+
         return obj
 
-    def package_connection(self):
-        """
-        The function to be overridden!
-        """
+    def initialization(self):
+        """ Init operations require the app context """
+        with self.app.app_context():
+            self.custom_initialization()
+
+    # TO BE OVERRIDDEN
+    @abc.abstractmethod
+    def custom_initialization(self):
         pass
+
+    # TO BE OVERRIDDEN
+    @abc.abstractmethod
+    def custom_connection(self):
+        return
 
     def test_connection(self):
         try:
-            service_object = self.package_connection()
-            self.set_object(obj=service_object)
+            self.set_object(obj=self.custom_connection())
             return True
-        # TO FIX: leave only false
-        except Exception as e:
-            raise e
+        # except Exception as e:
+        #     raise e
+        except BaseException:
             return False
-        # except:
-        #     return False
 
     def retry(self, retry_interval=5, max_retries=-1):
         retry_count = 0
@@ -143,23 +159,11 @@ class BaseInjector(Module, metaclass=abc.ABCMeta):
 
     _models = {}
     _variables = {}
+    singleton = singleton
     injected_name = 'unknown'
 
     def __init__(self, app):
         self.app = app
-        self.singleton = singleton
-
-    @abc.abstractmethod
-    def custom_configure(self, binder):
-        return binder
-
-    def configure(self, binder):
-        FlaskExtClass, ext_instance = self.custom_configure()
-        # Set the injected name attribute
-        ext_instance.injected_name = self._variables.get('injected_name')
-
-        binder.bind(FlaskExtClass, to=ext_instance, scope=self.singleton)
-        return binder
 
     @classmethod
     def set_models(cls, base_models={}, custom_models={}):
@@ -181,8 +185,28 @@ class BaseInjector(Module, metaclass=abc.ABCMeta):
             cls._models[key] = model
 
         if len(cls._models) > 0:
-            log.verbose("Loaded modules")
+            log.verbose("Loaded models")
 
     @classmethod
     def set_variables(cls, envvars):
         cls._variables = envvars
+
+    def configure(self, binder):
+        # Get the Flask extension and its instance
+        FlaskExtClass, ext_instance = self.custom_configure()
+        # Set the injected name attribute
+        ext_instance.injected_name = self._variables.get('injected_name')
+        # IMPORTANT: Test connection (if any)
+        ext_instance.connect()
+        # Save the service object into global memory...
+        mem._services[ext_instance.name] = ext_instance.get_object()
+        # Do initizalization for this service
+        ext_instance.initialization()
+        # Binding between the class and the instance, for Flask requests
+        binder.bind(FlaskExtClass, to=ext_instance, scope=self.singleton)
+
+        return binder
+
+    @abc.abstractmethod
+    def custom_configure(self):
+        return

@@ -20,9 +20,11 @@ from rapydo.protocols.restful import Api, EndpointsFarmer, create_endpoints
 from rapydo.utils.logs import get_logger, \
     handle_log_output, MAX_CHAR_LEN, set_global_log_level
 
+
 #############################
 # LOGS
 log = get_logger(__name__)
+mem._services = {}
 
 # This is the first file to be imported in the project
 # We need to enable many things on a global level for logs
@@ -78,10 +80,6 @@ def create_app(name=__name__, debug=False,
                **kwargs):
     """ Create the server istance for Flask application """
 
-# TO FIX: REMOVE ME
-    debug = True
-# REMOVE ME
-
     #############################
     # Initialize reading of all files
     # TO FIX: remove me
@@ -136,8 +134,9 @@ def create_app(name=__name__, debug=False,
     ##############################
     # DATABASE/SERVICEs init and checks
     modules = []
-    for name, ConfigureInjection in internal_services.items():
-        modules.append(ConfigureInjection(microservice))
+    for injected, Injector in internal_services.items():
+        log.debug("Append '%s' to plugged services" % injected)
+        modules.append(Injector(microservice))
 
     ##############################
     # Cors
