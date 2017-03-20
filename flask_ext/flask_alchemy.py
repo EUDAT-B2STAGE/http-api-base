@@ -66,7 +66,7 @@ class SqlAlchemy(BaseExtension):
 
 class SqlInjector(BaseInjector):
 
-    def configure(self, binder):
+    def custom_configure(self):
         sql = SqlAlchemy(self.app, self._variables, self._models)
         # test connection the first time
         sql.connect()
@@ -75,12 +75,10 @@ class SqlInjector(BaseInjector):
         # from sqlalchemy import create_engine  # , MetaData
         # from sqlalchemy.orm import scoped_session, sessionmaker
 
-        # engine = create_engine('sqlite:////tmp/test.db', convert_unicode=True)
+        # engine = create_engine('sqlite:////tmp/testdb', convert_unicode=True)
         # # metadata = MetaData()
         # db_session = scoped_session(
         #     sessionmaker(autocommit=False, autoflush=False, bind=engine))
         # print("db", db_session)
-        # ########################
 
-        binder.bind(SqlAlchemy, to=sql, scope=self.singleton)
-        return binder
+        return SqlAlchemy, sql

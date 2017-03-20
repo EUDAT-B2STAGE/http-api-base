@@ -31,8 +31,9 @@ class NeoModel(BaseExtension):
 
 class InjectNeo(BaseInjector):
 
-    def configure(self, binder):
+    def custom_configure(self):
         neo = NeoModel(self.app, self._variables, self._models)
         # test connection the first time
         neo.connect()
-        binder.bind(NeoModel, to=neo, scope=self.singleton)
+
+        return NeoModel, neo

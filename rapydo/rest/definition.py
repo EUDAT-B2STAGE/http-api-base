@@ -8,13 +8,13 @@ we could provide back then
 import pytz
 import dateutil.parser
 from datetime import datetime
-from flask import g
+# from flask import g
+from injector import inject
 from flask_restful import request, Resource, reqparse
-
-from rapydo.confs import API_URL
 from rapydo.rest.response import ResponseElements
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.globals import mem
+from rapydo.services.detect import services_classes as injectable_services
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
@@ -35,13 +35,31 @@ class EndpointResource(Resource):
     Implements a generic Resource for our Restful APIs model
     """
 
-    myname = __name__
-    hcode = hcodes.HTTP_OK_BASIC
-    base_url = API_URL
-
-    def __init__(self):
+    @inject(**injectable_services)
+    def __init__(self, **injected_services):
+        # Init original class
         super(EndpointResource, self).__init__()
+        # Do extra stuff
+        self.inject_services(injected_services)
+        self.init_parameters()
 
+    def myname(self):
+        return self.__class__.__name__
+
+    def inject_services(self, injected_services):
+
+            for name, service in injected_services.items():
+                obj = service.connection
+                print(service, obj)
+                try:
+                    setattr(self, service.injected_name, obj)
+                except AttributeError:
+                    log.error("Failed to inject %s" % obj)
+
+            # AUTH
+            self.auth.set_services(injected_services)
+
+    def init_parameters(self):
         # Make sure you can parse arguments at every call
         self._args = {}
         self._json_args = {}
@@ -150,9 +168,6 @@ class EndpointResource(Resource):
             log.verbose("Parameters %s" % self._args)
         return self._args
 
-    def myname(self):
-        return self.__class__.__name__
-
     def set_method_id(self, name='myid', idtype='string'):
         """ How to have api/method/:id route possible"""
         self.endtype = idtype + ':' + name
@@ -196,24 +211,25 @@ class EndpointResource(Resource):
         authentication/__init__.py@verify_token method
         """
 
+# TO FIX: current use has to be obtained through the injected service
         return self.global_get('custom_auth').get_user()
 
-    def global_get(self, object_name):
+    # def global_get(self, object_name):
 
-        obj = g.get('_%s' % object_name, None)
-        if obj is None:
-            raise AttributeError(
-                "Global API variables: no %s object found!" % object_name)
-        return obj
+    #     obj = g.get('_%s' % object_name, None)
+    #     if obj is None:
+    #         raise AttributeError(
+    #             "Global API variables: no %s object found!" % object_name)
+    #     return obj
 
-    def global_get_service(self,
-                           service_name, object_name='services', **kwargs):
+    # def global_get_service(self,
+    #                        service_name, object_name='services', **kwargs):
 
-        from rapydo.services import get_instance_from_services
-        return get_instance_from_services(
-            self.global_get(object_name),   # services
-            service_name,
-            **kwargs)
+    #     from rapydo.services import get_instance_from_services
+    #     return get_instance_from_services(
+    #         self.global_get(object_name),   # services
+    #         service_name,
+    #         **kwargs)
 
     def method_not_allowed(self, methods=['GET']):
         # TO FIX: is it used?

@@ -7,6 +7,7 @@
   extension: flask_neo4j
   class: NeoModel
   injector: InjectNeo
+  injected_name: neo
 
   # irods commands
 - name: irods
@@ -16,6 +17,7 @@
   extension: flask_irods
   class: IrodsPythonClient
   injector: RPCInjector
+  injected_name: rpc
 
   # sqlalchemy
 - name: sqlalchemy
@@ -25,6 +27,18 @@
   extension: flask_alchemy
   class: SqlAlchemy
   injector: SqlInjector
+  injected_name: db
+
+##############################
+# # OTHERS?
+# "mongo",
+# "elastic",
+# "celery",
+  # "redis",
+
+##############################
+# THIS HAS TO BE THE LAST ONE
+##############################
 
   # authentication
 - name: authentication
@@ -34,10 +48,4 @@
   extension: flask_auth
   class: Authenticator
   injector: AuthInjector
-
-##############################
-# # OTHERS?
-# "mongo",
-# "elastic",
-# "celery",
-  # "redis",
+  injected_name: auth

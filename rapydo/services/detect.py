@@ -26,7 +26,7 @@ services_configuration = load_yaml_file('services', path=CORE_CONFIG_PATH)
 for service in services_configuration:
 
     name = service.get('name')
-    prefix = service.get('prefix') + '_'
+    prefix = service.get('prefix').lower() + '_'
     log.very_verbose("Service: %s" % name)
 
     # Was this service enabled from the developer?
@@ -36,7 +36,7 @@ for service in services_configuration:
         log.debug("Service *%s* requested for enabling" % name)
 
         # Is this service external?
-        external_var = prefix.upper() + 'EXTERNAL'
+        external_var = prefix + 'EXTERNAL'
         if os.environ.get(external_var) is None:
             os.environ[external_var] = "False"
 
@@ -50,6 +50,9 @@ for service in services_configuration:
             if var.startswith(prefix):
                 key = var[len(prefix):]
                 variables[key] = value
+
+        key = 'injected_name'
+        variables[key] = service.get(key)
 
         ###################
         # Load module and get class and configuration

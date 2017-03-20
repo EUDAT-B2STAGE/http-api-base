@@ -4,8 +4,9 @@
 
 # TO FIX: create a base object for flask extensions like the injector
 
-import logging
+import abc
 import time
+import logging
 from flask import _app_ctx_stack as stack
 from injector import Module, singleton
 
@@ -103,8 +104,10 @@ class BaseExtension(object):
             service_object = self.package_connection()
             self.set_object(obj=service_object)
             return True
+        # TO FIX: leave only false
         except Exception as e:
             raise e
+            return False
         # except:
         #     return False
 
@@ -136,17 +139,26 @@ class BaseExtension(object):
             return self.get_object(ref=ctx)
 
 
-class BaseInjector(Module):
+class BaseInjector(Module, metaclass=abc.ABCMeta):
 
-    _variables = {}
     _models = {}
+    _variables = {}
+    injected_name = 'unknown'
 
     def __init__(self, app):
         self.app = app
         self.singleton = singleton
 
+    @abc.abstractmethod
+    def custom_configure(self, binder):
+        return binder
+
     def configure(self, binder):
-        # To be overidden
+        FlaskExtClass, ext_instance = self.custom_configure()
+        # Set the injected name attribute
+        ext_instance.injected_name = self._variables.get('injected_name')
+
+        binder.bind(FlaskExtClass, to=ext_instance, scope=self.singleton)
         return binder
 
     @classmethod

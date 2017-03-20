@@ -20,7 +20,7 @@ class Authenticator(BaseExtension):
 
     def package_connection(self):
 
-        print("\n\nSHOULD BE CALLED ONLY ONCE")
+        print("SHOULD BE CALLED ONLY ONCE")
 
         # What service will hold authentication?
         auth_service = os.environ.get('AUTH_SERVICE')
@@ -54,16 +54,20 @@ class Authenticator(BaseExtension):
 
         return custom_auth
 
+    def inizialization(self):
+
+        print("TODO: inizialization for authentication!")
+
+        pass
+
 
 class AuthInjector(BaseInjector):
 
-    def configure(self, binder):
+    def custom_configure(self):
+
         # note: no models
         auth = Authenticator(self.app, self._variables)
+        # init
+        auth.inizialization()
 
-        # TO FIX: decomment
-        # # test auth service?
-        # auth.connect()
-
-        binder.bind(Authenticator, to=auth, scope=self.singleton)
-        return binder
+        return Authenticator, auth

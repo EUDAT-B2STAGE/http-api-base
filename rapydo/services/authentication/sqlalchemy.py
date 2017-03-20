@@ -58,6 +58,8 @@ class Authentication(BaseAuthentication):
     #         roles.append(self.default_role)
     #     return NotImplementedError("To do")
 
+# TODO: (IMPORTANT) developer should be able to specify a custom init
+# which would replace this function below
     def init_users_and_roles(self):
 
         missing_role = missing_user = False
