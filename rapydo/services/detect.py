@@ -16,12 +16,14 @@ from rapydo.utils.logs import get_logger
 
 
 log = get_logger(__name__)
+
 meta = Meta()
-services = {}
-services_classes = {}
 services_configuration = load_yaml_file('services', path=CORE_CONFIG_PATH)
 
-# TO FIX: cycle only enabled in env??
+services = {}
+services_classes = {}
+available_services = {}
+
 # Work off all available services
 for service in services_configuration:
 
@@ -31,8 +33,9 @@ for service in services_configuration:
 
     # Was this service enabled from the developer?
     enable_var = prefix.upper() + 'ENABLE'
+    available_services[name] = os.environ.get(enable_var, False)
 
-    if os.environ.get(enable_var, False):
+    if available_services.get(name):
         log.debug("Service *%s* requested for enabling" % name)
 
         # Is this service external?

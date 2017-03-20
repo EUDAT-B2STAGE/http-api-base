@@ -10,7 +10,7 @@ from datetime import datetime
 from flask import jsonify, current_app
 
 from rapydo.rest.definition import EndpointResource
-# from rapydo.services.detect import CELERY_AVAILABLE
+from rapydo.services.detect import available_services
 from rapydo.services.authentication import BaseAuthentication
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.globals import mem
@@ -18,14 +18,13 @@ from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
 
-# TO FIX: read from mem
-CELERY_AVAILABLE = False
-
 
 class Status(EndpointResource):
     """ API online client testing """
 
     def get(self):
+        # # A test for auth:
+        # print("YEAH", self.auth._db)
         return 'Server is alive!'
 
 
@@ -79,14 +78,13 @@ class Login(EndpointResource):
                 code=bad_code)
 
         # auth instance from the global namespace
-        auth = self.global_get('custom_auth')
-        token, jti = auth.make_login(username, password)
+        token, jti = self.auth.make_login(username, password)
         if token is None:
             return self.send_errors(
                 message="Credentials: invalid username and/or password",
                 code=bad_code)
 
-        auth.save_token(auth._user, token, jti)
+        self.auth.save_token(self.auth._user, token, jti)
 
         # TO FIX: split response as above in access_token and token_type?
         # # The right response should be the following
@@ -106,36 +104,32 @@ class Logout(EndpointResource):
     """ Let the logged user escape from here, invalidating current token """
 
     def get(self):
-        auth = self.global_get('custom_auth')
-        auth.invalidate_token(auth.get_token())
+        self.auth.invalidate_token(auth.get_token())
         return self.empty_response()
 
 
 class Tokens(EndpointResource):
     """ List all active tokens for a user """
 
-    def get_user(self, auth):
+    def get_user(self):
 
-        iamadmin = auth.verify_admin()
+        iamadmin = self.auth.verify_admin()
 
         if iamadmin:
             username = self.get_input(single_parameter='username')
             if username is not None:
-                return auth.get_user_object(username=username)
+                return self.auth.get_user_object(username=username)
 
         return self.get_current_user()
 
     def get(self, token_id=None):
 
-        auth = self.global_get('custom_auth')
-        user = self.get_user(auth)
-
+        user = self.get_user()
         if user is None:
             return self.send_errors(
                 message="Invalid: bad username", code=hcodes.HTTP_BAD_REQUEST)
 
-        tokens = auth.get_tokens(user=user)
-
+        tokens = self.auth.get_tokens(user=user)
         if token_id is None:
             return tokens
 
@@ -154,13 +148,12 @@ class Tokens(EndpointResource):
             by chanding the user UUID and by removing single tokens
         """
 
-        auth = self.global_get('custom_auth')
-        user = self.get_user(auth)
+        user = self.get_user()
         if user is None:
             return self.send_errors(
                 message="Invalid: bad username", code=hcodes.HTTP_BAD_REQUEST)
 
-        tokens = auth.get_tokens(user=user)
+        tokens = self.auth.get_tokens(user=user)
         invalidated = False
 
         for token in tokens:
@@ -180,7 +173,7 @@ class Tokens(EndpointResource):
             # NOTE: this is allowed only in removing tokens in unittests
             if not current_app.config['TESTING']:
                 raise KeyError("Please specify a valid token")
-            auth.invalidate_all_tokens(user=user)
+            self.auth.invalidate_all_tokens(user=user)
         # SPECIFIC
         else:
             if not invalidated:
@@ -197,7 +190,6 @@ class Profile(EndpointResource):
 
     def get(self):
 
-        # auth = self.global_get('custom_auth')
         current_user = self.get_current_user()
         data = {
             'uuid': current_user.uuid,
@@ -257,13 +249,13 @@ class Profile(EndpointResource):
             user.last_password_change = datetime.now(pytz.utc)
             user.save()
 
-            auth = self.global_get('custom_auth')
-            tokens = auth.get_tokens(user=auth._user)
+            # TODO: use defaults instead of passing a parameter like this
+            tokens = self.auth.get_tokens(user=self.auth._user)
             for token in tokens:
                 # for graphdb it just remove the edge
-                auth.invalidate_token(token=token["token"])
+                self.auth.invalidate_token(token=token["token"])
             # changes the user uuid invalidating all tokens
-            auth.invalidate_all_tokens()
+            self.auth.invalidate_all_tokens()
 
         except:
             return self.send_errors(
@@ -274,6 +266,8 @@ class Profile(EndpointResource):
         return self.empty_response()
 
 
+###########################
+# NOTE: roles are configured inside swagger definitions
 class Internal(EndpointResource):
     """ Token and Role authentication test """
 
@@ -288,9 +282,10 @@ class Admin(EndpointResource):
         return "I am admin!"
 
 
+###########################
 # In case you have celery queue,
 # you get a queue endpoint for free
-if CELERY_AVAILABLE:
+if available_services.get('celery'):
     from rapydo.services.celery.celery import celery_app
 
     class Queue(EndpointResource):
