@@ -14,33 +14,32 @@ MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a
 import pytz
 from datetime import datetime, timedelta
 from rapydo.utils.uuid import getUUID
-from rapydo.utils.logs import get_logger
 from rapydo.services.authentication import BaseAuthentication
-from rapydo.services.detect import GRAPHDB_AVAILABLE
+from rapydo.services.detect import available_services
+from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
 
-
-if not GRAPHDB_AVAILABLE:
-    log.critical("No GraphDB service found for auth")
+if not available_services.get(__name__.split('.')[::-1][0]):
+    log.critical("No neo4j GraphDB service found for auth")
     exit(1)
 
 
 class Authentication(BaseAuthentication):
 
-    def __init__(self, services=None):
-        self.myinit()
-        self._graph = services.get('neo4j').get_instance()
+    # def __init__(self, services=None):
+    #     self.myinit()
+    #     self.db = services.get('neo4j').get_instance()
 
     def get_user_object(self, username=None, payload=None):
 
         user = None
         try:
             if username is not None:
-                user = self._graph.User.nodes.get(email=username)
+                user = self.db.User.nodes.get(email=username)
             if payload is not None and 'user_id' in payload:
-                user = self._graph.User.nodes.get(uuid=payload['user_id'])
-        except self._graph.User.DoesNotExist:
+                user = self.db.User.nodes.get(uuid=payload['user_id'])
+        except self.db.User.DoesNotExist:
             log.warning("Could not find user for '%s'" % username)
         return user
 
@@ -59,7 +58,7 @@ class Authentication(BaseAuthentication):
         return roles
 
     def fill_custom_payload(self, userobj, payload):
-## // TO FIX
+        # TO FIX
         """
 This method should be implemented inside the vanilla folder,
 instead of here
@@ -71,7 +70,7 @@ instead of here
         if self.default_role not in roles:
             roles.append(self.default_role)
 
-        user_node = self._graph.User(**userdata)
+        user_node = self.db.User(**userdata)
         try:
             user_node.save()
         except Exception as e:
@@ -83,15 +82,15 @@ instead of here
         for role in roles:
             log.debug("Adding role %s" % role)
             try:
-                role_obj = self._graph.Role.nodes.get(name=role)
-            except self._graph.Role.DoesNotExist:
+                role_obj = self.db.Role.nodes.get(name=role)
+            except self.db.Role.DoesNotExist:
                 raise Exception("Graph role %s does not exist" % role)
             user_node.roles.connect(role_obj)
 
         return user_node
 
     def create_role(self, role, description="automatic"):
-        role = self._graph.Role(name=role, description=description)
+        role = self.db.Role(name=role, description=description)
         role.save()
         return role
 
@@ -99,7 +98,7 @@ instead of here
 
         # Handle system roles
         current_roles = []
-        current_roles_objs = self._graph.Role.nodes.all()
+        current_roles_objs = self.db.Role.nodes.all()
         for role in current_roles_objs:
             current_roles.append(role.name)
 
@@ -113,7 +112,7 @@ instead of here
             pass
 
         # Default user (if no users yet available)
-        if not len(self._graph.User.nodes) > 0:
+        if not len(self.db.User.nodes) > 0:
             log.warning("No users inside graphdb. Injecting default.")
             self.create_user({
                 # 'uuid': getUUID(),
@@ -129,7 +128,7 @@ instead of here
         now = datetime.now(pytz.utc)
         exp = now + timedelta(seconds=self.shortTTL)
 
-        token_node = self._graph.Token()
+        token_node = self.db.Token()
         token_node.jti = jti
         token_node.token = token
         token_node.creation = now
@@ -149,8 +148,8 @@ instead of here
 
     def verify_token_custom(self, jti, user, payload):
         try:
-            token_node = self._graph.Token.nodes.get(jti=jti)
-        except self._graph.Token.DoesNotExist:
+            token_node = self.db.Token.nodes.get(jti=jti)
+        except self.db.Token.DoesNotExist:
             return False
         if not token_node.emitted_for.is_connected(user):
             return False
@@ -160,7 +159,7 @@ instead of here
     def refresh_token(self, jti):
         now = datetime.now(pytz.utc)
         try:
-            token_node = self._graph.Token.nodes.get(jti=jti)
+            token_node = self.db.Token.nodes.get(jti=jti)
 
             if now > token_node.expiration:
                 self.invalidate_token(token=token_node.token)
@@ -175,7 +174,7 @@ instead of here
             token_node.save()
 
             return True
-        except self._graph.Token.DoesNotExist:
+        except self.db.Token.DoesNotExist:
             log.warning("Token %s not found" % jti)
             return False
 
@@ -189,8 +188,8 @@ instead of here
             tokens = user.tokens.all()
         elif token_jti is not None:
             try:
-                tokens = [self._graph.Token.nodes.get(jti=token_jti)]
-            except self._graph.Token.DoesNotExist:
+                tokens = [self.db.Token.nodes.get(jti=token_jti)]
+            except self.db.Token.DoesNotExist:
                 pass
 
         if tokens is not None:
@@ -221,9 +220,9 @@ instead of here
         if user is None:
             user = self.get_user()
         try:
-            token_node = self._graph.Token.nodes.get(token=token)
+            token_node = self.db.Token.nodes.get(token=token)
             token_node.delete()
-        except self._graph.Token.DoesNotExist:
+        except self.db.Token.DoesNotExist:
             log.warning("Unable to invalidate, token not found: %s" % token)
             return False
         return True
@@ -239,11 +238,11 @@ instead of here
 
         # A graph node for internal accounts associated to oauth2
         try:
-            user_node = self._graph.User.nodes.get(email=email)
+            user_node = self.db.User.nodes.get(email=email)
             if user_node.authmethod != 'oauth2':
                 # The user already exist with another type of authentication
                 return None
-        except self._graph.User.DoesNotExist:
+        except self.db.User.DoesNotExist:
 ## TO BE VERIFIED
             user_node = self.create_user(userdata={
                 # 'uuid': getUUID(),
@@ -252,12 +251,12 @@ instead of here
             })
         ## NOTE: missing roles for this user?
 
-        # A self._graph node for external oauth2 account
+        # A self.db node for external oauth2 account
         try:
             oauth2_external = \
-                self._graph.ExternalAccounts.nodes.get(username=email)
-        except self._graph.ExternalAccounts.DoesNotExist:
-            oauth2_external = self._graph.ExternalAccounts(username=email)
+                self.db.ExternalAccounts.nodes.get(username=email)
+        except self.db.ExternalAccounts.DoesNotExist:
+            oauth2_external = self.db.ExternalAccounts(username=email)
         # update main info for this user
         oauth2_external.email = email
         oauth2_external.token = token

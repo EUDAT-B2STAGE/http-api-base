@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import os
 from rapydo.utils.meta import Meta
 from rapydo.confs import PRODUCTION
 from flask_ext import BaseInjector, BaseExtension, get_logger
@@ -9,8 +8,6 @@ log = get_logger(__name__)
 
 
 class Authenticator(BaseExtension):
-
-    _custom_auth = None
 
     def get_authentication_module(self, auth_service):
         meta = Meta()
@@ -23,18 +20,15 @@ class Authenticator(BaseExtension):
 
     def custom_connection(self):
 
-        print("SHOULD BE CALLED ONLY ONCE??")
-        # TO BE FIXED...
-
         # What service will hold authentication?
-        auth_service = os.environ.get('AUTH_SERVICE')
+        auth_service = self.variables.get('service')
         if auth_service is None:
             raise ValueError("You MUST specify a service for authentication")
         else:
             log.verbose("Auth service '%s'" % auth_service)
 
         auth_module = self.get_authentication_module(auth_service)
-        custom_auth = auth_module.Authentication(self.variables.get('service'))
+        custom_auth = auth_module.Authentication()
 
         # If oauth services are available, set them before every request
         from rapydo.services.oauth2clients import ExternalLogins as oauth2
@@ -56,26 +50,26 @@ class Authenticator(BaseExtension):
         from rapydo.protocols.oauth import oauth
         oauth.init_app(self.app)
 
-        self._custom_auth = custom_auth
-        return self._custom_auth
+        return custom_auth
 
-    def custom_initialization(self, extras):
+    def custom_initialization(self):
 
-        obj = self._custom_auth
-        # A little trick here:
-        # We may pass around instances of services.
-        # In particular an instance of a database to be used
-        # as the backend service of authentication
-        # The extra service is the injector, so I provided the method
-        # 'internal_object' to recover the service instance
-        obj._db = extras.get('extra_service').internal_object()
+        obj = self.get_object()
         obj.init_users_and_roles()
-        log.warning("Initialized auth")
+        log.info("Initialized auth")
 
         ####################
         # TODO: check this piece of code
         if PRODUCTION and obj.check_if_user_defaults():
             raise AttributeError("PRODUCTION mode with default admin user?")
+
+    def post_connection(self, obj=None):
+
+        # Very important: give a service backend to authentication
+        if self.extra_service is not None:
+            obj = self.get_object()
+            # this is a 'hat trick'
+            obj.db = self.extra_service.internal_object()
 
 
 class AuthInjector(BaseInjector):

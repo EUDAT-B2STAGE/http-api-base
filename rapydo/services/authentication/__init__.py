@@ -47,13 +47,11 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     longTTL = 2592000     # 1 month in seconds
     shortTTL = 604800     # 1 week in seconds
 
-    def __init__(self, auth_service):
-        self.auth_service = auth_service
+    def __init__(self):
+        # TODO:
+        # myinit is a class method for unittest
+        # could it be fixed?
         self.myinit()
-
-    def set_database(self, services):
-        self._db = services.get(self.auth_service).connection
-        log.verbose("DB %s on current auth" % self._db.__class__.__name__)
 
     @classmethod
     def myinit(cls):

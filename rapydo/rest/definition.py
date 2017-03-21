@@ -50,14 +50,13 @@ class EndpointResource(Resource):
 
         # Let injected service be part of the self
         for name, service in injected_services.items():
+            # Note: this works only here because of Flask CTX
             obj = service.connection
+            # inject as the name specified in services.yaml
             try:
                 setattr(self, service.injected_name, obj)
             except AttributeError:
                 log.error("Failed to inject %s" % obj)
-
-        # TO FIX: remove this from here please
-        self.auth.set_database(injected_services)
 
     def init_parameters(self):
         # Make sure you can parse arguments at every call

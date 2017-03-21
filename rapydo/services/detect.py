@@ -29,14 +29,13 @@ for service in services_configuration:
 
     name = service.get('name')
     prefix = service.get('prefix').lower() + '_'
-    log.very_verbose("Service: %s" % name)
 
     # Was this service enabled from the developer?
     enable_var = prefix.upper() + 'ENABLE'
     available_services[name] = os.environ.get(enable_var, False)
 
     if available_services.get(name):
-        log.debug("Service *%s* requested for enabling" % name)
+        log.very_verbose("Service %s: requested to be enabled" % name)
 
         # Is this service external?
         external_var = prefix + 'EXTERNAL'

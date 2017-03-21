@@ -28,7 +28,7 @@ class NeoModel(BaseExtension):
         db.set_connection(self.uri)
         return db
 
-    def custom_initialization(self, extras):
+    def custom_initialization(self):
         pass
 
 

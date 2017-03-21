@@ -5,44 +5,28 @@ Mongodb based implementation
 """
 
 from datetime import datetime, timedelta
-# from json import JSONEncoder
-# from uuid import UUID
-from rapydo.services.detect import MONGO_AVAILABLE
 from rapydo.services.authentication import BaseAuthentication
-
 from rapydo.utils.uuid import getUUID
+from rapydo.services.detect import available_services
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
 
-if not MONGO_AVAILABLE:
-    log.critical("No Mongo service found available currently for auth")
+if not available_services.get(__name__.split('.')[::-1][0]):
+    log.critical("No mongodb service found available currently for auth")
     exit(1)
-
-"""
-# Dealing with no UUID serialization support in json
-
-JSONEncoder_olddefault = JSONEncoder.default
-
-
-def JSONEncoder_newdefault(self, o):
-    if isinstance(o, UUID):
-        return str(o)
-    return JSONEncoder_olddefault(self, o)
-
-
-JSONEncoder.default = JSONEncoder_newdefault
-"""
 
 
 class Authentication(BaseAuthentication):
 
-    def __init__(self, services=None):
-        # Read init credentials and configuration
-        self.myinit()
-        # Get the instance for mongodb
-        name = __name__.split('.')[::-1][0]  # returns 'mongo'
-        self._db = services.get(name).get_instance(dbname='auth')
+    # def __init__(self, services=None):
+    #     # Read init credentials and configuration
+    #     self.myinit()
+    #     # Get the instance for mongodb
+    #     name = __name__.split('.')[::-1][0]  # returns 'mongo'
+    #     self.db = services.get(name).get_instance(dbname='auth')
+
+    # TO FIX: how to call a specific instance with a specifi db
 
     def fill_custom_payload(self, userobj, payload):
         """
@@ -57,16 +41,16 @@ class Authentication(BaseAuthentication):
         if username is not None:
             # NOTE: email is the key, so to query use _id
             try:
-                user = self._db.User.objects.raw({'_id': username}).first()
-            except self._db.User.DoesNotExist:
+                user = self.db.User.objects.raw({'_id': username}).first()
+            except self.db.User.DoesNotExist:
                 # don't do things, user will remain 'None'
                 pass
 
         if payload is not None and 'user_id' in payload:
             try:
-                user = self._db.User.objects.raw(
+                user = self.db.User.objects.raw(
                     {'uuid': payload['user_id']}).first()
-            except self._db.User.DoesNotExist:
+            except self.db.User.DoesNotExist:
                 pass
 
         return user
@@ -94,11 +78,11 @@ class Authentication(BaseAuthentication):
         try:
 
             # if no roles
-            cursor = self._db.Role.objects.all()
+            cursor = self.db.Role.objects.all()
             missing_role = len(list(cursor)) < 1
 
             for role in self.default_roles:
-                role = self._db.Role(name=role, description="automatic")
+                role = self.db.Role(name=role, description="automatic")
                 if missing_role:
                     transactions.append(role)
                 roles.append(role)
@@ -107,11 +91,11 @@ class Authentication(BaseAuthentication):
                 log.warning("No roles inside mongo. Injected defaults.")
 
             # if no users
-            cursor = self._db.User.objects.all()
+            cursor = self.db.User.objects.all()
             missing_user = len(list(cursor)) < 1
 
             if missing_user:
-                user = self._db.User(
+                user = self.db.User(
                     uuid=getUUID(),
                     email=self.default_user,
                     authmethod='credentials',
@@ -151,7 +135,7 @@ class Authentication(BaseAuthentication):
         if user is None:
             log.error("Trying to save an empty token")
         else:
-            self._db.Token(
+            self.db.Token(
                 jti=jti, token=token,
                 creation=now, last_access=now, expiration=exp,
                 IP=ip, hostname=hostname,
@@ -163,8 +147,8 @@ class Authentication(BaseAuthentication):
     def refresh_token(self, jti):
 
         try:
-            token_entry = self._db.Token.objects.raw({'jti': jti}).first()
-        except self._db.Token.DoesNotExist:
+            token_entry = self.db.Token.objects.raw({'jti': jti}).first()
+        except self.db.Token.DoesNotExist:
             return False
 
         now = datetime.now()
@@ -187,15 +171,15 @@ class Authentication(BaseAuthentication):
 
         if user is not None:
             try:
-                tokens = self._db.Token.objects.raw(
+                tokens = self.db.Token.objects.raw(
                     {'user_id': user.email}).all()
-            except self._db.Token.DoesNotExist:
+            except self.db.Token.DoesNotExist:
                 pass
         elif token_jti is not None:
             try:
-                tokens.append(self._db.Token.objects.
+                tokens.append(self.db.Token.objects.
                               raw({'jti': token_jti}).first())
-            except self._db.Token.DoesNotExist:
+            except self.db.Token.DoesNotExist:
                 pass
 
         for token in tokens:
@@ -228,10 +212,10 @@ class Authentication(BaseAuthentication):
             user = self.get_user()
 
         try:
-            token_entry = self._db.Token.objects.raw({'token': token}).first()
+            token_entry = self.db.Token.objects.raw({'token': token}).first()
             token_entry.user_id = None
             token_entry.save()
-        except self._db.Token.DoesNotExist:
+        except self.db.Token.DoesNotExist:
             log.warning("Could not invalidate non-existing token")
 
         return True
@@ -239,8 +223,8 @@ class Authentication(BaseAuthentication):
     def verify_token_custom(self, jti, user, payload):
 
         try:
-            token = self._db.Token.objects.raw({'jti': jti}).first()
-        except self._db.Token.DoesNotExist:
+            token = self.db.Token.objects.raw({'jti': jti}).first()
+        except self.db.Token.DoesNotExist:
             return False
 
         if token.user_id is None or token.user_id.email != user.email:
@@ -279,8 +263,8 @@ class Authentication(BaseAuthentication):
 
 #         # Check if a user already exists with this email
 #         internal_user = None
-#         internal_users = self._db.User.query.filter(
-#             self._db.User.email == email).all()
+#         internal_users = self.db.User.query.filter(
+#             self.db.User.email == email).all()
 
 #         # If something found
 #         if len(internal_users) > 0:
@@ -296,21 +280,21 @@ class Authentication(BaseAuthentication):
 #         # If missing, add it locally
 #         else:
 #             # Create new one
-#             internal_user = self._db.User(
+#             internal_user = self.db.User(
 #                 uuid=getUUID(), email=email, authmethod='oauth2')
 #             # link default role into users
 #             internal_user.roles.append(
-#                 self._db.Role.query.filter_by(name=self.default_role).first())
-#             self._db.session.add(internal_user)
-#             self._db.session.commit()
+#                 self.db.Role.query.filter_by(name=self.default_role).first())
+#             self.db.session.add(internal_user)
+#             self.db.session.commit()
 #             log.info("Created internal user %s" % internal_user)
 
 #         # Get ExternalAccount for the oauth2 data if exists
-#         external_user = self._db.ExternalAccounts \
+#         external_user = self.db.ExternalAccounts \
 #             .query.filter_by(username=email).first()
 #         # or create it otherwise
 #         if external_user is None:
-#             external_user = self._db.ExternalAccounts(username=email, unity=ui)
+#             external_user = self.db.ExternalAccounts(username=email, unity=ui)
 
 #             # Connect the external account to the current user
 #             external_user.main_user = internal_user
@@ -324,8 +308,8 @@ class Authentication(BaseAuthentication):
 #         external_user.certificate_cn = cn
 #         external_user.certificate_dn = dn
 
-#         self._db.session.add(external_user)
-#         self._db.session.commit()
+#         self.db.session.add(external_user)
+#         self.db.session.commit()
 #         log.debug("Updated external user %s" % external_user)
 
 #         return internal_user, external_user
@@ -335,13 +319,13 @@ class Authentication(BaseAuthentication):
 #         if external_user is None:
 #             return False
 #         external_user.proxyfile = proxy
-#         self._db.session.add(external_user)  # can be commented
-#         self._db.session.commit()
+#         self.db.session.add(external_user)  # can be commented
+#         self.db.session.commit()
 #         return True
 
     def oauth_from_token(self, token):
         raise NotImplementedError("to do")
-#         extus = self._db.ExternalAccounts.query.filter_by(token=token).first()
+#         extus = self.db.ExternalAccounts.query.filter_by(token=token).first()
 #         intus = extus.main_user
 #         # print(token, intus, extus)
 #         return intus, extus
@@ -350,16 +334,16 @@ class Authentication(BaseAuthentication):
         raise NotImplementedError("to do")
 
 #         setattr(obj, key, value)
-#         self._db.session.commit()
+#         self.db.session.commit()
 #         return
 
     def oauth_from_local(self, internal_user):
 
         log.pp(internal_user, prefix_line="internal")
-        accounts = self._db.ExternalAccounts
+        accounts = self.db.ExternalAccounts
         try:
             external_user = accounts.objects.raw(
                 {'user_id': internal_user.email}).first()
-        except self._db.ExternalAccounts.DoesNotExist:
+        except self.db.ExternalAccounts.DoesNotExist:
             external_user = None
         return internal_user, external_user

@@ -69,8 +69,8 @@ class InternalResponse(Response):
         if isinstance(rv, dict):
             try:
                 rv = jsonify(rv)
-                log.very_verbose("Jsonified response")
-            except:
+                # log.very_verbose("Jsonified response")
+            except BaseException:
                 log.error("Cannot jsonify rv")
 
         return super(InternalResponse, cls).force_type(rv, environ)
@@ -198,7 +198,7 @@ class ResponseMaker(object):
         # 2. Apply DEFAULT or CUSTOM manipulation
         # (strictly to the sole content)
         method = get_response()
-        log.verbose("Apply response method: %s" % method)
+        log.very_verbose("Response method: %s" % method.__name__)
         r['defined_content'] = method(r['defined_content'])
 
         # 3. Recover correct status and errors

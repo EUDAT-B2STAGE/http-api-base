@@ -8,19 +8,14 @@ import sqlalchemy
 from datetime import datetime, timedelta
 from rapydo.utils.uuid import getUUID
 from rapydo.services.authentication import BaseAuthentication
+from rapydo.services.detect import available_services
 from rapydo.utils.logs import get_logger
-from injector import inject
-from flask_ext.flask_alchemy import SqlAlchemy
 
 log = get_logger(__name__)
 
-# TO FIX: how to give error if the proposed service is not enabled?
-# must find a way with injector
-#
-# from rapydo.services.detect import SQL_AVAILABLE
-# if not SQL_AVAILABLE:
-#     log.critical("No SQLalchemy service found for auth")
-#     exit(1)
+if not available_services.get(__name__.split('.')[::-1][0]):
+    log.critical("No sqlalchemy service available for auth")
+    exit(1)
 
 
 class Authentication(BaseAuthentication):
@@ -32,9 +27,9 @@ class Authentication(BaseAuthentication):
     def get_user_object(self, username=None, payload=None):
         user = None
         if username is not None:
-            user = self._db.User.query.filter_by(email=username).first()
+            user = self.db.User.query.filter_by(email=username).first()
         if payload is not None and 'user_id' in payload:
-            user = self._db.User.query.filter_by(
+            user = self.db.User.query.filter_by(
                 uuid=payload['user_id']).first()
         return user
 
@@ -66,18 +61,18 @@ class Authentication(BaseAuthentication):
 
         try:
             # if no roles
-            missing_role = not self._db.Role.query.first()
+            missing_role = not self.db.Role.query.first()
             if missing_role:
                 log.warning("No roles inside db. Injected defaults.")
                 for role in self.default_roles:
-                    sqlrole = self._db.Role(name=role, description="automatic")
-                    self._db.session.add(sqlrole)
+                    sqlrole = self.db.Role(name=role, description="automatic")
+                    self.db.session.add(sqlrole)
 
             # if no users
-            missing_user = not self._db.User.query.first()
+            missing_user = not self.db.User.query.first()
             if missing_user:
                 log.warning("No users inside db. Injected default.")
-                user = self._db.User(
+                user = self.db.User(
                     uuid=getUUID(),
                     email=self.default_user,
                     authmethod='credentials',
@@ -86,9 +81,9 @@ class Authentication(BaseAuthentication):
 
                 # link roles into users
                 for role in self.default_roles:
-                    sqlrole = self._db.Role.query.filter_by(name=role).first()
+                    sqlrole = self.db.Role.query.filter_by(name=role).first()
                     user.roles.append(sqlrole)
-                self._db.session.add(user)
+                self.db.session.add(user)
 
         except sqlalchemy.exc.OperationalError:
             raise AttributeError("Existing SQL tables are not consistent " +
@@ -96,7 +91,7 @@ class Authentication(BaseAuthentication):
                                  "rebuilding your DB.")
 
         if missing_user or missing_role:
-            self._db.session.commit()
+            self.db.session.commit()
 
     def save_token(self, user, token, jti):
 
@@ -112,7 +107,7 @@ class Authentication(BaseAuthentication):
         now = datetime.now()
         exp = now + timedelta(seconds=self.shortTTL)
 
-        token_entry = self._db.Token(
+        token_entry = self.db.Token(
             jti=jti,
             token=token,
             creation=now,
@@ -124,14 +119,14 @@ class Authentication(BaseAuthentication):
 
         token_entry.emitted_for = user
 
-        self._db.session.add(token_entry)
-        self._db.session.commit()
+        self.db.session.add(token_entry)
+        self.db.session.commit()
 
         log.debug("Token stored inside the DB")
 
     def refresh_token(self, jti):
         now = datetime.now()
-        token_entry = self._db.Token.query.filter_by(jti=jti).first()
+        token_entry = self.db.Token.query.filter_by(jti=jti).first()
         if token_entry is None:
             return False
 
@@ -145,8 +140,8 @@ class Authentication(BaseAuthentication):
         token_entry.last_access = now
         token_entry.expiration = exp
 
-        self._db.session.add(token_entry)
-        self._db.session.commit()
+        self.db.session.add(token_entry)
+        self.db.session.commit()
 
         return True
 
@@ -159,7 +154,7 @@ class Authentication(BaseAuthentication):
         if user is not None:
             tokens = user.tokens.all()
         elif token_jti is not None:
-            tokens = [self._db.Token.query.filter_by(jti=token_jti).first()]
+            tokens = [self.db.Token.query.filter_by(jti=token_jti).first()]
 
         if tokens is not None:
             for token in tokens:
@@ -185,8 +180,8 @@ class Authentication(BaseAuthentication):
         if user is None:
             user = self._user
         user.uuid = getUUID()
-        self._db.session.add(user)
-        self._db.session.commit()
+        self.db.session.add(user)
+        self.db.session.commit()
         log.warning("User uuid changed to: %s" % user.uuid)
         return True
 
@@ -194,17 +189,17 @@ class Authentication(BaseAuthentication):
         if user is None:
             user = self.get_user()
 
-        token_entry = self._db.Token.query.filter_by(token=token).first()
+        token_entry = self.db.Token.query.filter_by(token=token).first()
         if token_entry is not None:
             token_entry.emitted_for = None
-            self._db.session.commit()
+            self.db.session.commit()
         else:
             log.warning("Could not invalidate token")
 
         return True
 
     def verify_token_custom(self, jti, user, payload):
-        token_entry = self._db.Token.query.filter_by(jti=jti).first()
+        token_entry = self.db.Token.query.filter_by(jti=jti).first()
         if token_entry is None:
             return False
         if token_entry.emitted_for is None or token_entry.emitted_for != user:
@@ -242,8 +237,8 @@ class Authentication(BaseAuthentication):
 
         # Check if a user already exists with this email
         internal_user = None
-        internal_users = self._db.User.query.filter(
-            self._db.User.email == email).all()
+        internal_users = self.db.User.query.filter(
+            self.db.User.email == email).all()
 
         # If something found
         if len(internal_users) > 0:
@@ -259,21 +254,21 @@ class Authentication(BaseAuthentication):
         # If missing, add it locally
         else:
             # Create new one
-            internal_user = self._db.User(
+            internal_user = self.db.User(
                 uuid=getUUID(), email=email, authmethod='oauth2')
             # link default role into users
             internal_user.roles.append(
-                self._db.Role.query.filter_by(name=self.default_role).first())
-            self._db.session.add(internal_user)
-            self._db.session.commit()
+                self.db.Role.query.filter_by(name=self.default_role).first())
+            self.db.session.add(internal_user)
+            self.db.session.commit()
             log.info("Created internal user %s" % internal_user)
 
         # Get ExternalAccount for the oauth2 data if exists
-        external_user = self._db.ExternalAccounts \
+        external_user = self.db.ExternalAccounts \
             .query.filter_by(username=email).first()
         # or create it otherwise
         if external_user is None:
-            external_user = self._db.ExternalAccounts(username=email, unity=ui)
+            external_user = self.db.ExternalAccounts(username=email, unity=ui)
 
             # Connect the external account to the current user
             external_user.main_user = internal_user
@@ -287,8 +282,8 @@ class Authentication(BaseAuthentication):
         external_user.certificate_cn = cn
         external_user.certificate_dn = dn
 
-        self._db.session.add(external_user)
-        self._db.session.commit()
+        self.db.session.add(external_user)
+        self.db.session.commit()
         log.debug("Updated external user %s" % external_user)
 
         return internal_user, external_user
@@ -297,26 +292,26 @@ class Authentication(BaseAuthentication):
         if external_user is None:
             return False
         external_user.proxyfile = proxy
-        self._db.session.add(external_user)  # can be commented
-        self._db.session.commit()
+        self.db.session.add(external_user)  # can be commented
+        self.db.session.commit()
         return True
 
 # TO FIX: make this methods below abstract for graph and others too?
 
     def oauth_from_token(self, token):
-        extus = self._db.ExternalAccounts.query.filter_by(token=token).first()
+        extus = self.db.ExternalAccounts.query.filter_by(token=token).first()
         intus = extus.main_user
         # print(token, intus, extus)
         return intus, extus
 
     def associate_object_to_attr(self, obj, key, value):
         setattr(obj, key, value)
-        self._db.session.commit()
+        self.db.session.commit()
         return
 
     # TO FIX: to be cached
     def oauth_from_local(self, internal_user):
-        accounts = self._db.ExternalAccounts
+        accounts = self.db.ExternalAccounts
         external_user = accounts.query.filter(
             accounts.main_user.has(id=internal_user.id)).first()
         return internal_user, external_user

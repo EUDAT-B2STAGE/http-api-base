@@ -14,7 +14,7 @@ from injector import Module, singleton
 ####################
 # TO FIX: # how to use logs inside this extensions?
 # should we make a Flask extension or a Python package out of logging?
-def get_logger(name=__name__, level=logging.DEBUG):
+def get_logger(name, level=logging.VERY_VERBOSE):
     import logging
     logger = logging.getLogger(name)
     logger.setLevel(level)
@@ -29,6 +29,8 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
     def __init__(self, app=None, variables={}, models={}):
 
+        self.injected_name = None
+        self.extra_service = None
         # a different name for each extended object
         self.name = self.__class__.__name__.lower()
         log.very_verbose("Opening service instance of %s" % self.name)
@@ -40,13 +42,6 @@ class BaseExtension(metaclass=abc.ABCMeta):
         self.models = models
         self.variables = variables
         log.very_verbose("Vars: %s" % variables)
-
-        # # DEPRECATED, models are now injected into instance,
-        # # instead of the extension
-        # for name, model in models.items():
-        #     # Save attribute inside class with the same name
-        #     log.verbose("Injecting model '%s'" % name)
-        #     setattr(self, name, model)
 
     def init_app(self, app):
         app.teardown_appcontext(self.teardown)
@@ -93,6 +88,7 @@ class BaseExtension(metaclass=abc.ABCMeta):
         else:
             log.info("Connected! %s" % self.name)
 
+        self.post_connection(obj)
         return self.set_models_to_service(obj)
 
     def set_models_to_service(self, obj):
@@ -104,22 +100,10 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
         return obj
 
-    def initialization(self, **extras):
+    def initialization(self):
         """ Init operations require the app context """
         with self.app.app_context():
-            self.custom_initialization(extras)
-
-    # TO BE OVERRIDDEN
-    @abc.abstractmethod
-    def custom_initialization(self, extras):
-        # # containing the db service if necessary
-        # log.pp(extras)
-        pass
-
-    # TO BE OVERRIDDEN
-    @abc.abstractmethod
-    def custom_connection(self):
-        return
+            self.custom_initialization()
 
     def project_initialization(self):
 
@@ -155,11 +139,12 @@ class BaseExtension(metaclass=abc.ABCMeta):
                 log.info("Service '%s' not available", self.name)
                 time.sleep(retry_interval)
 
+    # OVERRIDE if you must close your connection
     def teardown(self, exception):
         ctx = stack.top
         if self.has_object(ref=ctx):
-            # neo does not have an 'open' connection that needs closing
-            # ctx.service.close()
+            # obj = self.get_object(ref=ctx)
+            # obj.close()
             self.set_object(obj=None, ref=ctx)
 
     @property
@@ -169,6 +154,20 @@ class BaseExtension(metaclass=abc.ABCMeta):
             if not self.has_object(ref=ctx):
                 self.set_object(obj=self.connect(), ref=ctx)
             return self.get_object(ref=ctx)
+
+    # OPTIONALLY
+    def post_connection(self, obj=None):
+        pass
+
+    # TO BE OVERRIDDEN
+    @abc.abstractmethod
+    def custom_initialization(self):
+        pass
+
+    # TO BE OVERRIDDEN
+    @abc.abstractmethod
+    def custom_connection(self):
+        return
 
 
 class BaseInjector(Module, metaclass=abc.ABCMeta):
@@ -216,15 +215,17 @@ class BaseInjector(Module, metaclass=abc.ABCMeta):
 
         # Get the Flask extension and its instance
         FlaskExtClass, ext_instance = self.custom_configure()
-
-        # Use the extension instance
         ext_instance.injected_name = self._variables.get('injected_name')
+        ext_instance.extra_service = self.extra_service
+
+        # First connection, before any request
         ext_instance.connect()
-        ext_instance.initialization(extra_service=self.extra_service)
+        # And different types of initalization
+        ext_instance.initialization()
         ext_instance.project_initialization()
-        self.extension_instance = ext_instance
 
         # Binding between the class and the instance, for Flask requests
+        self.extension_instance = ext_instance
         binder.bind(FlaskExtClass, to=ext_instance, scope=self.singleton)
         return binder
 

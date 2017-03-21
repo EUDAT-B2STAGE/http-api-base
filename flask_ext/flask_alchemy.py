@@ -60,7 +60,7 @@ class SqlAlchemy(BaseExtension):
 
         return self.mydb
 
-    def custom_initialization(self, extras):
+    def custom_initialization(self):
         obj = self.get_object()
 
         # # TO FIX: this option should go inside the configuration file
