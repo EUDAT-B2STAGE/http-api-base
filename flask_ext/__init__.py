@@ -9,7 +9,6 @@ import time
 import logging
 from flask import _app_ctx_stack as stack
 from injector import Module, singleton
-from rapydo.utils.globals import mem
 
 
 ####################
@@ -42,6 +41,8 @@ class BaseExtension(metaclass=abc.ABCMeta):
         self.variables = variables
         log.very_verbose("Vars: %s" % variables)
 
+        # # DEPRECATED, models are now injected into instance,
+        # # instead of the extension
         # for name, model in models.items():
         #     # Save attribute inside class with the same name
         #     log.verbose("Injecting model '%s'" % name)
@@ -103,20 +104,35 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
         return obj
 
-    def initialization(self):
+    def initialization(self, **extras):
         """ Init operations require the app context """
         with self.app.app_context():
-            self.custom_initialization()
+            self.custom_initialization(extras)
 
     # TO BE OVERRIDDEN
     @abc.abstractmethod
-    def custom_initialization(self):
+    def custom_initialization(self, extras):
+        # # containing the db service if necessary
+        # log.pp(extras)
         pass
 
     # TO BE OVERRIDDEN
     @abc.abstractmethod
     def custom_connection(self):
         return
+
+    def project_initialization(self):
+
+        # Allow a custom method for mixed services init
+        try:
+            # TO FIX: to be redefined
+            from custom import services as custom_services
+            custom_services.init()
+        except BaseException:
+            log.debug("No custom init available for mixed services")
+
+    # TODO: allow a custom init method the project on any service?
+        pass
 
     def test_connection(self):
         try:
@@ -160,10 +176,12 @@ class BaseInjector(Module, metaclass=abc.ABCMeta):
     _models = {}
     _variables = {}
     singleton = singleton
+    extension_instance = None
     injected_name = 'unknown'
 
-    def __init__(self, app):
+    def __init__(self, app, extra_service=None):
         self.app = app
+        self.extra_service = extra_service
 
     @classmethod
     def set_models(cls, base_models={}, custom_models={}):
@@ -191,20 +209,23 @@ class BaseInjector(Module, metaclass=abc.ABCMeta):
     def set_variables(cls, envvars):
         cls._variables = envvars
 
+    def internal_object(self):
+        return self.extension_instance.get_object()
+
     def configure(self, binder):
+
         # Get the Flask extension and its instance
         FlaskExtClass, ext_instance = self.custom_configure()
-        # Set the injected name attribute
+
+        # Use the extension instance
         ext_instance.injected_name = self._variables.get('injected_name')
-        # IMPORTANT: Test connection (if any)
         ext_instance.connect()
-        # Save the service object into global memory...
-        mem._services[ext_instance.name] = ext_instance.get_object()
-        # Do initizalization for this service
-        ext_instance.initialization()
+        ext_instance.initialization(extra_service=self.extra_service)
+        ext_instance.project_initialization()
+        self.extension_instance = ext_instance
+
         # Binding between the class and the instance, for Flask requests
         binder.bind(FlaskExtClass, to=ext_instance, scope=self.singleton)
-
         return binder
 
     @abc.abstractmethod

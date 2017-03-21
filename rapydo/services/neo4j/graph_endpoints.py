@@ -19,7 +19,6 @@ __author__ = "Mattia D'Antonio (m.dantonio@cineca.it)"
 class GraphBaseOperations(EndpointResource):
 
     def initGraph(self):
-        self.graph = self.global_get_service('neo4j')
         self._current_user = self.getLoggedUserInstance()
 
     def getSingleLinkedNode(self, relation):
@@ -34,8 +33,8 @@ class GraphBaseOperations(EndpointResource):
         if user is None:
             return None
         try:
-            return self.graph.User.nodes.get(email=user.email)
-        except self.graph.User.DoesNotExist:
+            return self.neo.User.nodes.get(email=user.email)
+        except self.neo.User.DoesNotExist:
             return None
 
     def getNode(self, Model, identifier, field='accession'):
@@ -50,7 +49,7 @@ class GraphBaseOperations(EndpointResource):
     def countNodes(self, type):
         query = "MATCH (a:%s) RETURN count(a) as count" % type
 
-        records = self.graph.cypher(query)
+        records = self.neo.cypher(query)
         for record in records:
             if (record is None):
                 return 0

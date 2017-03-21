@@ -279,7 +279,7 @@ instead of here
     #     # # Create irods user inside the database
 
     #     # graph_irods_user = None
-    #     # graph = self.global_get_service('neo4j')
+    #     # graph = self.neo
     #     # try:
     #     #     graph_irods_user = graph.IrodsUser.nodes.get(username=irods_user)
     #     # except graph.IrodsUser.DoesNotExist:

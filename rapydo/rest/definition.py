@@ -56,8 +56,7 @@ class EndpointResource(Resource):
             except AttributeError:
                 log.error("Failed to inject %s" % obj)
 
-# TO FIX: to remove? use global mem instead?
-        # AUTH
+        # TO FIX: remove this from here please
         self.auth.set_database(injected_services)
 
     def init_parameters(self):
@@ -212,25 +211,7 @@ class EndpointResource(Resource):
         authentication/__init__.py@verify_token method
         """
 
-# TO FIX: current use has to be obtained through the injected service
-        return self.global_get('custom_auth').get_user()
-
-    # def global_get(self, object_name):
-
-    #     obj = g.get('_%s' % object_name, None)
-    #     if obj is None:
-    #         raise AttributeError(
-    #             "Global API variables: no %s object found!" % object_name)
-    #     return obj
-
-    # def global_get_service(self,
-    #                        service_name, object_name='services', **kwargs):
-
-    #     from rapydo.services import get_instance_from_services
-    #     return get_instance_from_services(
-    #         self.global_get(object_name),   # services
-    #         service_name,
-    #         **kwargs)
+        return self.auth.get_user()
 
     def method_not_allowed(self, methods=['GET']):
         # TO FIX: is it used?

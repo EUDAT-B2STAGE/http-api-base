@@ -59,7 +59,7 @@ class IrodsPythonClient(BaseExtension):
         obj.query(DataObject.owner_name).all()
         return obj
 
-    def custom_initialization(self):
+    def custom_initialization(self, extras):
         pass
 
 

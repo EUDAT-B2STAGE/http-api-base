@@ -53,7 +53,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     def set_database(self, services):
         self._db = services.get(self.auth_service).connection
-        log.verbose("DB %s set for current auth" % self._db.__class__.__name__)
+        log.verbose("DB %s on current auth" % self._db.__class__.__name__)
 
     @classmethod
     def myinit(cls):

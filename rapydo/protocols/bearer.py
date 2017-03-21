@@ -13,7 +13,7 @@ there is no client id nor is client authentication required.
 """
 
 from functools import wraps
-from flask import request, g
+from flask import request
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.meta import Meta
 from rapydo.utils.logs import get_logger
@@ -100,10 +100,8 @@ class HTTPTokenAuth(object):
             # ignore headers and let go, avoid unwanted interactions with CORS
             if request.method != 'OPTIONS':
 
-                print("\n\nTO BE FIXED", decorated_self.auth)
                 # Check authentication
-                token_fn = g._custom_auth.verify_token
-# TO FIX: ^^^ use auth from decorated_self??
+                token_fn = decorated_self.auth.verify_token
                 if not self.authenticate(token_fn, token):
                     # Clear TCP receive buffer of any pending data
                     request.data
@@ -115,7 +113,7 @@ class HTTPTokenAuth(object):
 
             # Check roles
             if len(roles) > 0:
-                roles_fn = g._custom_auth.verify_roles
+                roles_fn = decorated_self.auth.verify_roles
                 if not self.authenticate_roles(roles_fn, roles):
                     return decorated_self.send_errors(
                         message="You are not authorized: missing privileges",

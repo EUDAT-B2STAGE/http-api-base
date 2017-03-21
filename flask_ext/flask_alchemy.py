@@ -58,14 +58,18 @@ class SqlAlchemy(BaseExtension):
             # do init_app on the extension
             self.mydb.init_app(self.app)
 
-            with self.app.app_context():
-                self.mydb.create_all()
-
         return self.mydb
 
-    def custom_initialization(self):
-        pass
-        # INIT like authentication?
+    def custom_initialization(self, extras):
+        obj = self.get_object()
+
+        # # TO FIX: this option should go inside the configuration file
+        # if config.REMOVE_DATA_AT_INIT_TIME:
+        # if self.variables('remove_data_at_init_time'):
+        #     log.warning("Removing old data")
+        #     self._db.drop_all()
+
+        obj.create_all()
 
 
 class SqlInjector(BaseInjector):

@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
 
 """
-Detect which services are running,
-by testing environment variables set
-with containers/docker-compose/do.py
+Detect which services are running, by testing environment variables
+set with containers/docker-compose/do.py
 
 Note: links and automatic variables were removed as unsafe
 """
@@ -20,6 +19,7 @@ log = get_logger(__name__)
 meta = Meta()
 services_configuration = load_yaml_file('services', path=CORE_CONFIG_PATH)
 
+authentication_service = None
 services = {}
 services_classes = {}
 available_services = {}
@@ -56,6 +56,9 @@ for service in services_configuration:
 
         key = 'injected_name'
         variables[key] = service.get(key)
+
+        if name == 'authentication':
+            authentication_service = variables.get('service')
 
         ###################
         # Load module and get class and configuration
@@ -106,109 +109,7 @@ for service in services_configuration:
         log.very_verbose("Skipping service %s" % name)
 
 # TODO: should we report error if missing authentication?
-
-# ###################
-# print("\n\nEXIT DEBUG")
-# exit(1)
-
-# #######################################################
-# farm_queue = []
-
-# #######################################################
-# # RELATIONAL DATABASE
-
-# SQL_AVAILABLE = False
-
-# # Note: with SQL_PROD_AVAILABLE we refer to a real database container
-# # running and linked (e.g. Mysql or Postgres)
-# # Not considering sqllite for this variable
-# SQL_PROD_AVAILABLE = 'SQLDB_NAME' in os.environ and PRODUCTION
-
-# if SQL_PROD_AVAILABLE:
-#     SQL_AVAILABLE = True
-
-# if os.environ.get('BACKEND_AUTH_SERVICE', '') == 'relationaldb':
-#     SQL_AVAILABLE = True
-#     from rapydo.services.sql.alchemy import SQLFarm as service
-#     # log.debug("Created SQLAlchemy relational DB object")
-#     farm_queue.append(service)
-#     # services['sql'] = service
-
-# #######################################################
-# # GRAPH DATABASE
-# GRAPHDB_AVAILABLE = 'GDB_NAME' in os.environ
-
-# if GRAPHDB_AVAILABLE:
-#     # DO something and inject into 'services'
-#     from rapydo.services.neo4j.graph import GraphFarm as service
-#     farm_queue.append(service)
-
-# #######################################################
-# # MONGO DB
-# MONGO_AVAILABLE = 'MONGO_NAME' in os.environ
-
-# if MONGO_AVAILABLE:
-#     # External service if using user/password?
-#     # TODO: write example into docker-compose production
-
-#     # DO something and inject into 'services'
-#     from rapydo.services.mongo.mongodb import MongoFarm as service
-#     farm_queue.append(service)
-
-# #######################################################
-# # IRODS
-# IRODS_EXTERNAL = False
-# IRODS_AVAILABLE = 'RODSERVER_NAME' in os.environ or \
-#                   'ICAT_1_ENV_IRODS_HOST' in os.environ
-
-# if IRODS_AVAILABLE:
-
-#     # IRODS 4
-#     USER_HOME = os.environ['HOME']
-#     IRODS_HOME = os.path.join(USER_HOME, ".irods")
-#     if not os.path.exists(IRODS_HOME):
-#         os.mkdir(IRODS_HOME)
-#     IRODS_ENV = os.path.join(IRODS_HOME, "irods_environment.json")
-#     # IRODS_ENV = USER_HOME + "/.irods/.irodsEnv"
-
-#     # We may check if iRODS is an external service
-#     # by verifying if this linked container is provided
-#     if os.environ.get('RODSERVER_NAME', None) is None:
-#         IRODS_EXTERNAL = True
-
-#     # DO something and inject into 'services'
-#     from rapydo.services.irods.client import IrodsFarm as service
-#     # services['irods'] = service
-#     farm_queue.append(service)
-
-# #######################################################
-# # ELASTICSEARCH / OTHERS
-
-# ELASTIC_AVAILABLE = 'EL_NAME' in os.environ
-
-# if ELASTIC_AVAILABLE:
-#     from rapydo.services.elasticsearch.service import ElasticFarm as service
-#     farm_queue.append(service)
-
-
-# #######################################################
-# # REDIS for CELERY TASKS QUEUE
-
-# CELERY_AVAILABLE = 'QUEUE_NAME' in os.environ
-
-# if CELERY_AVAILABLE:
-#     from rapydo.services.celery.tasks import CeleryFarm as service
-#     farm_queue.append(service)
-
-
-# #####################################
-# #####################################
-
-# # Create the dictionary of services
-# for farm in farm_queue:
-#     service_name = farm.define_service_name()
-#     log.debug("Adding service '%s' to available array" % service_name)
-#     services[service_name] = farm
-
-# print("SERVICES", services)
-# exit(1)
+if authentication_service is None:
+    raise AttributeError("Missing config: no service behind authentication")
+else:
+    log.info("Authentication based on: '%s' service" % authentication_service)

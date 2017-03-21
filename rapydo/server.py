@@ -15,7 +15,8 @@ from rapydo.rest.response import ResponseMaker
 from rapydo.customization import Customizer
 from rapydo.confs import PRODUCTION, DEBUG as ENVVAR_DEBUG
 from rapydo.utils.globals import mem
-from rapydo.services.detect import services as internal_services
+from rapydo.services.detect import authentication_service, \
+    services as internal_services
 from rapydo.protocols.restful import Api, EndpointsFarmer, create_endpoints
 from rapydo.utils.logs import get_logger, \
     handle_log_output, MAX_CHAR_LEN, set_global_log_level
@@ -94,6 +95,7 @@ def create_app(name=__name__, debug=False,
     ##############################
     # Disable security if launching celery workers
     if worker_mode:
+        # TO FIX: it should pass we no problems in case?
         enable_security = False
         skip_endpoint_mapping = True
 
@@ -127,17 +129,6 @@ def create_app(name=__name__, debug=False,
         # from werkzeug.debug import DebuggedApplication
         # app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
-    #################################################
-    # Other components
-    #################################################
-
-    ##############################
-    # DATABASE/SERVICEs init and checks
-    modules = []
-    for injected, Injector in internal_services.items():
-        log.debug("Append '%s' to plugged services" % injected)
-        modules.append(Injector(microservice))
-
     ##############################
     # Cors
     cors.init_app(microservice)
@@ -146,6 +137,24 @@ def create_app(name=__name__, debug=False,
     ##############################
     # Enabling our internal Flask customized response
     microservice.response_class = InternalResponse
+
+    ##############################
+    # DATABASE/SERVICEs init and checks
+    auth_backend_obj = None
+    modules = []
+    for injected, Injector in internal_services.items():
+
+        args = {'app': microservice}
+        if injected == 'authentication':
+            args['extra_service'] = auth_backend_obj
+
+        inj = Injector(**args)
+
+        if injected == authentication_service:
+            auth_backend_obj = inj
+
+        log.debug("Append '%s' to plugged services" % injected)
+        modules.append(inj)
 
     ##############################
     # Restful plugin
@@ -194,6 +203,7 @@ def create_app(name=__name__, debug=False,
         # # Set global objects for celery workers
         # if worker_mode:
         #     mem.services = internal_services
+        # UPDATE: we have mem._services again...!
 
     ##############################
     # Logging responses

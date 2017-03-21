@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 
 import os
-from flask_ext import BaseInjector, BaseExtension, get_logger
 from rapydo.utils.meta import Meta
+from rapydo.confs import PRODUCTION
+from flask_ext import BaseInjector, BaseExtension, get_logger
 
 log = get_logger(__name__)
 
 
 class Authenticator(BaseExtension):
+
+    _custom_auth = None
 
     def get_authentication_module(self, auth_service):
         meta = Meta()
@@ -20,7 +23,8 @@ class Authenticator(BaseExtension):
 
     def custom_connection(self):
 
-        print("SHOULD BE CALLED ONLY ONCE")
+        print("SHOULD BE CALLED ONLY ONCE??")
+        # TO BE FIXED...
 
         # What service will hold authentication?
         auth_service = os.environ.get('AUTH_SERVICE')
@@ -53,31 +57,25 @@ class Authenticator(BaseExtension):
         oauth.init_app(self.app)
 
         self._custom_auth = custom_auth
-        return custom_auth
+        return self._custom_auth
 
-    def custom_initialization(self):
+    def custom_initialization(self, extras):
 
-        # # TODO: do init for auth
         obj = self._custom_auth
-        from rapydo.utils.globals import mem
-        backend_database = self.variables.get('service')
-        obj._db = mem._services.get(backend_database)
+        # A little trick here:
+        # We may pass around instances of services.
+        # In particular an instance of a database to be used
+        # as the backend service of authentication
+        # The extra service is the injector, so I provided the method
+        # 'internal_object' to recover the service instance
+        obj._db = extras.get('extra_service').internal_object()
         obj.init_users_and_roles()
         log.warning("Initialized auth")
 
-        # ####################
-        # # TODO: check this piece of code
-        # if PRODUCTION and init_auth.check_if_user_defaults():
-        #     raise AttributeError(
-        #         "Starting production mode with default admin user")
-
-        # ####################
-        # # Allow a custom method for mixed services init
-        # try:
-        #     from custom import services as custom_services
-        #     custom_services.init(internal_services, enable_security)
-        # except BaseException:
-        #     log.debug("No custom init available for mixed services")
+        ####################
+        # TODO: check this piece of code
+        if PRODUCTION and obj.check_if_user_defaults():
+            raise AttributeError("PRODUCTION mode with default admin user?")
 
 
 class AuthInjector(BaseInjector):
