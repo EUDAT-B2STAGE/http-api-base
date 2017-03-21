@@ -67,7 +67,6 @@ class Authenticator(BaseExtension):
 
         # Very important: give a service backend to authentication
         if self.extra_service is not None:
-            obj = self.get_object()
             # this is a 'hat trick'
             obj.db = self.extra_service.internal_object()
 

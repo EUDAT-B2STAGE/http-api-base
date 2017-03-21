@@ -9,6 +9,8 @@ import time
 import logging
 from flask import _app_ctx_stack as stack
 from injector import Module, singleton
+from rapydo.confs import CUSTOM_PACKAGE
+from rapydo.utils.meta import Meta
 
 
 ####################
@@ -23,6 +25,7 @@ def get_logger(name, level=logging.VERY_VERBOSE):
 
 
 log = get_logger(__name__)
+meta = Meta()
 
 
 class BaseExtension(metaclass=abc.ABCMeta):
@@ -89,6 +92,7 @@ class BaseExtension(metaclass=abc.ABCMeta):
             log.info("Connected! %s" % self.name)
 
         self.post_connection(obj)
+
         return self.set_models_to_service(obj)
 
     def set_models_to_service(self, obj):
@@ -109,8 +113,8 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
         # Allow a custom method for mixed services init
         try:
-            # TO FIX: to be redefined
-            from custom import services as custom_services
+            module_path = "%s.%s.%s" % (CUSTOM_PACKAGE, 'apis', 'services')
+            custom_services = meta.get_module_from_string(module_path)
             custom_services.init()
         except BaseException:
             log.debug("No custom init available for mixed services")
@@ -220,9 +224,11 @@ class BaseInjector(Module, metaclass=abc.ABCMeta):
 
         # First connection, before any request
         ext_instance.connect()
-        # And different types of initalization
         ext_instance.initialization()
-        ext_instance.project_initialization()
+
+        # Once among the whole service, and as the last one:
+        if ext_instance.name == 'authenticator':
+            ext_instance.project_initialization()
 
         # Binding between the class and the instance, for Flask requests
         self.extension_instance = ext_instance
