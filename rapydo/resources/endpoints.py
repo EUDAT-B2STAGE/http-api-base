@@ -160,7 +160,8 @@ class Tokens(EndpointResource):
         for token in tokens:
             # all or specific
             if token_id is None or token["id"] == token_id:
-                done = auth.invalidate_token(token=token["token"], user=user)
+                done = self.auth.invalidate_token(
+                    token=token["token"], user=user)
                 if not done:
                     return self.send_errors(message="Failed '%s'" % token)
                 else:
