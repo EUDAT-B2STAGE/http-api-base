@@ -25,7 +25,6 @@ from rapydo.utils.logs import get_logger, \
 #############################
 # LOGS
 log = get_logger(__name__)
-mem._services = {}
 
 # This is the first file to be imported in the project
 # We need to enable many things on a global level for logs
@@ -47,8 +46,7 @@ class Flask(OriginalFlask):
             out = str(rv)
             if len(out) > response_log_max_len:
                 out = out[:response_log_max_len] + ' ...'
-
-            log.verbose("Custom response built: %s" % out)
+            # log.very_verbose("Custom response built: %s" % out)
         except BaseException:
             log.debug("Response: [UNREADABLE OBJ]")
         responder = ResponseMaker(rv)
@@ -83,8 +81,8 @@ def create_app(name=__name__, debug=False,
 
     #############################
     # Initialize reading of all files
-    # TO FIX: remove me
     mem.customizer = Customizer(testing_mode, PRODUCTION)
+    # TO FIX: try to remove mem. from everywhere...
 
     #################################################
     # Flask app instance
@@ -113,6 +111,8 @@ def create_app(name=__name__, debug=False,
             tmp = str(ENVVAR_DEBUG).lower() == 'true'
         debug = tmp  # bool(tmp)
     microservice.config['DEBUG'] = debug
+    # import logging
+    # microservice.logger.setLevel(logging.VERY_VERBOSE)
     log.info("Flask application generated")
 
     ##############################
@@ -203,7 +203,6 @@ def create_app(name=__name__, debug=False,
         # # Set global objects for celery workers
         # if worker_mode:
         #     mem.services = internal_services
-        # UPDATE: we have mem._services again...!
 
     ##############################
     # Logging responses

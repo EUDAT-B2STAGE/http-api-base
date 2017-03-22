@@ -1,5 +1,7 @@
 
 depends_on:
+  # TO FIX: it should depend on the name of the service
+  # as the name proposed in services.yaml
   - CELERY_AVAILABLE
 class: Queue
 file: endpoints
