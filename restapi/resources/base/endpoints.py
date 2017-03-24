@@ -8,7 +8,7 @@ And a Farm: How to create endpoints into REST service.
 from __future__ import absolute_import
 
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import jsonify, current_app
 from ..rest.definition import EndpointResource
@@ -54,13 +54,21 @@ class Login(EndpointResource):
 
     def post(self):
 
+        REGISTER_FAILED_LOGIN = True
+        FORCE_FIRST_PASSWORD_CHANGE = True
+        MAX_PASSWORD_VALIDITY = 90  # 0
+        MAX_LOGIN_ATTEMPTS = 3  # 0
+        # SECOND_FACTOR_AUTHENTICATION = None
+        SECOND_FACTOR_AUTHENTICATION = "TOTP"
+
         # NOTE: In case you need different behaviour when using unittest
         # if current_app.config['TESTING']:
         #     print("\nThis is inside a TEST\n")
 
         username = None
         password = None
-        bad_code = hcodes.HTTP_BAD_UNAUTHORIZED
+        unauthorized = hcodes.HTTP_BAD_UNAUTHORIZED
+        forbidden = hcodes.HTTP_BAD_FORBIDDEN
 
         jargs = self.get_input()
         if 'username' in jargs:
@@ -74,19 +82,66 @@ class Login(EndpointResource):
 
         if username is None or password is None:
             return self.send_errors(
-                message="Credentials: missing 'username' and/or 'password'",
-                code=bad_code)
+                message="Missing username or password",
+                code=unauthorized)
 
         # auth instance from the global namespace
         auth = self.global_get('custom_auth')
+
+        if REGISTER_FAILED_LOGIN and MAX_LOGIN_ATTEMPTS > 0:
+            if auth.get_failed_login(username) >= MAX_LOGIN_ATTEMPTS:
+                msg = """
+                    Sorry, this account is temporarily blocked due to
+                    more than %d failed login attempts. Try again later"""\
+                    % MAX_LOGIN_ATTEMPTS
+                return self.send_errors(message=msg, code=unauthorized)
+
         token, jti = auth.make_login(username, password)
         if token is None:
+
+            if REGISTER_FAILED_LOGIN:
+                auth.register_failed_login(username)
+
             return self.send_errors(
-                message="Credentials: invalid username and/or password",
-                code=bad_code)
+                message="Invalid username or password",
+                code=unauthorized)
+
+        user = auth.get_user()
+
+        actions = []
+        error_message = None
+
+        if SECOND_FACTOR_AUTHENTICATION is not None:
+
+            actions.append(SECOND_FACTOR_AUTHENTICATION)
+            error_message = "You do not provided a valid second factor"
+
+        last_pwd_change = user.last_password_change
+        if FORCE_FIRST_PASSWORD_CHANGE and last_pwd_change == 0:
+
+            actions.append('FIRST LOGIN')
+            error_message = "This is a temporary password"
+
+        elif MAX_PASSWORD_VALIDITY > 0:
+            valid_until = \
+                last_pwd_change + timedelta(days=MAX_PASSWORD_VALIDITY)
+            now = datetime.now(pytz.utc)
+
+            if valid_until < now:
+
+                actions.append('PASSWORD EXPIRED')
+                error_message = "This password is expired"
+
+        if error_message is not None:
+            # temp_token, temp_jti = auth.create_temporary_token(user)
+            # auth.save_token(auth._user, temp_token, temp_jti)
+            return self.force_response(
+                # {'token': temp_token, 'actions': actions},
+                {'actions': actions},
+                errors=error_message,
+                code=forbidden)
 
         auth.save_token(auth._user, token, jti)
-
         # TO FIX: split response as above in access_token and token_type?
         # # The right response should be the following
         # {
@@ -142,8 +197,8 @@ class Tokens(EndpointResource):
             if token["id"] == token_id:
                 return token
 
-        errorMessage = "Either this token was not emitted for your account " + \
-                       "or it does not exist"
+        errorMessage = """Either this token was not emitted for your account
+                          or it does not exist"""
         return self.send_errors(
             message=errorMessage, code=hcodes.HTTP_BAD_NOTFOUND)
 

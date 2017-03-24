@@ -78,7 +78,7 @@ class InternalResponse(Response):
             try:
                 rv = jsonify(rv)
                 log.very_verbose("Jsonified response")
-            except:
+            except BaseException:
                 log.error("Cannot jsonify rv")
 
         return super(InternalResponse, cls).force_type(rv, environ)
@@ -127,7 +127,7 @@ class ResponseMaker(object):
                 main = None
                 try:
                     main = json.loads(response[0])
-                except:
+                except BaseException:
                     main = response[0]
 
                 if len(response) > 0:
@@ -251,8 +251,8 @@ class ResponseMaker(object):
         # Convert errors in a list, always
         if errors is not None:
             if not isinstance(errors, list):
-                if not isinstance(errors, dict):
-                    errors = {'Generic error': errors}
+                # if not isinstance(errors, dict):
+                    # errors = {'Generic error': errors}
                 errors = [errors]
 
         # Decide code range

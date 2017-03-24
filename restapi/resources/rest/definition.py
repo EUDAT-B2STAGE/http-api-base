@@ -228,8 +228,7 @@ class EndpointResource(Resource):
 
         return self.force_response(
             headers={'ALLOW': methods_string.strip(', ')},
-            errors={'message':
-                    'The method is not allowed for the requested URL.'},
+            errors='The method is not allowed for the requested URL.',
             code=hcodes.HTTP_BAD_METHOD_NOT_ALLOWED)
 
     def force_response(self, *args, **kwargs):

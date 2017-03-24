@@ -20,8 +20,8 @@ tologin:
       # description: your registered username
 
   responses:
-    # '401':
-    #   description: Credentials are wrong
+    '401':
+      description: Invalid username or password
     '200':
       description: Credentials are valid
       examples:
