@@ -52,34 +52,64 @@ class SwaggerSpecifications(EndpointResource):
 class Login(EndpointResource):
     """ Let a user login with the developer chosen method """
 
-    def post(self):
+    def login_failed(self, auth, username, message):
 
         REGISTER_FAILED_LOGIN = True
-        FORCE_FIRST_PASSWORD_CHANGE = True
-        MAX_PASSWORD_VALIDITY = 90  # 0
-        MAX_LOGIN_ATTEMPTS = 3  # 0
-        # SECOND_FACTOR_AUTHENTICATION = None
-        SECOND_FACTOR_AUTHENTICATION = "TOTP"
+
+        if REGISTER_FAILED_LOGIN:
+            auth.register_failed_login(username)
+
+        return self.send_errors(
+            message=message,
+            code=hcodes.HTTP_BAD_UNAUTHORIZED
+        )
+
+    def check_password_strength(self, pwd, old_pwd):
+
+        if pwd == old_pwd:
+            return False, "Password cannot match the previous password"
+        if len(pwd) < 8:
+            return False, "Password too short"
+
+        return True, None
+
+    def post(self):
 
         # NOTE: In case you need different behaviour when using unittest
         # if current_app.config['TESTING']:
         #     print("\nThis is inside a TEST\n")
 
-        username = None
-        password = None
+        REGISTER_FAILED_LOGIN = True
+        FORCE_FIRST_PASSWORD_CHANGE = True
+        MAX_PASSWORD_VALIDITY = 90  # 0
+        # DISABLE_UNUSED_CREDENTIALS_AFTER = 0
+        DISABLE_UNUSED_CREDENTIALS_AFTER = 180
+        MAX_LOGIN_ATTEMPTS = 3  # 0
+        # SECOND_FACTOR_AUTHENTICATION = None
+        TOTP = 'TOTP'
+        SECOND_FACTOR_AUTHENTICATION = TOTP
+        CHECK_PASSWORD_STRENGHT = True
+
         unauthorized = hcodes.HTTP_BAD_UNAUTHORIZED
         forbidden = hcodes.HTTP_BAD_FORBIDDEN
+        conflict = hcodes.HTTP_BAD_CONFLICT
+
+        now = datetime.now(pytz.utc)
 
         jargs = self.get_input()
-        if 'username' in jargs:
-            username = jargs['username']
-        elif 'email' in jargs:
-            username = jargs['email']
-        if 'password' in jargs:
-            password = jargs['password']
-        elif 'pwd' in jargs:
-            password = jargs['pwd']
+        username = jargs.get('username')
+        if username is None:
+            username = jargs.get('email')
 
+        password = jargs.get('password')
+        if password is None:
+            password = jargs.get('pwd')
+
+        new_password = jargs.get('new_password')
+        password_confirm = jargs.get('password_confirm')
+        totp_code = jargs.get('totp_code')
+
+        # NOTE: now is checked at every request
         if username is None or password is None:
             return self.send_errors(
                 message="Missing username or password",
@@ -89,6 +119,7 @@ class Login(EndpointResource):
         auth = self.global_get('custom_auth')
 
         if REGISTER_FAILED_LOGIN and MAX_LOGIN_ATTEMPTS > 0:
+            # TO FIX: implement get_failed_login
             if auth.get_failed_login(username) >= MAX_LOGIN_ATTEMPTS:
                 msg = """
                     Sorry, this account is temporarily blocked due to
@@ -98,38 +129,96 @@ class Login(EndpointResource):
 
         token, jti = auth.make_login(username, password)
         if token is None:
-
-            if REGISTER_FAILED_LOGIN:
-                auth.register_failed_login(username)
-
-            return self.send_errors(
-                message="Invalid username or password",
-                code=unauthorized)
+            return self.login_failed(
+                auth, username, 'Invalid username or password')
 
         user = auth.get_user()
 
-        actions = []
+        if DISABLE_UNUSED_CREDENTIALS_AFTER > 0:
+            last_login = user.last_login
+            if last_login is not None and last_login > 0:
+
+                inactivity = timedelta(days=DISABLE_UNUSED_CREDENTIALS_AFTER)
+                valid_until = last_login + inactivity
+
+                if valid_until < now:
+                    msg = "Sorry, this account is blocked for inactivity"
+                    return self.send_errors(message=msg, code=unauthorized)
+
+        message_body = {}
+        message_body['actions'] = []
         error_message = None
+
+        if totp_code is not None:
+            import pyotp
+
+            # TO FIX: use a real secret based on user.SomeThing
+            totp = pyotp.TOTP('base32secret3232')
+            if not totp.verify(totp_code):
+
+                return self.login_failed(auth, username, 'Invalid code')
+
+        if new_password is not None and password_confirm is not None:
+            if new_password != password_confirm:
+                msg = "Your password doesn't match the confirmation"
+                return self.send_errors(message=msg, code=conflict)
+
+            if CHECK_PASSWORD_STRENGHT:
+                check, msg = self.check_password_strength(
+                    new_password, password)
+
+                if not check:
+                    return self.send_errors(message=msg, code=conflict)
+
+            # TO FIX: check password strength, if required
+
+        if new_password is not None and password_confirm is not None:
+            user.password = BaseAuthentication.hash_password(new_password)
+            user.last_password_change = now
+            user.save()
+
+            password = new_password
 
         if SECOND_FACTOR_AUTHENTICATION is not None:
 
-            actions.append(SECOND_FACTOR_AUTHENTICATION)
-            error_message = "You do not provided a valid second factor"
+            if totp_code is not None:
+                # should be already validated
+                pass
+            else:
+                message_body['actions'].append(SECOND_FACTOR_AUTHENTICATION)
+                error_message = "You do not provided a valid second factor"
 
         last_pwd_change = user.last_password_change
+        if last_pwd_change is None:
+            last_pwd_change = 0
         if FORCE_FIRST_PASSWORD_CHANGE and last_pwd_change == 0:
 
-            actions.append('FIRST LOGIN')
-            error_message = "This is a temporary password"
+            message_body['actions'].append('FIRST LOGIN')
+            error_message = "This is your first login"
+
+            if SECOND_FACTOR_AUTHENTICATION is not None and \
+               SECOND_FACTOR_AUTHENTICATION == TOTP:
+
+                import pyotp
+                import pyqrcode
+                from io import BytesIO
+
+                totp = pyotp.TOTP('base32secret3232')
+
+                otpauth_url = totp.provisioning_uri("GenomicRepository")
+                qr_url = pyqrcode.create(otpauth_url)
+                qr_stream = BytesIO()
+                qr_url.svg(qr_stream, scale=5)
+
+                message_body["qr_code"] = qr_stream.getvalue()
 
         elif MAX_PASSWORD_VALIDITY > 0:
             valid_until = \
                 last_pwd_change + timedelta(days=MAX_PASSWORD_VALIDITY)
-            now = datetime.now(pytz.utc)
 
             if valid_until < now:
 
-                actions.append('PASSWORD EXPIRED')
+                message_body['actions'].append('PASSWORD EXPIRED')
                 error_message = "This password is expired"
 
         if error_message is not None:
@@ -137,11 +226,15 @@ class Login(EndpointResource):
             # auth.save_token(auth._user, temp_token, temp_jti)
             return self.force_response(
                 # {'token': temp_token, 'actions': actions},
-                {'actions': actions},
+                message_body,
                 errors=error_message,
                 code=forbidden)
 
         auth.save_token(auth._user, token, jti)
+        if user.first_login is None:
+            user.first_login = now
+        user.last_login = now
+        user.save()
         # TO FIX: split response as above in access_token and token_type?
         # # The right response should be the following
         # {
@@ -288,7 +381,6 @@ class Profile(EndpointResource):
 
     def put(self, uuid):
         # TO FIX: this should be a POST method...
-
         """ Create or update profile for current user """
 
         from flask_restful import request
@@ -319,7 +411,7 @@ class Profile(EndpointResource):
             # changes the user uuid invalidating all tokens
             auth.invalidate_all_tokens()
 
-        except:
+        except BaseException:
             return self.send_errors(
                 message="Unknown error, please contact administrators",
                 code=hcodes.HTTP_BAD_REQUEST

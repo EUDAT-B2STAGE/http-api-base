@@ -7,7 +7,6 @@ Add auth checks called /checklogged and /testadmin
 
 from __future__ import absolute_import
 
-import os
 import abc
 import jwt
 import hmac
@@ -123,11 +122,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
                         % abs_filename)
             log.info("To create your own secret file:\n" +
                      "head -c 24 /dev/urandom > %s" % abs_filename)
-            # full_path = os.path.dirname(abs_filename)
-            # if not os.path.isdir(full_path):
-            #     print('mkdir -p {filename}'.format(filename=full_path))
-            # import sys
-            # sys.exit(1)
 
         return self.JWT_SECRET
 
