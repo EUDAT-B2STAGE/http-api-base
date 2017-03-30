@@ -149,7 +149,7 @@ class Customizer(object):
                     continue
                 current = self.lookup(
                     ep, self._current_package, base_dir, endpoint_dir)
-                if current.exists:
+                if current is not None and current.exists:
                     # Add endpoint to REST mapping
                     self._endpoints.append(current)
 
@@ -176,6 +176,10 @@ class Customizer(object):
     def lookup(self, endpoint, package, base_dir, endpoint_dir):
 
         log.verbose("Found endpoint dir: '%s'" % endpoint)
+
+        if os.path.exists(os.path.join(endpoint_dir, 'SKIP')):
+            log.info("Skipping: %s" % endpoint)
+            return None
 
         # Find yaml files
         conf = None
