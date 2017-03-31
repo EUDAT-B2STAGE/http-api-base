@@ -502,11 +502,12 @@ class Profile(EndpointResource):
             msg = "New password is missing"
             raise RestApiException(msg, status_code=hcodes.HTTP_BAD_REQUEST)
 
-        token, jti = auth.make_login(username, password)
 
         if totp_authentication:
             security.verify_totp(auth, username, totp_code)
-        security.verify_token(auth, username, token)
+        else:
+            token, jti = auth.make_login(username, password)
+            security.verify_token(auth, username, token)
 
         security.change_password(
             auth, user, password, new_password, password_confirm)
