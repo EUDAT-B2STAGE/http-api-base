@@ -7,6 +7,7 @@ And a Farm: How to create endpoints into REST service.
 
 from __future__ import absolute_import
 
+import re
 import pytz
 from datetime import datetime, timedelta
 
@@ -64,12 +65,25 @@ class Login(EndpointResource):
             code=hcodes.HTTP_BAD_UNAUTHORIZED
         )
 
-    def check_password_strength(self, pwd, old_pwd):
+    # TO FIX: check password strength, if required
+    def verify_password_strength(self, pwd, old_pwd):
 
         if pwd == old_pwd:
             return False, "Password cannot match the previous password"
         if len(pwd) < 8:
-            return False, "Password too short"
+            return False, "Password is too short, use at least 8 characters"
+
+        if not re.search("[a-z]", pwd):
+            return False, "Password is too simple, missing lower case letters"
+        if not re.search("[A-Z]", pwd):
+            return False, "Password is too simple, missing upper case letters"
+        if not re.search("[0-9]", pwd):
+            return False, "Password is too simple, missing numbers"
+
+        # special_characters = "['\s!#$%&\"(),*+,-./:;<=>?@[\\]^_`{|}~']"
+        special_characters = "[^a-zA-Z0-9]"
+        if not re.search(special_characters, pwd):
+            return False, "Password is too simple, missing special characters"
 
         return True, None
 
@@ -88,7 +102,11 @@ class Login(EndpointResource):
         # SECOND_FACTOR_AUTHENTICATION = None
         TOTP = 'TOTP'
         SECOND_FACTOR_AUTHENTICATION = TOTP
-        CHECK_PASSWORD_STRENGHT = True
+        VERIFY_PASSWORD_STRENGHT = True
+
+        # FORCE_FIRST_PASSWORD_CHANGE = False
+        # SECOND_FACTOR_AUTHENTICATION = None
+        # MAX_PASSWORD_VALIDITY = 0
 
         unauthorized = hcodes.HTTP_BAD_UNAUTHORIZED
         forbidden = hcodes.HTTP_BAD_FORBIDDEN
@@ -136,7 +154,7 @@ class Login(EndpointResource):
 
         if DISABLE_UNUSED_CREDENTIALS_AFTER > 0:
             last_login = user.last_login
-            if last_login is not None and last_login > 0:
+            if last_login is not None:
 
                 inactivity = timedelta(days=DISABLE_UNUSED_CREDENTIALS_AFTER)
                 valid_until = last_login + inactivity
@@ -163,14 +181,12 @@ class Login(EndpointResource):
                 msg = "Your password doesn't match the confirmation"
                 return self.send_errors(message=msg, code=conflict)
 
-            if CHECK_PASSWORD_STRENGHT:
-                check, msg = self.check_password_strength(
+            if VERIFY_PASSWORD_STRENGHT:
+                check, msg = self.verify_password_strength(
                     new_password, password)
 
                 if not check:
                     return self.send_errors(message=msg, code=conflict)
-
-            # TO FIX: check password strength, if required
 
         if new_password is not None and password_confirm is not None:
             user.password = BaseAuthentication.hash_password(new_password)
@@ -213,10 +229,15 @@ class Login(EndpointResource):
                 message_body["qr_code"] = qr_stream.getvalue()
 
         elif MAX_PASSWORD_VALIDITY > 0:
-            valid_until = \
-                last_pwd_change + timedelta(days=MAX_PASSWORD_VALIDITY)
 
-            if valid_until < now:
+            if last_pwd_change is None or last_pwd_change == 0:
+                expired = True
+            else:
+                valid_until = \
+                    last_pwd_change + timedelta(days=MAX_PASSWORD_VALIDITY)
+                expired = (valid_until < now)
+
+            if expired:
 
                 message_body['actions'].append('PASSWORD EXPIRED')
                 error_message = "This password is expired"
@@ -352,13 +373,14 @@ class Profile(EndpointResource):
             'email': current_user.email
         }
 
+        auth = self.global_get('custom_auth')
         # roles = []
         roles = {}
         for role in current_user.roles:
             # roles.append(role.name)
             roles[role.name] = role.name
         data["roles"] = roles
-        data["isAdmin"] = "admin_root" in roles
+        data["isAdmin"] = auth.verify_admin()
 
         if hasattr(current_user, 'name'):
             data["name"] = current_user.name
