@@ -9,8 +9,14 @@ to handle services known errors
 
 # from __future__ import absolute_import
 # from commons.logs import get_logger
+from commons import htmlcodes as hcodes
 
 
 class RestApiException(Exception):
 
-    pass
+    def __init__(self, exception, status_code):
+
+        if status_code is None:
+            status_code = hcodes.HTTP_BAD_NOTFOUND
+        super(RestApiException).__init__()
+        self.status_code = status_code

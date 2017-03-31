@@ -10,16 +10,58 @@ from __future__ import absolute_import
 import re
 import pytz
 from datetime import datetime, timedelta
+from restapi.resources import decorators as decorate
 
 from flask import jsonify, current_app
 from ..rest.definition import EndpointResource
 from ..services.detect import CELERY_AVAILABLE
 from ..services.authentication import BaseAuthentication
+from restapi.resources.exceptions import RestApiException
 from commons import htmlcodes as hcodes
 from commons.globals import mem
 from commons.logs import get_logger
 
 log = get_logger(__name__)
+
+REGISTER_FAILED_LOGIN = True
+FORCE_FIRST_PASSWORD_CHANGE = True
+MAX_PASSWORD_VALIDITY = 90  # 0
+# DISABLE_UNUSED_CREDENTIALS_AFTER = 0
+DISABLE_UNUSED_CREDENTIALS_AFTER = 180
+MAX_LOGIN_ATTEMPTS = 3  # 0
+# SECOND_FACTOR_AUTHENTICATION = None
+TOTP = 'TOTP'
+SECOND_FACTOR_AUTHENTICATION = TOTP
+VERIFY_PASSWORD_STRENGHT = True
+
+# FORCE_FIRST_PASSWORD_CHANGE = False
+SECOND_FACTOR_AUTHENTICATION = None
+# MAX_PASSWORD_VALIDITY = 0
+
+
+class HandleSecurity(object):
+
+    # TO FIX: check password strength, if required
+    def verify_password_strength(self, pwd, old_pwd):
+
+        if pwd == old_pwd:
+            return False, "Password cannot match the previous password"
+        if len(pwd) < 8:
+            return False, "Password is too short, use at least 8 characters"
+
+        if not re.search("[a-z]", pwd):
+            return False, "Password is too simple, missing lower case letters"
+        if not re.search("[A-Z]", pwd):
+            return False, "Password is too simple, missing upper case letters"
+        if not re.search("[0-9]", pwd):
+            return False, "Password is too simple, missing numbers"
+
+        # special_characters = "['\s!#$%&\"(),*+,-./:;<=>?@[\\]^_`{|}~']"
+        special_characters = "[^a-zA-Z0-9]"
+        if not re.search(special_characters, pwd):
+            return False, "Password is too simple, missing special characters"
+
+        return True, None
 
 
 class Status(EndpointResource):
@@ -55,8 +97,6 @@ class Login(EndpointResource):
 
     def login_failed(self, auth, username, message):
 
-        REGISTER_FAILED_LOGIN = True
-
         if REGISTER_FAILED_LOGIN:
             auth.register_failed_login(username)
 
@@ -65,48 +105,14 @@ class Login(EndpointResource):
             code=hcodes.HTTP_BAD_UNAUTHORIZED
         )
 
-    # TO FIX: check password strength, if required
-    def verify_password_strength(self, pwd, old_pwd):
-
-        if pwd == old_pwd:
-            return False, "Password cannot match the previous password"
-        if len(pwd) < 8:
-            return False, "Password is too short, use at least 8 characters"
-
-        if not re.search("[a-z]", pwd):
-            return False, "Password is too simple, missing lower case letters"
-        if not re.search("[A-Z]", pwd):
-            return False, "Password is too simple, missing upper case letters"
-        if not re.search("[0-9]", pwd):
-            return False, "Password is too simple, missing numbers"
-
-        # special_characters = "['\s!#$%&\"(),*+,-./:;<=>?@[\\]^_`{|}~']"
-        special_characters = "[^a-zA-Z0-9]"
-        if not re.search(special_characters, pwd):
-            return False, "Password is too simple, missing special characters"
-
-        return True, None
-
+    @decorate.catch_error(exception=RestApiException, catch_generic=True)
     def post(self):
 
         # NOTE: In case you need different behaviour when using unittest
         # if current_app.config['TESTING']:
         #     print("\nThis is inside a TEST\n")
 
-        REGISTER_FAILED_LOGIN = True
-        FORCE_FIRST_PASSWORD_CHANGE = True
-        MAX_PASSWORD_VALIDITY = 90  # 0
-        # DISABLE_UNUSED_CREDENTIALS_AFTER = 0
-        DISABLE_UNUSED_CREDENTIALS_AFTER = 180
-        MAX_LOGIN_ATTEMPTS = 3  # 0
-        # SECOND_FACTOR_AUTHENTICATION = None
-        TOTP = 'TOTP'
-        SECOND_FACTOR_AUTHENTICATION = TOTP
-        VERIFY_PASSWORD_STRENGHT = True
-
-        # FORCE_FIRST_PASSWORD_CHANGE = False
-        # SECOND_FACTOR_AUTHENTICATION = None
-        # MAX_PASSWORD_VALIDITY = 0
+        sec = HandleSecurity()
 
         unauthorized = hcodes.HTTP_BAD_UNAUTHORIZED
         forbidden = hcodes.HTTP_BAD_FORBIDDEN
@@ -129,9 +135,8 @@ class Login(EndpointResource):
 
         # NOTE: now is checked at every request
         if username is None or password is None:
-            return self.send_errors(
-                message="Missing username or password",
-                code=unauthorized)
+            msg = "Missing username or password"
+            raise RestApiException(msg, status_code=unauthorized)
 
         # auth instance from the global namespace
         auth = self.global_get('custom_auth')
@@ -143,7 +148,7 @@ class Login(EndpointResource):
                     Sorry, this account is temporarily blocked due to
                     more than %d failed login attempts. Try again later"""\
                     % MAX_LOGIN_ATTEMPTS
-                return self.send_errors(message=msg, code=unauthorized)
+                raise RestApiException(msg, status_code=unauthorized)
 
         token, jti = auth.make_login(username, password)
         if token is None:
@@ -161,7 +166,7 @@ class Login(EndpointResource):
 
                 if valid_until < now:
                     msg = "Sorry, this account is blocked for inactivity"
-                    return self.send_errors(message=msg, code=unauthorized)
+                    raise RestApiException(msg, status_code=unauthorized)
 
         message_body = {}
         message_body['actions'] = []
@@ -177,16 +182,19 @@ class Login(EndpointResource):
                 return self.login_failed(auth, username, 'Invalid code')
 
         if new_password is not None and password_confirm is not None:
+
+            # check, msg = sec.change_password(
+            #     password, new_password, password_confirm)
             if new_password != password_confirm:
                 msg = "Your password doesn't match the confirmation"
-                return self.send_errors(message=msg, code=conflict)
+                raise RestApiException(msg, status_code=conflict)
 
             if VERIFY_PASSWORD_STRENGHT:
-                check, msg = self.verify_password_strength(
+                check, msg = sec.verify_password_strength(
                     new_password, password)
 
                 if not check:
-                    return self.send_errors(message=msg, code=conflict)
+                    raise RestApiException(msg, status_code=conflict)
 
         if new_password is not None and password_confirm is not None:
             user.password = BaseAuthentication.hash_password(new_password)

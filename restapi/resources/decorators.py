@@ -224,18 +224,22 @@ def exceptionError(self, e, code):
     return self.send_errors(message=error, code=code)
 
 
-def error_handler(func, self, some_exception,
-                  label, catch_generic, error_code, args, kwargs):
+def error_handler(func, self, exception,
+                  catch_generic, args, kwargs):
 
     out = None
-    # print(func, self, some_exception, label, args, kwargs)
-    # default_label = 'Server error'
-    # if label is None:
-    #     label = default_label
     try:
         out = func(self, *args, **kwargs)
     # Catch the single exception that the user requested
-    except some_exception as e:
+    except exception as e:
+
+        error_code = None
+        if hasattr(e, "status_code"):
+            error_code = getattr(e, "status_code")
+
+        if error_code is None:
+            error_code = hcodes.HTTP_BAD_REQUEST
+
         return exceptionError(self, e, error_code)
 # TODO: check with @mdantonio
     # except Exception as e:
@@ -247,7 +251,7 @@ def error_handler(func, self, some_exception,
     #     else:
     #         traceback.print_exc()
     #         return exceptionError(
-    #             self, default_label, 'Please contact service administrators',
+    #             self, 'Please contact service administrators',
     #             code=hcodes.HTTP_SERVER_ERROR)
     else:
         pass
@@ -255,9 +259,7 @@ def error_handler(func, self, some_exception,
     return out
 
 
-def catch_error(
-        exception=None, exception_label=None,
-        catch_generic=True, error_code=hcodes.HTTP_BAD_REQUEST):
+def catch_error(exception=None, catch_generic=True):
     """
     A decorator to preprocess an API class method,
     and catch a specific error.
@@ -267,7 +269,7 @@ def catch_error(
         def wrapper(self, *args, **kwargs):
             return error_handler(
                 func, self,
-                exception, exception_label, catch_generic, error_code,
+                exception, catch_generic,
                 args, kwargs)
         return wrapper
     return decorator
