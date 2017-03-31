@@ -39,7 +39,7 @@ SECOND_FACTOR_AUTHENTICATION = TOTP
 VERIFY_PASSWORD_STRENGHT = True
 
 # FORCE_FIRST_PASSWORD_CHANGE = False
-SECOND_FACTOR_AUTHENTICATION = None
+# SECOND_FACTOR_AUTHENTICATION = None
 # MAX_PASSWORD_VALIDITY = 0
 
 
@@ -55,16 +55,25 @@ class HandleSecurity(object):
             raise RestApiException(msg, status_code=code)
 
     def verify_totp(self, auth, username, totp_code):
-        if totp_code is not None:
 
+        valid = True
+
+        if totp_code is None:
+            valid = False
+        else:
             # TO FIX: use a real secret based on user.SomeThing
             totp = pyotp.TOTP('base32secret3232')
             if not totp.verify(totp_code):
                 if REGISTER_FAILED_LOGIN:
                     auth.register_failed_login(username)
-                msg = 'Invalid code'
-                code = hcodes.HTTP_BAD_UNAUTHORIZED
-                raise RestApiException(msg, status_code=code)
+                valid = False
+
+        if not valid:
+            msg = 'Invalid authorization code'
+            code = hcodes.HTTP_BAD_UNAUTHORIZED
+            raise RestApiException(msg, status_code=code)
+
+        return True
 
     def get_qrcode():
 
@@ -98,7 +107,8 @@ class HandleSecurity(object):
 
         return True, None
 
-    def change_password(self, user, password, new_password, password_confirm):
+    def change_password(self, auth, user,
+                        password, new_password, password_confirm):
 
         if new_password != password_confirm:
             msg = "Your password doesn't match the confirmation"
@@ -117,6 +127,12 @@ class HandleSecurity(object):
             user.password = BaseAuthentication.hash_password(new_password)
             user.last_password_change = now
             user.save()
+
+            tokens = auth.get_tokens(user=user)
+            for token in tokens:
+                auth.invalidate_token(token=token["token"])
+            # changes the user uuid invalidating all tokens
+            auth.invalidate_all_tokens()
 
         return True
 
@@ -207,13 +223,16 @@ class Login(EndpointResource):
 
         new_password = jargs.get('new_password')
         password_confirm = jargs.get('password_confirm')
-        totp_code = jargs.get('totp_code')
 
         totp_authentication = (
             SECOND_FACTOR_AUTHENTICATION is not None and
             SECOND_FACTOR_AUTHENTICATION == TOTP
         )
 
+        if totp_authentication:
+            totp_code = jargs.get('totp_code')
+        else:
+            totp_code = None
         # ##################################################
         # Now credentials are checked at every request
         if username is None or password is None:
@@ -236,7 +255,7 @@ class Login(EndpointResource):
 
         security.verify_blocked_user(user)
 
-        if totp_code is not None:
+        if totp_authentication and totp_code is not None:
             security.verify_totp(auth, username, totp_code)
 
         # ##################################################
@@ -244,10 +263,11 @@ class Login(EndpointResource):
         if new_password is not None and password_confirm is not None:
 
             pwd_changed = security.change_password(
-                user, password, new_password, password_confirm)
+                auth, user, password, new_password, password_confirm)
 
             if pwd_changed:
                 password = new_password
+                token, jti = auth.make_login(username, password)
 
         # ##################################################
         # Something is missing in the authentication, asking action to user
@@ -447,45 +467,52 @@ class Profile(EndpointResource):
             elif data["irods_user"][0] == '-':
                 data["irods_user"] = None
 
+        if SECOND_FACTOR_AUTHENTICATION is not None:
+            data['2fa'] = SECOND_FACTOR_AUTHENTICATION
+
         return data
 
-    def put(self, uuid):
-        # TO FIX: this should be a POST method...
-        """ Create or update profile for current user """
+    @decorate.catch_error(exception=RestApiException, catch_generic=True)
+    def put(self):
+        """ Update profile for current user """
 
-        from flask_restful import request
-        try:
-            user = self.get_current_user()
-            if user.uuid != uuid:
-                return self.send_errors(
-                    message="Invalid uuid: not matching current user",
-                )
+        auth = self.global_get('custom_auth')
+        user = auth.get_user()
+        username = user.email
+        # if user.uuid != uuid:
+        #     msg = "Invalid uuid: not matching current user"
+        #     raise RestApiException(msg)
 
-            data = request.get_json(force=True)
+        data = self.get_input()
+        password = data.get('password')
+        new_password = data.get('new_password')
+        password_confirm = data.get('password_confirm')
+        totp_authentication = (
+            SECOND_FACTOR_AUTHENTICATION is not None and
+            SECOND_FACTOR_AUTHENTICATION == TOTP
+        )
+        if totp_authentication:
+            totp_code = data.get('totp_code')
+        else:
+            totp_code = None
 
-            key = "newpassword"
-            if key not in data:
-                return self.send_errors(
-                    message="Invalid request: missing %s value" % key,
-                    code=hcodes.HTTP_BAD_REQUEST
-                )
-            user.password = BaseAuthentication.hash_password(data[key])
-            user.last_password_change = datetime.now(pytz.utc)
-            user.save()
+        security = HandleSecurity()
 
-            auth = self.global_get('custom_auth')
-            tokens = auth.get_tokens(user=auth._user)
-            for token in tokens:
-                # for graphdb it just remove the edge
-                auth.invalidate_token(token=token["token"])
-            # changes the user uuid invalidating all tokens
-            auth.invalidate_all_tokens()
+        if new_password is None or password_confirm is None:
+            msg = "New password is missing"
+            raise RestApiException(msg, status_code=hcodes.HTTP_BAD_REQUEST)
 
-        except BaseException:
-            return self.send_errors(
-                message="Unknown error, please contact administrators",
-                code=hcodes.HTTP_BAD_REQUEST
-            )
+        token, jti = auth.make_login(username, password)
+
+        if totp_authentication:
+            security.verify_totp(auth, username, totp_code)
+        security.verify_token(auth, username, token)
+
+        security.change_password(
+            auth, user, password, new_password, password_confirm)
+        # I really don't why this save is required... since it is already
+        # in change_password ... But if I remove it the new pwd is not saved...
+        user.save()
 
         return self.empty_response()
 
