@@ -23,6 +23,7 @@ from commons.logs import get_logger
 
 import pyotp
 import pyqrcode
+# import hashlib
 from io import BytesIO
 
 log = get_logger(__name__)
@@ -38,12 +39,24 @@ TOTP = 'TOTP'
 SECOND_FACTOR_AUTHENTICATION = TOTP
 VERIFY_PASSWORD_STRENGHT = True
 
+PROJECT_NAME = "GenomicRepository"
 # FORCE_FIRST_PASSWORD_CHANGE = False
 # SECOND_FACTOR_AUTHENTICATION = None
 # MAX_PASSWORD_VALIDITY = 0
 
 
 class HandleSecurity(object):
+
+    def get_secret(self, user):
+        # TO FIX: use a real secret
+        # hashes does not works... maybe too long??
+        # secret = hashlib.sha224(user.email.encode('utf-8'))
+        # return secret.hexdigest()
+        # same problem with str(user.uuid)
+
+        # neither email works (problems with the @ character?)
+
+        return str(user.name)
 
     def verify_token(self, auth, username, token):
         if token is None:
@@ -54,18 +67,18 @@ class HandleSecurity(object):
             code = hcodes.HTTP_BAD_UNAUTHORIZED
             raise RestApiException(msg, status_code=code)
 
-    def verify_totp(self, auth, username, totp_code):
+    def verify_totp(self, auth, user, totp_code):
 
         valid = True
 
         if totp_code is None:
             valid = False
         else:
-            # TO FIX: use a real secret based on user.SomeThing
-            totp = pyotp.TOTP('base32secret3232')
+            secret = self.get_secret(user)
+            totp = pyotp.TOTP(secret)
             if not totp.verify(totp_code):
                 if REGISTER_FAILED_LOGIN:
-                    auth.register_failed_login(username)
+                    auth.register_failed_login(user.email)
                 valid = False
 
         if not valid:
@@ -75,11 +88,13 @@ class HandleSecurity(object):
 
         return True
 
-    def get_qrcode():
+    def get_qrcode(self, user):
 
-        totp = pyotp.TOTP('base32secret3232')
+        secret = self.get_secret(user)
+        log.critical(secret)
+        totp = pyotp.TOTP(secret)
 
-        otpauth_url = totp.provisioning_uri("GenomicRepository")
+        otpauth_url = totp.provisioning_uri(PROJECT_NAME)
         qr_url = pyqrcode.create(otpauth_url)
         qr_stream = BytesIO()
         qr_url.svg(qr_stream, scale=5)
@@ -256,7 +271,7 @@ class Login(EndpointResource):
         security.verify_blocked_user(user)
 
         if totp_authentication and totp_code is not None:
-            security.verify_totp(auth, username, totp_code)
+            security.verify_totp(auth, user, totp_code)
 
         # ##################################################
         # If requested, change the password
@@ -279,24 +294,25 @@ class Login(EndpointResource):
             message_body['actions'].append(SECOND_FACTOR_AUTHENTICATION)
             error_message = "You do not provided a valid second factor"
 
+        epoch = datetime.fromtimestamp(0, pytz.utc)
         last_pwd_change = user.last_password_change
-        if last_pwd_change is None:
-            last_pwd_change = 0
+        if last_pwd_change is None or last_pwd_change == 0:
+            last_pwd_change = epoch
 
-        if FORCE_FIRST_PASSWORD_CHANGE and last_pwd_change == 0:
+        if FORCE_FIRST_PASSWORD_CHANGE and last_pwd_change == epoch:
 
             message_body['actions'].append('FIRST LOGIN')
             error_message = "This is your first login"
 
             if totp_authentication:
 
-                qr_code = security.get_qrcode()
+                qr_code = security.get_qrcode(user)
 
                 message_body["qr_code"] = qr_code
 
         elif MAX_PASSWORD_VALIDITY > 0:
 
-            if last_pwd_change is None or last_pwd_change == 0:
+            if last_pwd_change == epoch:
                 expired = True
             else:
                 valid_until = \
@@ -502,9 +518,8 @@ class Profile(EndpointResource):
             msg = "New password is missing"
             raise RestApiException(msg, status_code=hcodes.HTTP_BAD_REQUEST)
 
-
         if totp_authentication:
-            security.verify_totp(auth, username, totp_code)
+            security.verify_totp(auth, user, totp_code)
         else:
             token, jti = auth.make_login(username, password)
             security.verify_token(auth, username, token)
