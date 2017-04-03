@@ -24,6 +24,7 @@ from commons.logs import get_logger
 import pyotp
 import pyqrcode
 # import hashlib
+import base64
 from io import BytesIO
 
 log = get_logger(__name__)
@@ -39,7 +40,7 @@ TOTP = 'TOTP'
 SECOND_FACTOR_AUTHENTICATION = TOTP
 VERIFY_PASSWORD_STRENGHT = True
 
-PROJECT_NAME = "GenomicRepository"
+PROJECT_NAME = "Genomic Repository"
 # FORCE_FIRST_PASSWORD_CHANGE = False
 # SECOND_FACTOR_AUTHENTICATION = None
 # MAX_PASSWORD_VALIDITY = 0
@@ -56,7 +57,10 @@ class HandleSecurity(object):
 
         # neither email works (problems with the @ character?)
 
-        return str(user.name)
+        # decoding errors...
+        # return str(user.name)
+
+        return base64.b32encode(user.name.encode('utf-8'))
 
     def verify_token(self, auth, username, token):
         if token is None:
@@ -75,6 +79,7 @@ class HandleSecurity(object):
             valid = False
         else:
             secret = self.get_secret(user)
+            log.critical(secret)
             totp = pyotp.TOTP(secret)
             if not totp.verify(totp_code):
                 if REGISTER_FAILED_LOGIN:
@@ -82,7 +87,7 @@ class HandleSecurity(object):
                 valid = False
 
         if not valid:
-            msg = 'Invalid authorization code'
+            msg = 'Invalid verification code'
             code = hcodes.HTTP_BAD_UNAUTHORIZED
             raise RestApiException(msg, status_code=code)
 
@@ -302,7 +307,9 @@ class Login(EndpointResource):
         if FORCE_FIRST_PASSWORD_CHANGE and last_pwd_change == epoch:
 
             message_body['actions'].append('FIRST LOGIN')
-            error_message = "This is your first login"
+            error_message = """
+                Please change your temporary password
+                """
 
             if totp_authentication:
 
@@ -322,7 +329,7 @@ class Login(EndpointResource):
             if expired:
 
                 message_body['actions'].append('PASSWORD EXPIRED')
-                error_message = "This password is expired"
+                error_message = "Your password is expired, please change it"
 
         if error_message is not None:
             return self.force_response(
