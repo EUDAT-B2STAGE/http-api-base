@@ -14,8 +14,8 @@ log.setLevel(logging.DEBUG)
 TEST_TROUBLESOME = True
 
 SERVER_URI = 'http://%s:%s' % (DEFAULT_HOST, DEFAULT_PORT)
-API_URI = 'http://%s%s' % (SERVER_URI, API_URL)
-AUTH_URI = 'http://%s%s' % (SERVER_URI, AUTH_URL)
+API_URI = '%s%s' % (SERVER_URI, API_URL)
+AUTH_URI = '%s%s' % (SERVER_URI, AUTH_URL)
 
 GET = 'GET'
 POST = 'POST'
