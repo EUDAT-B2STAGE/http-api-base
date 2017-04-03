@@ -21,11 +21,6 @@ from commons import htmlcodes as hcodes
 from commons.globals import mem
 from commons.logs import get_logger
 
-import pyotp
-import pyqrcode
-# import hashlib
-import base64
-from io import BytesIO
 
 log = get_logger(__name__)
 
@@ -44,6 +39,13 @@ PROJECT_NAME = "Genomic Repository"
 FORCE_FIRST_PASSWORD_CHANGE = False
 SECOND_FACTOR_AUTHENTICATION = None
 MAX_PASSWORD_VALIDITY = 0
+
+if SECOND_FACTOR_AUTHENTICATION is not None:
+    import pyotp
+    import pyqrcode
+    # import hashlib
+    import base64
+    from io import BytesIO
 
 
 class HandleSecurity(object):
