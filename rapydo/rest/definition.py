@@ -54,7 +54,12 @@ class EndpointResource(Resource):
             obj = service.connection
             # inject as the name specified in services.yaml
             try:
+                # @MATTIA: how do we decide if do something different
+                # before injecting
+                # e.g. which user, or which database
                 setattr(self, service.injected_name, obj)
+
+                print("Injected", name)
             except AttributeError:
                 log.error("Failed to inject %s" % obj)
 

@@ -153,7 +153,7 @@ class Customizer(object):
 
         # SWAGGER validation
         if not swag.validation(swag_dict):
-            raise AttributeError("Current swagger definition is invalid")
+            log.critical_exit("Current swagger definition is invalid")
 
         self._definitions = swag_dict
 
