@@ -4,7 +4,7 @@ import json
 import string
 import logging
 
-from rapydo.confs import TEST_HOST, SERVER_PORT, API_URL, AUTH_URL
+from rapydo.confs import DEFAULT_HOST, DEFAULT_PORT, API_URL, AUTH_URL
 from rapydo.utils.logs import get_logger
 from rapydo.utils import htmlcodes as hcodes
 
@@ -13,9 +13,9 @@ log.setLevel(logging.DEBUG)
 
 TEST_TROUBLESOME = True
 
-SERVER_URI = 'http://%s:%ss' % (TEST_HOST, SERVER_PORT)
-API_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
-AUTH_URI = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
+SERVER_URI = 'http://%s:%s' % (DEFAULT_HOST, DEFAULT_PORT)
+API_URI = 'http://%s%s' % (SERVER_URI, API_URL)
+AUTH_URI = 'http://%s%s' % (SERVER_URI, AUTH_URL)
 
 GET = 'GET'
 POST = 'POST'
@@ -651,7 +651,7 @@ class TestUtilities(unittest.TestCase):
             if trouble_type == 'LONG_TEXT':
                 return '%s%s%s' % (prefix, self.randomString(len=256, prefix=""), suffix)
             if trouble_type == 'VERY_LONG_TEXT':
-                return '%s%s%s' % (prefix, self.randomString(len=65536, prefix=""), suffix) 
+                return '%s%s%s' % (prefix, self.randomString(len=65536, prefix=""), suffix)
             if trouble_type == 'EXTREMELY_LONG_TEXT':
                 return '%s%s%s' % (prefix, self.randomString(len=16777216, prefix=""), suffix)
             if trouble_type == 'TOOOO_LONG_TEXT':

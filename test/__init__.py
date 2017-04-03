@@ -8,11 +8,11 @@ import unittest
 import json
 import logging
 from rapydo.server import create_app
-from rapydo.confs import API_URL, AUTH_URL, TEST_HOST, SERVER_PORT
 from rapydo.rest.response import get_content_from_response
 from rapydo.services.authentication import BaseAuthentication as ba
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.logs import get_logger, set_global_log_level
+from rapydo.tests.utilities import API_URI, AUTH_URI
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 
@@ -27,8 +27,8 @@ log = get_logger(__name__)
 #####################
 class RestTestsBase(unittest.TestCase):
 
-    _api_uri = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
-    _auth_uri = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
+    _api_uri = API_URI
+    _auth_uri = AUTH_URI
     _hcodes = hcodes
     latest_response = None
 
