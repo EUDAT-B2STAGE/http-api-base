@@ -26,7 +26,7 @@ DEFAULT_HOST = '127.0.0.1'
 DEFAULT_PORT = '5000'
 USER_HOME = os.environ['HOME']
 UPLOAD_FOLDER = '/uploads'
-SECRET_KEY_FILE = "/jwt_tokens/secret.key"
+SECRET_KEY_FILE = os.environ.get('JWT_APP_SECRETS') + "/secret.key"
 PRODUCTION = False
 if os.environ.get('APP_MODE', '') == 'production':
     PRODUCTION = True
