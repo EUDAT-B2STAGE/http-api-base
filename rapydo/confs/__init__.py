@@ -55,10 +55,9 @@ def get_api_url():
     if PRODUCTION:
         parsed = urlparse(api_url)
         if parsed.port is not None and parsed.port == 443:
-            backend_port = parsed.port
             removed_port = re.sub(r':[\d]+$', '', parsed.netloc)
             api_url = parsed._replace(
                 scheme="https", netloc=removed_port
             ).geturl()
 
-    return api_url, backend_port
+    return api_url
