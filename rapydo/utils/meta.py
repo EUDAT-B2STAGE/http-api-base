@@ -72,7 +72,8 @@ class Meta(object):
         self.set_latest_classes(classes)
         return self.get_latest_classes()
 
-    def get_module_from_string(self, modulestring, prefix_package=False):
+    def get_module_from_string(self, modulestring, prefix_package=False,
+                               exit_if_not_found=False, exit_on_fail=False):
         """
         Getting a module import
         when your module is stored as a string in a variable
@@ -85,8 +86,16 @@ class Meta(object):
         try:
             # Meta language for dinamically import
             module = import_module(modulestring)
+        except ModuleNotFoundError as e:
+            if exit_if_not_found:
+                raise e
+            else:
+                log.warning("Module %s not found " % modulestring)
         except ImportError as e:
-            log.warning("Failed to load resource: " + str(e))
+            if exit_on_fail:
+                raise e
+            else:
+                log.warning("Failed to load module: " + str(e))
         return module
 
     def import_submodules_from_package(self, package_name):
@@ -120,7 +129,7 @@ class Meta(object):
             # Meta language for dinamically import
             myclass = getattr(module, classname)
         except AttributeError as e:
-            log.critical("Failed to load resource: " + str(e))
+            log.critical("Failed to load class from module: " + str(e))
 
         return myclass
 
