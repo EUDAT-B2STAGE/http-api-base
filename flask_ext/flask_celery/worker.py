@@ -37,9 +37,8 @@ app = create_app(worker_mode=True)
 celery_injector = services.get('celery')(app)
 cls, ext = celery_injector.custom_configure()
 
-celery_app = ext.connect()
+celery_app = ext.custom_connection(worker_mode=True)
 
-log.pp(celery_app)
 # with app.app_context() as ctx:
 #     class CeleryWorker(Resource):
 
@@ -48,18 +47,18 @@ log.pp(celery_app)
 
 #             log.pp(injected_services)
 
-#     CeleryWorker()
-    # def get_connection():
+# CeleryWorker()
+# def get_connection():
 
-    #     # ??.custom_connection()
-    #     return None
+#     # ??.custom_connection()
+#     return None
 
-    # celery_app = get_connection()
+# celery_app = get_connection()
 
-    # log.debug("Celery %s" % celery_app)
+log.debug("Celery %s" % celery_app)
 
 ################################################
-# Import tasks modules to make sure all tasks are avaiable
+# Import tasks modules to make sure all tasks are available
 
 meta = Meta()
 # main_package = "commons.tasks."

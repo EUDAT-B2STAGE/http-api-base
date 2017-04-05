@@ -12,6 +12,7 @@ from rapydo.services.detect import available_services
 
 log = get_logger(__name__)
 
+log.critical("This code should not be called anymore!")
 
 if available_services.get('celery'):
 
