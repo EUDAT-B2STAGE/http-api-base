@@ -29,6 +29,16 @@
   injector: SqlInjector
   injected_name: db
 
+  # celery
+- name: celery
+  load_models: 0
+  prefix: celery
+  library: Celery
+  extension: flask_celery
+  class: CeleryExt
+  injector: CeleryInjector
+  injected_name: celery
+
 ##############################
 # # OTHERS?
 # "mongo",
