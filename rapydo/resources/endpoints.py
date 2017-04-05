@@ -288,14 +288,13 @@ class Admin(EndpointResource):
 # In case you have celery queue,
 # you get a queue endpoint for free
 if available_services.get('celery'):
-    from rapydo.services.celery.celery import celery_app
 
     class Queue(EndpointResource):
 
         def get(self, task_id=None):
 
             # Inspect all worker nodes
-            workers = celery_app.control.inspect()
+            workers = self.celery.control.inspect()
 
             data = []
 
