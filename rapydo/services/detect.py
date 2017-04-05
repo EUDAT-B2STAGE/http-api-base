@@ -35,7 +35,7 @@ for service in services_configuration:
     available_services[name] = os.environ.get(enable_var, False)
 
     if available_services.get(name):
-        log.very_verbose("Service %s: requested to be enabled" % name)
+        log.verbose("Service %s enabled" % name)
 
         # Is this service external?
         external_var = prefix + 'EXTERNAL'
@@ -64,19 +64,13 @@ for service in services_configuration:
         flaskext = service.get('extension')
 
         # Try inside our extensions
-        module = meta.get_module_from_string('flask_ext.' + flaskext)
-
-        # Try inside normal flask extensions
+        module = meta.get_module_from_string(
+            modulestring='flask_ext.' + flaskext, exit_on_fail=True)
         if module is None:
-            module = meta.get_module_from_string(flaskext)
-            if module is None:
-                log.error("Missing %s for service %s" % (flaskext, name))
-                exit(1)
-            else:
-                log.very_verbose("Loaded external extension %s" % name)
+            log.error("Missing %s for service %s" % (flaskext, name))
+            exit(1)
         else:
-            # log.very_verbose("Loaded internal extension %s" % name)
-            pass
+            log.very_verbose("Loaded external extension %s" % name)
 
         ###################
         Configurator = getattr(module, service.get('injector'))
@@ -89,7 +83,7 @@ for service in services_configuration:
                 meta.import_models(name, custom=True, exit_on_fail=False)
             )
         else:
-            log.debug("Skipping models")
+            log.very_verbose("Skipping models")
 
         ###################
         Class = getattr(module, service.get('class'))
