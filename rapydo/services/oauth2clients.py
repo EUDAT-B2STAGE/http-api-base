@@ -9,7 +9,7 @@ Testend against GitHub, then worked off B2ACCESS (EUDAT oauth service)
 import os
 from base64 import b64encode
 from rapydo.protocols.oauth import oauth
-from rapydo.confs import PRODUCTION, DEBUG as ENVVAR_DEBUG
+from rapydo.confs import PRODUCTION
 from rapydo.utils.globals import mem
 from rapydo.utils.meta import Meta
 from rapydo.utils.logs import get_logger
@@ -116,11 +116,8 @@ class ExternalLogins(object):
         authorize_url = B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
 
         if PRODUCTION:
-            if ENVVAR_DEBUG is None or not ENVVAR_DEBUG:
-                token_url = B2ACCESS_PROD_URL + '/oauth2/token'
-                authorize_url = B2ACCESS_PROD_URL + '/oauth2-as/oauth2-authz'
-            else:
-                log.warning("Switching to b2access dev in production")
+            token_url = B2ACCESS_PROD_URL + '/oauth2/token'
+            authorize_url = B2ACCESS_PROD_URL + '/oauth2-as/oauth2-authz'
 
         # COMMON ARGUMENTS
         arguments = {
@@ -138,8 +135,7 @@ class ExternalLogins(object):
         # B2ACCESS
         arguments['base_url'] = B2ACCESS_DEV_URL + '/oauth2/'
         if PRODUCTION:
-            if ENVVAR_DEBUG is None or not ENVVAR_DEBUG:
-                arguments['base_url'] = B2ACCESS_PROD_URL + '/oauth2/'
+            arguments['base_url'] = B2ACCESS_PROD_URL + '/oauth2/'
 
         b2access_oauth = oauth.remote_app('b2access', **arguments)
 
@@ -147,8 +143,7 @@ class ExternalLogins(object):
         # B2ACCESS CERTIFICATION AUTHORITY
         arguments['base_url'] = B2ACCESS_DEV_CA_URL
         if PRODUCTION:
-            if ENVVAR_DEBUG is None or not ENVVAR_DEBUG:
-                arguments['base_url'] = B2ACCESS_PROD_CA_URL
+            arguments['base_url'] = B2ACCESS_PROD_CA_URL
 
         b2accessCA = oauth.remote_app('b2accessCA', **arguments)
 
@@ -160,8 +155,6 @@ class ExternalLogins(object):
             from flask import session
             return session.get('b2access_token')
 
-## // TO CHECK:
-    ## could have used nametuple or attrs?
         return {'b2access': b2access_oauth, 'b2accessCA': b2accessCA}
 
 
@@ -188,12 +181,14 @@ def decorate_http_request(remote):
         if not headers.get("Authorization"):
             client_id = remote.consumer_key
             client_secret = remote.consumer_secret
-            userpass = b64encode(str.encode("%s:%s" %
-                                 (client_id, client_secret))).decode("ascii")
+            userpass = b64encode(
+                str.encode("%s:%s" % (client_id, client_secret))
+            ).decode("ascii")
             headers.update({'Authorization': 'Basic %s' % (userpass,)})
         response = old_http_request(
             uri, headers=headers, data=data, method=method)
-        # TO FIX: may we handle failed B2ACCESS response here?
+
+        # TODO: check if we may handle failed B2ACCESS response here
         return response
 
     remote.http_request = new_http_request

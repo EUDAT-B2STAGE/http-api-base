@@ -13,7 +13,7 @@ from rapydo.rest.response import InternalResponse
 from werkzeug.contrib.fixers import ProxyFix
 from rapydo.rest.response import ResponseMaker
 from rapydo.customization import Customizer
-from rapydo.confs import PRODUCTION, DEBUG as ENVVAR_DEBUG
+from rapydo.confs import PRODUCTION
 from rapydo.utils.globals import mem
 from rapydo.services.detect import authentication_service, \
     services as internal_services
@@ -72,11 +72,8 @@ class Flask(OriginalFlask):
 ########################
 # Flask App factory    #
 ########################
-def create_app(name=__name__, debug=False,
-               worker_mode=False, testing_mode=False,
-               avoid_context=False, enable_security=True,
-               skip_endpoint_mapping=False,
-               **kwargs):
+def create_app(name=__name__, worker_mode=False, testing_mode=False,
+               enable_security=True, skip_endpoint_mapping=False, **kwargs):
     """ Create the server istance for Flask application """
 
     #############################
@@ -88,32 +85,36 @@ def create_app(name=__name__, debug=False,
     # Flask app instance
     #################################################
     microservice = Flask(name, **kwargs)
+
     microservice.wsgi_app = ProxyFix(microservice.wsgi_app)
 
     ##############################
-    # Disable security if launching celery workers
-    if worker_mode:
-        # TO FIX: it should pass we no problems in case?
-        enable_security = False
-        skip_endpoint_mapping = True
+    # Add command line options
 
+    # import click
+
+    # @microservice.cli.command()
+    # def init():
+    #     """Initialize the current app"""
+    #     click.echo('Init')
+
+    ##############################
+    # Cors
+    cors.init_app(microservice)
+    log.debug("FLASKING! Injected CORS")
+
+    ##############################
+    # Enabling our internal Flask customized response
+    microservice.response_class = InternalResponse
+
+    ##############################
     # Set app internal testing mode if create_app received the parameter
     if testing_mode:
         microservice.config['TESTING'] = testing_mode
-    ##############################
+
     # Flask configuration from config file
     microservice.config.from_object(config)
-
-    if ENVVAR_DEBUG is not None:
-        try:
-            tmp = int(ENVVAR_DEBUG) == 1
-        except BaseException:
-            tmp = str(ENVVAR_DEBUG).lower() == 'true'
-        debug = tmp  # bool(tmp)
-    microservice.config['DEBUG'] = debug
-    # import logging
-    # microservice.logger.setLevel(logging.VERY_VERBOSE)
-    log.info("Flask application generated")
+    log.info("Flask app configured")
 
     ##############################
     if PRODUCTION:
@@ -130,13 +131,11 @@ def create_app(name=__name__, debug=False,
         # app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
 
     ##############################
-    # Cors
-    cors.init_app(microservice)
-    log.debug("FLASKING! Injected CORS")
-
-    ##############################
-    # Enabling our internal Flask customized response
-    microservice.response_class = InternalResponse
+    # Disable security if launching celery workers
+    if worker_mode:
+        # TO FIX: it should pass we no problems in case?
+        enable_security = False
+        skip_endpoint_mapping = True
 
     ##############################
     # DATABASE/SERVICEs init and checks
@@ -161,7 +160,7 @@ def create_app(name=__name__, debug=False,
     if not skip_endpoint_mapping:
         # Triggering automatic mapping of REST endpoints
         current_endpoints = \
-            create_endpoints(EndpointsFarmer(Api), enable_security, debug)
+            create_endpoints(EndpointsFarmer(Api), enable_security)
         # Restful init of the app
         current_endpoints.rest_api.init_app(microservice)
 

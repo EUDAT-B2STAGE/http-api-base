@@ -35,7 +35,7 @@ log.debug(
     "Create endpoints w/ [%s, %s]" % (Api, EndpointsFarmer))
 
 
-def create_endpoints(epo, security=False, debug=False):
+def create_endpoints(epo, security=False):
     """
     A single method to add all endpoints
     """
