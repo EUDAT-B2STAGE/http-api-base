@@ -23,9 +23,16 @@ class Status(EndpointResource):
     """ API online client testing """
 
     def get(self):
+
+        ##############################
         # # A test for auth:
         # print("YEAH", self.auth)
         # print("YEAH", self.db.Role)
+
+        ##############################
+        sql = self.get_service_instance('db', user="pippo", peppe="franco")
+        print("sql", sql.Role)
+
         return 'Server is alive!'
 
 
@@ -49,6 +56,8 @@ class SwaggerSpecifications(EndpointResource):
         # Jsonify, so we skip custom response building
         return jsonify(swagjson)
 
+
+# TO FIX: only if auth available?
 
 class Login(EndpointResource):
     """ Let a user login with the developer chosen method """
@@ -105,7 +114,7 @@ class Logout(EndpointResource):
     """ Let the logged user escape from here, invalidating current token """
 
     def get(self):
-        self.auth.invalidate_token(auth.get_token())
+        self.auth.invalidate_token(token=self.auth.get_token())
         return self.empty_response()
 
 
@@ -138,8 +147,8 @@ class Tokens(EndpointResource):
             if token["id"] == token_id:
                 return token
 
-        errorMessage = "Either this token was not emitted for your account " + \
-                       "or it does not exist"
+        errorMessage = "Either this token was not emitted for your account" + \
+                       " or it does not exist"
         return self.send_errors(
             message=errorMessage, code=hcodes.HTTP_BAD_NOTFOUND)
 
@@ -228,7 +237,6 @@ class Profile(EndpointResource):
 
     def put(self, uuid):
         # TO FIX: this should be a POST method...
-
         """ Create or update profile for current user """
 
         from flask_restful import request
@@ -259,7 +267,7 @@ class Profile(EndpointResource):
             # changes the user uuid invalidating all tokens
             self.auth.invalidate_all_tokens()
 
-        except:
+        except BaseException:
             return self.send_errors(
                 message="Unknown error, please contact administrators",
                 code=hcodes.HTTP_BAD_REQUEST

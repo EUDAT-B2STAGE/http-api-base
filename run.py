@@ -27,7 +27,7 @@ if PRODUCTION:
 app = create_app(name='REST_API')
 
 if __name__ == "__main__":
-    log.info("Flask server is running. Loaded %s" % be)
+    log.info("Flask server is running (loaded %s)" % be.__name__)
 
     # NOTE: 'threaded' option avoid to see
     # angular request on this server dropping

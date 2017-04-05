@@ -16,7 +16,12 @@ export TESTING_FLASK="True"
 com="nose2 -F"
 option="-s test"
 cov_reports=" --coverage-report term --coverage-report html"
-cov_options="-C --coverage rapydo $cov_reports"
+cov_options="--output-buffer -C --coverage rapydo"
+if [ ! -z "$1" ]; then
+    echo "extra coverage for project '$1'"
+    cov_options="$cov_options --coverage $1"
+fi
+echo $com $cov_options $cov_reports
 
 # Basic tests, written for the http-api-base sake
 $com $option/base --log-capture
@@ -25,7 +30,7 @@ if [ "$?" == "0" ]; then
     $com $option/custom --log-capture
     if [ "$?" == "0" ]; then
         # Print coverage if everything went well so far
-        $com --output-buffer $cov_options 2> /tmp/logfile.txt
+        $com $cov_options $cov_reports 2> /tmp/logfile.txt
         grep "platform linux" -A 1000 /tmp/logfile.txt
     else
         exit $?

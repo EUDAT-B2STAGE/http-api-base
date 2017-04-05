@@ -40,6 +40,7 @@ class EndpointResource(Resource):
         # Init original class
         super(EndpointResource, self).__init__()
         # Do extra stuff
+        self.services = {}
         self.inject_services(injected_services)
         self.init_parameters()
 
@@ -50,18 +51,20 @@ class EndpointResource(Resource):
 
         # Let injected service be part of the self
         for name, service in injected_services.items():
-            # Note: this works only here because of Flask CTX
-            obj = service.connection
+
+            # print("SERVICE", name, service.injected_name, service)
+            self.services[service.injected_name] = service
+
             # inject as the name specified in services.yaml
             try:
-                # @MATTIA: how do we decide if do something different
-                # before injecting
-                # e.g. which user, or which database
-                setattr(self, service.injected_name, obj)
-
-                print("Injected", name)
+                setattr(self, service.injected_name, service)
             except AttributeError:
-                log.error("Failed to inject %s" % obj)
+                log.error("Failed to inject %s" % service)
+
+    def get_service_instance(self, service_name, **kwargs):
+        farm = self.services.get(service_name)
+        instance = farm.get_instance(**kwargs)
+        return instance
 
     def init_parameters(self):
         # Make sure you can parse arguments at every call
