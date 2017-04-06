@@ -48,7 +48,7 @@ rabbit:
   image: rabbitmq:latest
   hostname: rabbit
   volumes:
-    - ${VOLUMES_PREFIX}_redisdata:/var/lib/rabbitmq
+    - ${VOLUMES_PREFIX}_rabbitdata:/var/lib/rabbitmq
 
 worker:
   extends:

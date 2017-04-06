@@ -89,6 +89,7 @@ for service in services_configuration:
         Class = getattr(module, service.get('class'))
 
         # ###################
+# TO DO: elaborate this OPTIONAL concept
         # # Is this service optional?
         # variables.get('optional', False)
         # print(variables)
