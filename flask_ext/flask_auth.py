@@ -14,7 +14,8 @@ class Authenticator(BaseExtension):
 
         module_name = "%s.%s.%s" % ('services', 'authentication', auth_service)
         log.verbose("Loading auth extension: %s" % module_name)
-        module = meta.get_module_from_string(module_name, prefix_package=True)
+        module = meta.get_module_from_string(
+            modulestring=module_name, prefix_package=True, exit_on_fail=True)
 
         return module
 
@@ -52,9 +53,8 @@ class Authenticator(BaseExtension):
 
         return custom_auth
 
-    def custom_initialization(self):
+    def custom_initialization(self, obj=None):
 
-        obj = self.get_object()
         obj.init_users_and_roles()
         log.info("Initialized auth")
 
@@ -68,7 +68,7 @@ class Authenticator(BaseExtension):
         # Very important: give a service backend to authentication
         if self.extra_service is not None:
             # this is a 'hat trick'
-            obj.db = self.extra_service.internal_object()
+            obj.db = self.extra_service.extension_instance.get_object()
 
 
 class AuthInjector(BaseInjector):

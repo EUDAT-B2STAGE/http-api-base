@@ -20,6 +20,8 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
     def __init__(self, app=None, variables={}, models={}):
 
+        self.objs = {}
+
         self.extra_service = None
         # a different name for each extended object
         self.name = self.__class__.__name__.lower()
@@ -37,34 +39,39 @@ class BaseExtension(metaclass=abc.ABCMeta):
     def init_app(self, app):
         app.teardown_appcontext(self.teardown)
 
-    # meta: get
-    def get_object(self, ref=None):
+    def pre_object(self, ref, key):
+        """ Make sure reference and key are strings """
+
         if ref is None:
-            ref = self
-        try:
-            obj = getattr(ref, self.name)
-        except AttributeError as e:
-            # raise e
-            log.critical_exit(
-                "\nMissing extension connection.\n" +
-                "Did you write a 'custom_connection' method inside " +
-                self.name + " internal extension?\n" +
-                "Did it return the connection object?\n" +
-                "\nLogs:\n" + str(e)
-            )
+            ref = self.__class__.__name__
+        elif isinstance(ref, object):
+            ref = ref.__class__.__name__
+        elif not isinstance(ref, str):
+            ref = str(ref)
+
+        if not isinstance(key, str):
+            key = str(key)
+
+        return ref, key
+
+    def set_object(self, obj, key="unknown", ref=None):
+        """ set object into internal array """
+
+        ref, key = self.pre_object(ref, key)
+
+        if ref not in self.objs:
+            self.objs[ref] = {}
+
+        self.objs[ref][key] = obj
+
         return obj
 
-    # meta: does it exist
-    def has_object(self, ref=None):
-        if ref is None:
-            ref = self
-        return hasattr(ref, self.name)
+    def get_object(self, key="unknown", ref=None):
+        """ recover object if any """
 
-    # meta: set
-    def set_object(self, obj, ref=None):
-        if ref is None:
-            ref = self
-        setattr(ref, self.name, obj)
+        ref, key = self.pre_object(ref, key)
+        obj = self.objs.get(ref, {}).get(key, None)
+        return obj
 
     def connect(self, **kwargs):
 
@@ -72,30 +79,14 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
         # BEFORE
         self.pre_connection(**kwargs)
-
-    #########################
-    #########################
-    # TO FIX: RETRY
         # Try until it's connected
         if len(kwargs) > 0:
-            pass
+            obj = self.custom_connection(**kwargs)
         else:
             obj = self.retry()
-
-        # # Last check
-        # obj = self.get_object()
-        # if obj is None:
-        #     log.critical("Failed to connect: %s" % self.name)
-        #     exit(1)
-        # else:
-        #     log.info("Connected! %s" % self.name)
-
-    #########################
-    #########################
-
+            log.info("Connected! %s" % self.name)
         # AFTER
         self.post_connection(obj, **kwargs)
-
         # FINISH: we set models (empty by default)
         if obj is not None:
             obj = self.set_models_to_service(obj)
@@ -120,21 +111,21 @@ class BaseExtension(metaclass=abc.ABCMeta):
             self.custom_initialization(obj)
 
     def project_initialization(self):
+        """ Custom initialization of your project
 
-        print("PROJECT INIT?")
-        # TOFIX: allow a custom init method the project on any service?
+        Please define your class Initializer in
+        vanilla/project/initialization.py
+        """
 
-        # # self.custom_project_initialization()
-
-        # try:
-        #     module_path = "%s.%s.%s" % (CUSTOM_PACKAGE, 'apis', 'services')
-        #     custom_services = \
-        #         meta.get_module_from_string(module_path, exit_on_fail=True)
-        #     custom_services.init()
-        # except BaseException:
-        #     log.debug("No custom init available for mixed services")
-
-        pass
+        try:
+            module_path = "%s.%s.%s" % \
+                (CUSTOM_PACKAGE, 'project', 'initialization')
+            module = meta.get_module_from_string(module_path)
+            Initializer = meta.get_class_from_string('Initializer', module)
+            Initializer()
+            log.debug("Project has been initialized")
+        except BaseException:
+            log.debug("No custom init available for mixed services")
 
     def set_connection_exception(self):
         return None
@@ -143,9 +134,9 @@ class BaseExtension(metaclass=abc.ABCMeta):
         retry_count = 0
 
         # Get the exception which will signal a missing connection
-        exception = self.set_connection_exception()
-        if exception is None:
-            exception = BaseException
+        exceptions = self.set_connection_exception()
+        if exceptions is None:
+            exceptions = (BaseException, )
 
         while max_retries != 0 or retry_count < max_retries:
 
@@ -155,13 +146,10 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
             try:
                 obj = self.custom_connection()
-            except exception as e:
+            except exceptions as e:
                 log.info("Service '%s' not available", self.name)
-                log.debug("error is: %s" % e)
+                log.debug("error is: %s(%s)" % (type(e), e))
                 time.sleep(retry_interval)
-            # except BaseException as e:
-            #     print("TEST EXCEPTION", e, type(e))
-            #     time.sleep(retry_interval)
             else:
                 break
 
@@ -169,7 +157,7 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
     def teardown(self, exception):
         ctx = stack.top
-        if self.has_object(ref=ctx):
+        if self.get_object(ref=ctx) is not None:
             self.close_connection(ctx)
 
     def get_instance(self, global_instance=True, **kwargs):
@@ -180,8 +168,11 @@ class BaseExtension(metaclass=abc.ABCMeta):
         log.very_verbose("instance hash: %s" % unique_hash)
 
         if ctx is None:
+
             # First connection, before any request
-            self.initialization(obj=self.connect())
+            obj = self.connect()
+            self.initialization(obj=obj)
+            self.set_object(obj=obj, ref=self)
 
             # Once among the whole service, and as the last one:
             if self.name == 'authenticator':
@@ -197,12 +188,10 @@ class BaseExtension(metaclass=abc.ABCMeta):
             else:
                 reference = ctx
 
-# TO FIX: use array for hash
-
-            obj = self.get_object(ref=reference)
+            obj = self.get_object(ref=reference, key=unique_hash)
             if obj is None:
                 obj = self.connect(**kwargs)
-                self.set_object(obj=obj, ref=reference)
+                self.set_object(obj=obj, ref=reference, key=unique_hash)
 
             log.verbose("Instance: %s(%s)" % (reference, obj))
 
@@ -229,7 +218,7 @@ class BaseExtension(metaclass=abc.ABCMeta):
     ############################
     # TO BE OVERRIDDEN
     @abc.abstractmethod
-    def custom_initialization(self):
+    def custom_initialization(self, obj=None):
         pass
 
     @abc.abstractmethod
@@ -275,21 +264,19 @@ class BaseInjector(Module, metaclass=abc.ABCMeta):
     def set_variables(cls, envvars):
         cls._variables = envvars
 
-    # def internal_object(self):
-    #     return self.extension_instance.get_instance()
-
     def configure(self, binder):
 
         # Get the Flask extension and its instance
         FlaskExtClass, flask_ext_obj = self.custom_configure()
+
+        # Passing the extra service for authentication
+        flask_ext_obj.extra_service = self.extra_service
+
+        # Binding between the class and the instance, for Flask requests
+        self.extension_instance = flask_ext_obj
+
         # Connect for the first time and initialize
         flask_ext_obj.get_instance()
-
-    # TO FIX
-        # # Passing the extra service for authentication
-        # flask_ext_obj.extra_service = self.extra_service
-        # # Binding between the class and the instance, for Flask requests
-        # self.extension_instance = flask_ext_obj
 
         binder.bind(FlaskExtClass, to=flask_ext_obj, scope=self.singleton)
         return binder

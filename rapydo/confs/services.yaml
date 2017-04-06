@@ -1,13 +1,13 @@
 
-#   # neo4j graphdb ORM
-# - name: neo4j
-#   load_models: 1
-#   prefix: graphdb
-#   library: neomodel #useless?
-#   extension: flask_neo4j
-#   class: NeoModel
-#   injector: InjectNeo
-#   injected_name: neo
+  # neo4j graphdb ORM
+- name: neo4j
+  load_models: 1
+  prefix: graphdb
+  library: neomodel # would this really be usefull??
+  extension: flask_neo4j
+  class: NeoModel
+  injector: InjectNeo
+  injected_name: neo
 
 #   # irods commands
 # - name: irods
@@ -19,15 +19,15 @@
 #   injector: RPCInjector
 #   injected_name: rpc
 
-  # sqlalchemy
-- name: sqlalchemy
-  load_models: 1
-  prefix: alchemy
-  library: Flask-SQLalchemy
-  extension: flask_alchemy
-  class: SqlAlchemy
-  injector: SqlInjector
-  injected_name: db
+#   # sqlalchemy
+# - name: sqlalchemy
+#   load_models: 1
+#   prefix: alchemy
+#   library: Flask-SQLalchemy
+#   extension: flask_alchemy
+#   class: SqlAlchemy
+#   injector: SqlInjector
+#   injected_name: db
 
 ##############################
 # # OTHERS?
@@ -40,12 +40,12 @@
 # # THIS HAS TO BE THE LAST ONE
 # ##############################
 
-#   # authentication
-# - name: authentication
-#   load_models: 0
-#   prefix: auth
-#   library: null
-#   extension: flask_auth
-#   class: Authenticator
-#   injector: AuthInjector
-#   injected_name: auth
+  # authentication
+- name: authentication
+  load_models: 0
+  prefix: auth
+  library: null
+  extension: flask_auth
+  class: Authenticator
+  injector: AuthInjector
+  injected_name: auth

@@ -21,9 +21,12 @@ log = get_logger(__name__)
 class SqlAlchemy(BaseExtension):
 
     def set_connection_exception(self):
-        return sqlalchemy.exc.OperationalError
+        return (sqlalchemy.exc.OperationalError, )
 
-    def custom_connection(self):
+    def custom_connection(self, **kwargs):
+
+        if len(kwargs) > 0:
+            print("TODO: use args for connection?", kwargs)
 
         uri = 'postgresql://%s:%s@%s:%s/%s' % (
             self.variables.get('user'),

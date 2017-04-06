@@ -54,12 +54,19 @@ class IrodsPythonClient(BaseExtension):
     def custom_connection(self):
         # self.prepare_session()
         obj = self.session()
+
+    # TO FIX: move into a post_connection?
         # Do a simple query to test this session
         from irods.models import DataObject
         obj.query(DataObject.owner_name).all()
+
+    # TODO: Create RPC wrapper from mattia and return instead of obj
+        pass
+
         return obj
 
-    def custom_initialization(self):
+    def custom_initialization(self, obj=None):
+        log.verbose("No initialization for now in irods?")
         pass
 
 

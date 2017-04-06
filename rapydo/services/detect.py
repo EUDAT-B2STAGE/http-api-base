@@ -89,7 +89,6 @@ for service in services_configuration:
         Class = getattr(module, service.get('class'))
 
         # ###################
-        # TO DO: elaborate this OPTIONAL concept
         # # Is this service optional?
         # variables.get('optional', False)
         # print(variables)
@@ -101,7 +100,6 @@ for service in services_configuration:
     else:
         log.very_verbose("Skipping service %s" % name)
 
-# TODO: should we report error if missing authentication?
 if authentication_service is None:
     raise AttributeError("Missing config: no service behind authentication")
 else:

@@ -29,9 +29,14 @@ class Status(EndpointResource):
         # print("YEAH", self.auth)
         # print("YEAH", self.db.Role)
 
-        ##############################
-        sql = self.get_service_instance('db', user="pippo", peppe="franco")
-        print("sql", sql.Role)
+        # # ##############################
+        # sql = self.get_service_instance('db', user="pippo", peppe="franco")
+        # print("sql", sql)
+        # # print("sql", sql.Role)
+
+        # ##############################
+        neo = self.get_service_instance('neo', user="pippo", peppe="franco")
+        print("graph", neo)
 
         return 'Server is alive!'
 
