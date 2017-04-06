@@ -333,6 +333,18 @@ class IrodsPythonClient():
 
     def get_permissions(self, coll_or_obj):
 
+        if type(coll_or_obj) is str:
+
+            if self.is_collection(coll_or_obj):
+                coll_or_obj = self.rpc.collections.get(coll_or_obj)
+            elif self.is_dataobject(coll_or_obj):
+                coll_or_obj = self.rpc.collections.get(coll_or_obj)
+            else:
+                coll_or_obj = None
+
+        if coll_or_obj is None:
+            raise IrodsException("Cannot get permission of a null object:w")
+
         data = {}
         data["path"] = coll_or_obj.path
         data["ACL"] = []
