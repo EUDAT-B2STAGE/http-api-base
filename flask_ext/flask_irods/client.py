@@ -22,6 +22,9 @@ class IrodsPythonClient():
     def __init__(self, rpc):
         self.rpc = rpc
 
+    def connect(self):
+        return self
+
     def get_collection_from_path(self, absolute_path):
         return os.path.dirname(absolute_path)
 
@@ -61,6 +64,8 @@ class IrodsPythonClient():
         try:
             self.rpc.data_objects.get(path)
             return True
+        except iexceptions.CollectionDoesNotExist:
+            return False
         except iexceptions.DataObjectDoesNotExist:
             return False
 
@@ -115,7 +120,7 @@ class IrodsPythonClient():
 
             return data
         except iexceptions.CollectionDoesNotExist as e:
-            raise IrodsException("Collection not found")
+            raise IrodsException("Collection not found (%s)" % path)
 
         # replicas = []
         # for line in lines:
@@ -395,6 +400,19 @@ class IrodsPythonClient():
                     "Cannot set inheritance: collection not found")
         return False
 
+    def get_user_home(self, user=None):
+
+        home = os.environ.get('IRODS_HOME', 'home')
+        zone = self.get_current_zone(prepend_slash=True)
+
+        if home.startswith("/"):
+            home = home[1:]
+
+        if user is None:
+            user = self.get_current_user()
+
+        return os.path.join(zone, home, user)
+
     def get_current_user(self):
         return self.rpc.username
 
@@ -621,14 +639,6 @@ class IrodsPythonClient():
                     resources.pop(resources.index(element))
             return list(resources)[::-1].pop()
         return None
-
-    def get_user_home(self, user=None):
-
-        if user is None:
-            user = self.get_current_user()
-# TO FIX: don't we have an irods command for this?
-        return os.path.join(
-            self.get_current_zone(prepend_slash=True), 'home', user)
 
     def get_current_zone(self, prepend_slash=False):
         # note: we could also use ienv (as admin?)
