@@ -14,8 +14,15 @@ irodslogger.setLevel(logging.INFO)
 
 log = get_logger(__name__)
 
+"""
+When connection errors occurs:
+irods.exception.NetworkException:
+    Could not connect to specified host and port:
+        pippodata.repo.cineca.it:1247
+"""
 
-class IrodsPythonClient(BaseExtension):
+
+class IrodsPythonExt(BaseExtension):
 
     def prepare_session(self, user=None):
         if user is None:
@@ -32,8 +39,12 @@ class IrodsPythonClient(BaseExtension):
         cpath = os.path.join(cdir, self.user)
         os.environ['X509_USER_KEY'] = os.path.join(cpath, 'userkey.pem')
         os.environ['X509_USER_CERT'] = os.path.join(cpath, 'usercert.pem')
-        if os.environ.get('X509_CERT_DIR') is None:
+
+        # if os.environ.get('X509_CERT_DIR') is None:
+        if self.variables.get("x509_cert_dir") is None:
             os.environ['X509_CERT_DIR'] = os.path.join(cdir, 'simple_ca')
+        else:
+            os.environ['X509_CERT_DIR'] = self.variables.get("x509_cert_dir")
 
         # server host certificate
         self._hostdn = Certificates.get_dn_from_cert(
@@ -54,9 +65,15 @@ class IrodsPythonClient(BaseExtension):
     def custom_connection(self):
         # self.prepare_session()
         obj = self.session()
+
+        # Do a simple command to test this session
+        u = obj.users.get(self.user)
+        log.verbose("Testing iRODS session retrieving user %s" % u.name)
+
         # Do a simple query to test this session
-        from irods.models import DataObject
-        obj.query(DataObject.owner_name).all()
+        # This command cannot be execute on CINECA irods, it remains stuck
+        # from irods.models import DataObject
+        # obj.query(DataObject.owner_name).all()
         return obj
 
     def custom_initialization(self):
@@ -67,7 +84,7 @@ class RPCInjector(BaseInjector):
 
     def custom_configure(self):
         # note: no models
-        rpc = IrodsPythonClient(self.app, self._variables)  # , self._models)
+        rpc = IrodsPythonExt(self.app, self._variables)  # , self._models)
         # set session variables once
         rpc.prepare_session()
-        return IrodsPythonClient, rpc
+        return IrodsPythonExt, rpc
