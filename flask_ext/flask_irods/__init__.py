@@ -7,6 +7,7 @@ import logging
 from irods.session import iRODSSession
 from rapydo.utils.certificates import Certificates
 from flask_ext import BaseInjector, BaseExtension, get_logger
+from flask_ext.flask_irods.client import IrodsPythonClient
 
 # Silence too much logging from irods
 irodslogger = logging.getLogger('irods')
@@ -74,7 +75,9 @@ class IrodsPythonExt(BaseExtension):
         # This command cannot be execute on CINECA irods, it remains stuck
         # from irods.models import DataObject
         # obj.query(DataObject.owner_name).all()
-        return obj
+
+        client = IrodsPythonClient(obj)
+        return client
 
     def custom_initialization(self):
         pass
@@ -87,4 +90,5 @@ class RPCInjector(BaseInjector):
         rpc = IrodsPythonExt(self.app, self._variables)  # , self._models)
         # set session variables once
         rpc.prepare_session()
+
         return IrodsPythonExt, rpc
