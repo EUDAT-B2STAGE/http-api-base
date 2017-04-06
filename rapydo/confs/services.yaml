@@ -15,7 +15,7 @@
   prefix: irods
   library: python-irodsclient
   extension: flask_irods
-  class: IrodsPythonClient
+  class: IrodsPythonExt
   injector: RPCInjector
   injected_name: rpc
 
