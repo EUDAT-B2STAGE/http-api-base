@@ -18,6 +18,7 @@ __author__ = "Mattia D'Antonio (m.dantonio@cineca.it)"
 
 class GraphBaseOperations(EndpointResource):
 
+    # TO FIX: This method is still required?
     def initGraph(self):
         self._current_user = self.getLoggedUserInstance()
 
