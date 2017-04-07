@@ -1,22 +1,26 @@
 
 ###############################
 # GLOBAL CONFIGURATION
-conf:
-  image: busybox
-  command: ./boot
-  environment:
-    APP_MODE: ${SELECTED_APP_MODE}
-    DEBUG_LEVEL: DEBUG
-    # Decide which service should handle users inside the backend server
-    AUTH_SERVICE: relationaldb
+# conf:
+#   image: busybox
+#   command: ./boot
+#   environment:
+#     APP_MODE: ${SELECTED_APP_MODE}
+#     DEBUG_LEVEL: DEBUG
+#     # Decide which service should handle users inside the backend server
+#     AUTH_SERVICE: relationaldb
 ###############################
 
 
 ###############################
 backend:
-  extends:
-    service: conf
-  image: eudatb2stage/apiserver:neo4j3
+  # command: httpapi 
+  # command: python run.py 
+  command: sleep 9999999999999 
+  # extends:
+  #   service: conf
+  # image: eudatb2stage/apiserver:neo4j3
+  build: ../builds/apiserver
   hostname: restapi
   # user may be overriden from project config
   # note: if you change the user, you should also
@@ -25,6 +29,7 @@ backend:
   working_dir: /code
   environment:
     VANILLA_PACKAGE: custom
+    JWT_APP_SECRETS: /jwt_tokens
   volumes:
     # Base code
     - ../backend:/code
@@ -55,7 +60,8 @@ worker:
     file: docker-compose.yml
     service: backend
   hostname: celworker
-  command: celery worker -c 1 -A rapydo.services.celery.worker.celery_app
+  # command: celery worker -c 1 -A rapydo.services.celery.worker.celery_app
+  command: celery worker -c 1 -A flask_ext.flask_celery.worker.celery_app
 
 #################################
 # Database administration

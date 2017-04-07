@@ -227,6 +227,10 @@ instead of here
             return False
         return True
 
+    # def clean_pending_tokens(self):
+    #     log.debug("Removing all pending tokens")
+    #     return self.cypher("MATCH (a:Token) WHERE NOT (a)<-[]-() DELETE a")
+
     def store_oauth2_user(self, current_user, token):
         """
         Allow external accounts (oauth2 credentials)

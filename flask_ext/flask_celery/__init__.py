@@ -67,7 +67,7 @@ class CeleryExt(BaseExtension):
 
         return self.celery_app
 
-    def custom_initialization(self):
+    def custom_initialization(self, obj=None):
         pass
 
 
