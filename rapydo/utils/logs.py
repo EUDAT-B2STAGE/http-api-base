@@ -7,6 +7,7 @@ IMPORTANT: log level must be read as the very first possible thing...
 """
 
 import os
+import re
 import json
 import logging
 
@@ -206,7 +207,7 @@ def set_global_log_level(package=None, app_level=None):
         if package is not None and package + '.' in key:
             # print("current", key, value.level)
             value.setLevel(app_level)
-        elif __package__ + '.' in key:
+        elif __package__ + '.' in key or 'flask_ext' in key:
             # print("common", key)
             value.setLevel(app_level)
         else:
@@ -238,8 +239,23 @@ def get_logger(name, debug_setter=None, newlevel=None):
 #         # handler.close()
 
 
-def handle_log_output(original_parameters_string):
+def re_obscure_pattern(string):
 
+    patterns = {
+        'http_credentials': r'[^:]+\:([^@:]+)\@[^:]+:[^:]',
+    }
+
+    for name, pattern in patterns.items():
+        p = re.compile(pattern)
+        m = p.search(string)
+        if m:
+            g = m.group(1)
+            string = string.replace(g, OBSCURE_VALUE)
+
+    return string
+
+
+def handle_log_output(original_parameters_string):
     """ Avoid printing passwords! """
     if (original_parameters_string is None):
         return {}
@@ -264,6 +280,7 @@ def handle_log_output(original_parameters_string):
 
     output = {}
     for key, value in parameters.items():
+
         if key in OBSCURED_FIELDS:
             value = OBSCURE_VALUE
         elif not isinstance(value, str):

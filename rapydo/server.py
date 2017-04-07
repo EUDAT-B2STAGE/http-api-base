@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 """
-Main server factory.
-We create all the internal flask  components here!
+The Main server factory.
+We create all the internal flask components here.
 """
 
+# import click
 import rapydo.confs as config
 from flask import Flask as OriginalFlask, request
 from flask_injector import FlaskInjector
@@ -15,9 +16,9 @@ from rapydo.rest.response import ResponseMaker
 from rapydo.customization import Customizer
 from rapydo.confs import PRODUCTION
 from rapydo.utils.globals import mem
+from rapydo.protocols.restful import Api, EndpointsFarmer, create_endpoints
 from rapydo.services.detect import authentication_service, \
     services as internal_services
-from rapydo.protocols.restful import Api, EndpointsFarmer, create_endpoints
 from rapydo.utils.logs import get_logger, \
     handle_log_output, MAX_CHAR_LEN, set_global_log_level
 
@@ -89,9 +90,7 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
     microservice.wsgi_app = ProxyFix(microservice.wsgi_app)
 
     ##############################
-    # Add command line options
-
-    # import click
+    # Add command line options:
 
     # @microservice.cli.command()
     # def init():
@@ -101,7 +100,7 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
     ##############################
     # Cors
     cors.init_app(microservice)
-    log.debug("FLASKING! Injected CORS")
+    log.verbose("FLASKING! Injected CORS")
 
     ##############################
     # Enabling our internal Flask customized response
@@ -114,7 +113,7 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
 
     # Flask configuration from config file
     microservice.config.from_object(config)
-    log.info("Flask app configured")
+    log.debug("Flask app configured")
 
     ##############################
     if PRODUCTION:
@@ -144,15 +143,16 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
     for injected, Injector in internal_services.items():
 
         args = {'app': microservice}
+        # This is where we pass the extra service to auth
         if injected == 'authentication':
             args['extra_service'] = auth_backend_obj
-
+        # Create the injector
         inj = Injector(**args)
-
+        # This is where we save the current service if it is the base for auth
         if injected == authentication_service:
             auth_backend_obj = inj
 
-        log.debug("Append '%s' to plugged services" % injected)
+        log.debug("Appending '%s' to services" % injected)
         modules.append(inj)
 
     ##############################
@@ -212,7 +212,6 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
 
         # Limit the parameters string size, sometimes it's too big
         for k in data:
-            # print("K", k, "DATA", data)
             try:
                 if not isinstance(data[k], str):
                     continue
@@ -224,17 +223,6 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
         log.info("{} {} {} {}".format(
                  request.method, request.url, data, response))
         return response
-
-    # ##############################
-    # log.critical("test")
-    # log.error("test")
-    # log.warning("test")
-    # log.info("test")
-    # log.debug("test")
-    # log.verbose("test")
-    # log.very_verbose("test")
-    # log.pp(microservice)
-    # log.critical_exit("test")
 
     ##############################
     # and the flask App is ready now:

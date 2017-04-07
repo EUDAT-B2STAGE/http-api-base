@@ -31,8 +31,7 @@ class Api(RestFulApi):
 
 ####################################
 # REST to be activated inside the app factory
-log.debug(
-    "Create endpoints w/ [%s, %s]" % (Api, EndpointsFarmer))
+log.verbose("Endpoints w/ %s-%s" % (Api.__name__, EndpointsFarmer.__name__))
 
 
 def create_endpoints(epo, security=False):

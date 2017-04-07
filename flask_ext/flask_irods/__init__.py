@@ -71,15 +71,11 @@ class IrodsPythonExt(BaseExtension):
         u = obj.users.get(self.user)
         log.verbose("Testing iRODS session retrieving user %s" % u.name)
 
-        # Do a simple query to test this session
-        # This command cannot be execute on CINECA irods, it remains stuck
-        # from irods.models import DataObject
-        # obj.query(DataObject.owner_name).all()
-
         client = IrodsPythonClient(obj)
         return client
 
-    def custom_initialization(self):
+    def custom_initialization(self, obj=None):
+        log.verbose("No initialization for now in irods?")
         pass
 
 
