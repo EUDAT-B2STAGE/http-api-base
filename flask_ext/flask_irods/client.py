@@ -494,6 +494,17 @@ class IrodsPythonClient():
         except iexceptions.DataObjectDoesNotExist:
             raise IrodsException("Cannot extra metadata, object not found")
 
+    # We may need this for testing the get_metadata
+    def set_metadata(self, path, **meta):
+        try:
+            obj = self.rpc.data_objects.get(path)
+
+            for key, value in meta.items():
+                obj.metadata.add(key, value)
+        except iexceptions.DataObjectDoesNotExist:
+            raise IrodsException("Cannot set metadata, object not found")
+
+
 # ####################################################
 # ####################################################
 # ####################################################
@@ -726,7 +737,7 @@ class IrodsPythonClient():
     @staticmethod
     def get_translated_user(self, user):
         """
-## // TO BE DEPRECATED
+#  // TO BE DEPRECATED
         """
         from rapydo.services.irods.translations import \
             importAccountsToIrodsUsers
