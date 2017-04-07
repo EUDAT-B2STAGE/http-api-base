@@ -41,6 +41,7 @@ class EndpointResource(Resource):
         super(EndpointResource, self).__init__()
         # Do extra stuff
         self.services = {}
+        # TO FIX: we really want to inject everything??
         self.inject_services(injected_services)
         self.init_parameters()
 
@@ -57,7 +58,13 @@ class EndpointResource(Resource):
 
             # inject as the name specified in services.yaml
             try:
-                setattr(self, service.injected_name, service)
+
+                # TO FIX: from mattia: I added this block, to be verified:
+                inject = self.get_service_instance(service.injected_name)
+                setattr(self, service.injected_name, inject)
+                # #######################################################
+
+                # setattr(self, service.injected_name, service)
             except AttributeError:
                 log.error("Failed to inject %s" % service)
 
