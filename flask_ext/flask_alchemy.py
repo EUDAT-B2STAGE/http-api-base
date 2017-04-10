@@ -60,31 +60,35 @@ class SqlAlchemy(BaseExtension):
             log.critical_exit(
                 "Could not get %s within %s models" % (obj_name, self.name))
 
-        # do init_app on the extension
-        db.init_app(self.app)
-
-        # check connection
-        with self.app.app_context():
-            from sqlalchemy import text
-            sql = text('SELECT 1')
-            db.engine.execute(sql)
-
         return db
 
-    def custom_init(self, obj=None):
+    def custom_init(self, db=None):
 
-        # # TO FIX: this option should go inside the configuration file
+        # # TO FIX: this option would go inside the configuration file?
         # if config.REMOVE_DATA_AT_INIT_TIME:
         # if self.variables('remove_data_at_init_time'):
         #     log.warning("Removing old data")
         #     self._db.drop_all()
 
-        if obj is None:
-            obj = super().custom_init()
+        # recover instance with the parent method
+        if db is None:
+            db = super().custom_init()
 
-        # Create table if they don't exist
-        obj.create_all()
-        log.debug("Initialized")
+        # do init_app on the original flask sqlalchemy extension
+        db.init_app(self.app)
+
+        # careful on what you do with app context on sqlalchemy
+        with self.app.app_context():
+
+            # check connection
+            from sqlalchemy import text
+            sql = text('SELECT 1')
+            db.engine.execute(sql)
+
+            # all is fine: now create table if they don't exist
+            db.create_all()
+
+        return db
 
 
 class SqlInjector(BaseInjector):

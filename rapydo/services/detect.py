@@ -169,16 +169,19 @@ class Detector(object):
         for service in self.services_configuration:
 
             name, _ = self.prefix_name(service)
+
             if not self.available_services.get(name):
                 continue
+
+            if name == 'authentication' and auth_backend is None:
+                raise ValueError("No backend service recovered")
 
             ExtClass = self.services_classes.get(name)
             ext_instance = ExtClass(app)
 
-            with app.app_context():
-                log.debug("Initializing %s" % name)
-                service_instance = ext_instance.custom_init(auth_backend)
-                instances[name] = service_instance
+            log.debug("Initializing %s" % name)
+            service_instance = ext_instance.custom_init(auth_backend)
+            instances[name] = service_instance
 
             if name == self.authentication_service:
                 auth_backend = service_instance
@@ -189,6 +192,7 @@ class Detector(object):
 
         if len(self.extensions_instances) < 1:
             raise KeyError("No instances available for modules")
+
         return self.extensions_instances
 
     def load_injector_modules(self):

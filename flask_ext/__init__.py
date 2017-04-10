@@ -126,14 +126,6 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
         return obj
 
-    def initialization(self, obj=None):
-        """ Init operations require the app context """
-
-        # # TODO: check in environment variables if to use context or not?
-        # if self.variables.get('init_with_ctx', False):
-        with self.app.app_context():
-            self.custom_init(obj)
-
     def set_connection_exception(self):
         return None
 

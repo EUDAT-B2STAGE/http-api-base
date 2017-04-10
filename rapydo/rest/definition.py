@@ -40,8 +40,6 @@ class EndpointResource(Resource):
         # Init original class
         super(EndpointResource, self).__init__()
 
-        print("UHM", services_extensions)
-
         self.services_extensions = services_extensions
         self.load_services()
         self.load_authentication()

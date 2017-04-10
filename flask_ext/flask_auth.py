@@ -40,10 +40,11 @@ class Authenticator(BaseExtension):
     def custom_init(self, auth_backend=None):
 
         obj = super().custom_init()
-
         obj.db = auth_backend
-        obj.init_users_and_roles()
-        log.info("Initialized auth")
+
+        with self.app.app_context():
+            obj.init_users_and_roles()
+            log.info("Initialized auth")
 
         # ####################
         # # TODO: check this piece of code
