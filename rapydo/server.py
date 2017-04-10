@@ -7,6 +7,7 @@ We create all the internal flask components here.
 
 # import click
 import rapydo.confs as config
+import warnings
 from flask import Flask as OriginalFlask, request
 from flask_injector import FlaskInjector
 from rapydo.protocols.cors import cors
@@ -17,9 +18,10 @@ from rapydo.customization import Customizer
 from rapydo.confs import PRODUCTION
 from rapydo.utils.globals import mem
 from rapydo.protocols.restful import Api, EndpointsFarmer, create_endpoints
-from rapydo.services.detect import authentication_service, \
-    services as internal_services
-from rapydo.utils.logs import get_logger, \
+from rapydo.services.detect import detector
+
+from rapydo.utils.logs import \
+    get_logger, \
     handle_log_output, MAX_CHAR_LEN, set_global_log_level
 
 
@@ -66,7 +68,6 @@ class Flask(OriginalFlask):
         # Note: jsonify gets done when calling the make_response,
         # so make sure that the data is written in  the right format!
         response = responder.generate_response()
-        # print("DEBUG server.py", response)
         return super().make_response(response)
 
 
@@ -87,6 +88,8 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
     #################################################
     microservice = Flask(name, **kwargs)
 
+    ##############################
+    # Fix proxy wsgi for production calls
     microservice.wsgi_app = ProxyFix(microservice.wsgi_app)
 
     ##############################
@@ -137,23 +140,8 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
         skip_endpoint_mapping = True
 
     ##############################
-    # DATABASE/SERVICEs init and checks
-    auth_backend_obj = None
-    modules = []
-    for injected, Injector in internal_services.items():
-
-        args = {'app': microservice}
-        # This is where we pass the extra service to auth
-        if injected == 'authentication':
-            args['extra_service'] = auth_backend_obj
-        # Create the injector
-        inj = Injector(**args)
-        # This is where we save the current service if it is the base for auth
-        if injected == authentication_service:
-            auth_backend_obj = inj
-
-        log.debug("Appending '%s' to services" % injected)
-        modules.append(inj)
+    # Find services and try to connect to the ones available
+    detector.init_services(app=microservice)
 
     ##############################
     # Restful plugin
@@ -168,7 +156,18 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
         # Injection!
         # Enabling "configuration modules" for services to be injected
         # IMPORTANT: Injector must be initialized AFTER mapping endpoints
+
+        modules = detector.load_injector_modules()
+
+        # AVOID warnings from Flask Injector
+        warnings.filterwarnings("ignore")
         FlaskInjector(app=microservice, modules=modules)
+
+        # Catch warnings from Flask Injector
+        # try:
+        #     FlaskInjector(app=microservice, modules=modules)
+        # except RuntimeWarning:
+        #     pass
 
     ##############################
     # Clean app routes

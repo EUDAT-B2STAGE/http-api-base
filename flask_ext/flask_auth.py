@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from rapydo.utils.meta import Meta
-from rapydo.confs import PRODUCTION
+# from rapydo.confs import PRODUCTION
 from flask_ext import BaseInjector, BaseExtension, get_logger
 
 log = get_logger(__name__)
@@ -9,26 +8,11 @@ log = get_logger(__name__)
 
 class Authenticator(BaseExtension):
 
-    def get_authentication_module(self, auth_service):
-        meta = Meta()
+    def custom_connection(self, **kwargs):
 
-        module_name = "%s.%s.%s" % ('services', 'authentication', auth_service)
-        log.verbose("Loading auth extension: %s" % module_name)
-        module = meta.get_module_from_string(
-            modulestring=module_name, prefix_package=True, exit_on_fail=True)
-
-        return module
-
-    def custom_connection(self):
-
-        # What service will hold authentication?
+        # # What service will hold authentication?
         auth_service = self.variables.get('service')
-        if auth_service is None:
-            raise ValueError("You MUST specify a service for authentication")
-        else:
-            log.verbose("Auth service '%s'" % auth_service)
-
-        auth_module = self.get_authentication_module(auth_service)
+        auth_module = self.meta.get_authentication_module(auth_service)
         custom_auth = auth_module.Authentication()
 
         # If oauth services are available, set them before every request
@@ -53,27 +37,19 @@ class Authenticator(BaseExtension):
 
         return custom_auth
 
-    def custom_initialization(self, obj=None):
+    def custom_init(self, auth_backend=None):
 
+        obj = super().custom_init()
+
+        obj.db = auth_backend
         obj.init_users_and_roles()
         log.info("Initialized auth")
 
-        ####################
-        # TODO: check this piece of code
-        if PRODUCTION and obj.check_if_user_defaults():
-            raise AttributeError("PRODUCTION mode with default admin user?")
-
-    def post_connection(self, obj=None):
-
-        # Very important: give a service backend to authentication
-        if self.extra_service is not None:
-            # this is a 'hat trick'
-            obj.db = self.extra_service.extension_instance.get_object()
+        # ####################
+        # # TODO: check this piece of code
+        # if PRODUCTION and obj.check_if_user_defaults():
+        #     raise AttributeError("PRODUCTION mode with default admin user?")
 
 
 class AuthInjector(BaseInjector):
-
-    def custom_configure(self):
-        # note: no models
-        auth = Authenticator(self.app, self._variables)
-        return Authenticator, auth
+    pass

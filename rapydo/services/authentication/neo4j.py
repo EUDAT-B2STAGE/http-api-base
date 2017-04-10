@@ -15,21 +15,16 @@ import pytz
 from datetime import datetime, timedelta
 from rapydo.utils.uuid import getUUID
 from rapydo.services.authentication import BaseAuthentication
-from rapydo.services.detect import available_services
+from rapydo.services.detect import detector
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
 
-if not available_services.get(__name__.split('.')[::-1][0]):
-    log.critical("No neo4j GraphDB service found for auth")
-    exit(1)
+if not detector.check_availability(__name__):
+    log.critical_exit("No neo4j GraphDB service found for auth")
 
 
 class Authentication(BaseAuthentication):
-
-    # def __init__(self, services=None):
-    #     self.myinit()
-    #     self.db = services.get('neo4j').get_instance()
 
     def get_user_object(self, username=None, payload=None):
 
@@ -106,9 +101,9 @@ instead of here
             if role not in current_roles:
                 self.create_role(role)
 
+        # TO FIX: Create some users for testing
         from flask import current_app
         if current_app.config['TESTING']:
-            # Create some users for testing
             pass
 
         # Default user (if no users yet available)
@@ -246,14 +241,14 @@ instead of here
             if user_node.authmethod != 'oauth2':
                 # The user already exist with another type of authentication
                 return None
+        # TO BE VERIFIED
         except self.db.User.DoesNotExist:
-## TO BE VERIFIED
             user_node = self.create_user(userdata={
                 # 'uuid': getUUID(),
                 'email': email,
                 'authmethod': 'oauth2'
             })
-        ## NOTE: missing roles for this user?
+        # NOTE: missing roles for this user?
 
         # A self.db node for external oauth2 account
         try:
@@ -284,7 +279,7 @@ instead of here
     #     # graph_irods_user = None
     #     # graph = self.neo
     #     # try:
-    #     #     graph_irods_user = graph.IrodsUser.nodes.get(username=irods_user)
+    #     #     graph_irods_user = .IrodsUser.nodes.get(username=irods_user)
     #     # except graph.IrodsUser.DoesNotExist:
     #     #     # Save into the graph
     #     #     graph_irods_user = graph.IrodsUser(username=irods_user)

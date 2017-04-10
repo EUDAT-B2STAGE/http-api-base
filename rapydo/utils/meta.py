@@ -37,7 +37,7 @@ class Meta(object):
             if not ispkg:
                 self._submodules.append(modname)
                 log.debug("Found %s submodule inside %s" %
-                             (modname, package.__name__))
+                          (modname, package.__name__))
         return self._submodules
 
     def get_classes_from_module(self, module):
@@ -49,9 +49,13 @@ class Meta(object):
 
         classes = {}
         try:
-            classes = dict([(name, cls)
-                           for name, cls in module.__dict__.items()
-                           if isinstance(cls, type)])
+            classes = dict(
+                [
+                    (name, cls)
+                    for name, cls in module.__dict__.items()
+                    if isinstance(cls, type)
+                ]
+            )
         except AttributeError:
             log.warning("Could not find any class inside your module")
 
@@ -147,7 +151,6 @@ class Meta(object):
 
     @staticmethod
     def get_self_reference_from_args(*args):
-
         """
         Useful in decorators:
         being able to call the internal method by getting
@@ -189,26 +192,17 @@ class Meta(object):
 
         return models
 
+    def get_authentication_module(self, auth_service):
 
-######################################################
-# ## INTERESTING EXAMPLE OF CREATING META CLASSES ## #
+        module_name = "%s.%s.%s" % ('services', 'authentication', auth_service)
+        log.verbose("Loading auth extension: %s" % module_name)
+        module = self.get_module_from_string(
+            modulestring=module_name, prefix_package=True, exit_on_fail=True)
 
-# # Name for the class. Remove path and extension (json)
-# label = os.path.splitext(
-#     os.path.basename(fileschema))[0].lower()
-# # Dynamic attributes
-# new_attributes = {
-#     "schema": reference_schema,
-#     "template": mytemplate,
-#     "table": label,
-# }
-# # Generating the new class
-# resource_class = RethinkResource
-# if secured:
-#     resource_class = RethinkSecuredResource
-# newclass = Meta.metaclassing(resource_class, label, new_attributes)
-# # Using the same structure i previously used in resources:
-# # resources[name] = (new_class, data_model.table)
-# json_autoresources[label] = (newclass, label)
+        return module
 
-######################################################
+    @staticmethod
+    def class_factory(name, parents=object, attributes_and_methods={}):
+        if not isinstance(parents, tuple):
+            parents = (parents, )
+        return type(name, parents, attributes_and_methods)

@@ -71,20 +71,21 @@ class SqlAlchemy(BaseExtension):
 
         return db
 
-    def custom_initialization(self, obj=None):
+    def custom_init(self, obj=None):
+
         # # TO FIX: this option should go inside the configuration file
         # if config.REMOVE_DATA_AT_INIT_TIME:
         # if self.variables('remove_data_at_init_time'):
         #     log.warning("Removing old data")
         #     self._db.drop_all()
 
+        if obj is None:
+            obj = super().custom_init()
+
         # Create table if they don't exist
-        log.debug("Initialized")
         obj.create_all()
+        log.debug("Initialized")
 
 
 class SqlInjector(BaseInjector):
-
-    def custom_configure(self):
-        sql = SqlAlchemy(self.app, self._variables, self._models)
-        return SqlAlchemy, sql
+    pass

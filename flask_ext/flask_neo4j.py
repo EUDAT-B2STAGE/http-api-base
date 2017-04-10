@@ -22,16 +22,18 @@ class NeoModel(BaseExtension):
     def custom_connection(self, **kwargs):
 
         if len(kwargs) > 0:
-            print("TODO: use args for connection?", kwargs)
+            variables = kwargs
+        else:
+            variables = self.variables
 
         self.uri = "bolt://%s:%s@%s:%s" % \
             (
                 # User:Password
-                self.variables.get('user', 'neo4j'),
-                self.variables.get('password'),
+                variables.get('user', 'neo4j'),
+                variables.get('password'),
                 # Host:Port
-                self.variables.get('host'),
-                self.variables.get('port'),
+                variables.get('host'),
+                variables.get('port'),
             )
         log.very_verbose("URI IS %s" % re_obscure_pattern(self.uri))
 
@@ -41,15 +43,9 @@ class NeoModel(BaseExtension):
         config.FORCE_TIMEZONE = True  # default False
         db.url = self.uri
         db.set_connection(self.uri)
+
         return db
 
-    def custom_initialization(self, obj=None):
-        log.verbose("No initialization for now in neo4j")
-        pass
 
-
-class InjectNeo(BaseInjector):
-
-    def custom_configure(self):
-        neo = NeoModel(self.app, self._variables, self._models)
-        return NeoModel, neo
+class NeoInjector(BaseInjector):
+    pass

@@ -14,7 +14,7 @@ from flask_restful import request, Resource, reqparse
 from rapydo.rest.response import ResponseElements
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.globals import mem
-from rapydo.services.detect import services_classes as injectable_services
+from rapydo.services.detect import detector
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
@@ -29,44 +29,43 @@ DEFAULT_PERPAGE = 10
 
 ###################
 # Extending the concept of rest generic resource
-
 class EndpointResource(Resource):
     """
     Implements a generic Resource for our Restful APIs model
     """
 
-    @inject(**injectable_services)
-    def __init__(self, **injected_services):
+    @inject(**detector.services_classes)
+    def __init__(self, **services_extensions):
+
         # Init original class
         super(EndpointResource, self).__init__()
-        # Do extra stuff
-        self.services = {}
-        # TO FIX: we really want to inject everything??
-        self.inject_services(injected_services)
+
+        print("UHM", services_extensions)
+
+        self.services_extensions = services_extensions
+        self.load_services()
+        self.load_authentication()
         self.init_parameters()
 
     def myname(self):
         return self.__class__.__name__
 
-    def inject_services(self, injected_services):
+    def load_services(self):
+        """ Save extensions for getting service instances """
+        self.services = {}
+        for name, extension in self.services_extensions.items():
+            self.services[extension.injected_name] = extension
+        if len(self.services) < 1:
+            raise AttributeError("No services available for requests...")
+        return self.services
 
-        # Let injected service be part of the self
-        for name, service in injected_services.items():
+    def load_authentication(self, auth_name='auth'):
+        # Authentication instance is always needed at each request
+        self.auth = self.get_service_instance(auth_name)
+        auth_backend = self.get_service_instance(detector.injected_auth_name)
+        self.auth.db = auth_backend
 
-            # print("SERVICE", name, service.injected_name, service)
-            self.services[service.injected_name] = service
-
-            # inject as the name specified in services.yaml
-            try:
-
-                # TO FIX: from mattia: I added this block, to be verified:
-                inject = self.get_service_instance(service.injected_name)
-                setattr(self, service.injected_name, inject)
-                # #######################################################
-
-                # setattr(self, service.injected_name, service)
-            except AttributeError:
-                log.error("Failed to inject %s" % service)
+        # Set parameters to be used
 
     def get_service_instance(self, service_name, **kwargs):
         farm = self.services.get(service_name)
@@ -209,10 +208,11 @@ class EndpointResource(Resource):
 
         return content
 
-    def get_current_token(self):
-        from rapydo.protocols.bearer import HTTPTokenAuth
-        _, token = HTTPTokenAuth.get_authentication_from_headers()
-        return token
+    # def get_current_token(self):
+    #     # TODO: TO BE DOUBLE CHECKED
+    #     from rapydo.protocols.bearer import HTTPTokenAuth
+    #     _, token = HTTPTokenAuth.get_authentication_from_headers()
+    #     return token
 
     def get_current_user(self):
         """

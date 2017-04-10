@@ -8,14 +8,13 @@ import sqlalchemy
 from datetime import datetime, timedelta
 from rapydo.utils.uuid import getUUID
 from rapydo.services.authentication import BaseAuthentication
-from rapydo.services.detect import available_services
+from rapydo.services.detect import detector
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
 
-if not available_services.get(__name__.split('.')[::-1][0]):
-    log.critical("No sqlalchemy service available for auth")
-    exit(1)
+if not detector.check_availability(__name__):
+    log.critical_exit("No sqlalchemy service available for auth")
 
 
 class Authentication(BaseAuthentication):

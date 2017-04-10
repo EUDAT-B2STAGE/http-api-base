@@ -35,7 +35,7 @@ app = create_app(worker_mode=True)
 # log.pp(injectable_services['celery'].__dict__)
 
 celery_injector = services.get('celery')(app)
-cls, ext = celery_injector.custom_configure()
+cls, ext = celery_injector.custom_configure(app)
 
 celery_app = ext.custom_connection(worker_mode=True)
 

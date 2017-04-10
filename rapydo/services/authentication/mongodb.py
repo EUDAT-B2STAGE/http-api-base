@@ -7,14 +7,14 @@ Mongodb based implementation
 from datetime import datetime, timedelta
 from rapydo.services.authentication import BaseAuthentication
 from rapydo.utils.uuid import getUUID
-from rapydo.services.detect import available_services
+from rapydo.services.detect import detector
 from rapydo.utils.logs import get_logger
+
 
 log = get_logger(__name__)
 
-if not available_services.get(__name__.split('.')[::-1][0]):
-    log.critical("No mongodb service found available currently for auth")
-    exit(1)
+if not detector.check_availability(__name__):
+    log.critical_exit("No mongodb service found available currently for auth")
 
 
 class Authentication(BaseAuthentication):
