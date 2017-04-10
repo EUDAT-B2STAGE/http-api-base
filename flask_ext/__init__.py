@@ -228,11 +228,13 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
 class BaseInjector(Module):
 
-    def __init__(self, **kwargs):
-        self.args = kwargs
+    # def __init__(self, **kwargs):
+    #     self.args = kwargs
 
     @classmethod
     def set_extension_class(cls, ExtensionClass):
+        if hasattr(cls, '_extClass'):
+            raise("Extension class was already set")
         cls._extClass = ExtensionClass
 
     @classmethod
@@ -247,13 +249,10 @@ class BaseInjector(Module):
     @inject
     def configure(self, binder, app: Flask):
 
-        # TODO: recheck on new versions of Flask-Injector
-        # import warnings
-        # warnings.warn("switch to provider", SyntaxWarning)
+        # TODO: recheck soon on new versions of Flask-Injector...
 
-        # # Get the Flask extension and its instance
+        # Get the Flask extension and its instance
         MyClass = self.get_extension_class()
-        my_instance = MyClass(app, **self.args)
-
-        return binder.bind(MyClass, to=my_instance, scope=singleton)
+        # my_instance = MyClass(app, **self.args)
+        return binder.bind(MyClass, to=MyClass(app), scope=singleton)
         # return my_instance

@@ -45,7 +45,3 @@ class NeoModel(BaseExtension):
         db.set_connection(self.uri)
 
         return db
-
-
-class NeoInjector(BaseInjector):
-    pass

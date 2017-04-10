@@ -50,7 +50,3 @@ class Authenticator(BaseExtension):
         # # TODO: check this piece of code
         # if PRODUCTION and obj.check_if_user_defaults():
         #     raise AttributeError("PRODUCTION mode with default admin user?")
-
-
-class AuthInjector(BaseInjector):
-    pass

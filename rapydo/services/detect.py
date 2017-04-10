@@ -106,17 +106,20 @@ class Detector(object):
         variables[key] = service.get(key)
         return variables
 
-    def load_python_module(self, service):
+    def load_class_from_module(self, classname='BaseInjector', service=None):
 
-        # Load module and get class and configuration
-        flaskext = service.get('extension')
+        if service is None:
+            flaskext = ''
+        else:
+            flaskext = '.' + service.get('extension')
+
         # Try inside our extensions
         module = self.meta.get_module_from_string(
-            modulestring='flask_ext.' + flaskext, exit_on_fail=True)
+            modulestring='flask_ext' + flaskext, exit_on_fail=True)
         if module is None:
             log.critical_exit("Missing %s for %s" % (flaskext, service))
 
-        return module
+        return getattr(module, classname)
 
     def load_classes(self):
 
@@ -135,9 +138,8 @@ class Detector(object):
             variables = service.get('variables')
             ext_name = service.get('class')
 
-            # # Get the existing class!
-            module = self.load_python_module(service)
-            MyClass = getattr(module, ext_name)
+            # Get the existing class
+            MyClass = self.load_class_from_module(ext_name, service=service)
 
             # Passing variables
             MyClass.set_variables(variables)
@@ -204,22 +206,17 @@ class Detector(object):
                 continue
 
             # Module for injection
-            module = self.load_python_module(service)
-        # TODO: # Create modules programmatically ?
-            MyModule = getattr(module, service.get('injector'))
+            ModuleBaseClass = self.load_class_from_module()
+            # Create modules programmatically 8)
+            MyModule = self.meta.metaclassing(
+                ModuleBaseClass, service.get('injector'))
 
             # Recover class
             MyClass = self.services_classes.get(name)
             if MyClass is None:
                 raise AttributeError("No class found for %s" % name)
             MyModule.set_extension_class(MyClass)
-
-            self.modules.append(
-                MyModule(
-                    ext_instances=self.extensions_instances,
-                    auth_service_name=self.authentication_service
-                )
-            )
+            self.modules.append(MyModule)
 
         return self.modules
 

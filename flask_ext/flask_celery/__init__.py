@@ -66,7 +66,3 @@ class CeleryExt(BaseExtension):
         self.celery_app.conf.CELERY_RESULT_SERIALIZER = 'json'
 
         return self.celery_app
-
-
-class CeleryInjector(BaseInjector):
-    pass

@@ -89,7 +89,3 @@ class SqlAlchemy(BaseExtension):
             db.create_all()
 
         return db
-
-
-class SqlInjector(BaseInjector):
-    pass

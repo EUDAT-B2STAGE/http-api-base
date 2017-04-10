@@ -73,7 +73,3 @@ class IrodsPythonExt(BaseExtension):
 
         client = IrodsPythonClient(obj)
         return client
-
-
-class RPCInjector(BaseInjector):
-    pass
