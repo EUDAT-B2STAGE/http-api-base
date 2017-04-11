@@ -442,8 +442,7 @@ class EndpointResource(Resource):
         if skip_missing_ids and id == '-':
             del data['id']
 
-## // TO FIX:
-        # Difficult task for now to compute links ID for relationships
+# TO FIX: for now is difficult to compute links ID for relationships
         if relationship_depth > 0:
             del data['links']
 
@@ -475,8 +474,7 @@ class EndpointResource(Resource):
                 attribute = get_attribute(instance, key)
                 # datetime is not json serializable,
                 # converting it to string
-## // TO FIX:
-# use flask.jsonify
+                # TO FIX: use flask.jsonify
                 if attribute is None:
                     data["attributes"][key] = ""
                 elif isinstance(attribute, datetime):

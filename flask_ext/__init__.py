@@ -97,7 +97,7 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
         for name, model in self.models.items():
             # Save attribute inside class with the same name
-            log.verbose("Injecting model '%s'" % name)
+            log.debug("Injecting model '%s'" % name)
             setattr(obj, name, model)
 
         return obj

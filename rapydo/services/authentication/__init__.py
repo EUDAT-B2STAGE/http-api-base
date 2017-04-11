@@ -35,7 +35,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     # This string will be replaced with a proper secret file
     JWT_SECRET = 'top secret!'
     JWT_ALGO = 'HS256'
-# TO FIX: already defined in auth.py HTTPAUTH_DEFAULT_SCHEME
+    # TO FIX: already defined in auth.py HTTPAUTH_DEFAULT_SCHEME
     token_type = 'Bearer'
 
     ##########################
@@ -48,9 +48,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     shortTTL = 604800     # 1 week in seconds
 
     def __init__(self):
-        # TODO:
-        # myinit is a class method for unittest
-        # could it be fixed?
+        # TODO: myinit is a class method for unittest could it be fixed?
         self.myinit()
 
     @classmethod
@@ -424,8 +422,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             log.critical("Current authentication db models are broken!")
             return None, None
 
-# // TO FIX:
-# maybe payload should be some basic part + custom payload from the developer
+# TO FIX: payload should be some basic part + custom payload from the developer
         if self.check_passwords(user.password, password):
             return self.create_token(self.fill_payload(user))
 
