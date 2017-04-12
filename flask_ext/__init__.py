@@ -6,35 +6,62 @@
 
 import abc
 import time
-from flask import _app_ctx_stack as stack
-from injector import Module, singleton
-from rapydo.confs import CUSTOM_PACKAGE
+from flask import Flask, _app_ctx_stack as stack
+from injector import Module, singleton, inject  # , provider
 from rapydo.utils.meta import Meta
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
-meta = Meta()
 
 
 class BaseExtension(metaclass=abc.ABCMeta):
 
-    def __init__(self, app=None, variables={}, models={}):
+    models = {}  # I get models on a cls level, instead of instances
+    meta = Meta()
 
+    def __init__(self, app=None, **kwargs):
+
+        self.set_name()
         self.objs = {}
-
-        self.extra_service = None
-        # a different name for each extended object
-        self.name = self.__class__.__name__.lower()
-        log.very_verbose("Opening service instance of %s" % self.name)
+        self.args = kwargs
 
         self.app = app
         if app is not None:
             self.init_app(app)
 
-        self.models = models
-        self.variables = variables
-        self.injected_name = variables.get('injected_name')
-        log.very_verbose("Vars: %s" % variables)
+        self.injected_name = self.variables.get('injected_name')
+        # log.very_verbose("Vars: %s" % self.variables)
+
+    def set_name(self):
+        """ a different name for each extended object """
+        self.name = self.__class__.__name__.lower()
+        log.very_verbose("Opening service instance of %s" % self.name)
+
+    @classmethod
+    def set_models(cls, base_models={}, custom_models={}):
+
+        # Join models as described by issue #16
+        cls.models = base_models
+        for key, model in custom_models.items():
+
+            # Verify if overriding
+            if key in base_models.keys():
+                original_model = base_models[key]
+                # Override
+                if issubclass(model, original_model):
+                    log.very_verbose("Overriding model %s" % key)
+                    cls.models[key] = model
+                    continue
+
+            # Otherwise just append
+            cls.models[key] = model
+
+        if len(cls.models) > 0:
+            log.verbose("Loaded models")
+
+    @classmethod
+    def set_variables(cls, envvars):
+        cls.variables = envvars
 
     def init_app(self, app):
         app.teardown_appcontext(self.teardown)
@@ -52,25 +79,20 @@ class BaseExtension(metaclass=abc.ABCMeta):
         if not isinstance(key, str):
             key = str(key)
 
-        return ref, key
+        return ref + key
 
-    def set_object(self, obj, key="unknown", ref=None):
+    def set_object(self, obj, key='[]', ref=None):
         """ set object into internal array """
 
-        ref, key = self.pre_object(ref, key)
-
-        if ref not in self.objs:
-            self.objs[ref] = {}
-
-        self.objs[ref][key] = obj
-
+        h = self.pre_object(ref, key)
+        self.objs[h] = obj
         return obj
 
-    def get_object(self, key="unknown", ref=None):
+    def get_object(self, key='[]', ref=None):
         """ recover object if any """
 
-        ref, key = self.pre_object(ref, key)
-        obj = self.objs.get(ref, {}).get(key, None)
+        h = self.pre_object(ref, key)
+        obj = self.objs.get(h, None)
         return obj
 
     def connect(self, **kwargs):
@@ -79,53 +101,30 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
         # BEFORE
         self.pre_connection(**kwargs)
+
         # Try until it's connected
         if len(kwargs) > 0:
             obj = self.custom_connection(**kwargs)
         else:
             obj = self.retry()
             log.info("Connected! %s" % self.name)
+
         # AFTER
         self.post_connection(obj, **kwargs)
-        # FINISH: we set models (empty by default)
-        if obj is not None:
-            obj = self.set_models_to_service(obj)
-
         return obj
 
     def set_models_to_service(self, obj):
 
+        if len(self.models) < 1 and self.__class__.__name__ == 'NeoModel':
+            raise Exception()
+
         for name, model in self.models.items():
             # Save attribute inside class with the same name
-            log.debug("Injecting model '%s'" % name)
+            log.very_verbose("Injecting model '%s'" % name)
             setattr(obj, name, model)
+            obj.models = self.models
 
         return obj
-
-    def initialization(self, obj=None):
-        """ Init operations require the app context """
-
-        # # TODO: check in environment variables if to use context or not?
-        # if self.variables.get('init_with_ctx', False):
-        with self.app.app_context():
-            self.custom_initialization(obj)
-
-    def project_initialization(self):
-        """ Custom initialization of your project
-
-        Please define your class Initializer in
-        vanilla/project/initialization.py
-        """
-
-        try:
-            module_path = "%s.%s.%s" % \
-                (CUSTOM_PACKAGE, 'project', 'initialization')
-            module = meta.get_module_from_string(module_path)
-            Initializer = meta.get_class_from_string('Initializer', module)
-            Initializer()
-            log.debug("Project has been initialized")
-        except BaseException:
-            log.debug("No custom init available for mixed services")
 
     def set_connection_exception(self):
         return None
@@ -147,8 +146,8 @@ class BaseExtension(metaclass=abc.ABCMeta):
             try:
                 obj = self.custom_connection()
             except exceptions as e:
-                log.info("Service '%s' not available", self.name)
-                log.debug("error is: %s(%s)" % (type(e), e))
+                log.warning("Service '%s' not available", self.name)
+                log.info("error is: %s(%s)" % (type(e), e))
                 time.sleep(retry_interval)
             else:
                 break
@@ -167,33 +166,33 @@ class BaseExtension(metaclass=abc.ABCMeta):
         unique_hash = str(sorted(kwargs.items()))
         log.very_verbose("instance hash: %s" % unique_hash)
 
+        # When using the context, this is the first connection
         if ctx is None:
-
             # First connection, before any request
             obj = self.connect()
-            self.initialization(obj=obj)
+            # self.initialization(obj=obj)
             self.set_object(obj=obj, ref=self)
 
-            # Once among the whole service, and as the last one:
-            if self.name == 'authenticator':
-                self.project_initialization()
+            # NOTE: moved into detect.py
+            # # Once among the whole service, and as the last one:
+            # if self.name == 'authenticator':
+            #     self.project_initialization()
 
             log.very_verbose("First connection for service %s" % self.name)
 
         else:
             if global_instance:
-                # TODO: IMPORTANT! check if self is having only one instance
-                # which makes it global
-                reference = self
+                ref = self
             else:
-                reference = ctx
+                ref = ctx
 
-            obj = self.get_object(ref=reference, key=unique_hash)
+            obj = self.get_object(ref=ref, key=unique_hash)
             if obj is None:
                 obj = self.connect(**kwargs)
-                self.set_object(obj=obj, ref=reference, key=unique_hash)
+                self.set_object(obj=obj, ref=ref, key=unique_hash)
+            log.verbose("Instance %s(%s)" % (ref.__class__.__name__, obj))
 
-            log.verbose("Instance: %s(%s)" % (reference, obj))
+        obj = self.set_models_to_service(obj)
 
         return obj
 
@@ -213,74 +212,47 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
         # obj = self.get_object(ref=ctx)
         # obj.close()
-        self.set_object(obj=None, ref=ctx)  # to be overriden in case
+        self.set_object(obj=None, ref=ctx)  # it could be overidden
 
     ############################
-    # TO BE OVERRIDDEN
-    @abc.abstractmethod
-    def custom_initialization(self, obj=None):
-        pass
-
+    # To be overridden
     @abc.abstractmethod
     def custom_connection(self):
         return
 
+    ############################
+    # Already has default
+    def custom_init(self, obj=None):
+        return self.get_instance()
 
-class BaseInjector(Module, metaclass=abc.ABCMeta):
 
-    _models = {}
-    _variables = {}
-    singleton = singleton
-    extension_instance = None
-    injected_name = 'unknown'
+class BaseInjector(Module):
 
-    def __init__(self, app, extra_service=None):
-        self.app = app
-        self.extra_service = extra_service
+    # def __init__(self, **kwargs):
+    #     self.args = kwargs
 
     @classmethod
-    def set_models(cls, base_models={}, custom_models={}):
-
-        # Join models as described by issue #16
-        cls._models = base_models
-        for key, model in custom_models.items():
-
-            # Verify if overriding
-            if key in base_models.keys():
-                original_model = base_models[key]
-                # Override
-                if issubclass(model, original_model):
-                    log.very_verbose("Overriding model %s" % key)
-                    cls._models[key] = model
-                    continue
-
-            # Otherwise just append
-            cls._models[key] = model
-
-        if len(cls._models) > 0:
-            log.very_verbose("Loaded models")
+    def set_extension_class(cls, ExtensionClass):
+        if hasattr(cls, '_extClass'):
+            raise("Extension class was already set")
+        cls._extClass = ExtensionClass
 
     @classmethod
-    def set_variables(cls, envvars):
-        cls._variables = envvars
+    def get_extension_class(cls):
+        if not hasattr(cls, '_extClass'):
+            raise("Extension class was not set at 'service detection' time")
+        return cls._extClass
 
-    def configure(self, binder):
+    # @provider
+    # @singleton
+    # def provide_ext(self, app: Flask) -> BaseExtension:
+    @inject
+    def configure(self, binder, app: Flask):
+
+        # TODO: recheck soon on new versions of Flask-Injector...
 
         # Get the Flask extension and its instance
-        FlaskExtClass, flask_ext_obj = self.custom_configure()
-
-        # Passing the extra service for authentication
-        flask_ext_obj.extra_service = self.extra_service
-
-        # Binding between the class and the instance, for Flask requests
-        self.extension_instance = flask_ext_obj
-
-        # Connect for the first time and initialize
-        flask_ext_obj.get_instance()
-
-        binder.bind(FlaskExtClass, to=flask_ext_obj, scope=self.singleton)
-        return binder
-
-    @abc.abstractmethod
-    def custom_configure(self):
-        return
+        MyClass = self.get_extension_class()
+        # my_instance = MyClass(app, **self.args)
+        return binder.bind(MyClass, to=MyClass(app), scope=singleton)
+        # return my_instance

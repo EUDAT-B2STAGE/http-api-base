@@ -8,100 +8,248 @@ Note: links and automatic variables were removed as unsafe
 """
 
 import os
+# from functools import lru_cache
 from rapydo.confs import CORE_CONFIG_PATH
+from rapydo.confs import CUSTOM_PACKAGE
 from rapydo.utils.meta import Meta
 from rapydo.utils.formats.yaml import load_yaml_file
+
 from rapydo.utils.logs import get_logger
 
 
 log = get_logger(__name__)
 
-meta = Meta()
-services_configuration = load_yaml_file('services', path=CORE_CONFIG_PATH)
 
-authentication_service = None
-services = {}
-services_classes = {}
-available_services = {}
+class Detector(object):
 
-# Work off all available services
-for service in services_configuration:
+    def __init__(self, config_file_name='services'):
 
-    name = service.get('name')
-    prefix = service.get('prefix').lower() + '_'
+        self.authentication_service = None
+        self.injected_auth_name = None
+        self.modules = []
+        self.services_configuration = []
+        self.services = {}
+        self.services_classes = {}
+        self.extensions_instances = {}
+        self.available_services = {}
 
-    # Was this service enabled from the developer?
-    enable_var = prefix.upper() + 'ENABLE'
-    available_services[name] = os.environ.get(enable_var, False)
+        self.meta = Meta()
+        self.check_configuration(config_file_name)
+        self.load_classes()
 
-    if available_services.get(name):
-        log.verbose("Service %s enabled" % name)
+    @staticmethod
+    def get_bool_from_os(name):
+        bool_var = os.environ.get(name, False)
+        if not isinstance(bool_var, bool):
+            tmp = int(bool_var)
+            bool_var = bool(tmp)
+        return bool_var
 
-        # Is this service external?
-        external_var = prefix + 'EXTERNAL'
-        if os.environ.get(external_var) is None:
-            os.environ[external_var] = "False"
+    @staticmethod
+    # @lru_cache(maxsize=None)
+    def prefix_name(service):
+        return \
+            service.get('name'), \
+            service.get('prefix').lower() + '_'
 
-        ###################
-        # Read variables
+    def check_configuration(self, config_file_name):
+
+        self.services_configuration = load_yaml_file(
+            file=config_file_name, path=CORE_CONFIG_PATH)
+
+        for service in self.services_configuration:
+
+            name, prefix = self.prefix_name(service)
+
+            # Was this service enabled from the developer?
+            enable_var = str(prefix + 'enable').upper()
+            self.available_services[name] = self.get_bool_from_os(enable_var)
+            if self.available_services[name]:
+
+                # read variables
+                variables = self.load_variables(service, enable_var, prefix)
+                service['variables'] = variables
+
+                # set auth service
+                if name == 'authentication':
+                    self.authentication_service = variables.get('service')
+
+        # log.pp(self.services_configuration)
+
+        if self.authentication_service is None:
+            raise AttributeError("no service defined behind authentication")
+        else:
+            log.info("Authentication based on '%s' service"
+                     % self.authentication_service)
+
+    def load_variables(self, service, enable_var=None, prefix=None):
+
         variables = {}
+
+        if prefix is None:
+            _, prefix = self.prefix_name(service)
+
         for var, value in os.environ.items():
-            if var == enable_var:
+            if enable_var is not None and var == enable_var:
                 continue
             var = var.lower()
             if var.startswith(prefix):
                 key = var[len(prefix):]
                 variables[key] = value
 
+        # Is this service external?
+        external_var = str(prefix + 'external').upper()
+        variables['external'] = self.get_bool_from_os(external_var)
+
+        # move injected name from service configuration to variables
         key = 'injected_name'
         variables[key] = service.get(key)
+        return variables
 
-        if name == 'authentication':
-            authentication_service = variables.get('service')
+    def load_class_from_module(self, classname='BaseInjector', service=None):
 
-        ###################
-        # Load module and get class and configuration
-        flaskext = service.get('extension')
+        if service is None:
+            flaskext = ''
+        else:
+            flaskext = '.' + service.get('extension')
 
         # Try inside our extensions
-        module = meta.get_module_from_string(
-            modulestring='flask_ext.' + flaskext, exit_on_fail=True)
+        module = self.meta.get_module_from_string(
+            modulestring='flask_ext' + flaskext, exit_on_fail=True)
         if module is None:
-            log.error("Missing %s for service %s" % (flaskext, name))
-            exit(1)
-        else:
-            log.very_verbose("Loaded external extension %s" % name)
+            log.critical_exit("Missing %s for %s" % (flaskext, service))
 
-        ###################
-        Configurator = getattr(module, service.get('injector'))
-        # Passing variables
-        Configurator.set_variables(variables)
-        # Passing models
-        if service.get('load_models'):
-            Configurator.set_models(
-                meta.import_models(name, custom=False),
-                meta.import_models(name, custom=True, exit_on_fail=False)
-            )
-        else:
-            log.very_verbose("Skipping models")
+        return getattr(module, classname)
 
-        ###################
-        Class = getattr(module, service.get('class'))
+    def load_classes(self):
 
-        # ###################
-# TO DO: elaborate this OPTIONAL concept
-        # # Is this service optional?
-        # variables.get('optional', False)
-        # print(variables)
+        for service in self.services_configuration:
 
-        # Save services
-        services[name] = Configurator
-        services_classes[name] = Class
+            name, _ = self.prefix_name(service)
 
-    else:
-        log.very_verbose("Skipping service %s" % name)
+            if self.available_services.get(name):
+                log.very_verbose("Looking for class %s" % name)
+            else:
+                continue
 
-if authentication_service is None:
-    raise AttributeError("Missing config: no service behind authentication")
-else:
-    log.info("Authentication based on: '%s' service" % authentication_service)
+            if name == self.authentication_service:
+                self.injected_auth_name = service.get('injected_name')
+
+            variables = service.get('variables')
+            ext_name = service.get('class')
+
+            # Get the existing class
+            MyClass = self.load_class_from_module(ext_name, service=service)
+
+            # Passing variables
+            MyClass.set_variables(variables)
+
+            # Passing models
+            if service.get('load_models'):
+                MyClass.set_models(
+                    self.meta.import_models(name, custom=False),
+                    self.meta.import_models(
+                        name, custom=True, exit_on_fail=False)
+                )
+            else:
+                log.very_verbose("Skipping models")
+
+            # Save
+            self.services_classes[name] = MyClass
+            log.debug("Got class definition for %s" % MyClass)
+
+        if len(self.services_classes) < 1:
+            raise KeyError("No classes were recovered!")
+
+        return self.services_classes
+
+    def init_services(self, app):
+
+        instances = {}
+        auth_backend = None
+
+        for service in self.services_configuration:
+
+            name, _ = self.prefix_name(service)
+
+            if not self.available_services.get(name):
+                continue
+
+            if name == 'authentication' and auth_backend is None:
+                raise ValueError("No backend service recovered")
+
+            ExtClass = self.services_classes.get(name)
+            ext_instance = ExtClass(app)
+
+            log.debug("Initializing %s" % name)
+            service_instance = ext_instance.custom_init(auth_backend)
+            instances[name] = service_instance
+
+            if name == self.authentication_service:
+                auth_backend = service_instance
+
+            self.extensions_instances[name] = ext_instance
+
+        self.project_initialization(instances)
+
+        if len(self.extensions_instances) < 1:
+            raise KeyError("No instances available for modules")
+
+        return self.extensions_instances
+
+    def load_injector_modules(self):
+
+        for service in self.services_configuration:
+
+            name, _ = self.prefix_name(service)
+            if not self.available_services.get(name):
+                continue
+
+            # Module for injection
+            ModuleBaseClass = self.load_class_from_module()
+            # Create modules programmatically 8)
+            MyModule = self.meta.metaclassing(
+                ModuleBaseClass, service.get('injector'))
+
+            # Recover class
+            MyClass = self.services_classes.get(name)
+            if MyClass is None:
+                raise AttributeError("No class found for %s" % name)
+            MyModule.set_extension_class(MyClass)
+            self.modules.append(MyModule)
+
+        return self.modules
+
+    def check_availability(self, name):
+
+        if '.' in name:
+            # In this case we are receiving a module name
+            # e.g. rapydo.services.mongodb
+            name = name.split('.')[::-1][0]
+
+        return self.available_services.get(name)
+
+    @classmethod
+    def project_initialization(self, instances):
+        """ Custom initialization of your project
+
+        Please define your class Initializer in
+        vanilla/project/initialization.py
+        """
+
+        log.warning("Global project initialization to be fullfilled")
+        # print("INIT WHATEVER?", instances, "\n\n")
+
+        try:
+            module_path = "%s.%s.%s" % \
+                (CUSTOM_PACKAGE, 'project', 'initialization')
+            module = self.meta.get_module_from_string(module_path)
+            Initializer = self.meta.get_class_from_string(
+                'Initializer', module)
+            Initializer()
+            log.debug("Project has been initialized")
+        except BaseException:
+            log.debug("No custom init available for mixed services")
+
+
+detector = Detector()

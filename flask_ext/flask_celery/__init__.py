@@ -66,13 +66,3 @@ class CeleryExt(BaseExtension):
         self.celery_app.conf.CELERY_RESULT_SERIALIZER = 'json'
 
         return self.celery_app
-
-    def custom_initialization(self, obj=None):
-        pass
-
-
-class CeleryInjector(BaseInjector):
-
-    def custom_configure(self):
-        celery = CeleryExt(self.app, self._variables)
-        return CeleryExt, celery

@@ -25,7 +25,8 @@ irods.exception.NetworkException:
 
 class IrodsPythonExt(BaseExtension):
 
-    def prepare_session(self, user=None):
+    # def prepare_session(self, user=None):
+    def pre_connection(self, user=None):
         if user is None:
             self.user = self.variables.get('default_admin_user')
             # Note: 'user' is referring to the main user inside iCAT
@@ -64,7 +65,6 @@ class IrodsPythonExt(BaseExtension):
         return irods_session
 
     def custom_connection(self):
-        # self.prepare_session()
         obj = self.session()
 
         # Do a simple command to test this session
@@ -73,18 +73,3 @@ class IrodsPythonExt(BaseExtension):
 
         client = IrodsPythonClient(obj)
         return client
-
-    def custom_initialization(self, obj=None):
-        log.verbose("No initialization for now in irods?")
-        pass
-
-
-class RPCInjector(BaseInjector):
-
-    def custom_configure(self):
-        # note: no models
-        rpc = IrodsPythonExt(self.app, self._variables)  # , self._models)
-        # set session variables once
-        rpc.prepare_session()
-
-        return IrodsPythonExt, rpc

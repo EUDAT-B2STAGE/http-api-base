@@ -10,7 +10,7 @@ from datetime import datetime
 from flask import jsonify, current_app
 
 from rapydo.rest.definition import EndpointResource
-from rapydo.services.detect import available_services
+from rapydo.services.detect import detector
 from rapydo.services.authentication import BaseAuthentication
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.globals import mem
@@ -23,21 +23,7 @@ class Status(EndpointResource):
     """ API online client testing """
 
     def get(self):
-
-        ##############################
-        # # A test for auth:
-        # print("YEAH", self.auth)
-        # print("YEAH", self.db.Role)
-
-        # # ##############################
-        # sql = self.get_service_instance('db', user="pippo", peppe="franco")
-        # print("sql", sql)
-        # # print("sql", sql.Role)
-
-        # ##############################
-        neo = self.get_service_instance('neo', user="pippo", peppe="franco")
-        print("graph", neo)
-
+        # print(self.auth)
         return 'Server is alive!'
 
 
@@ -90,14 +76,13 @@ class Login(EndpointResource):
                 message="Credentials: missing 'username' and/or 'password'",
                 code=bad_code)
 
-        # auth instance from the global namespace
         token, jti = self.auth.make_login(username, password)
         if token is None:
             return self.send_errors(
                 message="Credentials: invalid username and/or password",
                 code=bad_code)
 
-        self.auth.save_token(self.auth._user, token, jti)
+        self.auth.save_token(user=self.auth._user, token=token, jti=jti)
 
         # TO FIX: split response as above in access_token and token_type?
         # # The right response should be the following
@@ -298,7 +283,7 @@ class Admin(EndpointResource):
 ###########################
 # In case you have celery queue,
 # you get a queue endpoint for free
-if available_services.get('celery'):
+if detector.check_availability('celery'):
 
     class Queue(EndpointResource):
 

@@ -8,13 +8,13 @@ Celery tasks
 import os
 from rapydo.utils.logs import get_logger
 from celery import Celery
-from rapydo.services.detect import available_services
+from rapydo.services.detect import detector
 
 log = get_logger(__name__)
 
 log.critical("This code should not be called anymore!")
 
-if available_services.get('celery'):
+if detector.check_availability('celery'):
 
     HOST = os.environ.get('QUEUE_NAME').split('/')[::-1][0]
     PORT = int(os.environ.get('QUEUE_PORT').split(':')[::-1][0])
