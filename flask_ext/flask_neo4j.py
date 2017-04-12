@@ -5,10 +5,28 @@
 import socket
 import neo4j
 from neomodel import db, config
-from flask_ext import BaseInjector, BaseExtension, get_logger
+from flask_ext import BaseExtension, get_logger
 from rapydo.utils.logs import re_obscure_pattern
 
 log = get_logger(__name__)
+
+
+class NeomodelClient():
+
+    def __init__(self, db):
+        self.db = db
+
+    def cypher(self, query):
+        """ Execute normal neo4j queries """
+        from neomodel import db
+        try:
+            results, meta = db.cypher_query(query)
+        except Exception as e:
+            raise Exception(
+                "Failed to execute Cypher Query: %s\n%s" % (query, str(e)))
+            return False
+        # log.debug("Graph query.\nResults: %s\nMeta: %s" % (results, meta))
+        return results
 
 
 class NeoModel(BaseExtension):
@@ -44,4 +62,7 @@ class NeoModel(BaseExtension):
         db.url = self.uri
         db.set_connection(self.uri)
 
-        return db
+        client = NeomodelClient(db)
+        return client
+
+        # return db
