@@ -7,9 +7,7 @@ Interesting reading:
 http://flask.pocoo.org/docs/0.11/patterns/fileuploads/
 https://philsturgeon.uk/api/2016/01/04/http-rest-api-file-uploads/
 
-Note:
-originally developed for POST,
-should/could be used also for PUT
+Note: originally developed for POST, should/could be used also for PUT
 http://stackoverflow.com/a/9533843/2114395
 
 """

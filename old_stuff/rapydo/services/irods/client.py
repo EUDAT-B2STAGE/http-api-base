@@ -103,8 +103,7 @@ class IrodsException(RestApiException):
     def parseIrodsError(self, error):
         error = str(error)
         log.debug("*%s*" % error)
-# // TO FIX:
-# this gets called twice
+        # TO FIX: this gets called twice
 
         # Error example:
         # ERROR: mkdirUtil: mkColl of /abs/path/to/resource error.
@@ -209,9 +208,8 @@ class ICommands(BashCommands):
         return resources
 
     def get_default_resource_admin(self, skip=['bundleResc']):
-# // TO FIX:
-# find out the right way to get the default irods resource
-# note: we could use ienv
+        # TO FIX: find out the right way to get the default irods resource
+        # note: we could use ienv
         resources = self.get_resources_admin()
         if len(resources) > 0:
             # Remove strange resources
@@ -225,13 +223,11 @@ class ICommands(BashCommands):
 
         if user is None:
             user = self.get_current_user()
-# // TO FIX:
-# don't we have an irods command for this?
         return os.path.join(
             self.get_current_zone(prepend_slash=True), 'home', user)
 
     def get_current_zone(self, prepend_slash=False):
-# note: we could also use ienv (as admin?)
+        # note: we could also use ienv (as admin?)
         userdata = self.get_user_info()
         zone = userdata['zone']
         if prepend_slash:
@@ -785,7 +781,6 @@ class ICommands(BashCommands):
 
         return data
 
-# // TO FIX:
     def get_current_user_environment(self):
         com = 'ienv'
         output = self.basic_icom(com)
@@ -987,8 +982,6 @@ class ICommands(BashCommands):
 
     @lru_cache(maxsize=4)
     def get_user_info(self, username=None):
-## // TO FIX:
-# should we cache this method?
         com = 'iuserinfo'
         args = []
         if username is not None:
@@ -1010,8 +1003,6 @@ class ICommands(BashCommands):
             else:
                 data[key] = value
         data['groups'] = groups
-        # from beeprint import pp
-        # pp(data)
         return data
 
     def user_has_group(self, username, groupname):
@@ -1390,7 +1381,6 @@ class IMetaCommands(ICommands):
 #         metas = {}
 
 #         if appconfig.mocking():
-# # // TO FIX:
 #             empty = ""
 # # Generate random
 # # e.g. irods://130.186.13.14:1247/cinecaDMPZone/home/pdonorio/replica/test2
