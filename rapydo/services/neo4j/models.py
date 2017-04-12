@@ -190,7 +190,12 @@ class StructuredNode(originalStructuredNode):
     These methods use custom flags set in myAttribProperty instances and in
     RelationshipDefinition instances (as modified by the custom functions
     RelationshipTo and RelationshipFrom)
+
+    Note: abstract nodes to be used as base have to use a configuration like:
+    http://j.mp/2o54N47 (neomodel readthedocs)
     """
+
+    __abstract_node__ = True
 
     @classmethod
     def show_fields(cls, view_public_only=False):
@@ -253,6 +258,8 @@ class IdentifiedNode(StructuredNode):
         A StructuredNode identified by an uuid
     """
 
+    __abstract_node__ = True
+
     # TO FIX: now we should use:
     # uuid = UniqueIdProperty
     uuid = StringProperty(default=getUUID, unique_index=True)
@@ -263,6 +270,8 @@ class TimestampedNode(IdentifiedNode):
     """
         An IdentifiedNode with creation and modification dates
     """
+
+    __abstract_node__ = True
 
     created = DateTimeProperty(default_now=True, show=True)
     modified = DateTimeProperty(default_now=True, show=True)
