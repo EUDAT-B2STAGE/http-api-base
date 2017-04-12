@@ -35,38 +35,34 @@ class EndpointResource(Resource):
     """
 
     @inject(**detector.services_classes)
-    def __init__(self, **services_extensions):
+    def __init__(self, **services):
+
+        if len(services) < 1:
+            raise AttributeError("No services available for requests...")
 
         # Init original class
         super(EndpointResource, self).__init__()
 
-        self.services_extensions = services_extensions
-        self.load_services()
+        self.services = services
         self.load_authentication()
         self.init_parameters()
 
     def myname(self):
         return self.__class__.__name__
 
-    def load_services(self):
-        """ Save extensions for getting service instances """
-        self.services = {}
-        for name, extension in self.services_extensions.items():
-            self.services[extension.injected_name] = extension
-        if len(self.services) < 1:
-            raise AttributeError("No services available for requests...")
-        return self.services
-
-    def load_authentication(self, auth_name='auth'):
+    def load_authentication(self):
         # Authentication instance is always needed at each request
-        self.auth = self.get_service_instance(auth_name)
-        auth_backend = self.get_service_instance(detector.injected_auth_name)
+        self.auth = self.get_service_instance(detector.authentication_name)
+        auth_backend = self.get_service_instance(
+            detector.authentication_service)
         self.auth.db = auth_backend
 
         # Set parameters to be used
 
     def get_service_instance(self, service_name, **kwargs):
         farm = self.services.get(service_name)
+        if farm is None:
+            raise AttributeError("Service %s not found" % service_name)
         instance = farm.get_instance(**kwargs)
         return instance
 

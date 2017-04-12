@@ -7,7 +7,6 @@
   extension: flask_neo4j
   class: NeoModel
   injector: NeoInjector
-  injected_name: neo
 
   # irods commands
 - name: irods
@@ -17,7 +16,6 @@
   extension: flask_irods
   class: IrodsPythonExt
   injector: RPCInjector
-  injected_name: rpc
 
   # sqlalchemy
 - name: sqlalchemy
@@ -27,7 +25,6 @@
   extension: flask_alchemy
   class: SqlAlchemy
   injector: SqlInjector
-  injected_name: db
 
   # celery
 - name: celery
@@ -37,14 +34,12 @@
   extension: flask_celery
   class: CeleryExt
   injector: CeleryInjector
-  injected_name: celery
 
 ##############################
 # # OTHERS?
 # "mongo",
 # "elastic",
-# "celery",
-  # "redis",
+# "redis",
 
 # ##############################
 # # THIS HAS TO BE THE LAST ONE
@@ -58,4 +53,3 @@
   extension: flask_auth
   class: Authenticator
   injector: AuthInjector
-  injected_name: auth

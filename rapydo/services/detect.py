@@ -4,7 +4,8 @@
 Detect which services are running, by testing environment variables
 set with containers/docker-compose/do.py
 
-Note: links and automatic variables were removed as unsafe
+Note: docker links and automatic variables removed as unsafe with compose V3
+
 """
 
 import os
@@ -25,7 +26,7 @@ class Detector(object):
     def __init__(self, config_file_name='services'):
 
         self.authentication_service = None
-        self.injected_auth_name = None
+        self.authentication_name = 'authentication'
         self.modules = []
         self.services_configuration = []
         self.services = {}
@@ -71,7 +72,7 @@ class Detector(object):
                 service['variables'] = variables
 
                 # set auth service
-                if name == 'authentication':
+                if name == self.authentication_name:
                     self.authentication_service = variables.get('service')
 
         # log.pp(self.services_configuration)
@@ -101,9 +102,6 @@ class Detector(object):
         external_var = str(prefix + 'external').upper()
         variables['external'] = self.get_bool_from_os(external_var)
 
-        # move injected name from service configuration to variables
-        key = 'injected_name'
-        variables[key] = service.get(key)
         return variables
 
     def load_class_from_module(self, classname='BaseInjector', service=None):
@@ -131,9 +129,6 @@ class Detector(object):
                 log.very_verbose("Looking for class %s" % name)
             else:
                 continue
-
-            if name == self.authentication_service:
-                self.injected_auth_name = service.get('injected_name')
 
             variables = service.get('variables')
             ext_name = service.get('class')

@@ -29,9 +29,6 @@ class BaseExtension(metaclass=abc.ABCMeta):
         if app is not None:
             self.init_app(app)
 
-        self.injected_name = self.variables.get('injected_name')
-        # log.very_verbose("Vars: %s" % self.variables)
-
     def set_name(self):
         """ a different name for each extended object """
         self.name = self.__class__.__name__.lower()
