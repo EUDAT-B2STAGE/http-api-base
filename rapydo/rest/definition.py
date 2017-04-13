@@ -54,7 +54,7 @@ class EndpointResource(Resource):
         # Authentication instance is always needed at each request
         self.auth = self.get_service_instance(
             detector.authentication_name,
-            global_instance=False
+            authenticator=True
         )
         auth_backend = self.get_service_instance(
             detector.authentication_service)
