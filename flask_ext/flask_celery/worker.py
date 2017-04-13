@@ -12,13 +12,8 @@ So we made some improvement along the code.
 """
 
 from rapydo.server import create_app
-# from rapydo.services.celery.celery import celery_app
 from rapydo.utils.meta import Meta
 from rapydo.utils.logs import get_logger
-from rapydo.services.detect import services
-# from rapydo.services.detect import services_classes as injectable_services
-# from flask_ext.flask_celery import CeleryExt
-# from injector import inject
 
 log = get_logger(__name__)
 
@@ -27,35 +22,15 @@ log = get_logger(__name__)
 # This is necessary to have the app context available
 app = create_app(worker_mode=True)
 
-# Recover celery app with current app
-# celery_app = MyCelery(app)._current
+celery_app = app.extensions.get('celery').celery_app
+celery_app.app = app
 
-# celery_app = MyCelery(app)._current
 
-# log.pp(injectable_services['celery'].__dict__)
+def get_service(service):
+    return celery_app.app.extensions.get(service).get_instance()
 
-celery_injector = services.get('celery')(app)
-cls, ext = celery_injector.custom_configure(app)
 
-celery_app = ext.custom_connection(worker_mode=True)
-
-# with app.app_context() as ctx:
-#     class CeleryWorker(Resource):
-
-#         @inject(**injectable_services)
-#         def __init__(self, **injected_services):
-
-#             log.pp(injected_services)
-
-# CeleryWorker()
-# def get_connection():
-
-#     # ??.custom_connection()
-#     return None
-
-# celery_app = get_connection()
-
-log.debug("Celery %s" % celery_app)
+celery_app.get_service = get_service
 
 ################################################
 # Import tasks modules to make sure all tasks are available
@@ -65,4 +40,6 @@ meta = Meta()
 # # Base tasks
 # submodules = meta.import_submodules_from_package(main_package + "base")
 # # Custom tasks
-# submodules = meta.import_submodules_from_package(main_package + "custom")
+submodules = meta.import_submodules_from_package("telethon.tasks")
+
+log.debug("Celery worker is ready %s" % celery_app)
