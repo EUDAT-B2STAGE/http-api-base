@@ -290,7 +290,7 @@ if detector.check_availability('celery'):
         def get(self, task_id=None):
 
             # Inspect all worker nodes
-            celery = self.get_service_yyinstance('celery')
+            celery = self.get_service_instance('celery')
             workers = celery.control.inspect()
 
             data = []
