@@ -26,7 +26,8 @@ irods.exception.NetworkException:
 class IrodsPythonExt(BaseExtension):
 
     # def prepare_session(self, user=None):
-    def pre_connection(self, user=None):
+    def pre_connection(self, **kwargs):
+        user = kwargs.get('user')
         if user is None:
             self.user = self.variables.get('default_admin_user')
             # Note: 'user' is referring to the main user inside iCAT
@@ -52,8 +53,9 @@ class IrodsPythonExt(BaseExtension):
         self._hostdn = Certificates.get_dn_from_cert(
             user='host', certfilename='hostcert')
 
-    def session(self):
-        irods_session = iRODSSession(
+    def custom_connection(self, **kwargs):
+
+        obj = iRODSSession(
             user=self.user,
             zone=self.variables.get('zone'),
             # password='thisismypassword', # authentication_scheme='password',
@@ -62,10 +64,6 @@ class IrodsPythonExt(BaseExtension):
             port=self.variables.get('port'),
             server_dn=self._hostdn,
         )
-        return irods_session
-
-    def custom_connection(self):
-        obj = self.session()
 
         # Do a simple command to test this session
         u = obj.users.get(self.user)

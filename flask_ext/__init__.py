@@ -214,7 +214,7 @@ class BaseExtension(metaclass=abc.ABCMeta):
     ############################
     # To be overridden
     @abc.abstractmethod
-    def custom_connection(self):
+    def custom_connection(self, **kwargs):
         return
 
     ############################
