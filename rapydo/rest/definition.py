@@ -52,18 +52,22 @@ class EndpointResource(Resource):
 
     def load_authentication(self):
         # Authentication instance is always needed at each request
-        self.auth = self.get_service_instance(detector.authentication_name)
+        self.auth = self.get_service_instance(
+            detector.authentication_name,
+            global_instance=False
+        )
         auth_backend = self.get_service_instance(
             detector.authentication_service)
         self.auth.db = auth_backend
 
         # Set parameters to be used
 
-    def get_service_instance(self, service_name, **kwargs):
+    def get_service_instance(self, service_name,
+                             global_instance=True, **kwargs):
         farm = self.services.get(service_name)
         if farm is None:
             raise AttributeError("Service %s not found" % service_name)
-        instance = farm.get_instance(**kwargs)
+        instance = farm.get_instance(global_instance=global_instance, **kwargs)
         return instance
 
     def init_parameters(self):
