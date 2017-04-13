@@ -63,16 +63,19 @@ class SqlAlchemy(BaseExtension):
         return db
 
     def custom_init(self, db=None):
+        """
+            Note: we ignore db here, as it would be just a component
+            for authentication...
+        """
 
-        # # TO FIX: this option would go inside the configuration file?
+        # recover instance with the parent method
+        db = super().custom_init()
+
+        # TO FIX: this option would go inside the configuration file?
         # if config.REMOVE_DATA_AT_INIT_TIME:
         # if self.variables('remove_data_at_init_time'):
         #     log.warning("Removing old data")
         #     self._db.drop_all()
-
-        # recover instance with the parent method
-        if db is None:
-            db = super().custom_init()
 
         # do init_app on the original flask sqlalchemy extension
         db.init_app(self.app)

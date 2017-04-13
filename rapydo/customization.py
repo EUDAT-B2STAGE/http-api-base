@@ -30,13 +30,14 @@ class Customizer(object):
     """
     Customize your BACKEND:
     Read all of available configurations and definitions.
-
     """
-    def __init__(self, testing=False, production=False):
+
+    def __init__(self, testing=False, production=False, init=False):
 
         # Input
         self._testing = testing
         self._production = production
+        self._initiliazing = init
 
         # Some initialization
         self._endpoints = []
@@ -49,9 +50,10 @@ class Customizer(object):
         # Do things
         self.do_config()
 
-        self.do_schema()
-        self.find_endpoints()
-        self.do_swagger()
+        if not self._initiliazing:
+            self.do_schema()
+            self.find_endpoints()
+            self.do_swagger()
 
     def do_config(self):
         ##################

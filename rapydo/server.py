@@ -5,7 +5,6 @@ The Main server factory.
 We create all the internal flask components here.
 """
 
-# import click
 import rapydo.confs as config
 import warnings
 from flask import Flask as OriginalFlask, request
@@ -74,13 +73,14 @@ class Flask(OriginalFlask):
 ########################
 # Flask App factory    #
 ########################
-def create_app(name=__name__, worker_mode=False, testing_mode=False,
+def create_app(name=__name__,
+               worker_mode=False, testing_mode=False, init_mode=False,
                enable_security=True, skip_endpoint_mapping=False, **kwargs):
     """ Create the server istance for Flask application """
 
     #############################
     # Initialize reading of all files
-    mem.customizer = Customizer(testing_mode, PRODUCTION)
+    mem.customizer = Customizer(testing_mode, PRODUCTION, init_mode)
     # TO FIX: try to remove mem. from everywhere...
 
     #################################################
@@ -89,16 +89,28 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
     microservice = Flask(name, **kwargs)
 
     ##############################
-    # Fix proxy wsgi for production calls
-    microservice.wsgi_app = ProxyFix(microservice.wsgi_app)
+    # Add commands to 'flask' binary
+    if init_mode:
+        microservice.config['INIT_MODE'] = init_mode
+        skip_endpoint_mapping = True
+
+        @microservice.cli.command()
+        def init():
+            """Initialize the current app"""
+            log.warning("Initialization completed")
+
+    elif testing_mode:
+        microservice.config['TESTING'] = testing_mode
+
+    # Disable security if launching celery workers
+    elif worker_mode:
+        # TO FIX: it should pass we no problems in case?
+        enable_security = False
+        skip_endpoint_mapping = True
 
     ##############################
-    # Add command line options:
-
-    # @microservice.cli.command()
-    # def init():
-    #     """Initialize the current app"""
-    #     click.echo('Init')
+    # Fix proxy wsgi for production calls
+    microservice.wsgi_app = ProxyFix(microservice.wsgi_app)
 
     ##############################
     # Cors
@@ -110,10 +122,6 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
     microservice.response_class = InternalResponse
 
     ##############################
-    # Set app internal testing mode if create_app received the parameter
-    if testing_mode:
-        microservice.config['TESTING'] = testing_mode
-
     # Flask configuration from config file
     microservice.config.from_object(config)
     log.debug("Flask app configured")
@@ -131,13 +139,6 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
         # # http://stackoverflow.com/a/17839750/2114395
         # from werkzeug.debug import DebuggedApplication
         # app.wsgi_app = DebuggedApplication(app.wsgi_app, True)
-
-    ##############################
-    # Disable security if launching celery workers
-    if worker_mode:
-        # TO FIX: it should pass we no problems in case?
-        enable_security = False
-        skip_endpoint_mapping = True
 
     ##############################
     # Find services and try to connect to the ones available
