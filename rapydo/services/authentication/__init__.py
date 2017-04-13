@@ -41,8 +41,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     ##########################
     _oauth2 = {}
     _payload = {}
-    _user = None
-    _token = None
 
     longTTL = 2592000     # 1 month in seconds
     shortTTL = 604800     # 1 week in seconds
@@ -50,6 +48,8 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     def __init__(self):
         # TODO: myinit is a class method for unittest could it be fixed?
         self.myinit()
+        self._user = None
+        self._token = None
 
     @classmethod
     def myinit(cls):
@@ -138,7 +138,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         return hashed_password == proposed_password
 
     def get_user(self):
-        # UHM?
         return self._user
 
     def get_token(self):

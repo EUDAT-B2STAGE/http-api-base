@@ -232,7 +232,7 @@ class Detector(object):
         vanilla/project/initialization.py
         """
 
-        log.warning("Global project initialization to be fullfilled")
+        log.critical("Global project initialization to be fullfilled")
         # print("INIT WHATEVER?", instances, "\n\n")
 
         try:

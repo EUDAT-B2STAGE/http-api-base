@@ -49,11 +49,13 @@ class IrodsPythonExt(BaseExtension):
         else:
             os.environ['X509_CERT_DIR'] = self.variables.get("x509_cert_dir")
 
-        # server host certificate
-        self._hostdn = Certificates.get_dn_from_cert(
-            user='host', certfilename='hostcert')
-
     def custom_connection(self, **kwargs):
+
+        # In case not set, recover from certificates we have
+        if self.variables.get('dn') is None:
+            # server host certificate
+            self.variables['dn'] = Certificates.get_dn_from_cert(
+                certdir='host', certfilename='hostcert')
 
         obj = iRODSSession(
             user=self.user,
@@ -62,7 +64,7 @@ class IrodsPythonExt(BaseExtension):
             authentication_scheme=self.variables.get('authscheme'),
             host=self.variables.get('host'),
             port=self.variables.get('port'),
-            server_dn=self._hostdn,
+            server_dn=self.variables.get('dn')
         )
 
         # Do a simple command to test this session

@@ -33,6 +33,3 @@ if __name__ == "__main__":
     # angular request on this server dropping
     # and becoming slow if not totally frozen
     app.run(host='0.0.0.0', threaded=True)
-
-    # NOTE: Now flask is launched with its own binary:
-    # http://flask.pocoo.org/docs/0.12/cli/

@@ -91,6 +91,7 @@ class Meta(object):
             # Meta language for dinamically import
             module = import_module(modulestring)
         except ModuleNotFoundError as e:
+            # if True:
             if exit_if_not_found:
                 raise e
             else:
