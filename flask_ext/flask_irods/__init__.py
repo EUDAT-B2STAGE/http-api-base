@@ -47,10 +47,6 @@ class IrodsPythonExt(BaseExtension):
         else:
             os.environ['X509_CERT_DIR'] = self.variables.get("x509_cert_dir")
 
-        # server host certificate
-        self._hostdn = Certificates.get_dn_from_cert(
-            user='host', certfilename='hostcert')
-
         if os.path.isdir(cpath):
             os.environ['X509_USER_KEY'] = os.path.join(cpath, 'userkey.pem')
             os.environ['X509_USER_CERT'] = os.path.join(cpath, 'usercert.pem')
