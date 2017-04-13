@@ -158,7 +158,7 @@ class Detector(object):
 
         return self.services_classes
 
-    def init_services(self, app, project_init=False):
+    def init_services(self, app, project_init=False, project_clean=False):
 
         instances = {}
         auth_backend = None
@@ -182,6 +182,7 @@ class Detector(object):
             log.debug("Initializing %s" % name)
             service_instance = ext_instance.custom_init(
                 pinit=project_init,
+                pdestroy=project_clean,
                 abackend=auth_backend
             )
             instances[name] = service_instance

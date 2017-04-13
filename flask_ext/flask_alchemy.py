@@ -68,10 +68,6 @@ class SqlAlchemy(BaseExtension):
         # recover instance with the parent method
         db = super().custom_init()
 
-        if pdestroy:
-            log.warning("Destroy current data")
-            db.drop_all()
-
         # do init_app on the original flask sqlalchemy extension
         db.init_app(self.app)
 
@@ -87,5 +83,10 @@ class SqlAlchemy(BaseExtension):
                 # all is fine: now create table
                 # because they should not exist yet
                 db.create_all()
+
+            if pdestroy:
+                # massive destruction
+                log.critical("Destroy current SQL data")
+                db.drop_all()
 
         return db

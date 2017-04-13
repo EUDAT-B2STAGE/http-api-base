@@ -74,8 +74,10 @@ class Flask(OriginalFlask):
 # Flask App factory    #
 ########################
 def create_app(name=__name__,
-               worker_mode=False, testing_mode=False, init_mode=False,
-               enable_security=True, skip_endpoint_mapping=False, **kwargs):
+               init_mode=False, destroy_mode=False,
+               worker_mode=False, testing_mode=False,
+               skip_endpoint_mapping=False,
+               **kwargs):
     """ Create the server istance for Flask application """
 
     #############################
@@ -98,14 +100,17 @@ def create_app(name=__name__,
         def init():
             """Initialize the current app"""
             log.warning("Initialization completed")
+    elif destroy_mode:
+        microservice.config['DESTROY_MODE'] = destroy_mode
+        skip_endpoint_mapping = True
 
+        @microservice.cli.command()
+        def destroy():
+            """Destory current data from the app"""
+            log.warning("Data removal completed")
     elif testing_mode:
         microservice.config['TESTING'] = testing_mode
-
-    # Disable security if launching celery workers
     elif worker_mode:
-        enable_security = False
-# TO FIX: no security?? @mattia
         skip_endpoint_mapping = True
 
     ##############################
@@ -142,14 +147,16 @@ def create_app(name=__name__,
 
     ##############################
     # Find services and try to connect to the ones available
-    detector.init_services(app=microservice, project_init=init_mode)
+    detector.init_services(
+        app=microservice,
+        project_init=init_mode, project_clean=destroy_mode
+    )
 
     ##############################
     # Restful plugin
     if not skip_endpoint_mapping:
         # Triggering automatic mapping of REST endpoints
-        current_endpoints = \
-            create_endpoints(EndpointsFarmer(Api), enable_security)
+        current_endpoints = create_endpoints(EndpointsFarmer(Api))
         # Restful init of the app
         current_endpoints.rest_api.init_app(microservice)
 
