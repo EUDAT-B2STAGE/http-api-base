@@ -12,7 +12,11 @@ log = get_logger(__name__)
 
 class CeleryExt(BaseExtension):
 
-    def custom_connection(self, worker_mode=False):
+    celery_app = None
+
+    def custom_connection(self, **kwargs):
+
+        worker_mode = self.args.get("worker_mode", False)
 
         broker = self.variables.get("broker")
 
@@ -44,10 +48,10 @@ class CeleryExt(BaseExtension):
             log.info("Found Redis as Celery broker %s" % BROKER_URL)
         else:
             log.error("Unable to start Celery, missing broker service")
-            self.celery_app = None
-            return self.celery_app
+            celery_app = None
+            return celery_app
 
-        self.celery_app = Celery(
+        celery_app = Celery(
             'RestApiQueue',
             backend=BACKEND_URL,
             broker=BROKER_URL,
@@ -61,8 +65,12 @@ class CeleryExt(BaseExtension):
                 log.warning("No running Celery workers were found")
 
         # Skip initial warnings, avoiding pickle format (deprecated)
-        self.celery_app.conf.CELERY_ACCEPT_CONTENT = ['json']
-        self.celery_app.conf.CELERY_TASK_SERIALIZER = 'json'
-        self.celery_app.conf.CELERY_RESULT_SERIALIZER = 'json'
+        celery_app.conf.CELERY_ACCEPT_CONTENT = ['json']
+        celery_app.conf.CELERY_TASK_SERIALIZER = 'json'
+        celery_app.conf.CELERY_RESULT_SERIALIZER = 'json'
 
-        return self.celery_app
+        if CeleryExt.celery_app is None:
+            print("Test 0")
+            CeleryExt.celery_app = celery_app
+
+        return celery_app

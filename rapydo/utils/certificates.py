@@ -5,7 +5,14 @@ Using x509 certificates
 """
 
 import os
+import re
 from OpenSSL import crypto
+from plumbum import local
+import pytz
+import dateutil.parser
+from datetime import datetime, timedelta
+
+from rapydo.basher import BashCommands
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.uuid import getUUID
 from rapydo.utils.logs import get_logger
@@ -140,3 +147,54 @@ class Certificates(object):
         log.debug('Wrote certificate to %s' % proxyfile)
 
         return proxyfile
+
+    @classmethod
+    def check_certificate_validity(cls, certfile, validity_interval=1):
+        args = ["x509", "-in", certfile, "-text"]
+
+        bash = BashCommands()
+        output = bash.execute_command("openssl", args)
+
+        pattern = re.compile(
+            r"Validity.*\n\s*Not Before: (.*)\n" +
+            r"\s*Not After *: (.*)")
+        validity = pattern.search(output).groups()
+
+        not_before = dateutil.parser.parse(validity[0])
+        not_after = dateutil.parser.parse(validity[1])
+        now = datetime.now(pytz.utc)
+        valid = \
+            (not_before < now) and \
+            (not_after > now - timedelta(hours=validity_interval))
+
+        return valid, not_before, not_after
+
+    @classmethod
+    def get_myproxy_certificate(cls, irods_env,
+                                irods_user, myproxy_cert_name, irods_cert_pwd,
+                                proxy_cert_file,
+                                duration=168,
+                                myproxy_host="grid.hpc.cineca.it"
+                                ):
+        try:
+            myproxy = local["myproxy-logon"]
+            if irods_env is not None:
+                myproxy = myproxy.with_env(**irods_env)
+
+            # output = (myproxy["-s", myproxy_host, "-l", irods_user, "-k", myproxy_cert_name, "-t", str(duration), "-o", proxy_cert_file, "-S"] << irods_cert_pwd)()
+            # log.critical(output)
+            (
+                myproxy[
+                    "-s", myproxy_host,
+                    "-l", irods_user,
+                    "-k", myproxy_cert_name,
+                    "-t", str(duration),
+                    "-o", proxy_cert_file,
+                    "-S"
+                ] << irods_cert_pwd
+            )()
+
+            return True
+        except Exception as e:
+            log.error(e)
+            return False

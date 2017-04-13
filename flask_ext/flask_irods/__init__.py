@@ -40,14 +40,67 @@ class IrodsPythonExt(BaseExtension):
         # TO FIX: move this into certificates.py?
         cdir = Certificates._dir
         cpath = os.path.join(cdir, self.user)
-        os.environ['X509_USER_KEY'] = os.path.join(cpath, 'userkey.pem')
-        os.environ['X509_USER_CERT'] = os.path.join(cpath, 'usercert.pem')
 
         # if os.environ.get('X509_CERT_DIR') is None:
         if self.variables.get("x509_cert_dir") is None:
             os.environ['X509_CERT_DIR'] = os.path.join(cdir, 'simple_ca')
         else:
             os.environ['X509_CERT_DIR'] = self.variables.get("x509_cert_dir")
+
+        if os.path.isdir(cpath):
+            os.environ['X509_USER_KEY'] = os.path.join(cpath, 'userkey.pem')
+            os.environ['X509_USER_CERT'] = os.path.join(cpath, 'usercert.pem')
+        else:
+            proxy_cert_file = cpath + '.pem'
+            if not os.path.isfile(proxy_cert_file):
+                # Proxy file does not exist
+                valid = False
+            else:
+                valid, not_before, not_after = \
+                    Certificates.check_certificate_validity(proxy_cert_file)
+                if not valid:
+                    raise Exception(
+                        "Invalid GSI certificate (%s). Validity: %s - %s"
+                        % (user, not_before, not_after)
+                    )
+
+            # Proxy file does not exist or expired
+            if not valid:
+                log.warning("Invalid proxy for %s refresh" % user)
+                try:
+
+                    irods_env = os.environ
+                    cert_name = "genome_%s" % user
+                    # cert_pwd = user_node.irods_cert
+                    cert_pwd = "YT9OOMQMXFS5"
+                    myproxy_host = "grid.hpc.cineca.it"
+
+                    valid = Certificates.get_myproxy_certificate(
+                        irods_env=irods_env,
+                        irods_user=user,
+                        myproxy_cert_name=cert_name,
+                        irods_cert_pwd=cert_pwd,
+                        proxy_cert_file=proxy_cert_file,
+                        myproxy_host=myproxy_host
+                    )
+
+                    if valid:
+                        log.info(
+                            "Proxy refreshed for %s" % user)
+                    else:
+                        log.error(
+                            "Cannot refresh proxy for user %s" % user)
+                except Exception as e:
+                    log.critical(
+                        "Cannot refresh proxy for user %s" % user)
+                    log.critical(e)
+
+            ##################
+            if valid:
+                os.environ['X509_USER_KEY'] = proxy_cert_file
+                os.environ['X509_USER_CERT'] = proxy_cert_file
+            else:
+                log.critical("Cannot find a valid certificate file")
 
     def custom_connection(self, **kwargs):
 

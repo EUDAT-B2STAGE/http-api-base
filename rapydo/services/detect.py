@@ -27,6 +27,7 @@ class Detector(object):
 
         self.authentication_service = None
         self.authentication_name = 'authentication'
+        self.task_service_name = 'celery'
         self.modules = []
         self.services_configuration = []
         self.services = {}
@@ -158,7 +159,8 @@ class Detector(object):
 
         return self.services_classes
 
-    def init_services(self, app, project_init=False, project_clean=False):
+    def init_services(self, app, worker_mode=False,
+                      project_init=False, project_clean=False):
 
         instances = {}
         auth_backend = None
@@ -173,9 +175,13 @@ class Detector(object):
             if name == self.authentication_name and auth_backend is None:
                 raise ValueError("No backend service recovered")
 
+            args = {}
+            if name == self.task_service_name:
+                args['worker_mode'] = worker_mode
+
             # Get extension class and build the extension object
             ExtClass = self.services_classes.get(name)
-            ext_instance = ExtClass(app)
+            ext_instance = ExtClass(app, **args)
             self.extensions_instances[name] = ext_instance
 
             # Initialize the real service getting the first service object
@@ -190,11 +196,28 @@ class Detector(object):
             if name == self.authentication_service:
                 auth_backend = service_instance
 
-        if project_init:
-            self.project_initialization(instances)
+            # if name == self.task_service_name:
+            #     submodules = self.meta.import_submodules_from_package(
+            #         "%s.tasks" % CUSTOM_PACKAGE)
+            #     import inspect
+            #     for submodule in submodules:
+            #         functions = inspect.getmembers(
+            #             submodule, predicate=inspect.isfunction)
+            #         for func in functions:
+            #             print(func[1].__class__.__dict__)
+            #             # print(func[1].__base__)
+
+            #             setattr(ext_instance, func[0], func[1])
+            #         # ext_instance.
+            #         log.critical(submodules)
+            #         log.critical_exit("")
 
         if len(self.extensions_instances) < 1:
             raise KeyError("No instances available for modules")
+
+        # Only once in a lifetime
+        if project_init:
+            self.project_initialization(instances)
 
         return self.extensions_instances
 
