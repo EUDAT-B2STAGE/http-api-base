@@ -27,6 +27,7 @@ class Detector(object):
 
         self.authentication_service = None
         self.authentication_name = 'authentication'
+        self.task_service_name = 'celery'
         self.modules = []
         self.services_configuration = []
         self.services = {}
@@ -174,7 +175,7 @@ class Detector(object):
                 raise ValueError("No backend service recovered")
 
             args = {}
-            if name == 'celery':
+            if name == self.task_service_name:
                 args['worker_mode'] = worker_mode
 
             ExtClass = self.services_classes.get(name)
@@ -188,6 +189,22 @@ class Detector(object):
                 auth_backend = service_instance
 
             self.extensions_instances[name] = ext_instance
+
+            # if name == self.task_service_name:
+            #     submodules = self.meta.import_submodules_from_package(
+            #         "%s.tasks" % CUSTOM_PACKAGE)
+            #     import inspect
+            #     for submodule in submodules:
+            #         functions = inspect.getmembers(
+            #             submodule, predicate=inspect.isfunction)
+            #         for func in functions:
+            #             print(func[1].__class__.__dict__)
+            #             # print(func[1].__base__)
+
+            #             setattr(ext_instance, func[0], func[1])
+            #         # ext_instance.
+            #         log.critical(submodules)
+            #         log.critical_exit("")
 
         self.project_initialization(instances)
 
