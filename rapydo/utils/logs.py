@@ -10,6 +10,7 @@ import os
 import re
 import json
 import logging
+import traceback
 
 from logging.config import fileConfig
 from json.decoder import JSONDecodeError
@@ -18,6 +19,8 @@ from rapydo.confs import AVOID_COLORS_ENV_LABEL
 #######################
 # DEBUG level is 10 (https://docs.python.org/3/howto/logging.html)
 CRITICAL_EXIT = 60
+PRINT_STACK = 59
+PRINT = 9
 VERBOSE = 5
 VERY_VERBOSE = 1
 
@@ -36,6 +39,22 @@ def critical_exit(self, message, *args, **kws):
     # TO FIX: check if raise is better
     import sys
     sys.exit(1)
+
+
+def print_stack(self, message, *args, **kws):
+    if self.isEnabledFor(PRINT_STACK):
+        print("")
+        self._log(PRINT_STACK, message, args, **kws)
+        traceback.print_stack()
+        print("\n\n")
+
+
+def myprint(self, message, *args, **kws):
+    # if self.isEnabledFor(PRINT):
+    if self.isEnabledFor(logging.DEBUG):
+        message = "\033[33;5m%s" % message
+        print(message, *args, **kws)
+        print("\033[1;0m", end='')
 
 
 def verbose(self, message, *args, **kws):
@@ -65,6 +84,14 @@ def pretty_print(self, myobject, prefix_line=None):
 logging.addLevelName(CRITICAL_EXIT, "CRITICAL_EXIT")
 logging.Logger.critical_exit = critical_exit
 logging.CRITICAL_EXIT = CRITICAL_EXIT
+
+logging.addLevelName(PRINT_STACK, "PRINT_STACK")
+logging.Logger.print_stack = print_stack
+logging.PRINT_STACK = PRINT_STACK
+
+logging.addLevelName(PRINT, "PRINT")
+logging.Logger.print = myprint
+logging.PRINT = PRINT
 
 logging.addLevelName(VERBOSE, "VERBOSE")
 logging.Logger.verbose = verbose
@@ -122,6 +149,9 @@ class LogMe(object):
             logging.addLevelName(
                 logging.CRITICAL_EXIT, "\033[4;33;41m%s\033[1;0m"
                 % logging.getLevelName(logging.CRITICAL_EXIT))
+            logging.addLevelName(
+                logging.PRINT_STACK, "\033[5;37;41m%s\033[1;0m"
+                % logging.getLevelName(logging.PRINT_STACK))
             logging.addLevelName(
                 logging.CRITICAL, "\033[5;37;41m%s\033[1;0m"
                 % logging.getLevelName(logging.CRITICAL))
