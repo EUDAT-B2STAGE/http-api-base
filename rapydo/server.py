@@ -104,8 +104,8 @@ def create_app(name=__name__,
 
     # Disable security if launching celery workers
     elif worker_mode:
-        # TO FIX: it should pass we no problems in case?
         enable_security = False
+# TO FIX: no security?? @mattia
         skip_endpoint_mapping = True
 
     ##############################
@@ -142,7 +142,7 @@ def create_app(name=__name__,
 
     ##############################
     # Find services and try to connect to the ones available
-    detector.init_services(app=microservice)
+    detector.init_services(app=microservice, project_init=init_mode)
 
     ##############################
     # Restful plugin
