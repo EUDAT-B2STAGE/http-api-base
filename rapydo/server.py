@@ -141,7 +141,11 @@ def create_app(name=__name__, worker_mode=False, testing_mode=False,
 
     ##############################
     # Find services and try to connect to the ones available
-    detector.init_services(app=microservice)
+    extensions = detector.init_services(
+        app=microservice, worker_mode=worker_mode)
+
+    if worker_mode:
+        microservice.extensions = extensions
 
     ##############################
     # Restful plugin

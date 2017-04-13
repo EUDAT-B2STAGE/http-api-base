@@ -158,7 +158,7 @@ class Detector(object):
 
         return self.services_classes
 
-    def init_services(self, app):
+    def init_services(self, app, worker_mode=False):
 
         instances = {}
         auth_backend = None
@@ -170,11 +170,15 @@ class Detector(object):
             if not self.available_services.get(name):
                 continue
 
-            if name == 'authentication' and auth_backend is None:
+            if name == self.authentication_name and auth_backend is None:
                 raise ValueError("No backend service recovered")
 
+            args = {}
+            if name == 'celery':
+                args['worker_mode'] = worker_mode
+
             ExtClass = self.services_classes.get(name)
-            ext_instance = ExtClass(app)
+            ext_instance = ExtClass(app, **args)
 
             log.debug("Initializing %s" % name)
             service_instance = ext_instance.custom_init(auth_backend)
