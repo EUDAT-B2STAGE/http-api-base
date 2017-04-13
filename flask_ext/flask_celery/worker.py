@@ -14,6 +14,7 @@ So we made some improvement along the code.
 from rapydo.server import create_app
 from rapydo.utils.meta import Meta
 from rapydo.utils.logs import get_logger
+from rapydo.confs import CUSTOM_PACKAGE
 
 log = get_logger(__name__)
 
@@ -40,6 +41,6 @@ meta = Meta()
 # # Base tasks
 # submodules = meta.import_submodules_from_package(main_package + "base")
 # # Custom tasks
-submodules = meta.import_submodules_from_package("telethon.tasks")
+submodules = meta.import_submodules_from_package("%s.tasks" % CUSTOM_PACKAGE)
 
 log.debug("Celery worker is ready %s" % celery_app)
