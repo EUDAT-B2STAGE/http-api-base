@@ -343,12 +343,13 @@ class IrodsPythonClient():
                 coll_or_obj = None
 
         if coll_or_obj is None:
-            raise IrodsException("Cannot get permission of a null object:w")
+            raise IrodsException("Cannot get permission of a null object")
 
         data = {}
         data["path"] = coll_or_obj.path
         data["ACL"] = []
         acl_list = self.rpc.permissions.get(coll_or_obj)
+
         for acl in acl_list:
             data["ACL"].append([
                 acl.user_name,
@@ -356,8 +357,8 @@ class IrodsPythonClient():
                 acl.access_name
             ])
 
-        data["inheritance"] = "Bohhhhhh"
-        log.critical("how to retrieve inheritance?")
+        # TO FIX: how to retrieve inheritance?
+        data["inheritance"] = "N/A"
 
         return data
 
