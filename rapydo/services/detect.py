@@ -190,21 +190,19 @@ class Detector(object):
 
             self.extensions_instances[name] = ext_instance
 
-            # if name == self.task_service_name:
-            #     submodules = self.meta.import_submodules_from_package(
-            #         "%s.tasks" % CUSTOM_PACKAGE)
-            #     import inspect
-            #     for submodule in submodules:
-            #         functions = inspect.getmembers(
-            #             submodule, predicate=inspect.isfunction)
-            #         for func in functions:
-            #             print(func[1].__class__.__dict__)
-            #             # print(func[1].__base__)
+            # Injecting into the Celery Extension Class
+            # all celery tasks found in *vanilla_package/tasks*
+            if name == self.task_service_name:
 
-            #             setattr(ext_instance, func[0], func[1])
-            #         # ext_instance.
-            #         log.critical(submodules)
-            #         log.critical_exit("")
+                task_package = "%s.tasks" % CUSTOM_PACKAGE
+
+                submodules = \
+                    self.meta.import_submodules_from_package(task_package)
+                for submodule in submodules:
+                    tasks = self.meta.get_celery_tasks_from_module(submodule)
+
+                    for func_name, funct in tasks.items():
+                        setattr(ExtClass, func_name, funct)
 
         self.project_initialization(instances)
 
