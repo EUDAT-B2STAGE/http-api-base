@@ -159,7 +159,8 @@ class Detector(object):
 
         return self.services_classes
 
-    def init_services(self, app, worker_mode=False):
+    def init_services(self, app, worker_mode=False,
+                      project_init=False, project_clean=False):
 
         instances = {}
         auth_backend = None
@@ -178,11 +179,18 @@ class Detector(object):
             if name == self.task_service_name:
                 args['worker_mode'] = worker_mode
 
+            # Get extension class and build the extension object
             ExtClass = self.services_classes.get(name)
             ext_instance = ExtClass(app, **args)
+            self.extensions_instances[name] = ext_instance
 
+            # Initialize the real service getting the first service object
             log.debug("Initializing %s" % name)
-            service_instance = ext_instance.custom_init(auth_backend)
+            service_instance = ext_instance.custom_init(
+                pinit=project_init,
+                pdestroy=project_clean,
+                abackend=auth_backend
+            )
             instances[name] = service_instance
 
             if name == self.authentication_service:
@@ -204,10 +212,12 @@ class Detector(object):
                     for func_name, funct in tasks.items():
                         setattr(ExtClass, func_name, funct)
 
-        self.project_initialization(instances)
-
         if len(self.extensions_instances) < 1:
             raise KeyError("No instances available for modules")
+
+        # Only once in a lifetime
+        if project_init:
+            self.project_initialization(instances)
 
         return self.extensions_instances
 
@@ -251,9 +261,13 @@ class Detector(object):
         vanilla/project/initialization.py
         """
 
-        log.critical("Global project initialization to be fullfilled")
-        # print("INIT WHATEVER?", instances, "\n\n")
+        ##############
+        # Initialize the RAPyDo project
+        log.critical("Global project initialization yet to be fullfilled")
+        # log.print(instances)
 
+        ##############
+        # Initialize the 'vanilla' customization
         try:
             module_path = "%s.%s.%s" % \
                 (CUSTOM_PACKAGE, 'project', 'initialization')
@@ -261,9 +275,9 @@ class Detector(object):
             Initializer = self.meta.get_class_from_string(
                 'Initializer', module)
             Initializer()
-            log.debug("Project has been initialized")
+            log.info("Vanilla project has been initialized")
         except BaseException:
-            log.debug("No custom init available for mixed services")
+            log.debug("Note: no custom init available for mixed services")
 
 
 detector = Detector()

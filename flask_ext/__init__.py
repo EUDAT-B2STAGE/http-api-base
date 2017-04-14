@@ -21,8 +21,8 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
     def __init__(self, app=None, **kwargs):
 
-        self.set_name()
         self.objs = {}
+        self.set_name()
         self.args = kwargs
 
         self.app = app
@@ -156,37 +156,43 @@ class BaseExtension(metaclass=abc.ABCMeta):
         if self.get_object(ref=ctx) is not None:
             self.close_connection(ctx)
 
-    def get_instance(self, global_instance=True, **kwargs):
+    def get_instance(self, **kwargs):
 
+        # Parameters
+        global_instance = kwargs.pop('global_instance', False)
+        isauth = kwargs.pop('authenticator', False)
+        # pinit = kwargs('project_initialization', False)
+        # log.print(kwargs)
+
+        # Variables
         obj = None
         ctx = stack.top
+        ref = self
         unique_hash = str(sorted(kwargs.items()))
         log.very_verbose("instance hash: %s" % unique_hash)
 
-        # When using the context, this is the first connection
+        # When not using the context, this is the first connection
         if ctx is None:
             # First connection, before any request
             obj = self.connect()
             # self.initialization(obj=obj)
-            self.set_object(obj=obj, ref=self)
+            self.set_object(obj=obj, ref=ref)
 
-            # NOTE: moved into detect.py
-            # # Once among the whole service, and as the last one:
-            # if self.name == 'authenticator':
-            #     self.project_initialization()
-
-            log.very_verbose("First connection for service %s" % self.name)
+            log.very_verbose("First connection for %s" % self.name)
 
         else:
-            if global_instance:
-                ref = self
-            else:
-                ref = ctx
+            # isauth = 'Authenticator' == self.__class__.__name__
 
-            obj = self.get_object(ref=ref, key=unique_hash)
+            if not isauth:
+                if not global_instance:
+                    ref = ctx
+
+                obj = self.get_object(ref=ref, key=unique_hash)
+
             if obj is None:
                 obj = self.connect(**kwargs)
                 self.set_object(obj=obj, ref=ref, key=unique_hash)
+
             log.verbose("Instance %s(%s)" % (ref.__class__.__name__, obj))
 
         obj = self.set_models_to_service(obj)
@@ -219,8 +225,21 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
     ############################
     # Already has default
-    def custom_init(self, obj=None):
-        return self.get_instance()
+    def custom_init(self, **kwargs):
+        """
+        The real signature:
+        def custom_init(self, pinit=False, pdestroy=False, abackend=None):
+
+            - A backend is needed for non-standalone services
+                e.g. authentication module
+            - Project initialization/removal could be used here
+                or carried on to low levels;
+                they get activated by specific flask cli commands
+
+        """
+        return self.get_instance(
+            # project_initialization=pinit
+        )
 
 
 class BaseInjector(Module):

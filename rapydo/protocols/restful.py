@@ -13,8 +13,10 @@ from rapydo.utils.logs import get_logger
 log = get_logger(__name__)
 
 
-# Hack the original class to remove the response making...
 class Api(RestFulApi):
+    """
+    Hack the original class to remove the response
+    """
 
     def output(self, resource):
         """
@@ -25,25 +27,17 @@ class Api(RestFulApi):
         This ruins our plan of creating our standard response,
         so I am overriding it to JUST TO AVOID THE DECORATOR
         """
-
         return resource
 
 
-####################################
-# REST to be activated inside the app factory
-log.verbose("Endpoints w/ %s-%s" % (Api.__name__, EndpointsFarmer.__name__))
-
-
-def create_endpoints(epo, security=False):
+def create_endpoints(epo):
     """
-    A single method to add all endpoints
+    Add all memorized resource (from swagger reading) into Flask-Restful
     """
 
-    # ####################################
     # Use configuration built with swagger
     resources = mem.customizer._endpoints
 
-    ####################################
     # Basic configuration (simple): from example class
     if len(resources) < 1:
         log.warning("No custom endpoints found!")
@@ -53,11 +47,6 @@ def create_endpoints(epo, security=False):
     log.debug("Using resources defined within swagger")
 
     for resource in resources:
-
-        if not security:
-            # TODO: CHECK can we allow a server startup with no security?
-            raise NotImplementedError("No way to remove security with swagger")
-
         # TODO: CHECK is there any way to remove farm.py ?
         epo.add(resource)
 
@@ -67,6 +56,8 @@ def create_endpoints(epo, security=False):
         log.debug("Found one or more schema to expose")
         epo.add(se)
 
-    ####################################
-    # The end
     return epo
+
+
+# REST to be activated inside the app factory
+log.verbose("Endpoints w/ %s-%s" % (Api.__name__, EndpointsFarmer.__name__))
