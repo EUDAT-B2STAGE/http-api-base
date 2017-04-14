@@ -87,6 +87,7 @@ class Detector(object):
     def load_variables(self, service, enable_var=None, prefix=None):
 
         variables = {}
+        host = None
 
         if prefix is None:
             _, prefix = self.prefix_name(service)
@@ -98,10 +99,15 @@ class Detector(object):
             if var.startswith(prefix):
                 key = var[len(prefix):]
                 variables[key] = value
+                if key == 'host':
+                    host = value
 
-        # Is this service external?
-        external_var = str(prefix + 'external').upper()
-        variables['external'] = self.get_bool_from_os(external_var)
+        # Verify if service is EXTERNAL
+        variables['external'] = False
+        if isinstance(host, str) and host.count('.') == 2:
+            if not host.endswith('dockerized.io'):
+                variables['external'] = True
+        # log.print("EXTERNAL: %s" % variables['external'])
 
         return variables
 
