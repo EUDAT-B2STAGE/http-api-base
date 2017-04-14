@@ -70,9 +70,9 @@ class IrodsPythonExt(BaseExtension):
                 try:
 
                     irods_env = os.environ
-                    cert_name = "genome_%s" % user
                     # cert_pwd = user_node.irods_cert
-                    cert_pwd = "YT9OOMQMXFS5"
+                    cert_name = kwargs.pop("proxy_cert_name")
+                    cert_pwd = kwargs.pop("proxy_pass")
                     myproxy_host = "grid.hpc.cineca.it"
 
                     valid = Certificates.get_myproxy_certificate(

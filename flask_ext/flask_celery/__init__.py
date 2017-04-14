@@ -70,7 +70,6 @@ class CeleryExt(BaseExtension):
         celery_app.conf.CELERY_RESULT_SERIALIZER = 'json'
 
         if CeleryExt.celery_app is None:
-            print("Test 0")
             CeleryExt.celery_app = celery_app
 
         return celery_app
