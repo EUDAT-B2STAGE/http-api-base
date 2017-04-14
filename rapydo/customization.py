@@ -8,8 +8,8 @@ import os
 import re
 import glob
 from rapydo.confs import (
-    BACKEND_PACKAGE, CUSTOM_PACKAGE, CORE_CONFIG_PATH,
-    BLUEPRINT_KEY, API_URL, BASE_URLS,
+    BACKEND_PACKAGE, CUSTOM_PACKAGE, CORE_CONFIG_PATH, PROJECT_CONF_FILE,
+    API_URL, BASE_URLS,
 )
 
 # TO FIX: should be imported after reading logger level from conf
@@ -62,13 +62,14 @@ class Customizer(object):
         CUSTOM_CONFIG_PATH = os.path.join(CUSTOM_PACKAGE, 'specs')
 
         # Find out what is the active blueprint
-        bp_file = os.path.join(CUSTOM_CONFIG_PATH, '%s.init' % BLUEPRINT_KEY)
-        with open(bp_file) as bp_hd:
-            blueprint = bp_hd.read().strip()
+        # bp_file = os.path.join(CUSTOM_CONFIG_PATH, '%s.init' % BLUEPRINT_KEY)
+        # with open(bp_file) as bp_hd:
+        #     blueprint = bp_hd.read().strip()
 
         # Read the custom configuration from the active blueprint file
-        custom_config = load_yaml_file(blueprint, path=CUSTOM_CONFIG_PATH)
-        custom_config[BLUEPRINT_KEY] = blueprint
+        custom_config = load_yaml_file(
+            PROJECT_CONF_FILE, path=CUSTOM_CONFIG_PATH)
+        # custom_config[BLUEPRINT_KEY] = blueprint
 
         # Read default configuration
         defaults = load_yaml_file('defaults', path=CORE_CONFIG_PATH)
