@@ -19,7 +19,8 @@ BASE_URLS = [API_URL, AUTH_URL]
 BACKEND_PACKAGE = 'rapydo'
 CUSTOM_PACKAGE = os.environ.get('VANILLA_PACKAGE', 'custom')
 CORE_CONFIG_PATH = os.path.join(BACKEND_PACKAGE, 'confs')
-BLUEPRINT_KEY = 'blueprint'
+PROJECT_CONF_FILE = 'project_configuration'
+# BLUEPRINT_KEY = 'blueprint'
 #################################
 # THE APP
 DEFAULT_HOST = '127.0.0.1'

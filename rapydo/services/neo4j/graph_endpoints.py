@@ -18,7 +18,6 @@ __author__ = "Mattia D'Antonio (m.dantonio@cineca.it)"
 
 class GraphBaseOperations(EndpointResource):
 
-    # TO FIX: This method is still required?
     def initGraph(self):
         self.graph = self.get_service_instance('neo4j')
         self._current_user = self.getLoggedUserInstance()
