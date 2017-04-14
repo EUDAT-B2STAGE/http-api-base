@@ -207,3 +207,22 @@ class Meta(object):
         if not isinstance(parents, tuple):
             parents = (parents, )
         return type(name, parents, attributes_and_methods)
+
+    def get_celery_tasks_from_module(self, submodule):
+        """
+            Extract all celery tasks from a module.
+            Celery tasks are functions decorated by @celery_app.task(...)
+            This decorator transform the function into a class child of
+            celery.local.PromiseProxy
+        """
+        tasks = {}
+        functions = inspect.getmembers(submodule)
+        for func in functions:
+
+            obj_type = type(func[1])
+
+            if obj_type.__module__ != "celery.local":
+                continue
+
+            tasks[func[0]] = func[1]
+        return tasks
