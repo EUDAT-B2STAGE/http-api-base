@@ -72,6 +72,9 @@ class IrodsPythonClient():
     def list(self, path=None, recursive=False, detailed=False, acl=False):
         """ List the files inside an iRODS path/collection """
 
+        if path is None:
+            path = self.get_user_home()
+
         if self.is_dataobject(path):
             raise IrodsException("Cannot list an object, get it instead")
         try:
