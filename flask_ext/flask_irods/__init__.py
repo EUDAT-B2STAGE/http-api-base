@@ -27,6 +27,7 @@ class IrodsPythonExt(BaseExtension):
 
     # def prepare_session(self, user=None):
     def pre_connection(self, **kwargs):
+
         user = kwargs.get('user')
         if user is None:
             self.user = self.variables.get('default_admin_user')
@@ -126,3 +127,16 @@ class IrodsPythonExt(BaseExtension):
 
         client = IrodsPythonClient(obj)
         return client
+
+    def custom_init(self, pinit=False, **kwargs):
+        """ Note: we ignore args here """
+
+        if pinit and not self.variables.get('external'):
+            log.debug("waiting for internal certificates")
+            # should actually connect with user and password
+            # and verify if GSI is already registered with admin rodsminer
+            import time
+            time.sleep(5)
+
+        # recover instance with the parent method
+        return super().custom_init()

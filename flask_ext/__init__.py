@@ -138,7 +138,7 @@ class BaseExtension(metaclass=abc.ABCMeta):
 
             retry_count += 1
             if retry_count > 1:
-                log.verbose("testing again")
+                log.verbose("testing again in %s secs" % retry_interval)
 
             try:
                 obj = self.custom_connection()
@@ -148,6 +148,11 @@ class BaseExtension(metaclass=abc.ABCMeta):
                 time.sleep(retry_interval)
             else:
                 break
+
+            # Increment sleeps time if doing a lot of retries
+            if retry_count % 3 == 0:
+                log.debug("Incrementing interval")
+                retry_interval += retry_interval
 
         return obj
 
