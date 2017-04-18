@@ -103,12 +103,14 @@ class MongoFarm(ServiceFarm):
     @classmethod
     def get_instance(cls, models2skip=[], use_models=True, dbname=None):
 
-        if MongoFarm._mongo is None:
-            MongoFarm._mongo = MyMongoDb(db=dbname)
-            if use_models:
-                cls.load_models()
-                # Remove the ones which developers do not want
-                models = set(list(cls._models.values())) - set(models2skip)
-                MongoFarm._mongo.inject_models(models)
+        # TO FIX: create a list of connections associated to db aliases
+        # if MongoFarm._mongo is None:
+
+        MongoFarm._mongo = MyMongoDb(db=dbname)
+        if use_models:
+            cls.load_models()
+            # Remove the ones which developers do not want
+            models = set(list(cls._models.values())) - set(models2skip)
+            MongoFarm._mongo.inject_models(models)
 
         return MongoFarm._mongo

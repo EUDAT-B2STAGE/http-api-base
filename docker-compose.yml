@@ -106,7 +106,7 @@ proxy:
     - htmlfiles
   volumes:
     - ../containers/nginx_proxy:/etc/nginx/conf.d
-    - ../frontend/felask/static:/static
+    # - ../frontend/felask/static:/static
 
 ##############################
 swagger:

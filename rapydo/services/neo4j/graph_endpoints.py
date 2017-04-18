@@ -22,7 +22,8 @@ class GraphBaseOperations(EndpointResource):
         self.graph = self.get_service_instance('neo4j')
         self._current_user = self.getLoggedUserInstance()
 
-    def getSingleLinkedNode(self, relation):
+    @staticmethod
+    def getSingleLinkedNode(relation):
 
         nodes = relation.all()
         if len(nodes) <= 0:
