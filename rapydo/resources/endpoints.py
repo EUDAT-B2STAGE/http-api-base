@@ -41,6 +41,7 @@ if SECOND_FACTOR_AUTHENTICATION is not None:
     from io import BytesIO
 
 
+# TO FIX: move me somewhere...
 class HandleSecurity(object):
 
     def get_secret(self, user):
