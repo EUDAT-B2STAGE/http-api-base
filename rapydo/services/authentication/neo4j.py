@@ -53,11 +53,7 @@ class Authentication(BaseAuthentication):
         return roles
 
     def fill_custom_payload(self, userobj, payload):
-        # TO FIX
-        """
-This method should be implemented inside the vanilla folder,
-instead of here
-        """
+        # TO FIX: should be implemented in vanilla, not here
         return payload
 
     def create_user(self, userdata, roles=[]):

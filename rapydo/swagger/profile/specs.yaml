@@ -4,9 +4,9 @@ class: Profile
 baseuri: "/auth"
 mapping:
   whoami: "/profile"
-  iam: "/profile/<uuid>"
-ids:
-  uuid: uuid associated to the proile you want to access
+#   iam: "/profile/<uuid>"
+# ids:
+#   uuid: uuid associated to the proile you want to access
 labels:
   - base
   - profiles

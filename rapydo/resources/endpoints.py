@@ -5,10 +5,13 @@ Base endpoints: authorization, status, checks.
 And a Farm: How to create endpoints into REST service.
 """
 
+import re
 import pytz
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import jsonify, current_app
 
+from rapydo.exceptions import RestApiException
+from rapydo import decorators as decorate
 from rapydo.rest.definition import EndpointResource
 from rapydo.services.detect import detector
 from rapydo.services.authentication import BaseAuthentication
@@ -16,7 +19,173 @@ from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.globals import mem
 from rapydo.utils.logs import get_logger
 
+
 log = get_logger(__name__)
+
+REGISTER_FAILED_LOGIN = False
+FORCE_FIRST_PASSWORD_CHANGE = False
+VERIFY_PASSWORD_STRENGHT = False
+MAX_PASSWORD_VALIDITY = 0
+DISABLE_UNUSED_CREDENTIALS_AFTER = 0
+MAX_LOGIN_ATTEMPTS = 0
+SECOND_FACTOR_AUTHENTICATION = None
+# TOTP = 'TOTP'
+# SECOND_FACTOR_AUTHENTICATION = TOTP
+PROJECT_NAME = "Genomic Repository"
+
+if SECOND_FACTOR_AUTHENTICATION is not None:
+    import pyotp
+    import pyqrcode
+    # import hashlib
+    import base64
+    from io import BytesIO
+
+
+class HandleSecurity(object):
+
+    def get_secret(self, user):
+        # TO FIX: use a real secret
+        # hashes does not works... maybe too long??
+        # secret = hashlib.sha224(user.email.encode('utf-8'))
+        # return secret.hexdigest()
+        # same problem with str(user.uuid)
+
+        # neither email works (problems with the @ character?)
+
+        # decoding errors...
+        # return str(user.name)
+
+        return base64.b32encode(user.name.encode('utf-8'))
+
+    def verify_token(self, auth, username, token):
+        if token is None:
+
+            if REGISTER_FAILED_LOGIN:
+                auth.register_failed_login(username)
+            msg = 'Invalid username or password'
+            code = hcodes.HTTP_BAD_UNAUTHORIZED
+            raise RestApiException(msg, status_code=code)
+
+    def verify_totp(self, auth, user, totp_code):
+
+        valid = True
+
+        if totp_code is None:
+            valid = False
+        else:
+            secret = self.get_secret(user)
+            log.critical(secret)
+            totp = pyotp.TOTP(secret)
+            if not totp.verify(totp_code):
+                if REGISTER_FAILED_LOGIN:
+                    auth.register_failed_login(user.email)
+                valid = False
+
+        if not valid:
+            msg = 'Invalid verification code'
+            code = hcodes.HTTP_BAD_UNAUTHORIZED
+            raise RestApiException(msg, status_code=code)
+
+        return True
+
+    def get_qrcode(self, user):
+
+        secret = self.get_secret(user)
+        log.critical(secret)
+        totp = pyotp.TOTP(secret)
+
+        otpauth_url = totp.provisioning_uri(PROJECT_NAME)
+        qr_url = pyqrcode.create(otpauth_url)
+        qr_stream = BytesIO()
+        qr_url.svg(qr_stream, scale=5)
+        return qr_stream.getvalue()
+
+    # TO FIX: check password strength, if required
+    def verify_password_strength(self, pwd, old_pwd):
+
+        if pwd == old_pwd:
+            return False, "Password cannot match the previous password"
+        if len(pwd) < 8:
+            return False, "Password is too short, use at least 8 characters"
+
+        if not re.search("[a-z]", pwd):
+            return False, "Password is too simple, missing lower case letters"
+        if not re.search("[A-Z]", pwd):
+            return False, "Password is too simple, missing upper case letters"
+        if not re.search("[0-9]", pwd):
+            return False, "Password is too simple, missing numbers"
+
+        # special_characters = "['\s!#$%&\"(),*+,-./:;<=>?@[\\]^_`{|}~']"
+        special_characters = "[^a-zA-Z0-9]"
+        if not re.search(special_characters, pwd):
+            return False, "Password is too simple, missing special characters"
+
+        return True, None
+
+    def change_password(self, auth, user,
+                        password, new_password, password_confirm):
+
+        if new_password != password_confirm:
+            msg = "Your password doesn't match the confirmation"
+            raise RestApiException(msg, status_code=hcodes.HTTP_BAD_CONFLICT)
+
+        if VERIFY_PASSWORD_STRENGHT:
+            check, msg = self.verify_password_strength(
+                new_password, password)
+
+            if not check:
+                raise RestApiException(
+                    msg, status_code=hcodes.HTTP_BAD_CONFLICT)
+
+        if new_password is not None and password_confirm is not None:
+            now = datetime.now(pytz.utc)
+            user.password = BaseAuthentication.hash_password(new_password)
+            user.last_password_change = now
+            user.save()
+
+            tokens = auth.get_tokens(user=user)
+            for token in tokens:
+                auth.invalidate_token(token=token["token"])
+            # changes the user uuid invalidating all tokens
+            auth.invalidate_all_tokens()
+
+        return True
+
+    def verify_blocked_username(self, auth, username):
+
+        if not REGISTER_FAILED_LOGIN:
+            # We do not register failed login
+            pass
+        elif MAX_LOGIN_ATTEMPTS <= 0:
+            # We register failed login, but we do not put a max num of failures
+            pass
+            # TO FIX: implement get_failed_login
+        elif auth.get_failed_login(username) < MAX_LOGIN_ATTEMPTS:
+            # We register and put a max, but user does not reached it yet
+            pass
+        else:
+            # Dear user, you have exceeded the limit
+            msg = """
+                Sorry, this account is temporarily blocked due to
+                more than %d failed login attempts. Try again later"""\
+                % MAX_LOGIN_ATTEMPTS
+            code = hcodes.HTTP_BAD_UNAUTHORIZED
+            raise RestApiException(msg, status_code=code)
+
+    def verify_blocked_user(self, user):
+
+        if DISABLE_UNUSED_CREDENTIALS_AFTER > 0:
+            last_login = user.last_login
+            now = datetime.now(pytz.utc)
+            code = hcodes.HTTP_BAD_UNAUTHORIZED
+            if last_login is not None:
+
+                inactivity = timedelta(days=DISABLE_UNUSED_CREDENTIALS_AFTER)
+                valid_until = last_login + inactivity
+
+                if valid_until < now:
+                    msg = "Sorry, this account is blocked for inactivity"
+                    raise RestApiException(msg, status_code=code)
 
 
 class Status(EndpointResource):
@@ -51,38 +220,125 @@ class SwaggerSpecifications(EndpointResource):
 class Login(EndpointResource):
     """ Let a user login with the developer chosen method """
 
+    @decorate.catch_error(exception=RestApiException, catch_generic=True)
     def post(self):
 
-        # NOTE: In case you need different behaviour when using unittest
-        # if current_app.config['TESTING']:
-        #     print("\nThis is inside a TEST\n")
+        # ########## INIT ##########
+        security = HandleSecurity()
 
-        username = None
-        password = None
-        bad_code = hcodes.HTTP_BAD_UNAUTHORIZED
+        now = datetime.now(pytz.utc)
 
         jargs = self.get_input()
-        if 'username' in jargs:
-            username = jargs['username']
-        elif 'email' in jargs:
-            username = jargs['email']
-        if 'password' in jargs:
-            password = jargs['password']
-        elif 'pwd' in jargs:
-            password = jargs['pwd']
+        username = jargs.get('username')
+        if username is None:
+            username = jargs.get('email')
 
+        password = jargs.get('password')
+        if password is None:
+            password = jargs.get('pwd')
+
+        new_password = jargs.get('new_password')
+        password_confirm = jargs.get('password_confirm')
+
+        totp_authentication = (
+            SECOND_FACTOR_AUTHENTICATION is not None and
+            SECOND_FACTOR_AUTHENTICATION == TOTP
+        )
+
+        if totp_authentication:
+            totp_code = jargs.get('totp_code')
+        else:
+            totp_code = None
+        # ##################################################
+        # Now credentials are checked at every request
         if username is None or password is None:
-            return self.send_errors(
-                message="Credentials: missing 'username' and/or 'password'",
-                code=bad_code)
+            msg = "Missing username or password"
+            raise RestApiException(
+                msg, status_code=hcodes.HTTP_BAD_UNAUTHORIZED)
+
+        # ##################################################
+        # Authentication control
+        security.verify_blocked_username(self.auth, username)
 
         token, jti = self.auth.make_login(username, password)
-        if token is None:
-            return self.send_errors(
-                message="Credentials: invalid username and/or password",
-                code=bad_code)
 
-        self.auth.save_token(user=self.auth._user, token=token, jti=jti)
+        security.verify_token(self.auth, username, token)
+
+        user = self.auth.get_user()
+
+        security.verify_blocked_user(user)
+
+        if totp_authentication and totp_code is not None:
+            security.verify_totp(self.auth, user, totp_code)
+
+        # ##################################################
+        # If requested, change the password
+        if new_password is not None and password_confirm is not None:
+
+            pwd_changed = security.change_password(
+                self.auth, user, password, new_password, password_confirm)
+
+            if pwd_changed:
+                password = new_password
+                token, jti = self.auth.make_login(username, password)
+
+        # ##################################################
+        # Something is missing in the authentication, asking action to user
+        message_body = {}
+        message_body['actions'] = []
+        error_message = None
+
+        if totp_authentication and totp_code is None:
+            message_body['actions'].append(SECOND_FACTOR_AUTHENTICATION)
+            error_message = "You do not provided a valid second factor"
+
+        epoch = datetime.fromtimestamp(0, pytz.utc)
+        last_pwd_change = user.last_password_change
+        if last_pwd_change is None or last_pwd_change == 0:
+            last_pwd_change = epoch
+
+        if FORCE_FIRST_PASSWORD_CHANGE and last_pwd_change == epoch:
+
+            message_body['actions'].append('FIRST LOGIN')
+            error_message = """
+                Please change your temporary password
+                """
+
+            if totp_authentication:
+
+                qr_code = security.get_qrcode(user)
+
+                message_body["qr_code"] = qr_code
+
+        elif MAX_PASSWORD_VALIDITY > 0:
+
+            if last_pwd_change == epoch:
+                expired = True
+            else:
+                valid_until = \
+                    last_pwd_change + timedelta(days=MAX_PASSWORD_VALIDITY)
+                expired = (valid_until < now)
+
+            if expired:
+
+                message_body['actions'].append('PASSWORD EXPIRED')
+                error_message = "Your password is expired, please change it"
+
+        if error_message is not None:
+            return self.force_response(
+                message_body,
+                errors=error_message,
+                code=hcodes.HTTP_BAD_FORBIDDEN)
+
+        # ##################################################
+        # Everything is ok, let's save authentication information
+
+        if user.first_login is None:
+            user.first_login = now
+        user.last_login = now
+        # Should be saved inside save_token...
+        # user.save()
+        self.auth.save_token(self.auth._user, token, jti)
 
         # TO FIX: split response as above in access_token and token_type?
         # # The right response should be the following
@@ -135,8 +391,9 @@ class Tokens(EndpointResource):
             if token["id"] == token_id:
                 return token
 
-        errorMessage = "Either this token was not emitted for your account" + \
-                       " or it does not exist"
+        errorMessage = """Either this token was not emitted for your account
+                          or it does not exist"""
+
         return self.send_errors(
             message=errorMessage, code=hcodes.HTTP_BAD_NOTFOUND)
 
@@ -202,7 +459,7 @@ class Profile(EndpointResource):
             # roles.append(role.name)
             roles[role.name] = role.name
         data["roles"] = roles
-        data["isAdmin"] = "admin_root" in roles
+        data["isAdmin"] = self.auth.verify_admin()
 
         if hasattr(current_user, 'name'):
             data["name"] = current_user.name
@@ -221,45 +478,51 @@ class Profile(EndpointResource):
             elif data["irods_user"][0] == '-':
                 data["irods_user"] = None
 
+        if SECOND_FACTOR_AUTHENTICATION is not None:
+            data['2fa'] = SECOND_FACTOR_AUTHENTICATION
+
         return data
 
-    def put(self, uuid):
-        # TO FIX: this should be a POST method...
-        """ Create or update profile for current user """
+    @decorate.catch_error(exception=RestApiException, catch_generic=True)
+    def put(self):
+        """ Update profile for current user """
 
-        from flask_restful import request
-        try:
-            user = self.get_current_user()
-            if user.uuid != uuid:
-                return self.send_errors(
-                    message="Invalid uuid: not matching current user",
-                )
+        user = self.auth.get_user()
+        username = user.email
+        # if user.uuid != uuid:
+        #     msg = "Invalid uuid: not matching current user"
+        #     raise RestApiException(msg)
 
-            data = request.get_json(force=True)
+        data = self.get_input()
+        password = data.get('password')
+        new_password = data.get('new_password')
+        password_confirm = data.get('password_confirm')
+        totp_authentication = (
+            SECOND_FACTOR_AUTHENTICATION is not None and
+            SECOND_FACTOR_AUTHENTICATION == TOTP
+        )
+        if totp_authentication:
+            totp_code = data.get('totp_code')
+        else:
+            totp_code = None
 
-            key = "newpassword"
-            if key not in data:
-                return self.send_errors(
-                    message="Invalid request: missing %s value" % key,
-                    code=hcodes.HTTP_BAD_REQUEST
-                )
-            user.password = BaseAuthentication.hash_password(data[key])
-            user.last_password_change = datetime.now(pytz.utc)
-            user.save()
+        security = HandleSecurity()
 
-            # TODO: use defaults instead of passing a parameter like this
-            tokens = self.auth.get_tokens(user=self.auth._user)
-            for token in tokens:
-                # for graphdb it just remove the edge
-                self.auth.invalidate_token(token=token["token"])
-            # changes the user uuid invalidating all tokens
-            self.auth.invalidate_all_tokens()
+        if new_password is None or password_confirm is None:
+            msg = "New password is missing"
+            raise RestApiException(msg, status_code=hcodes.HTTP_BAD_REQUEST)
 
-        except BaseException:
-            return self.send_errors(
-                message="Unknown error, please contact administrators",
-                code=hcodes.HTTP_BAD_REQUEST
-            )
+        if totp_authentication:
+            security.verify_totp(self.auth, user, totp_code)
+        else:
+            token, jti = self.auth.make_login(username, password)
+            security.verify_token(self.auth, username, token)
+
+        security.change_password(
+            self.auth, user, password, new_password, password_confirm)
+        # I really don't why this save is required... since it is already
+        # in change_password ... But if I remove it the new pwd is not saved...
+        user.save()
 
         return self.empty_response()
 

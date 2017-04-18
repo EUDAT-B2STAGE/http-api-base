@@ -164,11 +164,12 @@ class GraphBaseOperations(EndpointResource):
 
 
 class myGraphError(RestApiException):
-    status_code = None
+    pass
+    # status_code = None
 
-    def __init__(self, exception, status_code=hcodes.HTTP_BAD_NOTFOUND):
-        super(myGraphError).__init__()
-        self.status_code = status_code
+    # def __init__(self, exception, status_code=hcodes.HTTP_BAD_NOTFOUND):
+    #     super(myGraphError).__init__()
+    #     self.status_code = status_code
 
 
 def returnError(self, label=None, error=None, code=hcodes.HTTP_BAD_NOTFOUND):
