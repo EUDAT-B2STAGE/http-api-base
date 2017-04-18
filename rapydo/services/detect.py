@@ -104,7 +104,7 @@ class Detector(object):
 
         # Verify if service is EXTERNAL
         variables['external'] = False
-        if isinstance(host, str) and host.count('.') == 2:
+        if isinstance(host, str) and host.count('.') > 2:
             if not host.endswith('dockerized.io'):
                 variables['external'] = True
         # log.print("EXTERNAL: %s" % variables['external'])
