@@ -348,6 +348,30 @@ class EndpointResource(Resource):
 
         return aware_utc_dt
 
+    @staticmethod
+    def date_from_string(date, format="%d/%m/%Y"):
+
+        if date == "":
+            return ""
+        # datetime.now(pytz.utc)
+        try:
+            return_date = datetime.strptime(date, format)
+        except BaseException:
+            return_date = dateutil.parser.parse(date)
+
+        return pytz.utc.localize(return_date)
+
+    @staticmethod
+    def string_from_timestamp(timestamp):
+        if timestamp == "":
+            return ""
+        try:
+            date = datetime.fromtimestamp(float(timestamp))
+            return date.isoformat()
+        except BaseException:
+            log.warning("Errors parsing %s" % timestamp)
+            return ""
+
     def formatJsonResponse(self, instances, resource_type=None):
         """
         Format specifications can be found here:
@@ -378,30 +402,6 @@ class EndpointResource(Resource):
         #     endpoint + '?currentpage=' + str(len(instances)) + '&perpage=1',
 
         return json_data
-
-    @staticmethod
-    def dateFromString(date, format="%d/%m/%Y"):
-
-        if date == "":
-            return ""
-        # datetime.now(pytz.utc)
-        try:
-            return datetime.strptime(date, format)
-        except:
-            return dateutil.parser.parse(date)
-
-    @staticmethod
-# TO FIX: can we stop using java-like camelCase? XD
-    def stringFromTimestamp(timestamp):
-        if timestamp == "":
-            return ""
-        try:
-            date = datetime.fromtimestamp(float(timestamp))
-            return date.isoformat()
-        except:
-            log.warning(
-                "Errors parsing %s" % timestamp)
-            return ""
 
     def getJsonResponse(self, instance,
                         fields=[], resource_type=None, skip_missing_ids=False,
@@ -475,7 +475,7 @@ class EndpointResource(Resource):
                 if attribute is None:
                     data["attributes"][key] = ""
                 elif isinstance(attribute, datetime):
-                    dval = self.stringFromTimestamp(attribute.strftime('%s'))
+                    dval = self.string_from_timestamp(attribute.strftime('%s'))
                     data["attributes"][key] = dval
                 else:
                     data["attributes"][key] = attribute
