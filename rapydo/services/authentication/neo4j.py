@@ -56,10 +56,8 @@ class Authentication(BaseAuthentication):
         # TO FIX: should be implemented in vanilla, not here
         return payload
 
+    # Also user by POST user
     def create_user(self, userdata, roles=[]):
-
-        if self.default_role not in roles:
-            roles.append(self.default_role)
 
         user_node = self.db.User(**userdata)
         try:
@@ -69,16 +67,26 @@ class Authentication(BaseAuthentication):
             log.error(message)
             raise AttributeError(message)
 
-        # Link the new external account to at least at the very default Role
+        self.link_roles(user_node, roles)
+
+        return user_node
+
+    # Also user by PUT user
+    def link_roles(self, user, roles):
+
+        if self.default_role not in roles:
+            roles.append(self.default_role)
+
+        for p in user.roles.all():
+            user.roles.disconnect(p)
+
         for role in roles:
             log.debug("Adding role %s" % role)
             try:
                 role_obj = self.db.Role.nodes.get(name=role)
             except self.db.Role.DoesNotExist:
                 raise Exception("Graph role %s does not exist" % role)
-            user_node.roles.connect(role_obj)
-
-        return user_node
+            user.roles.connect(role_obj)
 
     def create_role(self, role, description="automatic"):
         role = self.db.Role(name=role, description=description)
