@@ -199,17 +199,20 @@ class IrodsPythonClient():
             raise IrodsException(
                 "Source and destination path are the same")
         try:
+            log.verbose("Copy %s into %s" % (sourcepath, destpath))
             source = self.rpc.data_objects.get(sourcepath)
             self.create_empty(
                 destpath, directory=False, ignore_existing=force)
-            target = self.rpc.data_objects.get(sourcepath)
+            target = self.rpc.data_objects.get(destpath)
             with source.open('r+') as f:
                 with target.open('w') as t:
                     for line in f:
                         # if t.writable():
                         t.write(line)
         except iexceptions.DataObjectDoesNotExist:
-            raise IrodsException("Data oject not found")
+            raise IrodsException("Data object not found: %s" % sourcepath)
+        except iexceptions.CollectionDoesNotExist:
+            raise IrodsException("Collection not found: %s" % sourcepath)
 
     def move(self, src_path, dest_path):
 
