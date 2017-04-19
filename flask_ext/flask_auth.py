@@ -21,6 +21,8 @@ class Authenticator(BaseExtension):
             ext_auth = oauth2(self.app.config['TESTING'])
             custom_auth.set_oauth2_services(ext_auth._available_services)
 
+        # TO FIX: why tests should use a custom secret?
+        # In this way we cannot test the import_secret
         if self.app.config['TESTING']:
             secret = 'IaMvERYsUPERsECRET'
         else:

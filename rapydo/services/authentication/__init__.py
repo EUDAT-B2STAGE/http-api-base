@@ -237,6 +237,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         return encode, self._payload['jti']
 
+    # TO FIX: this method is not used
     def create_temporary_token(self, user):
         # expiration = timedelta(seconds=300)
         expiration = timedelta(seconds=10)
