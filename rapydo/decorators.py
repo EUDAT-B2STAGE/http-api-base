@@ -133,53 +133,52 @@ def get_response():
 # right before the function call (necessary for flask_restful)
 # http://flask-restful.readthedocs.org/en/latest/reqparse.html
 
-def apimethod(func):
-# TODO: remove it when nobody uses it anymore
-    """ 
-    Decorate methods to return the most standard json data
-    and also to parse available args before using them in the function
-    """
+# def apimethod(func):
+#     """ 
+#     Decorate methods to return the most standard json data
+#     and also to parse available args before using them in the function
+#     """
 
-    log.warning("Deprecated 'apimethod', to add parameters use SWAGGER")
+#     log.warning("Deprecated 'apimethod', to add parameters use SWAGGER")
 
-    @wraps(func)
-    def wrapper(self, *args, **kwargs):
+#     @wraps(func)
+#     def wrapper(self, *args, **kwargs):
 
-        # Debug
-        class_name = self.__class__.__name__
-        method_name = func.__name__.upper()
-        log.info("[Class: %s] %s request" % (class_name, method_name))
+#         # Debug
+#         class_name = self.__class__.__name__
+#         method_name = func.__name__.upper()
+#         log.info("[Class: %s] %s request" % (class_name, method_name))
 
-        #######################
-        # PARAMETERS INPUT
+#         #######################
+#         # PARAMETERS INPUT
 
-        # Load the right parameters that were decorated
-        if self.apply_parameters(method_name):
-            # Call the parse method
-            self.parse()
+#         # Load the right parameters that were decorated
+#         if self.apply_parameters(method_name):
+#             # Call the parse method
+#             self.parse()
 
-        #######################
-# MAYBE THIS IS STILL USEFULL
-        # Call the wrapped function
-        out = None
-        try:
-            out = func(self, *args, **kwargs)
-        # Handle any error to avoid Flask using the HTML web page for errors
-        except BaseException as e:
-            # raise e
-            log.warning("nb: dig more changing the decorator 'except'")
-            # If we raise NotImpleted
-            if isinstance(e, NotImplementedError):
-                message = "Missing functionality"
-            else:
-                message = "Unexpected error"
-            return self.report_generic_error("%s\n[%s]" % (message, e))
-        finally:
-            log.debug("Called %s", func)
+#         #######################
+# # MAYBE THIS IS STILL USEFULL
+#         # Call the wrapped function
+#         out = None
+#         try:
+#             out = func(self, *args, **kwargs)
+#         # Handle any error to avoid Flask using the HTML web page for errors
+#         except BaseException as e:
+#             # raise e
+#             log.warning("nb: dig more changing the decorator 'except'")
+#             # If we raise NotImpleted
+#             if isinstance(e, NotImplementedError):
+#                 message = "Missing functionality"
+#             else:
+#                 message = "Unexpected error"
+#             return self.report_generic_error("%s\n[%s]" % (message, e))
+#         finally:
+#             log.debug("Called %s", func)
 
-        return out
+#         return out
 
-    return wrapper
+#     return wrapper
 
 
 # ##############################

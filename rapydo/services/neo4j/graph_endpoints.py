@@ -48,18 +48,6 @@ class GraphBaseOperations(EndpointResource):
         except Model.DoesNotExist:
             return None
 
-    def countNodes(self, type):
-        query = "MATCH (a:%s) RETURN count(a) as count" % type
-
-        records = self.graph.cypher(query)
-        for record in records:
-            if (record is None):
-                return 0
-            if (record.count is None):
-                return 0
-
-        return record.count
-
     # HANDLE INPUT PARAMETERS
 
     @staticmethod
@@ -67,38 +55,6 @@ class GraphBaseOperations(EndpointResource):
 
         separator = "#_#"
         return separator.join(var)
-
-    def readProperty(self, schema, values, checkRequired=True):
-
-        log.warning("This method is deprecated, use read_properties instead")
-
-        properties = {}
-        for field in schema:
-            if 'islink' in field:
-                continue
-
-            k = field["key"]
-            if k in values:
-                properties[k] = values[k]
-
-            # this field is missing but required!
-            elif checkRequired and field["required"] == "true":
-                raise RestApiException(
-                    'Missing field: %s' % k,
-                    status_code=hcodes.HTTP_BAD_REQUEST)
-
-        return properties
-
-    def updateProperties(self, instance, schema, properties):
-
-        log.warning("This method is deprecated, use update_properties instead")
-
-        for field in schema:
-            if 'islink' in field:
-                continue
-            key = field["key"]
-            if key in properties:
-                instance.__dict__[key] = properties[key]
 
     def read_properties(self, schema, values, checkRequired=True):
 
