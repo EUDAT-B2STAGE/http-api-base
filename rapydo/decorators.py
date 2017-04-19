@@ -19,6 +19,7 @@ I didn't manage so far to have it working in the way the documentation require.
 
 # import traceback
 from functools import wraps
+from rapydo.exceptions import RestApiException
 from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.globals import mem
 from rapydo.utils.logs import get_logger
@@ -209,45 +210,13 @@ def apimethod(func):
 
 #####################################################################
 # Error handling with custom methods
-def exceptionError(self, e, code):
+def send_error(self, e, code=None):
+
+    if code is None:
+        code = hcodes.HTTP_BAD_REQUEST
     error = str(e)
     log.error(error)
     return self.send_errors(message=error, code=code)
-
-
-def error_handler(func, self, exception,
-                  catch_generic, args, kwargs):
-
-    out = None
-    try:
-        out = func(self, *args, **kwargs)
-    # Catch the single exception that the user requested
-    except exception as e:
-
-        error_code = None
-        if hasattr(e, "status_code"):
-            error_code = getattr(e, "status_code")
-
-        if error_code is None:
-            error_code = hcodes.HTTP_BAD_REQUEST
-
-        return exceptionError(self, e, error_code)
-# TODO: check with @mdantonio
-    # except Exception as e:
-    #     log.warning(
-    #         "Unexpected exception inside error handler:\n%s" % str(e))
-
-    #     if not catch_generic:
-    #         raise e
-    #     else:
-    #         traceback.print_exc()
-    #         return exceptionError(
-    #             self, 'Please contact service administrators',
-    #             code=hcodes.HTTP_SERVER_ERROR)
-    else:
-        pass
-
-    return out
 
 
 def catch_error(exception=None, catch_generic=True):
@@ -255,12 +224,42 @@ def catch_error(exception=None, catch_generic=True):
     A decorator to preprocess an API class method,
     and catch a specific error.
     """
+
+    if exception is None:
+        exception = RestApiException
+
     def decorator(func):
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            return error_handler(
-                func, self,
-                exception, catch_generic,
-                args, kwargs)
+            out = None
+
+            try:
+                out = func(self, *args, **kwargs)
+            # Catch the single exception that the user requested
+            except exception as e:
+
+                if hasattr(e, "status_code"):
+                    error_code = getattr(e, "status_code")
+                    return send_error(self, e, error_code)
+
+                return send_error(self, e)
+
+            # Catch the basic API exception
+            except RestApiException as e:
+
+                if catch_generic:
+                    return send_error(self, e, e.status_code)
+                else:
+                    raise e
+
+            # Catch any other exception
+            except Exception as e:
+
+                if catch_generic:
+                    return send_error(self, e)
+                else:
+                    raise e
+
+            return out
         return wrapper
     return decorator

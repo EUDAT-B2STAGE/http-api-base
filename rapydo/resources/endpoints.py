@@ -29,7 +29,7 @@ MAX_PASSWORD_VALIDITY = 0
 DISABLE_UNUSED_CREDENTIALS_AFTER = 0
 MAX_LOGIN_ATTEMPTS = 0
 SECOND_FACTOR_AUTHENTICATION = None
-# TOTP = 'TOTP'
+TOTP = 'TOTP'
 # SECOND_FACTOR_AUTHENTICATION = TOTP
 PROJECT_NAME = "Genomic Repository"
 
@@ -221,7 +221,7 @@ class SwaggerSpecifications(EndpointResource):
 class Login(EndpointResource):
     """ Let a user login with the developer chosen method """
 
-    @decorate.catch_error(exception=RestApiException, catch_generic=True)
+    @decorate.catch_error()
     def post(self):
 
         # ########## INIT ##########
@@ -484,7 +484,7 @@ class Profile(EndpointResource):
 
         return data
 
-    @decorate.catch_error(exception=RestApiException, catch_generic=True)
+    @decorate.catch_error()
     def put(self):
         """ Update profile for current user """
 
