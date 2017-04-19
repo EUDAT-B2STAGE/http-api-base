@@ -90,17 +90,22 @@ class Meta(object):
         try:
             # Meta language for dinamically import
             module = import_module(modulestring)
-        except ModuleNotFoundError as e:
-            # if True:
-            if exit_if_not_found:
-                raise e
-            else:
-                log.warning("Module %s not found " % modulestring)
         except ImportError as e:
             if exit_on_fail:
                 raise e
             else:
                 log.warning("Failed to load module: " + str(e))
+
+        # TO FIX: cannot use the proper exception (available in python 3.6+)
+        # because we are stuck on python 3.5 con IMC
+        # except ModuleNotFoundError as e:
+        except BaseException as e:
+            # if True:
+            if exit_if_not_found:
+                raise e
+            else:
+                log.warning("Module %s not found " % modulestring)
+
         return module
 
     def import_submodules_from_package(self, package_name):
