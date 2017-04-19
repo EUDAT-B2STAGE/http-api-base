@@ -16,10 +16,10 @@ export TESTING_FLASK="True"
 com="nose2 -F"
 option="-s test"
 cov_reports=" --coverage-report term --coverage-report html"
-cov_options="--output-buffer -C --coverage rapydo"
-if [ ! -z "$1" ]; then
-    echo "extra coverage for project '$1'"
-    cov_options="$cov_options --coverage $1"
+cov_options="--output-buffer -C --coverage rapydo --coverage flask_ext"
+if [ ! -z "$VANILLA_PACKAGE" ]; then
+    echo "Extra coverage for project '$VANILLA_PACKAGE'"
+    cov_options="$cov_options --coverage $VANILLA_PACKAGE"
 fi
 echo $com $cov_options $cov_reports
 
