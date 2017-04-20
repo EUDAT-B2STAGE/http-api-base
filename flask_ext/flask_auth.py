@@ -7,6 +7,9 @@ log = get_logger(__name__)
 
 
 class Authenticator(BaseExtension):
+    """
+    The generic authentication Flask extension
+    """
 
     def custom_connection(self, **kwargs):
 

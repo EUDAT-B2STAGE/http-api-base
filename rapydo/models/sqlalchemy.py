@@ -34,6 +34,9 @@ class User(db.Model):
     email = db.Column(db.String(100), unique=True)
     authmethod = db.Column(db.String(20))
     password = db.Column(db.String(255))
+    first_login = db.Column(db.DateTime)
+    last_login = db.Column(db.DateTime)
+    last_password_change = db.Column(db.DateTime)
     roles = db.relationship('Role', secondary=roles_users,
                             backref=db.backref('users', lazy='dynamic'))
 
