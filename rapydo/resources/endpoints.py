@@ -136,9 +136,7 @@ class Login(EndpointResource):
         if self.auth.FORCE_FIRST_PASSWORD_CHANGE and last_pwd_change == epoch:
 
             message_body['actions'].append('FIRST LOGIN')
-            error_message = """
-                Please change your temporary password
-                """
+            error_message = "Please change your temporary password"
 
             if totp_authentication:
 

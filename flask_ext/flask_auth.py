@@ -105,7 +105,10 @@ class HandleSecurity(object):
             import pyotp
             import pyqrcode
 
-            log.debug("TOTP is available", pyotp, pyqrcode)
+            del(pyotp)
+            del(pyqrcode)
+
+            log.debug("TOTP is available")
         # TO FIX: cannot use the proper exception (available in python 3.6+)
         # because we are stuck on python 3.5 con IMC
         # except ModuleNotFoundError:
@@ -122,6 +125,8 @@ class HandleSecurity(object):
                 log.warning("TOTP is not available")
 
     def get_secret(self, user):
+
+        return 'base32secret3232'
         # TO FIX: use a real secret
         # hashes does not works... maybe too long??
         # import hashlib
@@ -134,7 +139,7 @@ class HandleSecurity(object):
         # decoding errors...
         # return str(user.name)
 
-        return base64.b32encode(user.name.encode('utf-8'))
+        # return base64.b32encode(user.name.encode('utf-8'))
 
     def verify_token(self, username, token):
         if token is None:
@@ -153,7 +158,6 @@ class HandleSecurity(object):
             valid = False
         else:
             secret = self.get_secret(user)
-            log.critical(secret)
             totp = pyotp.TOTP(secret)
             if not totp.verify(totp_code):
                 if self.auth.REGISTER_FAILED_LOGIN:
