@@ -174,7 +174,6 @@ class HandleSecurity(object):
     def get_qrcode(self, user):
 
         secret = self.get_secret(user)
-        log.critical(secret)
         totp = pyotp.TOTP(secret)
 
         global_conf = mem.customizer._configurations
