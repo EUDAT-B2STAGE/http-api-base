@@ -29,7 +29,7 @@ backend:
   working_dir: /code
   environment:
     VANILLA_PACKAGE: custom
-    JWT_APP_SECRETS: /jwt_tokens
+    JWT_APP_SECRETS: ${JWT_APP_SECRETS}
   volumes:
     # Base code
     - ../backend:/code
@@ -112,7 +112,9 @@ proxy:
 
 ##############################
 swagger:
-  image: eudatb2stage/swagger-ui:latest
+  # image: eudatb2stage/swagger-ui:latest
+  build: ./builds/swaggerui
+  # image: swagger-ui:rapydo
 
 #######################
 # Define here your services
