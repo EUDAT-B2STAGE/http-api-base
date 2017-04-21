@@ -113,7 +113,7 @@ proxy:
 ##############################
 swagger:
   # image: eudatb2stage/swagger-ui:latest
-  build: ./builds/swaggerui
+  build: ../builds/swaggerui
   # image: swagger-ui:rapydo
 
 #######################
