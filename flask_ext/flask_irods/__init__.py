@@ -60,14 +60,14 @@ class IrodsPythonExt(BaseExtension):
                 valid, not_before, not_after = \
                     Certificates.check_certificate_validity(proxy_cert_file)
                 if not valid:
-                    raise Exception(
-                        "Invalid GSI certificate (%s). Validity: %s - %s"
+                    log.warning(
+                        "Invalid proxy certificate for %s. Validity: %s - %s"
                         % (user, not_before, not_after)
                     )
 
             # Proxy file does not exist or expired
             if not valid:
-                log.warning("Invalid proxy for %s refresh" % user)
+                log.warning("Creating a new proxy for %s" % user)
                 try:
 
                     irods_env = os.environ
@@ -77,6 +77,7 @@ class IrodsPythonExt(BaseExtension):
                     myproxy_host = "grid.hpc.cineca.it"
 
                     valid = Certificates.get_myproxy_certificate(
+                        # TO FIX: X509_CERT_DIR should be enough
                         irods_env=irods_env,
                         irods_user=user,
                         myproxy_cert_name=cert_name,
@@ -86,14 +87,11 @@ class IrodsPythonExt(BaseExtension):
                     )
 
                     if valid:
-                        log.info(
-                            "Proxy refreshed for %s" % user)
+                        log.info("Proxy refreshed for %s" % user)
                     else:
-                        log.error(
-                            "Cannot refresh proxy for user %s" % user)
+                        log.error("Got invalid proxy for user %s" % user)
                 except Exception as e:
-                    log.critical(
-                        "Cannot refresh proxy for user %s" % user)
+                    log.critical("Cannot refresh proxy for user %s" % user)
                     log.critical(e)
 
             ##################

@@ -48,18 +48,6 @@ class GraphBaseOperations(EndpointResource):
         except Model.DoesNotExist:
             return None
 
-    def countNodes(self, type):
-        query = "MATCH (a:%s) RETURN count(a) as count" % type
-
-        records = self.graph.cypher(query)
-        for record in records:
-            if (record is None):
-                return 0
-            if (record.count is None):
-                return 0
-
-        return record.count
-
     # HANDLE INPUT PARAMETERS
 
     @staticmethod
@@ -67,38 +55,6 @@ class GraphBaseOperations(EndpointResource):
 
         separator = "#_#"
         return separator.join(var)
-
-    def readProperty(self, schema, values, checkRequired=True):
-
-        log.warning("This method is deprecated, use read_properties instead")
-
-        properties = {}
-        for field in schema:
-            if 'islink' in field:
-                continue
-
-            k = field["key"]
-            if k in values:
-                properties[k] = values[k]
-
-            # this field is missing but required!
-            elif checkRequired and field["required"] == "true":
-                raise myGraphError(
-                    'Missing field: %s' % k,
-                    status_code=hcodes.HTTP_BAD_REQUEST)
-
-        return properties
-
-    def updateProperties(self, instance, schema, properties):
-
-        log.warning("This method is deprecated, use update_properties instead")
-
-        for field in schema:
-            if 'islink' in field:
-                continue
-            key = field["key"]
-            if key in properties:
-                instance.__dict__[key] = properties[key]
 
     def read_properties(self, schema, values, checkRequired=True):
 
@@ -115,7 +71,7 @@ class GraphBaseOperations(EndpointResource):
 
             # this field is missing but required!
             elif checkRequired and field["required"]:
-                raise myGraphError(
+                raise RestApiException(
                     'Missing field: %s' % k,
                     status_code=hcodes.HTTP_BAD_REQUEST)
 
@@ -163,31 +119,6 @@ class GraphBaseOperations(EndpointResource):
         return value.split(split_char)
 
 
-class myGraphError(RestApiException):
-    pass
-    # status_code = None
-
-    # def __init__(self, exception, status_code=hcodes.HTTP_BAD_NOTFOUND):
-    #     super(myGraphError).__init__()
-    #     self.status_code = status_code
-
-
-def returnError(self, label=None, error=None, code=hcodes.HTTP_BAD_NOTFOUND):
-
-    if label is not None:
-        log.warning(
-            "Dictionary errors are deprecated, " +
-            "send errors as a list of strings instead"
-        )
-
-    if error is None:
-        error = "Raised an error without any motivation..."
-    else:
-        error = str(error)
-    log.error(error)
-    return self.force_response(errors=[error], code=code)
-
-
 def graph_transactions(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -224,15 +155,6 @@ def catch_graph_exceptions(func):
 
         try:
             return func(self, *args, **kwargs)
-        except (myGraphError) as e:
-            # if e.status_code == hcodes.HTTP_BAD_FORBIDDEN:
-            #     label = 'Forbidden'
-            # elif e.status_code == hcodes.HTTP_BAD_NOTFOUND:
-            #     label = 'Not found'
-            # else:
-            #     label = 'Bad request'
-            # return returnError(self, label, e, code=e.status_code)
-            return returnError(self, label=None, error=e, code=e.status_code)
 
         except (UniqueProperty) as e:
 
@@ -242,22 +164,19 @@ def catch_graph_exceptions(func):
             if m:
                 node = m.group(1)
                 prop = m.group(2)
-                parsedError = "A %s already exist with %s" % (node, prop)
+                error = "A %s already exist with %s" % (node, prop)
             else:
-                parsedError = e
+                error = str(e)
 
-            return returnError(
-                self, label=None,
-                error=parsedError, code=hcodes.HTTP_BAD_CONFLICT)
+            raise RestApiException(
+                error,
+                status_code=hcodes.HTTP_BAD_CONFLICT
+            )
         except (RequiredProperty) as e:
-            return returnError(self, label=None, error=e)
+            raise RestApiException(str(e))
 
         # TOFIX: to be specified with new neomodel exceptions
         # except ConstraintViolation as e:
-            # return returnError(self, label=None, error=e)
-        # except (GraphError) as e:
-            # Also returned for duplicated fields...
-            # UniqueProperty not catched?
-            # return returnError(self, label=None, error=e)
+        # except UniqueProperty as e:
 
     return wrapper

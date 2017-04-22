@@ -188,6 +188,20 @@ class TestUtilities(unittest.TestCase):
         content = json.loads(r.data.decode('utf-8'))
         return content['Response']['data']
 
+    def getDynamicInputSchema(self, endpoint, headers):
+        """
+            Retrieve a dynamic data schema associated with a endpoint
+        """
+
+        data = {"get_schema": 1}
+        r = self.app.post(
+            "%s/%s" % (API_URI, endpoint),
+            data=data,
+            headers=headers)
+        self.assertEqual(r.status_code, OK)
+        content = json.loads(r.data.decode('utf-8'))
+        return content['Response']['data']
+
     def buildData(self, schema):
         """
             Input: a Swagger-like schema

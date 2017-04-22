@@ -224,6 +224,7 @@ class Customizer(object):
         #####################
         # Check for dependecies and skip if missing
         for dependency in conf.pop('depends_on', []):
+            # TO FIX: uhm? Should verify the env variable {SERVICE}_ENABLE?
             if not getattr(module, dependency, False):
                 log.debug("Skip '%s': unmet %s" % (default_uri, dependency))
                 return endpoint
