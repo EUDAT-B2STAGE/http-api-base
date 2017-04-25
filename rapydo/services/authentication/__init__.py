@@ -40,7 +40,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
     ##########################
     _oauth2 = {}
-    _payload = {}
 
     longTTL = 2592000     # 1 month in seconds
     shortTTL = 604800     # 1 week in seconds
@@ -48,8 +47,9 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     def __init__(self):
         # TODO: myinit is a class method for unittest could it be fixed?
         self.myinit()
-        self._user = None
+        # Create variables to be fulfilled by the authentication decorator
         self._token = None
+        self._user = None
 
     @classmethod
     def myinit(cls):
@@ -167,10 +167,18 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     # ########################
     # # Retrieve information #
     # ########################
+
     def get_user(self):
+        """
+            Current user, obtained by the authentication decorator
+            inside the same Request (which is the same object instance)
+        """
         return self._user
 
     def get_token(self):
+        """
+            Current token obtained by the authentication decorator
+        """
         return self._token
 
     @abc.abstractmethod
@@ -230,12 +238,11 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     # ###################
     def create_token(self, payload):
         """ Generate a byte token with JWT library to encrypt the payload """
-        self._payload = payload
-        self._user = self.get_user_object(payload=self._payload)
+        self._user = self.get_user_object(payload=payload)
         encode = jwt.encode(
             payload, self.JWT_SECRET, algorithm=self.JWT_ALGO).decode('ascii')
 
-        return encode, self._payload['jti']
+        return encode, payload['jti']
 
     # TO FIX: this method is not used
     def create_temporary_token(self, user):
@@ -263,7 +270,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     def unpack_token(self, token):
 
         payload = None
-
         try:
             payload = jwt.decode(
                 token, self.JWT_SECRET, algorithms=[self.JWT_ALGO])
@@ -282,7 +288,7 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     def verify_token(self, token):
 
         # Force token cleaning
-        self._payload = {}
+        payload = {}
         self._user = None
 
         if token is None:
@@ -293,20 +299,20 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         if tmp_payload is None:
             return False
         else:
-            self._payload = tmp_payload
+            payload = tmp_payload
 
         # Get the user from payload
-        self._user = self.get_user_object(payload=self._payload)
+        self._user = self.get_user_object(payload=payload)
         if self._user is None:
             return False
 
         if not self.verify_token_custom(
            user=self._user,
-           jti=self._payload['jti'], payload=self._payload):
+           jti=payload['jti'], payload=payload):
             return False
         # e.g. for graph: verify the (token <- user) link
 
-        if not self.refresh_token(self._payload['jti']):
+        if not self.refresh_token(payload['jti']):
             return False
 
         logfunc = log.verbose

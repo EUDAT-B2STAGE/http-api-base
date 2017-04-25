@@ -40,6 +40,10 @@ class Detector(object):
         self.load_classes()
 
     @staticmethod
+    def get_global_var(key):
+        return os.environ.get(key, None)
+
+    @staticmethod
     def get_bool_from_os(name):
         bool_var = os.environ.get(name, False)
         if not isinstance(bool_var, bool):

@@ -8,8 +8,9 @@ import os
 import re
 import glob
 from rapydo.confs import (
-    BACKEND_PACKAGE, CUSTOM_PACKAGE, CORE_CONFIG_PATH, PROJECT_CONF_FILE,
-    API_URL, BASE_URLS,
+    BACKEND_PACKAGE, CUSTOM_PACKAGE,
+    CORE_CONFIG_PATH, PROJECT_CONF_FILE,
+    API_URL, BASE_URLS
 )
 
 # TO FIX: should be imported after reading logger level from conf
@@ -217,8 +218,10 @@ class Customizer(object):
         module = self._meta.get_module_from_string(name)
 
         if module is None:
-            log.warning("Could not find module %s in %s" % (name, file_name))
-            # exit(1)
+            debugger = log.warning
+            if self._production:
+                debugger = log.critical_exit
+            debugger("Could not find module %s (in %s)" % (name, file_name))
             return endpoint
 
         #####################
