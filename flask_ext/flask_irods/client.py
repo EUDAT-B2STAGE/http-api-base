@@ -441,7 +441,7 @@ class IrodsPythonClient():
         if user is None:
             user = self.get_current_user()
 
-        home = self.variables.get('home')
+        home = self.variables.get('home', 'home')
         if home.startswith(zone):
             home = home[len(zone):]
 
