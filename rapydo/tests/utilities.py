@@ -73,6 +73,11 @@ class TestUtilities(unittest.TestCase):
 
         return definition
 
+    def save_definition(self, endpoint, label):
+        specs = self.get("specs")
+        definition = self.get_definition(specs, endpoint)
+        self.save(label, definition)
+
     def get_error_message(self, definition, method, status_code):
         """
             Given a swagger definition for an endpoint, this method extracts
@@ -114,28 +119,90 @@ class TestUtilities(unittest.TestCase):
         """
             Retrieve a previously stored variable using the .save method
         """
-        if not hasattr(self.__class__, variable):
-            return None
+        if hasattr(self.__class__, variable):
+            data = getattr(self.__class__, variable)
+            if "value" in data:
+                return data["value"]
 
-        data = getattr(self.__class__, variable)
-        if "value" in data:
-            return data["value"]
+        raise AttributeError("Class variable %s not found" % variable)
         return None
 
-    def create_user(self, username, password, *args, **kwargs):
-        raise NotImplemented(
-            "Define this function, we should implemented a common endpoint")
+    def get_user_uuid(self, email):
 
-    def do_login(self, USER, PWD, status_code=OK):
+        admin_headers = self.get("admin_headers")
+        endpoint = 'admin/users'
+        users_def = self.get("def.users")
+        users = self._test_get(users_def, endpoint, admin_headers, OK)
+        for x in users:
+            if x.attributes.email == email:
+                user = x._id
+                return user
+
+        return None
+
+    def create_user(self, username, **kwargs):
+
+        users_def = self.get("def.users")
+        user_def = self.get("def.user")
+        admin_headers = self.get("admin_headers")
+        endpoint = 'admin/users'
+
+        # This prefix ensure a strong password
+
+        if "password" in kwargs:
+            password = kwargs.pop("password")
+        else:
+            password = self.randomString(prefix="Aa1+")
+
+        user = self.get_user_uuid(username)
+
+        if user is not None:
+            self._test_delete(user_def, 'admin/users/' + user,
+                              admin_headers, NO_CONTENT)
+
+        data = {}
+        data['email'] = username
+        data['password'] = password
+        data['name'] = username
+        data['surname'] = username
+
+        for v in kwargs:
+            data[v] = kwargs[v]
+
+        # data['group'] = group
+        # if irods_user is not None:
+        #     data['irods_user'] = irods_user
+
+        # if irods_cert is not None:
+        #     data['irods_cert'] = irods_cert
+
+        user = self._test_create(users_def, endpoint, admin_headers, data, OK)
+
+        env = os.environ
+        CHANGE_FIRST_PASSWORD = env.get("AUTH_FORCE_FIRST_PASSWORD_CHANGE")
+
+        if CHANGE_FIRST_PASSWORD:
+            error = "Please change your temporary password"
+            self.do_login(username, password,
+                          status_code=FORBIDDEN, error=error)
+
+            new_password = self.randomString(prefix="Aa1+")
+            data = {
+                "new_password": new_password,
+                "password_confirm": new_password
+            }
+
+            self.do_login(username, password, status_code=OK, **data)
+            # password change also changes the uuid
+            user = self.get_user_uuid(username)
+            password = new_password
+
+        return user, password
+
+    def do_login(self, USER, PWD, status_code=OK, error=None, **kwargs):
         """
             Make login and return both token and authorization header
         """
-
-        # READ AUTH CONFIGURATION
-
-        # env = os.environ
-        # CHANGE_FIRST_PASSWORD = env.get("AUTH_FORCE_FIRST_PASSWORD_CHANGE")
-        # VERIFY_PASSWORD_STRENGTH = env.get("AUTH_VERIFY_PASSWORD_STRENGTH")
 
         # AUTH_MAX_LOGIN_ATTEMPTS=0
         # AUTH_REGISTER_FAILED_LOGIN=False
@@ -145,14 +212,26 @@ class TestUtilities(unittest.TestCase):
         # AUTH_DISABLE_UNUSED_CREDENTIALS_AFTER=0
         # AUTH_MAX_PASSWORD_VALIDITY=0
 
+        data = {'username': USER, 'password': PWD}
+        for v in kwargs:
+            data[v] = kwargs[v]
+
         r = self.app.post(AUTH_URI + '/login',
-                          data=json.dumps({
-                                          'username': USER,
-                                          'password': PWD
-                                          }))
+                          data=json.dumps(data))
+
+        if r.status_code != OK:
+            # VERY IMPORTANT FOR DEBUGGING WHEN ADVANCED AUTH OPTIONS ARE ON
+            c = json.loads(r.data.decode('utf-8'))
+            log.error(c['Response']['errors'])
+
         self.assertEqual(r.status_code, status_code)
 
         content = json.loads(r.data.decode('utf-8'))
+        if error is not None:
+            errors = content['Response']['errors']
+            if errors is not None:
+                self.assertEqual(errors[0], error)
+
         token = ''
         if content is not None:
             data = content.get('Response', {}).get('data', {})
