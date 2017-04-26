@@ -161,7 +161,7 @@ mongodb:
 #################################
 # FTP
 
- ftp:
+ftp:
   # image: stilliard/pure-ftpd:latest
   build: ../builds/ftp
   volumes:
