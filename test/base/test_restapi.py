@@ -6,7 +6,7 @@ Tests for http api base
 """
 
 import json
-# from test import RestTestsBase
+from test import RestTestsBase
 from rapydo.tests.utilities import TestUtilities
 from rapydo.utils.logs import get_logger
 
@@ -14,7 +14,7 @@ __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 log = get_logger(__name__)
 
 
-class BaseTests(TestUtilities):
+class BaseTests(RestTestsBase, TestUtilities):
 
     """
     Unittests perpared for the core basic functionalities.
