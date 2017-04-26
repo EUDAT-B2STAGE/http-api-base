@@ -3,6 +3,7 @@ import random
 import json
 import string
 import logging
+import os
 
 from rapydo.confs import DEFAULT_HOST, DEFAULT_PORT, API_URL, AUTH_URL
 from rapydo.utils.logs import get_logger
@@ -121,17 +122,35 @@ class TestUtilities(unittest.TestCase):
             return data["value"]
         return None
 
-    def do_login(self, USER, PWD):
+    def create_user(self, username, password, *args, **kwargs):
+        raise NotImplemented(
+            "Define this function, we should implemented a common endpoint")
+
+    def do_login(self, USER, PWD, status_code=OK):
         """
             Make login and return both token and authorization header
         """
+
+        # READ AUTH CONFIGURATION
+
+        # env = os.environ
+        # CHANGE_FIRST_PASSWORD = env.get("AUTH_FORCE_FIRST_PASSWORD_CHANGE")
+        # VERIFY_PASSWORD_STRENGTH = env.get("AUTH_VERIFY_PASSWORD_STRENGTH")
+
+        # AUTH_MAX_LOGIN_ATTEMPTS=0
+        # AUTH_REGISTER_FAILED_LOGIN=False
+
+        # AUTH_SECOND_FACTOR_AUTHENTICATION=None
+
+        # AUTH_DISABLE_UNUSED_CREDENTIALS_AFTER=0
+        # AUTH_MAX_PASSWORD_VALIDITY=0
 
         r = self.app.post(AUTH_URI + '/login',
                           data=json.dumps({
                                           'username': USER,
                                           'password': PWD
                                           }))
-        self.assertEqual(r.status_code, OK)
+        self.assertEqual(r.status_code, status_code)
 
         content = json.loads(r.data.decode('utf-8'))
 
