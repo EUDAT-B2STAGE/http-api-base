@@ -128,7 +128,7 @@ class IrodsPythonExt(BaseExtension):
                     log.critical("Cannot find a valid certificate file")
             else:
                 raise NotImplemented(
-                    "Unable to create session, not valid auth option found")
+                    "Unable to create session, no valid auth option found")
 
     def custom_connection(self, **kwargs):
 

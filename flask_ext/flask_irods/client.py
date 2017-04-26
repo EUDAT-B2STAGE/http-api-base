@@ -321,14 +321,16 @@ class IrodsPythonClient():
                     self.create_empty(
                         destination, directory=False, ignore_existing=force)
                     obj = self.rpc.data_objects.get(destination)
+
                     # with obj.open("w") as target:
                     #     for line in handle:
                     #         s = line.encode("utf-8")
                     #         target.write(s)
+
                     with obj.open('w+') as target:
                         for line in handle:
                             if isinstance(line, str):
-                                print("line", line, type(line), )
+                                # print("line", line, type(line), )
                                 buffer = bytearray()
                                 buffer.extend(map(ord, line))
                                 # buffer.extend(line.encode())
@@ -438,11 +440,10 @@ class IrodsPythonClient():
 
         if user is None:
             user = self.get_current_user()
-
         if user == self.variables.get('user'):
             home = self.variables.get('home')
         else:
-            home = 'home'
+            home = os.path.join('home', user)
 
         if home.startswith("/"):
             if home.startswith(zone):
@@ -450,7 +451,8 @@ class IrodsPythonClient():
             else:
                 home = home[1:]
 
-        return os.path.join(zone, home, user)
+        path = os.path.join(zone, home.lstrip('/'))
+        return path
 
     def get_current_user(self):
         return self.rpc.username
