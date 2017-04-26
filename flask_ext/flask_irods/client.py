@@ -37,23 +37,6 @@ class IrodsPythonClient():
             root = '/'
         return os.path.join(root, *args)
 
-    # def check_certificate_validity(self, certfile, validity_interval=1):
-    #     args = ["x509", "-in", certfile, "-text"]
-    #     output = self.execute_command("openssl", args)
-
-    #     pattern = re.compile(
-    #         r"Validity.*\n\s*Not Before: (.*)\n" +
-    #         r"\s*Not After *: (.*)")
-    #     validity = pattern.search(output).groups()
-
-    #     not_before = dateutil.parser.parse(validity[0])
-    #     not_after = dateutil.parser.parse(validity[1])
-    #     now = datetime.now(pytz.utc) - timedelta(hours=validity_interval)
-
-    #     valid = (not_after > now) and (not_before < now)
-
-    #     return valid, not_before, not_after
-
 # ##################################
 # ##################################
 # Re-implemented wrappers

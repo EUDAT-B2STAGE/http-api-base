@@ -153,8 +153,11 @@ class TestUtilities(unittest.TestCase):
         self.assertEqual(r.status_code, status_code)
 
         content = json.loads(r.data.decode('utf-8'))
-
-        token = content['Response']['data']['token']
+        token = ''
+        if content is not None:
+            data = content.get('Response', {}).get('data', {})
+            if data is not None:
+                token = data.get('token', '')
         return {'Authorization': 'Bearer ' + token}, token
 
     def destroyToken(self, token, headers):

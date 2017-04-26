@@ -149,7 +149,7 @@ class Certificates(object):
         return proxyfile
 
     @classmethod
-    def check_certificate_validity(cls, certfile, validity_interval=1):
+    def check_cert_validity(cls, certfile, validity_interval=1):
         args = ["x509", "-in", certfile, "-text"]
 
         bash = BashCommands()

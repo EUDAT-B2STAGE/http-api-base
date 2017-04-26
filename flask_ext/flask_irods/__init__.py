@@ -31,6 +31,8 @@ class IrodsPythonExt(BaseExtension):
     def pre_connection(self, **kwargs):
 
         user = kwargs.get('user')
+        self.password = kwargs.get('password')
+
         proxy = kwargs.get('proxy', False)
         admin = kwargs.get('be_admin', False)
 
@@ -40,101 +42,120 @@ class IrodsPythonExt(BaseExtension):
                 user = self.variables.get('default_admin_user')
             else:
                 # There must be some way to fallback here
-                user = self.variables.get('default_user')
+                user = self.variables.get('user')
+                self.password = self.variables.get('password')
 
         if user is None:
             raise AttributeError("No user is defined")
         else:
             self.user = user
             log.verbose("Irods user: %s" % self.user)
+            self.schema = self.variables.get('authscheme')
 
-        # Identity with GSI
-
-        # TO FIX: move this into certificates.py?
-        cdir = Certificates._dir
-        cpath = os.path.join(cdir, self.user)
-
-        xcdir = self.variables.get("x509_cert_dir")
-        if xcdir is None:
-            os.environ['X509_CERT_DIR'] = os.path.join(cdir, 'simple_ca')
+        if not proxy and self.password is not None:
+            # Normal credentials
+            self.schema = 'credentials'
         else:
-            os.environ['X509_CERT_DIR'] = xcdir
+            # Identity with GSI
+            # TO FIX: The only (and main) alternative for now is only GSI
 
-        if os.path.isdir(cpath):
-            if proxy:
-                raise NotImplementedError("to do!")
-                os.environ['X509_USER_PROXY'] = os.path.join('userproxy.crt')
+            # TO FIX: move this into certificates.py?
+            cdir = Certificates._dir
+            cpath = os.path.join(cdir, self.user)
+
+            xcdir = self.variables.get("x509_cert_dir")
+            if xcdir is None:
+                os.environ['X509_CERT_DIR'] = os.path.join(cdir, 'simple_ca')
             else:
-                os.environ['X509_USER_KEY'] = \
-                    os.path.join(cpath, 'userkey.pem')
-                os.environ['X509_USER_CERT'] = \
-                    os.path.join(cpath, 'usercert.pem')
-        else:
-            proxy_cert_file = cpath + '.pem'
-            if not os.path.isfile(proxy_cert_file):
-                # Proxy file does not exist
-                valid = False
+                os.environ['X509_CERT_DIR'] = xcdir
+
+            if os.path.isdir(cpath):
+                if proxy:
+                    # B2ACCESS?
+                    raise NotImplementedError("to check!")
+                    os.environ['X509_USER_PROXY'] = \
+                        os.path.join('userproxy.crt')
+                else:
+                    os.environ['X509_USER_KEY'] = \
+                        os.path.join(cpath, 'userkey.pem')
+                    os.environ['X509_USER_CERT'] = \
+                        os.path.join(cpath, 'usercert.pem')
             else:
-                valid, not_before, not_after = \
-                    Certificates.check_certificate_validity(proxy_cert_file)
+                proxy_cert_file = cpath + '.pem'
+                if not os.path.isfile(proxy_cert_file):
+                    # Proxy file does not exist
+                    valid = False
+                else:
+                    valid, not_before, not_after = \
+                        Certificates.check_cert_validity(proxy_cert_file)
+                    if not valid:
+                        log.warning(
+                            "Invalid proxy certificate for %s. " +
+                            "Validity: %s - %s" % (user, not_before, not_after)
+                        )
+
+                # Proxy file does not exist or expired
                 if not valid:
-                    log.warning(
-                        "Invalid proxy certificate for %s. Validity: %s - %s"
-                        % (user, not_before, not_after)
-                    )
+                    log.warning("Creating a new proxy for %s" % user)
+                    try:
 
-            # Proxy file does not exist or expired
-            if not valid:
-                log.warning("Creating a new proxy for %s" % user)
-                try:
+                        irods_env = os.environ
+                        # cert_pwd = user_node.irods_cert
+                        cert_name = kwargs.pop("proxy_cert_name")
+                        cert_pwd = kwargs.pop("proxy_pass")
 
-                    irods_env = os.environ
-                    # cert_pwd = user_node.irods_cert
-                    cert_name = kwargs.pop("proxy_cert_name")
-                    cert_pwd = kwargs.pop("proxy_pass")
+                        valid = Certificates.get_myproxy_certificate(
+                            # TO FIX: X509_CERT_DIR should be enough
+                            irods_env=irods_env,
+                            irods_user=user,
+                            myproxy_cert_name=cert_name,
+                            irods_cert_pwd=cert_pwd,
+                            proxy_cert_file=proxy_cert_file,
+                            myproxy_host=MYPROXY_HOST
+                        )
 
-                    valid = Certificates.get_myproxy_certificate(
-                        # TO FIX: X509_CERT_DIR should be enough
-                        irods_env=irods_env,
-                        irods_user=user,
-                        myproxy_cert_name=cert_name,
-                        irods_cert_pwd=cert_pwd,
-                        proxy_cert_file=proxy_cert_file,
-                        myproxy_host=MYPROXY_HOST
-                    )
+                        if valid:
+                            log.info("Proxy refreshed for %s" % user)
+                        else:
+                            log.error("Got invalid proxy for user %s" % user)
+                    except Exception as e:
+                        log.critical("Cannot refresh proxy for user %s" % user)
+                        log.critical(e)
 
-                    if valid:
-                        log.info("Proxy refreshed for %s" % user)
-                    else:
-                        log.error("Got invalid proxy for user %s" % user)
-                except Exception as e:
-                    log.critical("Cannot refresh proxy for user %s" % user)
-                    log.critical(e)
-
-            ##################
-            if valid:
-                os.environ['X509_USER_KEY'] = proxy_cert_file
-                os.environ['X509_USER_CERT'] = proxy_cert_file
-            else:
-                log.critical("Cannot find a valid certificate file")
+                ##################
+                if valid:
+                    os.environ['X509_USER_KEY'] = proxy_cert_file
+                    os.environ['X509_USER_CERT'] = proxy_cert_file
+                else:
+                    log.critical("Cannot find a valid certificate file")
 
     def custom_connection(self, **kwargs):
 
-        # In case not set, recover from certificates we have
-        if self.variables.get('dn') is None:
-            # server host certificate
-            self.variables['dn'] = Certificates.get_dn_from_cert(
-                certdir='host', certfilename='hostcert')
+        if self.schema == 'credentials':
 
-        obj = iRODSSession(
-            user=self.user,
-            zone=self.variables.get('zone'),
-            # password='thisismypassword', # authentication_scheme='password',
-            authentication_scheme=self.variables.get('authscheme'),
-            host=self.variables.get('host'),
-            port=self.variables.get('port'),
-            server_dn=self.variables.get('dn')
-        )
+            obj = iRODSSession(
+                user=self.user,
+                password=self.password,
+                authentication_scheme='password',
+                host=self.variables.get('host'),
+                port=self.variables.get('port'),
+                zone=self.variables.get('zone'),
+            )
+        else:
+            # In case not set, recover from certificates we have
+            if self.variables.get('dn') is None:
+                # server host certificate
+                self.variables['dn'] = Certificates.get_dn_from_cert(
+                    certdir='host', certfilename='hostcert')
+
+            obj = iRODSSession(
+                user=self.user,
+                zone=self.variables.get('zone'),
+                authentication_scheme=self.variables.get('authscheme'),
+                host=self.variables.get('host'),
+                port=self.variables.get('port'),
+                server_dn=self.variables.get('dn')
+            )
 
         # Do a simple command to test this session
         u = obj.users.get(self.user)
