@@ -4,6 +4,7 @@
 import os
 from functools import lru_cache
 
+from rapydo.utils import htmlcodes as hcodes
 from irods.access import iRODSAccess
 from irods.models import User, UserGroup
 from irods import exception as iexceptions
@@ -19,8 +20,9 @@ class IrodsException(RestApiException):
 
 class IrodsPythonClient():
 
-    def __init__(self, rpc):
+    def __init__(self, rpc, variables):
         self.rpc = rpc
+        self.variables = variables
 
     def connect(self):
         return self
@@ -68,6 +70,15 @@ class IrodsPythonClient():
             return False
         except iexceptions.DataObjectDoesNotExist:
             return False
+
+    def dataobject_exists(self, path):
+        try:
+            self.rpc.data_objects.get(path)
+        except (
+            iexceptions.CollectionDoesNotExist,
+            iexceptions.DataObjectDoesNotExist
+        ):
+            raise IrodsException("%s not found or no permissions" % path)
 
     def list(self, path=None, recursive=False, detailed=False, acl=False):
         """ List the files inside an iRODS path/collection """
@@ -123,7 +134,7 @@ class IrodsPythonClient():
 
             return data
         except iexceptions.CollectionDoesNotExist as e:
-            raise IrodsException("Collection not found (%s)" % path)
+            raise IrodsException("Collection not found: %s" % path)
 
         # replicas = []
         # for line in lines:
@@ -142,22 +153,24 @@ class IrodsPythonClient():
         try:
 
             ret = self.rpc.collections.create(path)
-            log.debug("Create irods collection: %s" % path)
+            log.debug("Created irods collection: %s" % path)
             return ret
 
         except iexceptions.CAT_NO_ACCESS_PERMISSION:
             raise IrodsException("CAT_NO_ACCESS_PERMISSION")
 
         except iexceptions.CAT_UNKNOWN_COLLECTION:
-            raise IrodsException("Unable to collection, invalid path")
+            raise IrodsException("Unable to create collection, invalid path")
 
         except iexceptions.CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME:
             if not ignore_existing:
-                raise IrodsException("Irods collection already exists")
+                raise IrodsException(
+                    "Irods collection already exists",
+                    status_code=hcodes.HTTP_BAD_REQUEST)
             else:
                 log.debug("Irods collection already exists: %s" % path)
 
-        return False
+        return None
 
     def create_file(self, path, ignore_existing=False):
 
@@ -175,7 +188,9 @@ class IrodsPythonClient():
 
         except iexceptions.OVERWITE_WITHOUT_FORCE_FLAG:
             if not ignore_existing:
-                raise IrodsException("Irods object already exists")
+                raise IrodsException(
+                    "Irods object already exists",
+                    status_code=hcodes.HTTP_BAD_REQUEST)
             log.debug("Irods object already exists: %s" % path)
 
         return False
@@ -303,8 +318,9 @@ class IrodsPythonClient():
                         for line in handle:
                             s = line.decode("utf-8")
                             target.write(s)
-                    target.close()
-            handle.close()
+            # Do not close when you are using 'with'
+                # target.close()
+            # handle.close()
             return True
 
         except iexceptions.DataObjectDoesNotExist:
@@ -313,18 +329,32 @@ class IrodsPythonClient():
 
     def save(self, path, destination, force=False, resource=None):
 
+        # TO FIX: resource is not used!
+
+        # TO FIX: not working with the end of some file??
         try:
-            with open(path, "r") as handle:
-                self.create_empty(
-                    destination, directory=False, ignore_existing=force)
-                obj = self.rpc.data_objects.get(destination)
-                with obj.open('w+') as target:
-                    for line in handle:
-                        a_buffer = bytearray()
-                        a_buffer.extend(map(ord, line))
-                        target.write(a_buffer)
-                    target.close()
-            handle.close()
+            with open(path, "r+") as handle:
+                if handle.readable():
+                    self.create_empty(
+                        destination, directory=False, ignore_existing=force)
+                    obj = self.rpc.data_objects.get(destination)
+                    # with obj.open("w") as target:
+                    #     for line in handle:
+                    #         s = line.encode("utf-8")
+                    #         target.write(s)
+                    with obj.open('w+') as target:
+                        for line in handle:
+                            if isinstance(line, str):
+                                print("line", line, type(line), )
+                                buffer = bytearray()
+                                buffer.extend(map(ord, line))
+                                # buffer.extend(line.encode())
+                                target.write(buffer)
+
+            # Do not close when you are using 'with'
+                # target.close()
+            # handle.close()
+
             return True
         # except iexceptions.DataObjectDoesNotExist:
         #     raise IrodsException("Cannot write to file: not found")
@@ -421,14 +451,21 @@ class IrodsPythonClient():
 
     def get_user_home(self, user=None):
 
-        home = os.environ.get('IRODS_HOME', 'home')
         zone = self.get_current_zone(prepend_slash=True)
-
-        if home.startswith("/"):
-            home = home[1:]
 
         if user is None:
             user = self.get_current_user()
+
+        if user == self.variables.get('user'):
+            home = self.variables.get('home')
+        else:
+            home = 'home'
+
+        if home.startswith("/"):
+            if home.startswith(zone):
+                home = home[len(zone):]
+            else:
+                home = home[1:]
 
         return os.path.join(zone, home, user)
 
@@ -645,10 +682,10 @@ class IrodsPythonClient():
     def user_exists(self, user):
         return self.query_user(field=user) == user
 
-    def become_admin(self, user=None):
-        if IRODS_EXTERNAL:
-            raise ValueError("Cannot raise privileges in external service")
-        return self.change_user(IRODS_DEFAULT_ADMIN)
+    # def become_admin(self, user=None):
+    #     if IRODS_EXTERNAL:
+    #         raise ValueError("Cannot raise privileges in external service")
+    #     return self.change_user(IRODS_DEFAULT_ADMIN)
 
     def get_resources_admin(self):
         resources = []
@@ -709,37 +746,39 @@ class IrodsPythonClient():
             path += filename
         return path
 
-    def change_user(self, user=None, proxy=False):
-        """ Impersonification of another user because you're an admin """
+#     def change_user(self, user=None, proxy=False):
+#         """ Impersonification of another user because you're an admin """
 
-# Where to change with:
-# https://github.com/EUDAT-B2STAGE/http-api/issues/1#issuecomment-196729596
-        self._current_environment = None
+#         # I need to set X509_USER_PROXY
 
-        if user is None:
-            # Do not change user, go with the main admin
-            user = self._init_data['irods_user_name']
-        else:
-            #########
-            # # OLD: impersonification because i am an admin
-            # Use an environment variable to reach the goal
-            # os.environ[IRODS_USER_ALIAS] = user
+# # Where to change with:
+# # https://github.com/EUDAT-B2STAGE/http-api/issues/1#issuecomment-196729596
+#         self._current_environment = None
 
-            #########
-            # # NEW: use the certificate
-            self.prepare_irods_environment(user, proxy=proxy)
+#         if user is None:
+#             # Do not change user, go with the main admin
+#             user = self._init_data['irods_user_name']
+#         else:
+#             #########
+#             # # OLD: impersonification because i am an admin
+#             # Use an environment variable to reach the goal
+#             # os.environ[IRODS_USER_ALIAS] = user
 
-        self._current_user = user
-        log.verbose("Switched to user '%s'" % user)
-        # clean lru_cache because we changed user
-        self.get_user_info.cache_clear()
+#             #########
+#             # # NEW: use the certificate
+#             self.prepare_irods_environment(user, proxy=proxy)
 
-        # If i want to check
-        # return self.list(self.get_user_home(user))
-        return True
+#         self._current_user = user
+#         log.verbose("Switched to user '%s'" % user)
+#         # clean lru_cache because we changed user
+#         self.get_user_info.cache_clear()
 
-    def get_default_user(self):
-        return IRODS_DEFAULT_USER
+#         # If i want to check
+#         # return self.list(self.get_user_home(user))
+#         return True
+
+    # def get_default_user(self):
+    #     return IRODS_DEFAULT_USER
 
     @staticmethod
     def get_translated_user(self, user):
@@ -747,7 +786,7 @@ class IrodsPythonClient():
 #  // TO BE DEPRECATED
         """
         from rapydo.services.irods.translations import \
-            importAccountsToIrodsUsers
+            AccountsToIrodsUsers
         return AccountsToIrodsUsers.email2iuser(user)
 
     def translate_graph_user(self, graph, graph_user):

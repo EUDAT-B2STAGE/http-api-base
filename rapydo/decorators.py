@@ -218,12 +218,21 @@ def send_error(self, e, code=None):
     return self.send_errors(message=error, code=code)
 
 
-def catch_error(exception=None, catch_generic=True):
+def catch_error(
+        exception=None, catch_generic=True,
+        exception_label=None,
+        # TO FIX: where have this gone??
+        # error_code=None,
+        **kwargs):
     """
     A decorator to preprocess an API class method,
     and catch a specific error.
     """
 
+    if exception_label is None:
+        exception_label = ''
+    if len(exception_label) > 0:
+        exception_label += ': '
     if exception is None:
         exception = RestApiException
 
@@ -234,14 +243,16 @@ def catch_error(exception=None, catch_generic=True):
 
             try:
                 out = func(self, *args, **kwargs)
+
             # Catch the single exception that the user requested
             except exception as e:
 
+                message = exception_label + str(e)
                 if hasattr(e, "status_code"):
                     error_code = getattr(e, "status_code")
-                    return send_error(self, e, error_code)
-
-                return send_error(self, e)
+                    return send_error(self, message, error_code)
+                else:
+                    return send_error(self, message)
 
             # Catch the basic API exception
             except RestApiException as e:

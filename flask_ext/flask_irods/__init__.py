@@ -15,6 +15,9 @@ irodslogger.setLevel(logging.INFO)
 
 log = get_logger(__name__)
 
+# TO FIX: @mattia, make it an external variable
+MYPROXY_HOST = "grid.hpc.cineca.it"
+
 """
 When connection errors occurs:
 irods.exception.NetworkException:
@@ -25,32 +28,47 @@ irods.exception.NetworkException:
 
 class IrodsPythonExt(BaseExtension):
 
-    # def prepare_session(self, user=None):
     def pre_connection(self, **kwargs):
 
         user = kwargs.get('user')
+        proxy = kwargs.get('proxy', False)
+        admin = kwargs.get('be_admin', False)
+
         if user is None:
-            self.user = self.variables.get('default_admin_user')
-            # Note: 'user' is referring to the main user inside iCAT
-            # self.user = self.variables.get('user')
+            if not self.variables.get('external') and admin:
+                # Note: 'user' is referring to the main user inside iCAT
+                user = self.variables.get('default_admin_user')
+            else:
+                # There must be some way to fallback here
+                user = self.variables.get('default_user')
+
+        if user is None:
+            raise AttributeError("No user is defined")
         else:
             self.user = user
+            log.verbose("Irods user: %s" % self.user)
 
-        # identity GSI
+        # Identity with GSI
 
         # TO FIX: move this into certificates.py?
         cdir = Certificates._dir
         cpath = os.path.join(cdir, self.user)
 
-        # if os.environ.get('X509_CERT_DIR') is None:
-        if self.variables.get("x509_cert_dir") is None:
+        xcdir = self.variables.get("x509_cert_dir")
+        if xcdir is None:
             os.environ['X509_CERT_DIR'] = os.path.join(cdir, 'simple_ca')
         else:
-            os.environ['X509_CERT_DIR'] = self.variables.get("x509_cert_dir")
+            os.environ['X509_CERT_DIR'] = xcdir
 
         if os.path.isdir(cpath):
-            os.environ['X509_USER_KEY'] = os.path.join(cpath, 'userkey.pem')
-            os.environ['X509_USER_CERT'] = os.path.join(cpath, 'usercert.pem')
+            if proxy:
+                raise NotImplementedError("to do!")
+                os.environ['X509_USER_PROXY'] = os.path.join('userproxy.crt')
+            else:
+                os.environ['X509_USER_KEY'] = \
+                    os.path.join(cpath, 'userkey.pem')
+                os.environ['X509_USER_CERT'] = \
+                    os.path.join(cpath, 'usercert.pem')
         else:
             proxy_cert_file = cpath + '.pem'
             if not os.path.isfile(proxy_cert_file):
@@ -74,7 +92,6 @@ class IrodsPythonExt(BaseExtension):
                     # cert_pwd = user_node.irods_cert
                     cert_name = kwargs.pop("proxy_cert_name")
                     cert_pwd = kwargs.pop("proxy_pass")
-                    myproxy_host = "grid.hpc.cineca.it"
 
                     valid = Certificates.get_myproxy_certificate(
                         # TO FIX: X509_CERT_DIR should be enough
@@ -83,7 +100,7 @@ class IrodsPythonExt(BaseExtension):
                         myproxy_cert_name=cert_name,
                         irods_cert_pwd=cert_pwd,
                         proxy_cert_file=proxy_cert_file,
-                        myproxy_host=myproxy_host
+                        myproxy_host=MYPROXY_HOST
                     )
 
                     if valid:
@@ -123,7 +140,7 @@ class IrodsPythonExt(BaseExtension):
         u = obj.users.get(self.user)
         log.verbose("Testing iRODS session retrieving user %s" % u.name)
 
-        client = IrodsPythonClient(obj)
+        client = IrodsPythonClient(rpc=obj, variables=self.variables)
         return client
 
     def custom_init(self, pinit=False, **kwargs):
