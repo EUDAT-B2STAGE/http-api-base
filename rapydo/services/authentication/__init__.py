@@ -468,46 +468,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     # # Login attempts handling #
     # ###########################
 
-    @abc.abstractmethod
-    def invalidate_token(self, token, user=None):
-        """
-            With this method the specified token must be invalidated
-            as expected after a user logout
-        """
-        return
-
-    def fill_custom_payload(self, userobj, payload):
-        """
-            This method can be implemented by specific Authentication Methods
-            to add more specific payload content
-        """
-        return payload
-
-    def fill_payload(self, userobj):
-        """ Informations to store inside the JWT token,
-        starting from the user obtained from the current service
-
-        Claim attributes listed here:
-        http://blog.apcelent.com/json-web-token-tutorial-example-python.html
-
-        TTL is measured in seconds
-        """
-
-        now = datetime.now(pytz.utc)
-        nbf = now   # you can add a timedelta
-        exp = now + timedelta(seconds=self.longTTL)
-
-        payload = {
-            'user_id': userobj.uuid,
-            'hpwd': userobj.password,
-            'iat': now,
-            'nbf': nbf,
-            'exp': exp,
-            'jti': getUUID()
-        }
-
-        return self.fill_custom_payload(userobj, payload)
-
     def register_failed_login(self, username):
         log.critical("auth.register_failed_login: not implemented")
         return True
