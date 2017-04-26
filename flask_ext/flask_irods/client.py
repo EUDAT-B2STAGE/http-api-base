@@ -440,19 +440,27 @@ class IrodsPythonClient():
 
         if user is None:
             user = self.get_current_user()
-        if user == self.variables.get('user'):
-            home = self.variables.get('home')
-        else:
-            home = os.path.join('home', user)
 
-        if home.startswith("/"):
-            if home.startswith(zone):
-                home = home[len(zone):]
-            else:
-                home = home[1:]
+        home = self.variables.get('home')
+        if home.startswith(zone):
+            home = home[len(zone):]
 
-        path = os.path.join(zone, home.lstrip('/'))
+        path = os.path.join(zone, home.lstrip('/'), user)
         return path
+
+        # if user == self.variables.get('user'):
+        #     home = self.variables.get('home')
+        # else:
+        #     home = os.path.join('home', user)
+
+        # if home.startswith("/"):
+        #     if home.startswith(zone):
+        #         home = home[len(zone):]
+        #     else:
+        #         home = home[1:]
+
+        # path = os.path.join(zone, home.lstrip('/'))
+        # return path
 
     def get_current_user(self):
         return self.rpc.username
