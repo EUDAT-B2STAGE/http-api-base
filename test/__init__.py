@@ -5,15 +5,14 @@ Test base
 """
 
 import unittest
+import json
 import logging
-from restapi.server import create_app
-from restapi.confs.config import TEST_HOST, \
-    SERVER_PORT, API_URL, AUTH_URL
-from restapi.response import get_content_from_response
-from restapi.jsonify import json
-from restapi.resources.services.authentication import BaseAuthentication as ba
-import commons.htmlcodes as hcodes
-from commons.logs import get_logger, set_global_log_level
+from rapydo.server import create_app
+from rapydo.rest.response import get_content_from_response
+from rapydo.services.authentication import BaseAuthentication as ba
+from rapydo.utils import htmlcodes as hcodes
+from rapydo.utils.logs import get_logger, set_global_log_level
+from rapydo.tests.utilities import API_URI, AUTH_URI
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 
@@ -21,15 +20,15 @@ __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 TEST_DEBUGGING_LEVEL = logging.DEBUG
 
 #####################
-set_global_log_level('restapi', TEST_DEBUGGING_LEVEL)
+set_global_log_level('rapydo', TEST_DEBUGGING_LEVEL)
 log = get_logger(__name__)
 
 
 #####################
 class RestTestsBase(unittest.TestCase):
 
-    _api_uri = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, API_URL)
-    _auth_uri = 'http://%s:%s%s' % (TEST_HOST, SERVER_PORT, AUTH_URL)
+    _api_uri = API_URI
+    _auth_uri = AUTH_URI
     _hcodes = hcodes
     latest_response = None
 

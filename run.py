@@ -7,32 +7,13 @@ RESTful API Python 3 Flask server
 
 """
 
-import time
 import os
-from commons import myself, lic, PRODUCTION
-from commons.logs import get_logger
-from restapi.server import create_app
-from restapi.confs.config import SERVER_HOSTS, SERVER_PORT, args
-
-__author__ = myself
-__copyright__ = myself
-__license__ = lic
+import better_exceptions as be
+from rapydo.confs import PRODUCTION
+from rapydo.utils.logs import get_logger
+from rapydo.server import create_app
 
 log = get_logger(__name__)
-
-enable_debug = False
-enable_security = True
-
-if args is not None:
-    if args.debug:
-        enable_debug = True
-        log.warning("Enabling DEBUG mode")
-        time.sleep(1)
-
-    if not args.security:
-        enable_security = False
-        log.warning("No security enabled! Are you really sure?")
-        time.sleep(1)
 
 # The connection is HTTP internally to containers
 # The proxy will handle HTTPS calls
@@ -43,12 +24,12 @@ if PRODUCTION:
 
 #############################
 # BE FLASK
-app = create_app(
-    name='REST_API', enable_security=enable_security, debug=enable_debug)
+app = create_app(name='REST_API')
 
 if __name__ == "__main__":
+    log.debug("Server running (w/ %s)" % be.__name__)
+
     # NOTE: 'threaded' option avoid to see
     # angular request on this server dropping
     # and becoming slow if not totally frozen
-    log.info("*** Running Flask!")
-    app.run(host=SERVER_HOSTS, port=SERVER_PORT, threaded=True)
+    app.run(host='0.0.0.0', threaded=True)
