@@ -15,9 +15,6 @@ irodslogger.setLevel(logging.INFO)
 
 log = get_logger(__name__)
 
-# TO FIX: @mattia, make it an external variable
-MYPROXY_HOST = "grid.hpc.cineca.it"
-
 """
 When connection errors occurs:
 irods.exception.NetworkException:
@@ -35,6 +32,7 @@ class IrodsPythonExt(BaseExtension):
 
         proxy = kwargs.get('proxy', False)
         admin = kwargs.get('be_admin', False)
+        myproxy_host = self.variables.get("myproxy_host")
 
         if user is None:
             if not self.variables.get('external') and admin:
@@ -80,7 +78,7 @@ class IrodsPythonExt(BaseExtension):
                         os.path.join(cpath, 'userkey.pem')
                     os.environ['X509_USER_CERT'] = \
                         os.path.join(cpath, 'usercert.pem')
-            else:
+            elif myproxy_host is not None:
                 proxy_cert_file = cpath + '.pem'
                 if not os.path.isfile(proxy_cert_file):
                     # Proxy file does not exist
@@ -111,7 +109,7 @@ class IrodsPythonExt(BaseExtension):
                             myproxy_cert_name=cert_name,
                             irods_cert_pwd=cert_pwd,
                             proxy_cert_file=proxy_cert_file,
-                            myproxy_host=MYPROXY_HOST
+                            myproxy_host=myproxy_host
                         )
 
                         if valid:
@@ -128,6 +126,9 @@ class IrodsPythonExt(BaseExtension):
                     os.environ['X509_USER_CERT'] = proxy_cert_file
                 else:
                     log.critical("Cannot find a valid certificate file")
+            else:
+                raise NotImplemented(
+                    "Unable to create session, not valid auth option found")
 
     def custom_connection(self, **kwargs):
 
