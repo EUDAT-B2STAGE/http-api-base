@@ -518,8 +518,11 @@ class IrodsPythonClient():
                 units[name] = meta.units
 
             return data, units
-        except iexceptions.DataObjectDoesNotExist:
-            raise IrodsException("Cannot extra metadata, object not found")
+        except (
+            iexceptions.CollectionDoesNotExist,
+            iexceptions.DataObjectDoesNotExist
+        ):
+            raise IrodsException("Cannot extract metadata, object not found")
 
     # We may need this for testing the get_metadata
     def set_metadata(self, path, **meta):
