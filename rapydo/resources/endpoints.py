@@ -28,6 +28,26 @@ class Status(EndpointResource):
 
     def get(self):
         # print(self.auth)
+
+        # # Import smtplib for the actual sending function
+        # import smtplib
+
+        # # Import the email modules we'll need
+        # from email.mime.text import MIMEText
+
+        # msg = MIMEText("just a simple test")
+
+        # # me == the sender's email address
+        # # you == the recipient's email address
+        # msg['Subject'] = 'Test email'
+        # msg['From'] = "m.dantonio@cineca.it"
+        # msg['To'] = "m.dantonio@cineca.it"
+
+        # # Send the message via our own SMTP server.
+        # s = smtplib.SMTP('smtp')
+        # s.send_message(msg)
+        # s.quit()
+
         return 'Server is alive!'
 
 
