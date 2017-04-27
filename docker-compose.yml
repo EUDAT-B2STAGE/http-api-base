@@ -180,3 +180,18 @@ mongodb:
 #     - SMARTHOST_USER=m.dantonio
 #     - SMARTHOST_PASSWORD=-
 #     - SMARTHOST_ALIASES=*.cineca.it
+
+#################################
+# FTP
+
+ftp:
+  # image: stilliard/pure-ftpd:latest
+  build: ../builds/ftp
+  volumes:
+    - ${VOLUMES_PREFIX}_pureftpd:/etc/pure-ftpd/passwd
+# /etc/ssl/private/ A directory containing a single pure-ftpd.pem file
+# with the server's SSL certificates for TLS support. Optional TLS is
+# automatically enabled when the container finds this file on startup.
+  environment:
+    PUBLICHOST: ${PROJECT_DOMAIN}
+    ADDED_FLAGS: -d -d
