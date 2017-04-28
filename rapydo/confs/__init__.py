@@ -29,8 +29,13 @@ USER_HOME = os.environ['HOME']
 UPLOAD_FOLDER = '/uploads'
 SECRET_KEY_FILE = os.environ.get('JWT_APP_SECRETS') + "/secret.key"
 PRODUCTION = False
+DEBUG = False
 if os.environ.get('APP_MODE', '') == 'production':
     PRODUCTION = True
+
+# TO FIX: FROM MATTIA: added this, required by apis/oauth.py ... that's ok?
+elif os.environ.get('APP_MODE', '') == 'debug':
+    DEBUG = True
 
 #################################
 # SQLALCHEMY
