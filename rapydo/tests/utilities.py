@@ -5,6 +5,7 @@ import string
 import logging
 import os
 
+from rapydo.server import create_app
 from rapydo.confs import DEFAULT_HOST, DEFAULT_PORT, API_URL, AUTH_URL
 from rapydo.utils.logs import get_logger
 from rapydo.utils import htmlcodes as hcodes
@@ -50,6 +51,18 @@ class ParsedResponse(object):
 
 
 class TestUtilities(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        "set up test fixtures"
+        print('### Setting up flask server for Telethon tests###')
+        app = create_app(testing_mode=True)
+        cls.app = app.test_client()
+
+    @classmethod
+    def tearDownClass(cls):
+        "tear down test fixtures"
+        print('### Tearing down the flask server ###')
 
     def get_specs(self):
         """
