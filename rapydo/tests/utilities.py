@@ -33,6 +33,7 @@ delete = 'delete'
 OK = hcodes.HTTP_OK_BASIC                           # 200
 NO_CONTENT = hcodes.HTTP_OK_NORESPONSE              # 204
 PARTIAL = hcodes.HTTP_PARTIAL_CONTENT               # 206
+FOUND = hcodes.HTTP_FOUND                           # 302
 BAD_REQUEST = hcodes.HTTP_BAD_REQUEST               # 400
 UNAUTHORIZED = hcodes.HTTP_BAD_UNAUTHORIZED         # 401
 FORBIDDEN = hcodes.HTTP_BAD_FORBIDDEN               # 403
