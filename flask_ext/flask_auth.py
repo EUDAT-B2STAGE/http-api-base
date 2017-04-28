@@ -36,9 +36,18 @@ class Authenticator(BaseExtension):
 
         # If oauth services are available, set them before every request
         from rapydo.services.oauth2clients import ExternalLogins as oauth2
-        if oauth2._check_if_services_exist():
-            ext_auth = oauth2(self.app.config['TESTING'])
-            custom_auth.set_oauth2_services(ext_auth._available_services)
+
+        # TO FIX: from MATTIA: I removed this IF and always create oauth2()
+        # because before of this none create an instance of ExternalLogins to
+        # populate the dictionary of oauth2 services. To fix by putting this
+        # inizialization somewhere
+        # if oauth2._check_if_services_exist():
+        #     ext_auth = oauth2(self.app.config['TESTING'])
+        #     custom_auth.set_oauth2_services(ext_auth._available_services)
+
+        # TO FIX: FROM MATTIA: the testing parameter is still required?
+        ext_auth = oauth2(self.app.config['TESTING'])
+        custom_auth.set_oauth2_services(ext_auth._available_services)
 
         # TO FIX: why tests should use a custom secret?
         # In this way we cannot test the import_secret
