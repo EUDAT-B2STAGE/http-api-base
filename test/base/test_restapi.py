@@ -5,16 +5,12 @@ Tests for http api base
 (mostly authentication)
 """
 
-from betamax import Betamax
 from test import RestTestsBase
 from rapydo.tests.utilities import TestUtilities
 from rapydo.utils.logs import get_logger
 
 __author__ = "Paolo D'Onorio De Meo (p.donoriodemeo@cineca.it)"
 log = get_logger(__name__)
-
-with Betamax.configure() as config:
-    config.cassette_library_dir = 'tests/fixtures/cassettes'
 
 
 class BaseTests(RestTestsBase, TestUtilities):
@@ -35,19 +31,18 @@ class BaseTests(RestTestsBase, TestUtilities):
         pass
 
     def test_01_GET_status(self):
-        with Betamax(self.app).use_cassette('status'):
-            """ Test that the flask server is running and reachable """
+        """ Test that the flask server is running and reachable """
 
-            # Check success
-            endpoint = self._api_uri + '/status'
-            log.info("*** VERIFY if API is online")
-            r = self.app.get(endpoint)
-            self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
+        # Check success
+        endpoint = self._api_uri + '/status'
+        log.info("*** VERIFY if API is online")
+        r = self.app.get(endpoint)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_OK_BASIC)
 
-            # Check failure
-            log.info("*** VERIFY if invalid endpoint gives Not Found")
-            r = self.app.get(self._api_uri)
-            self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_NOTFOUND)
+        # Check failure
+        log.info("*** VERIFY if invalid endpoint gives Not Found")
+        r = self.app.get(self._api_uri)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_NOTFOUND)
 
     def test_02_GET_specifications(self):
         """ Test that the flask server is running and reachable """
