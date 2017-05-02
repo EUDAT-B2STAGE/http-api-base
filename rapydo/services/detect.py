@@ -214,8 +214,8 @@ class Detector(object):
 
                 task_package = "%s.tasks" % CUSTOM_PACKAGE
 
-                submodules = \
-                    self.meta.import_submodules_from_package(task_package)
+                submodules = self.meta.import_submodules_from_package(
+                    task_package, exit_on_fail=True)
                 for submodule in submodules:
                     tasks = self.meta.get_celery_tasks_from_module(submodule)
 

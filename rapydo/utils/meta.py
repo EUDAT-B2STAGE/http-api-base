@@ -95,6 +95,7 @@ class Meta(object):
                 raise e
             else:
                 log.warning("Failed to load module: " + str(e))
+                log.pretty_print("My test")
 
         # TO FIX: cannot use the proper exception (available in python 3.6+)
         # because we are stuck on python 3.5 con IMC
@@ -108,7 +109,9 @@ class Meta(object):
 
         return module
 
-    def import_submodules_from_package(self, package_name):
+    def import_submodules_from_package(self, package_name,
+                                       exit_if_not_found=False,
+                                       exit_on_fail=False):
 
         submodules = []
         package = self.get_module_from_string(package_name)
@@ -116,8 +119,12 @@ class Meta(object):
         for module_name in self.get_submodules_from_package(package):
             module_path = package_name + '.' + module_name
             log.debug("Loading module '%s'" % module_path)
-            submodules.append(
-                self.get_module_from_string(module_path))
+
+            submod = self.get_module_from_string(
+                module_path,
+                exit_if_not_found=exit_if_not_found,
+                exit_on_fail=exit_on_fail)
+            submodules.append(submod)
         return submodules
 
     @staticmethod
