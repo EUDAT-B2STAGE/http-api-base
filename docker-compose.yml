@@ -1,197 +1,191 @@
-
+version: '3'
 ###############################
-# GLOBAL CONFIGURATION
-# conf:
-#   image: busybox
-#   command: ./boot
-#   environment:
-#     APP_MODE: ${SELECTED_APP_MODE}
-#     DEBUG_LEVEL: DEBUG
-#     # Decide which service should handle users inside the backend server
-#     AUTH_SERVICE: relationaldb
-###############################
+services:
+  backend:
+    # command: httpapi 
+    # command: python run.py 
+    # command: sleep 9999999999999 
+    # image: eudatb2stage/apiserver:neo4j3
+    build: ../builds/apiserver
+    hostname: restapi
+    # user may be overriden from project config
+    # note: if you change the user, you should also
+    # fix permissions (e.g. sqllite directory)
+    user: root
+    working_dir: /code
+    environment:
+      FLASK_APP: run.py
+      VANILLA_PACKAGE: custom
+      JWT_APP_SECRETS: ${JWT_APP_SECRETS}
+    volumes:
+      # Base code
+      - ../backend:/code
+      # JWT tokens secret
+      - jwt_tokens:/jwt_tokens
+      # Tests
+      # - ../tests/backend:/code/test/custom
 
 
-###############################
-backend:
-  # command: httpapi 
-  # command: python run.py 
-  command: sleep 9999999999999 
-  # extends:
-  #   service: conf
-  # image: eudatb2stage/apiserver:neo4j3
-  build: ../builds/apiserver
-  hostname: restapi
-  # user may be overriden from project config
-  # note: if you change the user, you should also
-  # fix permissions (e.g. sqllite directory)
-  user: root
-  working_dir: /code
-  environment:
-    VANILLA_PACKAGE: custom
-    JWT_APP_SECRETS: ${JWT_APP_SECRETS}
-  volumes:
-    # Base code
-    - ../backend:/code
-    # JWT tokens secret
-    - jwt_tokens:/jwt_tokens
-    # Tests
-    # - ../tests/backend:/code/test/custom
+  #################################
+  # REDIS key/value store
+  # redqueue:
+  #   image: redis:alpine
+  #   command: redis-server --appendonly yes
+  #   hostname: myqueue
+  #   volumes:
+  #     - redisdata:/data
+
+  rabbit:
+    image: rabbitmq:latest
+    hostname: rabbit
+    volumes:
+      - rabbitdata:/var/lib/rabbitmq
+
+  worker:
+    build: ../builds/celery
+    hostname: celworker
+    user: root
+    working_dir: /code
+    environment:
+      VANILLA_PACKAGE: custom
+      JWT_APP_SECRETS: ${JWT_APP_SECRETS}
+    volumes:
+      # Base code
+      - ../backend:/code
+      # JWT tokens secret
+      - jwt_tokens:/jwt_tokens
+      # Tests
+      - ../tests/backend:/code/test/custom
+    command: celery worker -c 1 -A flask_ext.flask_celery.worker.celery_app
+
+  #################################
+  # Database administration
+
+  # This docker image let you access sqllite/postgres/mysql
+  # with a phpmyadmin-like web page
+  sqladmin:
+    image: eudatb2stage/sqladminer:latest
+
+  ##############################
+  # The proxy which decides to redirect requests
+  # based on URLs received.
+  # Redirects /api to backend
+  # Listens on port 80
+  # Should implements SSL on 443
+
+  proxy:
+    # image: nginx:1.11-alpine
+    build: ../builds/sslproxy
+    hostname: iamaproxy
+    volumes:
+      # - ../containers/nginx_proxy:/etc/nginx/conf.d
+      - ../confs/nginx/production.conf:/etc/nginx/sites-enabled/production
+      # - ../frontend/felask/static:/static
+      # SHARED WITH FRONTEND:
+      # js/css libraries installed via bower
+      - ../libs/bower_components:/data/frontend/felask/static/bower
+      # custom css files
+      - ../css:/data/frontend/felask/static/css/custom
+      # All the angular blueprints (&& templates)
+      - ../frontend/js/angular:/data/frontend/felask/static/app/commons
+      - ../frontend/css:/data/frontend/felask/static/css/base
+      - ../frontend/fonts:/data/frontend/felask/static/fonts
+      - ../js:/data/frontend/felask/static/app/custom
+      - ../frontend/templates:/data/frontend/felask/static/app/templates/common
+      - ../templates:/data/frontend/felask/static/app/templates/custom
 
 
-###############################
-#################################
-# REDIS key/value store
-# redqueue:
-#   image: redis:alpine
-#   command: redis-server --appendonly yes
-#   hostname: myqueue
-#   volumes:
-#     - ${VOLUMES_PREFIX}_redisdata:/data
+  ##############################
+  swagger:
+    # image: eudatb2stage/swagger-ui:latest
+    build: ../builds/swaggerui
+    # image: swagger-ui:rapydo
 
-rabbit:
-  image: rabbitmq:latest
-  hostname: rabbit
-  volumes:
-    - ${VOLUMES_PREFIX}_rabbitdata:/var/lib/rabbitmq
+  #######################
+  # Define here your services
 
-worker:
-  build: ../builds/celery
-  hostname: celworker
-  user: root
-  working_dir: /code
-  environment:
-    VANILLA_PACKAGE: custom
-    JWT_APP_SECRETS: ${JWT_APP_SECRETS}
-  volumes:
-    # Base code
-    - ../backend:/code
-    # JWT tokens secret
-    - jwt_tokens:/jwt_tokens
-    # Tests
-    - ../tests/backend:/code/test/custom
-  # command: celery worker -c 1 -A rapydo.services.celery.worker.celery_app
-  command: celery worker -c 1 -A flask_ext.flask_celery.worker.celery_app
+  # searchindex:
+  #   image: elasticsearch
+  #   hostname: elastic
+  #   volumes:
+  #       - restangulask_graphbased_elasticdata:/usr/share/elasticsearch/data
 
-#################################
-# Database administration
+  # sql:
+  #     image: postgres:9.6
+  #     volumes:
+  #         - sqldata:/var/lib/postgresql/data
+    # at init time, to create db and set permissions
+    # - ./confs/pgs_init.sh:/docker-entrypoint-initdb.d/setup-my-schema.sh:ro
+    # init file can be found at:
+    # https://github.com/EUDAT-B2STAGE/http-api/blob/master/confs/pgs_init.sh
+  #     environment:
+  #         POSTGRES_USER: myuser
+  #         POSTGRES_PASSWORD: mypassword
+  #         POSTGRES_DBS: mydb1 mydb2 ...
 
-# This docker image let you access sqllite/postgres/mysql
-# with a phpmyadmin-like web page
-sqladmin:
-  image: eudatb2stage/sqladminer:latest
-  # links:
-  #   - sql:db
-  # ports:
-  #   - 8888:80
+  #################################
+  gdb:
+    image: neo4j:3.1
+    # ports:
+    #   - 9090:7474
+    #   - 7687:7687
+    volumes:
+      - graphdata:/data
+    environment:
+      NEO4J_AUTH: neo4j/chooseapassword
+      # NEO4J_dbms_memory_pagecache_size: 2048M
+      # NEO4J_dbms_memory_heap_maxSize: 4096M
 
-##############################
-htmlfiles:
-  image: alpine
-  command: echo 'launched'
-  volumes:
-    # js/css libraries installed via bower
-    - ../libs/bower_components:/data/frontend/felask/static/bower
-    # custom css files
-    - ../css:/data/frontend/felask/static/css/custom
-    # All the angular blueprints (&& templates)
-    - ../frontend/js/angular:/data/frontend/felask/static/app/commons
-    - ../frontend/css:/data/frontend/felask/static/css/base
-    - ../frontend/fonts:/data/frontend/felask/static/fonts
-    - ../js:/data/frontend/felask/static/app/custom
-    - ../frontend/templates:/data/frontend/felask/static/app/templates/common
-    - ../templates:/data/frontend/felask/static/app/templates/custom
+  #################################
+  # Mongo DB
+  mongodb:
+    image: mongo:3.4
+    volumes:
+      - mongodata:/data/db
 
-##############################
-# The proxy which decides to redirect requests
-# based on URLs received.
-# Redirects /api to backend
-# Listens on port 80
-# Should implements SSL on 443
+  #################################
+  # SMTP server
+  # smtp:
+  #   image: namshi/smtp
+  #   environment:
+  #     # GMAIL_USER: -
+  #     # GMAIL_PASSWORD: -
+  #     - SMARTHOST_ADDRESS=mail.cineca.it
+  #     - SMARTHOST_PORT=587
+  #     - SMARTHOST_USER=m.dantonio
+  #     - SMARTHOST_PASSWORD=-
+  #     - SMARTHOST_ALIASES=*.cineca.it
 
-proxy:
-  # image: nginx:1.11-alpine
-  build: ../builds/sslproxy
-  hostname: iamaproxy
-  volumes_from:
-    - htmlfiles
-  volumes:
-    # - ../containers/nginx_proxy:/etc/nginx/conf.d
-    - ../containers/nginx_proxy/theproxy.conf:/etc/nginx/sites-enabled/production
-    # - ../frontend/felask/static:/static
+  #################################
+  # FTP
 
-##############################
-swagger:
-  # image: eudatb2stage/swagger-ui:latest
-  build: ../builds/swaggerui
-  # image: swagger-ui:rapydo
+  ftp:
+    # image: stilliard/pure-ftpd:latest
+    build: ../builds/ftp
+    volumes:
+      - pureftpd:/etc/pure-ftpd/passwd
+  # /etc/ssl/private/ A directory containing a single pure-ftpd.pem file
+  # with the server's SSL certificates for TLS support. Optional TLS is
+  # automatically enabled when the container finds this file on startup.
+    environment:
+      PUBLICHOST: ${PROJECT_DOMAIN}
+      ADDED_FLAGS: -d -d
 
-#######################
-# Define here your services
+volumes:
+  jwt_tokens:
+    driver: local
+  rabbitdata:
+    driver: local
+  # redisdata:
+  #   driver: local
+  # sqldata:
+  #   driver: local
+  graphdata:
+    driver: local
+  mongodata:
+    driver: local
+  pureftpd:
+    driver: local
 
-# searchindex:
-#   image: elasticsearch
-#   hostname: elastic
-#   volumes:
-#       - restangulask_graphbased_elasticdata:/usr/share/elasticsearch/data
 
-# sql:
-#     image: postgres:9.6
-#     volumes:
-#         - ${VOLUMES_PREFIX}_sqldata:/var/lib/postgresql/data
-  # at init time, to create db and set permissions
-  # - ./confs/pgs_init.sh:/docker-entrypoint-initdb.d/setup-my-schema.sh:ro
-  # init file can be found at:
-  # https://github.com/EUDAT-B2STAGE/http-api/blob/master/confs/pgs_init.sh
-#     environment:
-#         POSTGRES_USER: myuser
-#         POSTGRES_PASSWORD: mypassword
-#         POSTGRES_DBS: mydb1 mydb2 ...
-
-#################################
-gdb:
-  image: neo4j:3.1
-  # ports:
-  #   - 9090:7474
-  #   - 7687:7687
-  volumes:
-    - ${VOLUMES_PREFIX}_graphdata:/data
-  environment:
-    NEO4J_AUTH: neo4j/chooseapassword
-    # NEO4J_dbms_memory_pagecache_size: 2048M
-    # NEO4J_dbms_memory_heap_maxSize: 4096M
-
-#################################
-# Mongo DB
-mongodb:
-  image: mongo:3.4
-  volumes:
-    - ${VOLUMES_PREFIX}_mongodata:/data/db
-
-#################################
-# SMTP server
-# smtp:
-#   image: namshi/smtp
-#   environment:
-#     # GMAIL_USER: -
-#     # GMAIL_PASSWORD: -
-#     - SMARTHOST_ADDRESS=mail.cineca.it
-#     - SMARTHOST_PORT=587
-#     - SMARTHOST_USER=m.dantonio
-#     - SMARTHOST_PASSWORD=-
-#     - SMARTHOST_ALIASES=*.cineca.it
-
-#################################
-# FTP
-
-ftp:
-  # image: stilliard/pure-ftpd:latest
-  build: ../builds/ftp
-  volumes:
-    - ${VOLUMES_PREFIX}_pureftpd:/etc/pure-ftpd/passwd
-# /etc/ssl/private/ A directory containing a single pure-ftpd.pem file
-# with the server's SSL certificates for TLS support. Optional TLS is
-# automatically enabled when the container finds this file on startup.
-  environment:
-    PUBLICHOST: ${PROJECT_DOMAIN}
-    ADDED_FLAGS: -d -d
+ # networks:
