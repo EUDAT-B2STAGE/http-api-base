@@ -79,6 +79,7 @@ class IrodsPythonClient():
 
                 row = {}
                 key = coll.name
+                row["PID"] = ""
                 row["name"] = coll.name
                 row["objects"] = {}
                 if recursive:
@@ -102,6 +103,8 @@ class IrodsPythonClient():
                 row["name"] = obj.name
                 row["path"] = obj.path
                 row["object_type"] = "dataobject"
+                row["PID"] = ""
+                row["EUDAT/CHECKSUM"] = ""
 
                 if detailed:
                     row["owner"] = obj.owner_name
@@ -316,25 +319,27 @@ class IrodsPythonClient():
 
         # TO FIX: not working with the end of some file??
         try:
-            with open(path, "r+") as handle:
+            with open(path, "rb+") as handle:
                 if handle.readable():
                     self.create_empty(
                         destination, directory=False, ignore_existing=force)
                     obj = self.rpc.data_objects.get(destination)
 
-                    # with obj.open("w") as target:
-                    #     for line in handle:
-                    #         s = line.encode("utf-8")
-                    #         target.write(s)
 
-                    with obj.open('w+') as target:
+                    with obj.open("w+") as target:
                         for line in handle:
-                            if isinstance(line, str):
-                                # print("line", line, type(line), )
-                                buffer = bytearray()
-                                buffer.extend(map(ord, line))
-                                # buffer.extend(line.encode())
-                                target.write(buffer)
+                            #s = line.encode("utf-8")
+                            target.write(line)
+
+                    #with obj.open('w+') as target:
+                    #    for line in handle:
+                    #        s = line.encode("utf-8")
+                    #        if isinstance(s, str):
+                    #            # print("line", line, type(line), )
+                    #            buffer = bytearray()
+                    #            buffer.extend(map(ord, s))
+                    #            # buffer.extend(line.encode())
+                    #           target.write(buffer)
 
             # Do not close when you are using 'with'
                 # target.close()
@@ -538,7 +543,6 @@ class IrodsPythonClient():
     def set_metadata(self, path, **meta):
         try:
             obj = self.rpc.data_objects.get(path)
-
             for key, value in meta.items():
                 obj.metadata.add(key, value)
         except iexceptions.DataObjectDoesNotExist:
