@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 
 import os
@@ -465,6 +464,12 @@ class IrodsPythonClient():
     def get_current_user(self):
         return self.rpc.username
 
+    def get_current_zone(self, prepend_slash=False):
+        zone = self.rpc.zone
+        if prepend_slash:
+            zone = '/' + zone
+        return zone
+
     @lru_cache(maxsize=4)
     def get_user_info(self, username=None):
 
@@ -503,6 +508,7 @@ class IrodsPythonClient():
             return False
         return groupname in info['groups']
 
+# TODO: merge the two following 'user_exists'
     def check_user_exists(self, username, checkGroup=None):
         userdata = self.get_user_info(username)
         if userdata is None:
@@ -512,6 +518,16 @@ class IrodsPythonClient():
                 return False, "User %s is not in group %s" %\
                     (username, checkGroup)
         return True, "OK"
+
+    def query_user_exists(self, user):
+        results = self.rpc.query(User.name).filter(User.name == user).first()
+
+        if results is None:
+            return False
+        elif results[User.name] == user:
+            return True
+        else:
+            raise AttributeError("Failed to query")
 
     def get_metadata(self, path):
 
@@ -544,76 +560,12 @@ class IrodsPythonClient():
         except iexceptions.DataObjectDoesNotExist:
             raise IrodsException("Cannot set metadata, object not found")
 
-
-# ####################################################
-# ####################################################
-# ####################################################
-    # FROM old client.py:
-# ####################################################
-# ####################################################
-# ####################################################
-
-    def get_base_dir(self):
-        com = "ipwd"
-        iout = self.basic_icom(com).strip()
-        log.very_verbose("Base dir is %s" % iout)
-        return iout
-
-    ############################################
-    # ######### Resources Management ###########
-    ############################################
-
-    # for resources use this object manager:
-    # self.rpc.resources
-    def list_resources(self):
-        com = 'ilsresc'
-        iout = self.basic_icom(com).strip()
-        log.debug("Resources %s" % iout)
-        return iout.split("\n")
-
-    def get_base_resource(self):
-        resources = self.list_resources()
-        if len(resources) > 0:
-            return resources[0]
-        return None
-
-    def get_resources_from_file(self, filepath):
-        output = self.list(path=filepath, detailed=True)
-        resources = []
-        for elements in output:
-            # elements = line.split()
-            if len(elements) < 3:
-                continue
-            resources.append(elements[2])
-
-        log.debug("%s: found resources %s" % (filepath, resources))
-        return resources
-
-    def admin(self, command, user=None, extra=None):
-        """
-        Admin commands to manage users and stuff like that.
-        Note: it will give irods errors if current user has not privileges.
-        """
-
-        com = 'iadmin'
-        args = [command]
-        if user is not None:
-            args.append(user)
-        if extra is not None:
-            args.append(extra)
-        log.debug("iRODS admininistration command '%s'" % command)
-        return self.basic_icom(com, args)
-
-    def admin_list(self):
-        """
-        How to explore collections in a debug way
-        """
-        return self.admin('ls')
+    def get_user_from_dn(self, dn):
+        results = self.rpc.query(User.name).filter(User.dn == dn).first()
+        return results
 
     def create_user(self, user, admin=False):
 
-        # Use this:
-        # self.rpc.users.create
         if user is None:
             log.error("Asking for NULL user...")
             return False
@@ -623,213 +575,267 @@ class IrodsPythonClient():
             user_type = 'rodsadmin'
 
         try:
-            self.admin('mkuser', user, user_type)
-            return True
-        except IrodsException as e:
-            if 'CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME' in str(e):
-                log.warning("User %s already exists in iRODS" % user)
-                return False
-            raise e
+            user_data = self.rpc.users.create(user, user_type)
+            log.debug("Created user %s" % user_data)
+        except iexceptions.CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME:
+            log.warning("User %s already exists in iRODS" % user)
+            return False
 
-# // TO FIX:
-    def get_current_user_environment(self):
-        com = 'ienv'
-        output = self.basic_icom(com)
-        print("ENV IS", output)
-        return output
+        return True
 
-    def current_location(self, ifile):
-        """
-        irods://130.186.13.14:1247/cinecaDMPZone/home/pdonorio/replica/test2
-        """
-        protocol = 'irods'
-        URL = "%s://%s:%s%s" % (
-            protocol,
-            self._current_environment['IRODS_HOST'],
-            self._current_environment['IRODS_PORT'],
-            os.path.join(self._base_dir, ifile))
-        return URL
+    def list_user_attributes(self, user):
+        data = self.rpc.query(User.name, User.type, User.dn, User.zone) \
+            .filter(User.name == user).one()
+        return {
+            'name': data[User.name],
+            'type': data[User.type],
+            'dn': data[User.dn],
+            'zone': data[User.zone]
+        }
 
-    def get_resource_from_dataobject(self, ifile):
-        """ The attribute of resource from a data object """
-        details = self.list(ifile, True)
-        resources = []
-        for element in details:
-            # 2nd position is the resource in irods ils -l
-            resources.append(element[2])
-        return resources
+    def modify_user_dn(self, user, dn, zone):
 
-    def query_icat(self, query, key):
-        com = 'iquest'
-        args = ["%s" % query]
-        output = self.basic_icom(com, args)
-        log.debug("%s query: [%s]\n%s" % (com, query, output))
-        if 'CAT_NO_ROWS_FOUND' in output:
-            return None
-        return output.split('\n')[0].lstrip("%s = " % key)
+        # addAuth / rmAuth
+        self.rpc.users.modify(user, 'addAuth', dn)
+        # self.rpc.users.modify(user, 'addAuth', dn, user_zone=zone)
 
-    def query_user(self, select="USER_NAME", where="USER_NAME", field=None):
-        query = "SELECT %s WHERE %s = '%s'" % (select, where, field)
-        return self.query_icat(query, select)
 
-    def get_user_from_dn(self, dn):
-        return self.query_user(where='USER_DN', field=dn)
+# ####################################################
+# ####################################################
+# ####################################################
+    # FROM old client.py:
+# ####################################################
+# ####################################################
+# ####################################################
 
-    def user_exists(self, user):
-        return self.query_user(field=user) == user
+#     def query_icat(self, query, key):
+#         com = 'iquest'
+#         args = ["%s" % query]
+#         output = self.basic_icom(com, args)
+#         log.debug("%s query: [%s]\n%s" % (com, query, output))
+#         if 'CAT_NO_ROWS_FOUND' in output:
+#             return None
+#         return output.split('\n')[0].lstrip("%s = " % key)
 
-    # def become_admin(self, user=None):
-    #     if IRODS_EXTERNAL:
-    #         raise ValueError("Cannot raise privileges in external service")
-    #     return self.change_user(IRODS_DEFAULT_ADMIN)
+#     def query_user(self, select="USER_NAME", where="USER_NAME", field=None):
+#         query = "SELECT %s WHERE %s = '%s'" % (select, where, field)
+#         return self.query_icat(query, select)
 
-    def get_resources_admin(self):
-        resources = []
-        out = self.admin(command='lr')
-        if isinstance(out, str):
-            resources = out.strip().split('\n')
-        return resources
+#     def get_base_dir(self):
+#         com = "ipwd"
+#         iout = self.basic_icom(com).strip()
+#         log.very_verbose("Base dir is %s" % iout)
+#         return iout
 
-    def get_default_resource_admin(self, skip=['bundleResc']):
-        # TO FIX: find out the right way to get the default irods resource
+#     ############################################
+#     # ######### Resources Management ###########
+#     ############################################
 
-        # note: we could use ienv
-        resources = self.get_resources_admin()
-        if len(resources) > 0:
-            # Remove strange resources
-            for element in skip:
-                if element in resources:
-                    resources.pop(resources.index(element))
-            return list(resources)[::-1].pop()
-        return None
+#     # for resources use this object manager:
+#     # self.rpc.resources
+#     def list_resources(self):
+#         com = 'ilsresc'
+#         iout = self.basic_icom(com).strip()
+#         log.debug("Resources %s" % iout)
+#         return iout.split("\n")
 
-    def get_current_zone(self, prepend_slash=False):
-        # note: we could also use ienv (as admin?)
-        userdata = self.get_user_info()
-        zone = userdata['zone']
-        if prepend_slash:
-            zone = '/' + zone
-        return zone
+#     def get_base_resource(self):
+#         resources = self.list_resources()
+#         if len(resources) > 0:
+#             return resources[0]
+#         return None
 
-    def handle_collection_path(self, ipath):
-        """
-            iRODS specific pattern to handle paths
-        """
+#     def get_resources_from_file(self, filepath):
+#         output = self.list(path=filepath, detailed=True)
+#         resources = []
+#         for elements in output:
+#             # elements = line.split()
+#             if len(elements) < 3:
+#                 continue
+#             resources.append(elements[2])
 
-        home = self.get_base_dir()
+#         log.debug("%s: found resources %s" % (filepath, resources))
+#         return resources
 
-        # Should add the base dir if doesn't start with /
-        if ipath is None or ipath == '':
-            ipath = home
-        elif ipath[0] != '/':
-            ipath = home + '/' + ipath
-        else:
-            current_zone = self.get_current_zone()
-            if not ipath.startswith('/' + current_zone):
-                # Add the zone
-                ipath = '/' + current_zone + ipath
+#     def admin(self, command, user=None, extra=None):
+#         """
+#         Admin commands to manage users and stuff like that.
+#         Note: it will give irods errors if current user has not privileges.
+#         """
 
-        # Append / if missing in the end
-        if ipath[-1] != '/':
-            ipath += '/'
+#         com = 'iadmin'
+#         args = [command]
+#         if user is not None:
+#             args.append(user)
+#         if extra is not None:
+#             args.append(extra)
+#         log.debug("iRODS admininistration command '%s'" % command)
+#         return self.basic_icom(com, args)
 
-        return ipath
+#     def admin_list(self):
+#         """
+#         How to explore collections in a debug way
+#         """
+#         return self.admin('ls')
 
-    def get_irods_path(self, collection, filename=None):
+# # // TO FIX:
+#     def get_current_user_environment(self):
+#         com = 'ienv'
+#         output = self.basic_icom(com)
+#         print("ENV IS", output)
+#         return output
 
-        path = self.handle_collection_path(collection)
-        if filename is not None:
-            path += filename
-        return path
+#     def current_location(self, ifile):
+#         """
+#         irods://130.186.13.14:1247/cinecaDMPZone/home/pdonorio/replica/test2
+#         """
+#         protocol = 'irods'
+#         URL = "%s://%s:%s%s" % (
+#             protocol,
+#             self._current_environment['IRODS_HOST'],
+#             self._current_environment['IRODS_PORT'],
+#             os.path.join(self._base_dir, ifile))
+#         return URL
 
-#     def change_user(self, user=None, proxy=False):
-#         """ Impersonification of another user because you're an admin """
+#     def get_resource_from_dataobject(self, ifile):
+#         """ The attribute of resource from a data object """
+#         details = self.list(ifile, True)
+#         resources = []
+#         for element in details:
+#             # 2nd position is the resource in irods ils -l
+#             resources.append(element[2])
+#         return resources
 
-#         # I need to set X509_USER_PROXY
+#     def get_resources_admin(self):
+#         resources = []
+#         out = self.admin(command='lr')
+#         if isinstance(out, str):
+#             resources = out.strip().split('\n')
+#         return resources
 
-# # Where to change with:
-# # https://github.com/EUDAT-B2STAGE/http-api/issues/1#issuecomment-196729596
-#         self._current_environment = None
+#     def get_default_resource_admin(self, skip=['bundleResc']):
+#         # TO FIX: find out the right way to get the default irods resource
 
-#         if user is None:
-#             # Do not change user, go with the main admin
-#             user = self._init_data['irods_user_name']
+#         # note: we could use ienv
+#         resources = self.get_resources_admin()
+#         if len(resources) > 0:
+#             # Remove strange resources
+#             for element in skip:
+#                 if element in resources:
+#                     resources.pop(resources.index(element))
+#             return list(resources)[::-1].pop()
+#         return None
+
+#     def handle_collection_path(self, ipath):
+#         """
+#             iRODS specific pattern to handle paths
+#         """
+
+#         home = self.get_base_dir()
+
+#         # Should add the base dir if doesn't start with /
+#         if ipath is None or ipath == '':
+#             ipath = home
+#         elif ipath[0] != '/':
+#             ipath = home + '/' + ipath
 #         else:
-#             #########
-#             # # OLD: impersonification because i am an admin
-#             # Use an environment variable to reach the goal
-#             # os.environ[IRODS_USER_ALIAS] = user
+#             current_zone = self.get_current_zone()
+#             if not ipath.startswith('/' + current_zone):
+#                 # Add the zone
+#                 ipath = '/' + current_zone + ipath
 
-#             #########
-#             # # NEW: use the certificate
-#             self.prepare_irods_environment(user, proxy=proxy)
+#         # Append / if missing in the end
+#         if ipath[-1] != '/':
+#             ipath += '/'
 
-#         self._current_user = user
-#         log.verbose("Switched to user '%s'" % user)
-#         # clean lru_cache because we changed user
-#         self.get_user_info.cache_clear()
+#         return ipath
 
-#         # If i want to check
-#         # return self.list(self.get_user_home(user))
-#         return True
+#     def get_irods_path(self, collection, filename=None):
 
-    # def get_default_user(self):
-    #     return IRODS_DEFAULT_USER
+#         path = self.handle_collection_path(collection)
+#         if filename is not None:
+#             path += filename
+#         return path
 
-    @staticmethod
-    def get_translated_user(self, user):
-        """
-#  // TO BE DEPRECATED
-        """
-        from rapydo.services.irods.translations import \
-            AccountsToIrodsUsers
-        return AccountsToIrodsUsers.email2iuser(user)
+# #     def change_user(self, user=None, proxy=False):
+# #         """ Impersonification of another user because you're an admin """
 
-    def translate_graph_user(self, graph, graph_user):
-        from rapydo.services.irods.translations import Irods2Graph
-        return Irods2Graph(graph, self).graphuser2irodsuser(graph_user)
+# #         # I need to set X509_USER_PROXY
 
-################################################
-################################################
-#  NEED TO CHECK ALL OF THIS ICOMMANDS BELOW
-################################################
-################################################
+# # # Where to change with:
+# # # https://github.com/EUDAT-B2STAGE/http-api/issues/1#issuecomment-196729596
+# #         self._current_environment = None
 
-    def search(self, path, like=True):
-        com = "ilocate"
-        if like:
-            path += '%'
-        log.debug("iRODS search for %s" % path)
-        # Execute
-        out = self.execute_command(com, path)
-        content = out.strip().split('\n')
-        print("TEST", content)
-        return content
+# #         if user is None:
+# #             # Do not change user, go with the main admin
+# #             user = self._init_data['irods_user_name']
+# #         else:
+# #             #########
+# #             # # OLD: impersonification because i am an admin
+# #             # Use an environment variable to reach the goal
+# #             # os.environ[IRODS_USER_ALIAS] = user
 
-    def replica(self, dataobj, replicas_num=1, resOri=None, resDest=None):
-        """ Replica
-        Replicate a file in iRODS to another storage resource.
-        Note that replication is always within a zone.
-        """
+# #             #########
+# #             # # NEW: use the certificate
+# #             self.prepare_irods_environment(user, proxy=proxy)
 
-        com = "irepl"
-        if resOri is None:
-            resOri = self.first_resource
-        if resDest is None:
-            resDest = self.second_resource
+# #         self._current_user = user
+# #         log.verbose("Switched to user '%s'" % user)
+# #         # clean lru_cache because we changed user
+# #         self.get_user_info.cache_clear()
 
-        args = [dataobj]
-        args.append("-P")  # debug copy
-        args.append("-n")
-        args.append(replicas_num)
-        # Ori
-        args.append("-S")
-        args.append(resOri)
-        # Dest
-        args.append("-R")
-        args.append(resDest)
+# #         # If i want to check
+# #         # return self.list(self.get_user_home(user))
+# #         return True
 
-        return self.basic_icom(com, args)
+#     # def get_default_user(self):
+#     #     return IRODS_DEFAULT_USER
 
-    def replica_list(self, dataobj):
-        return self.get_resource_from_dataobject(dataobj)
+#     def translate_graph_user(self, graph, graph_user):
+#         from rapydo.services.irods.translations import Irods2Graph
+#         return Irods2Graph(graph, self).graphuser2irodsuser(graph_user)
+
+# ################################################
+# ################################################
+# #  NEED TO CHECK ALL OF THIS ICOMMANDS BELOW
+# ################################################
+# ################################################
+
+#     def search(self, path, like=True):
+#         com = "ilocate"
+#         if like:
+#             path += '%'
+#         log.debug("iRODS search for %s" % path)
+#         # Execute
+#         out = self.execute_command(com, path)
+#         content = out.strip().split('\n')
+#         print("TEST", content)
+#         return content
+
+#     def replica(self, dataobj, replicas_num=1, resOri=None, resDest=None):
+#         """ Replica
+#         Replicate a file in iRODS to another storage resource.
+#         Note that replication is always within a zone.
+#         """
+
+#         com = "irepl"
+#         if resOri is None:
+#             resOri = self.first_resource
+#         if resDest is None:
+#             resDest = self.second_resource
+
+#         args = [dataobj]
+#         args.append("-P")  # debug copy
+#         args.append("-n")
+#         args.append(replicas_num)
+#         # Ori
+#         args.append("-S")
+#         args.append(resOri)
+#         # Dest
+#         args.append("-R")
+#         args.append(resDest)
+
+#         return self.basic_icom(com, args)
+
+#     def replica_list(self, dataobj):
+#         return self.get_resource_from_dataobject(dataobj)

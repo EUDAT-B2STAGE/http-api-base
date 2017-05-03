@@ -93,7 +93,7 @@ class Certificates(object):
             f.write(proxycertcontent)
         return tempfile
 
-    def make_proxy_from_ca(self, ca_client, prod=False):
+    def proxy_from_ca(self, ca_client, prod=False):
         """
         Request for certificate and save it into a file
         """
