@@ -294,15 +294,15 @@ class IrodsPythonClient():
 
         try:
             obj = self.rpc.data_objects.get(absolute_path)
-            with obj.open('r+') as handle:
-                if handle.readable():
-                    with open(destination, "w", encoding="utf-8") as target:
-                        for line in handle:
-                            s = line.decode("utf-8")
-                            target.write(s)
-            # Do not close when you are using 'with'
-                # target.close()
-            # handle.close()
+            print("\n\n\nOBJECT", obj)
+
+            # TODO: could use io package?
+            with obj.open('r') as handle:
+                with open(destination, "w", encoding="utf-8") as target:
+                    for line in handle:
+                        print("TEST READ\n\n\n", line)
+                        s = line.decode("utf-8")
+                        target.write(s)
             return True
 
         except iexceptions.DataObjectDoesNotExist:
@@ -312,38 +312,29 @@ class IrodsPythonClient():
     def save(self, path, destination, force=False, resource=None):
 
         # TO FIX: resource is not used!
+        log.warning("Resource not used in saving irods data...")
 
-        # TO FIX: not working with the end of some file??
+        # TO FIX: not working...
         try:
-            with open(path, "r+") as handle:
-                if handle.readable():
-                    self.create_empty(
-                        destination, directory=False, ignore_existing=force)
-                    obj = self.rpc.data_objects.get(destination)
+            with open(path, "rb") as handle:
 
-                    # with obj.open("w") as target:
-                    #     for line in handle:
-                    #         s = line.encode("utf-8")
-                    #         target.write(s)
+                self.create_empty(
+                    destination, directory=False, ignore_existing=force)
 
-                    with obj.open('w+') as target:
-                        for line in handle:
-                            if isinstance(line, str):
-                                # print("line", line, type(line), )
-                                buffer = bytearray()
-                                buffer.extend(map(ord, line))
-                                # buffer.extend(line.encode())
-                                target.write(buffer)
+                obj = self.rpc.data_objects.get(destination)
 
-            # Do not close when you are using 'with'
-                # target.close()
-            # handle.close()
+                target = obj.open('w')
+                for line in handle:
+                    print("\n\n\nLINE WRITE", line)
+                    target.write(line)
+                target.close()
 
             return True
-        # except iexceptions.DataObjectDoesNotExist:
-        #     raise IrodsException("Cannot write to file: not found")
+
         except iexceptions.CollectionDoesNotExist:
             raise IrodsException("Cannot write to file: path not found")
+        # except iexceptions.DataObjectDoesNotExist:
+        #     raise IrodsException("Cannot write to file: not found")
 
         return False
 
