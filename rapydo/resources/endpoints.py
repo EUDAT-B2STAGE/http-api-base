@@ -291,7 +291,7 @@ class Tokens(EndpointResource):
                 message = "Token not found: " + \
                     "not emitted for your account or does not exist"
                 return self.send_errors(
-                    message=message, code=hcodes.HTTP_BAD_NOTFOUND)
+                    message=message, code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
         return self.empty_response()
 

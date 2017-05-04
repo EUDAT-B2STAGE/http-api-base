@@ -317,7 +317,6 @@ class IrodsPythonClient():
         # TO FIX: resource is not used!
         log.warning("Resource not used in saving irods data...")
 
-        # TO FIX: not working...
         try:
             with open(path, "rb") as handle:
 
@@ -327,26 +326,12 @@ class IrodsPythonClient():
                 obj = self.rpc.data_objects.get(destination)
 
                 try:
-                    target = obj.open('w')
-                    for line in handle:
-                        print("\n\n\nLINE WRITE", line)
-                        target.write(line)
-                    target.close()
+                    with obj.open('w') as target:
+                        for line in handle:
+                            target.write(line)
                 except BaseException as e:
-                    # TODO: remove empty object
                     self.remove(destination, force=True)
                     raise e
-
-            # with open(path, "rb+") as handle:
-            #     if handle.readable():
-            #         self.create_empty(
-            #             destination, directory=False, ignore_existing=force)
-            #         obj = self.rpc.data_objects.get(destination)
-
-            #         with obj.open("w+") as target:
-            #             for line in handle:
-            #                 #s = line.encode("utf-8")
-            #                 target.write(line)
 
             return True
 
