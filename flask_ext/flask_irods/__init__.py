@@ -87,10 +87,9 @@ class IrodsPythonExt(BaseExtension):
                     valid, not_before, not_after = \
                         Certificates.check_cert_validity(proxy_cert_file)
                     if not valid:
-                        log.warning(
-                            "Invalid proxy certificate for %s. " +
-                            "Validity: %s - %s" % (user, not_before, not_after)
-                        )
+                        error = "Invalid proxy certificate for %s." % user
+                        error += " Validity: %s - %s" % (not_before, not_after)
+                        log.warning(error)
 
                 # Proxy file does not exist or expired
                 if not valid:
