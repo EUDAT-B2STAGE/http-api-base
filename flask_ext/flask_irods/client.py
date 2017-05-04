@@ -553,7 +553,7 @@ class IrodsPythonClient():
 
     def get_user_from_dn(self, dn):
         results = self.rpc.query(User.name).filter(User.dn == dn).first()
-        return results
+        return results[User.name]
 
     def create_user(self, user, admin=False):
 
