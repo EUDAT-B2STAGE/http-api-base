@@ -78,6 +78,7 @@ class IrodsPythonClient():
 
                 row = {}
                 key = coll.name
+                row["PID"] = ""
                 row["name"] = coll.name
                 row["objects"] = {}
                 if recursive:
@@ -101,6 +102,8 @@ class IrodsPythonClient():
                 row["name"] = obj.name
                 row["path"] = obj.path
                 row["object_type"] = "dataobject"
+                row["PID"] = ""
+                row["EUDAT/CHECKSUM"] = ""
 
                 if detailed:
                     row["owner"] = obj.owner_name
@@ -323,11 +326,27 @@ class IrodsPythonClient():
 
                 obj = self.rpc.data_objects.get(destination)
 
-                target = obj.open('w')
-                for line in handle:
-                    print("\n\n\nLINE WRITE", line)
-                    target.write(line)
-                target.close()
+                try:
+                    target = obj.open('w')
+                    for line in handle:
+                        print("\n\n\nLINE WRITE", line)
+                        target.write(line)
+                    target.close()
+                except BaseException as e:
+                    # TODO: remove empty object
+                    self.remove(destination, force=True)
+                    raise e
+
+            # with open(path, "rb+") as handle:
+            #     if handle.readable():
+            #         self.create_empty(
+            #             destination, directory=False, ignore_existing=force)
+            #         obj = self.rpc.data_objects.get(destination)
+
+            #         with obj.open("w+") as target:
+            #             for line in handle:
+            #                 #s = line.encode("utf-8")
+            #                 target.write(line)
 
             return True
 
@@ -545,7 +564,6 @@ class IrodsPythonClient():
     def set_metadata(self, path, **meta):
         try:
             obj = self.rpc.data_objects.get(path)
-
             for key, value in meta.items():
                 obj.metadata.add(key, value)
         except iexceptions.DataObjectDoesNotExist:

@@ -2,6 +2,8 @@
 
 """ iRODS file-system flask connector """
 
+# TODO: b2access
+
 import os
 import logging
 from irods.session import iRODSSession
@@ -158,8 +160,15 @@ class IrodsPythonExt(BaseExtension):
             )
 
         # Do a simple command to test this session
-        u = obj.users.get(self.user)
-        log.verbose("Testing iRODS session retrieving user %s" % u.name)
+        print("\n\n\nREMOVED", self.user)
+        # u = obj.users.get(self.user)
+        # log.verbose("Testing iRODS session retrieving user %s" % u.name)
+
+        # from irods.models import User
+        # res = obj.query(User.name, User.dn).all()
+        # for element in res:
+        #     print(element)
+        # exit(1)
 
         client = IrodsPythonClient(rpc=obj, variables=self.variables)
         return client

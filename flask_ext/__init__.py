@@ -143,6 +143,7 @@ class BaseExtension(metaclass=abc.ABCMeta):
             try:
                 obj = self.custom_connection()
             except exceptions as e:
+                raise e
                 log.warning("Service '%s' not available", self.name)
                 log.info("error is: %s(%s)" % (type(e), e))
                 time.sleep(retry_interval)
