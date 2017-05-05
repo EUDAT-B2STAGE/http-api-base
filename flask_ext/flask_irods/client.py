@@ -5,7 +5,7 @@ from functools import lru_cache
 
 from rapydo.utils import htmlcodes as hcodes
 from irods.access import iRODSAccess
-from irods.models import User, UserGroup
+from irods.models import User, UserGroup, UserAuth
 from irods import exception as iexceptions
 from rapydo.exceptions import RestApiException
 
@@ -297,13 +297,11 @@ class IrodsPythonClient():
 
         try:
             obj = self.rpc.data_objects.get(absolute_path)
-            print("\n\n\nOBJECT", obj)
 
             # TODO: could use io package?
             with obj.open('r') as handle:
                 with open(destination, "w", encoding="utf-8") as target:
                     for line in handle:
-                        print("TEST READ\n\n\n", line)
                         s = line.decode("utf-8")
                         target.write(s)
             return True
@@ -555,8 +553,12 @@ class IrodsPythonClient():
             raise IrodsException("Cannot set metadata, object not found")
 
     def get_user_from_dn(self, dn):
-        results = self.rpc.query(User.name).filter(User.dn == dn).first()
-        return results[User.name]
+        results = self.rpc.query(User.name, UserAuth.user_dn) \
+            .filter(UserAuth.user_dn == dn).first()
+        if results is not None:
+            return results.get(User.name)
+        else:
+            return None
 
     def create_user(self, user, admin=False):
 
@@ -578,13 +580,27 @@ class IrodsPythonClient():
         return True
 
     def list_user_attributes(self, user):
-        data = self.rpc.query(User.name, User.type, User.dn, User.zone) \
-            .filter(User.name == user).one()
+
+        try:
+            data = self.rpc.query(
+                User.id, User.name, User.type, User.zone
+            ).filter(User.name == user).one()
+        except iexceptions.NoResultFound:
+            return None
+
+        try:
+            auth_data = self.rpc.query(
+                UserAuth.user_dn
+            ).filter(UserAuth.user_id == data[User.id]).one()
+            dn = auth_data.get(UserAuth.user_dn)
+        except iexceptions.NoResultFound:
+            dn = None
+
         return {
             'name': data[User.name],
             'type': data[User.type],
-            'dn': data[User.dn],
-            'zone': data[User.zone]
+            'zone': data[User.zone],
+            'dn': dn
         }
 
     def modify_user_dn(self, user, dn, zone):
@@ -750,37 +766,6 @@ class IrodsPythonClient():
 #         if filename is not None:
 #             path += filename
 #         return path
-
-# #     def change_user(self, user=None, proxy=False):
-# #         """ Impersonification of another user because you're an admin """
-
-# #         # I need to set X509_USER_PROXY
-
-# # # Where to change with:
-# # # https://github.com/EUDAT-B2STAGE/http-api/issues/1#issuecomment-196729596
-# #         self._current_environment = None
-
-# #         if user is None:
-# #             # Do not change user, go with the main admin
-# #             user = self._init_data['irods_user_name']
-# #         else:
-# #             #########
-# #             # # OLD: impersonification because i am an admin
-# #             # Use an environment variable to reach the goal
-# #             # os.environ[IRODS_USER_ALIAS] = user
-
-# #             #########
-# #             # # NEW: use the certificate
-# #             self.prepare_irods_environment(user, proxy=proxy)
-
-# #         self._current_user = user
-# #         log.verbose("Switched to user '%s'" % user)
-# #         # clean lru_cache because we changed user
-# #         self.get_user_info.cache_clear()
-
-# #         # If i want to check
-# #         # return self.list(self.get_user_home(user))
-# #         return True
 
 #     # def get_default_user(self):
 #     #     return IRODS_DEFAULT_USER

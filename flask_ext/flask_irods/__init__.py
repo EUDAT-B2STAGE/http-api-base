@@ -52,12 +52,13 @@ class IrodsPythonExt(BaseExtension):
             log.verbose("Irods user: %s" % self.user)
             self.schema = self.variables.get('authscheme')
 
+        ######################
+        # Normal credentials
         if not proxy and self.password is not None:
-            # Normal credentials
             self.schema = 'credentials'
+        ######################
+        # Identity with GSI
         else:
-            # Identity with GSI
-            # TO FIX: The only (and main) alternative for now is only GSI
 
             # TO FIX: move this into certificates.py?
             cdir = Certificates._dir
@@ -71,10 +72,9 @@ class IrodsPythonExt(BaseExtension):
 
             if os.path.isdir(cpath):
                 if proxy:
-                    # B2ACCESS?
-                    raise NotImplementedError("to check!")
+                    # this is used by b2access in eudat
                     os.environ['X509_USER_PROXY'] = \
-                        os.path.join('userproxy.crt')
+                        os.path.join(cpath, 'userproxy.crt')
                 else:
                     os.environ['X509_USER_KEY'] = \
                         os.path.join(cpath, 'userkey.pem')
@@ -160,9 +160,8 @@ class IrodsPythonExt(BaseExtension):
             )
 
         # Do a simple command to test this session
-        log.warning("Password connection to be fixed")
-        # u = obj.users.get(self.user)
-        # log.verbose("Testing iRODS session retrieving user %s" % u.name)
+        u = obj.users.get(self.user)
+        log.verbose("Testing iRODS session retrieving user %s" % u.name)
 
         client = IrodsPythonClient(rpc=obj, variables=self.variables)
         return client
