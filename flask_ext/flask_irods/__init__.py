@@ -73,8 +73,12 @@ class IrodsPythonExt(BaseExtension):
             if os.path.isdir(cpath):
                 if proxy:
                     # this is used by b2access in eudat
-                    os.environ['X509_USER_PROXY'] = \
-                        os.path.join(cpath, 'userproxy.crt')
+                    proxy_file = os.path.join(cpath, 'userproxy.crt')
+                    # temporary fix
+                    os.environ['X509_USER_KEY'] = proxy_file
+                    os.environ['X509_USER_CERT'] = proxy_file
+                    # to fix: the old good way that does not work anymore
+                    # os.environ['X509_USER_PROXY'] = proxy_file
                 else:
                     os.environ['X509_USER_KEY'] = \
                         os.path.join(cpath, 'userkey.pem')
