@@ -149,11 +149,17 @@ class IrodsPythonExt(BaseExtension):
                 zone=self.variables.get('zone'),
             )
         else:
-            # In case not set, recover from certificates we have
-            if self.variables.get('dn') is None:
-                # server host certificate
-                self.variables['dn'] = Certificates.get_dn_from_cert(
+            # Server host certificate
+            # In case not set, recover from the shared dockerized certificates
+            host_dn = self.variables.get('dn', None)
+            if isinstance(host_dn, str) and host_dn.strip() == '':
+                host_dn = None
+            if host_dn is None:
+                host_dn = Certificates.get_dn_from_cert(
                     certdir='host', certfilename='hostcert')
+            else:
+                host_dn = host_dn.strip('"')
+                log.verbose("Existing DN '%s'" % host_dn)
 
             obj = iRODSSession(
                 user=self.user,
@@ -161,15 +167,12 @@ class IrodsPythonExt(BaseExtension):
                 authentication_scheme=self.variables.get('authscheme'),
                 host=self.variables.get('host'),
                 port=self.variables.get('port'),
-                server_dn=self.variables.get('dn')
+                server_dn=host_dn
             )
 
-        if not PRODUCTION:
-            # Do a simple command to test this session
-            u = obj.users.get(self.user)
-            log.verbose("Testing iRODS session retrieving user %s" % u.name)
-        else:
-            log.warning("Check irods in beta TO BE FIXED")
+        # Do a simple command to test this session
+        u = obj.users.get(self.user)
+        log.verbose("Testing iRODS session retrieving user %s" % u.name)
 
         client = IrodsPythonClient(rpc=obj, variables=self.variables)
         return client

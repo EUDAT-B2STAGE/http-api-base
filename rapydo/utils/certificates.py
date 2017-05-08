@@ -37,7 +37,7 @@ class Certificates(object):
         for tup in sub.get_components():
             dn += '/' + tup[0].decode() + '=' + tup[1].decode()
 
-        log.verbose("Host DN is %s", dn)
+        log.verbose("Host DN computed is %s", dn)
         return dn
 
     @classmethod
