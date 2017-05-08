@@ -141,9 +141,6 @@ class IrodsPythonClient():
             log.debug("Created irods collection: %s" % path)
             return ret
 
-        except iexceptions.CAT_NO_ACCESS_PERMISSION:
-            raise IrodsException("CAT_NO_ACCESS_PERMISSION")
-
         except iexceptions.CAT_UNKNOWN_COLLECTION:
             raise IrodsException("Unable to create collection, invalid path")
 
@@ -154,6 +151,12 @@ class IrodsPythonClient():
                     status_code=hcodes.HTTP_BAD_REQUEST)
             else:
                 log.debug("Irods collection already exists: %s" % path)
+
+        except (
+            iexceptions.CAT_NO_ACCESS_PERMISSION,
+            iexceptions.SYS_NO_API_PRIV
+        ):
+            raise IrodsException("You have no permissions on path %s" % path)
 
         return None
 
