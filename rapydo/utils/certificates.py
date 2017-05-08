@@ -96,18 +96,14 @@ class Certificates(object):
     def proxy_from_ca(self, ca_client, prod=False):
         """
         Request for certificate and save it into a file
+
+        NOTE: insecure ssl context is required with b2access dev,
+        because they do not have a valid HTTPS certificate for development
         """
 
-        #######################
-        # INSECURE SSL CONTEXT. IMPORTANT: to use only if not in production
-        if prod:
-            # raise NotImplementedError(
-            #     "Please real signed certificates " +
-            #     "to connect to B2ACCESS Certification Authority")
-            pass
-        else:
-            # See more here:
-            # http://stackoverflow.com/a/28052583/2114395
+        if not prod:
+            # INSECURE SSL CONTEXT.
+            # source: http://stackoverflow.com/a/28052583/2114395
             import ssl
             ssl._create_default_https_context = \
                 ssl._create_unverified_context
@@ -115,11 +111,6 @@ class Certificates(object):
         #######################
         key, req = self.generate_csr_and_key()
         # log.debug("Key and Req:\n%s\n%s" % (key, req))
-
-        # Certificates should be trusted:
-        # they are injected them inside the docker image at init time.
-        # So this is not necessary:
-        # #b2accessCA.http_request = http_request_no_verify_host
 
         #######################
         response = None

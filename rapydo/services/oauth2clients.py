@@ -29,6 +29,7 @@ module = meta.get_module_from_string(
     "%s.%s.%s" % (CUSTOM_PACKAGE, 'apis', 'common')
 )
 
+# TO BE FIXED
 if module is None:
     B2ACCESS_ENV = PRODUCTION
 else:
@@ -172,7 +173,11 @@ class ExternalLogins(object):
             from flask import session
             return session.get('b2access_token')
 
-        return {'b2access': b2access_oauth, 'b2accessCA': b2accessCA}
+        return {
+            'b2access': b2access_oauth,
+            'b2accessCA': b2accessCA,
+            'prod': B2ACCESS_ENV_PRODUCTION
+        }
 
 
 def decorate_http_request(remote):
