@@ -8,6 +8,7 @@ import os
 import logging
 from irods.session import iRODSSession
 from rapydo.utils.certificates import Certificates
+from rapydo.confs import PRODUCTION
 from flask_ext import BaseExtension, get_logger
 from flask_ext.flask_irods.client import IrodsPythonClient
 
@@ -163,9 +164,12 @@ class IrodsPythonExt(BaseExtension):
                 server_dn=self.variables.get('dn')
             )
 
-        # Do a simple command to test this session
-        u = obj.users.get(self.user)
-        log.verbose("Testing iRODS session retrieving user %s" % u.name)
+        if not PRODUCTION:
+            # Do a simple command to test this session
+            u = obj.users.get(self.user)
+            log.verbose("Testing iRODS session retrieving user %s" % u.name)
+        else:
+            log.warning("Check irods in beta TO BE FIXED")
 
         client = IrodsPythonClient(rpc=obj, variables=self.variables)
         return client
