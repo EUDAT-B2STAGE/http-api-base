@@ -552,6 +552,8 @@ class IrodsPythonClient():
             obj = self.rpc.data_objects.get(path)
             for key, value in meta.items():
                 obj.metadata.add(key, value)
+        except iexceptions.CATALOG_ALREADY_HAS_ITEM_BY_THAT_NAME:
+            raise IrodsException("This metadata already exist")
         except iexceptions.DataObjectDoesNotExist:
             raise IrodsException("Cannot set metadata, object not found")
 

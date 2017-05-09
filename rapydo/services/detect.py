@@ -40,8 +40,8 @@ class Detector(object):
         self.load_classes()
 
     @staticmethod
-    def get_global_var(key):
-        return os.environ.get(key, None)
+    def get_global_var(key, default=None):
+        return os.environ.get(key, default)
 
     @staticmethod
     def get_bool_from_os(name):
