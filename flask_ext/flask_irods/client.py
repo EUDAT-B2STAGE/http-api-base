@@ -53,6 +53,13 @@ class IrodsPythonClient():
         except iexceptions.DataObjectDoesNotExist:
             return False
 
+    def get_dataobject(self, path):
+        try:
+            obj = self.rpc.data_objects.get(path)
+            return obj
+        except (iexceptions.CollectionDoesNotExist, iexceptions.DataObjectDoesNotExist):
+            raise IrodsException("%s not found or no permissions" % path)
+
     def dataobject_exists(self, path):
         try:
             self.rpc.data_objects.get(path)
@@ -78,7 +85,7 @@ class IrodsPythonClient():
 
                 row = {}
                 key = coll.name
-                row["PID"] = ""
+                row["PID"] = None
                 row["name"] = coll.name
                 row["objects"] = {}
                 if recursive:
@@ -102,8 +109,8 @@ class IrodsPythonClient():
                 row["name"] = obj.name
                 row["path"] = obj.path
                 row["object_type"] = "dataobject"
-                row["PID"] = ""
-                row["EUDAT/CHECKSUM"] = ""
+                row["PID"] = None
+                row["checksum"] = None
 
                 if detailed:
                     row["owner"] = obj.owner_name
