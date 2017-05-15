@@ -138,6 +138,8 @@ class IrodsPythonExt(BaseExtension):
 
     def custom_connection(self, **kwargs):
 
+        check_connection = True
+
         if self.schema == 'credentials':
 
             obj = iRODSSession(
@@ -148,7 +150,9 @@ class IrodsPythonExt(BaseExtension):
                 port=self.variables.get('port'),
                 zone=self.variables.get('zone'),
             )
+
         else:
+
             # Server host certificate
             # In case not set, recover from the shared dockerized certificates
             host_dn = self.variables.get('dn', None)
@@ -170,9 +174,15 @@ class IrodsPythonExt(BaseExtension):
                 server_dn=host_dn
             )
 
+            # Do not check for user if its a proxy certificate:
+            # we want to verify if they expired later
+            if kwargs.get('only_check_proxy', False):
+                check_connection = False
+
         # Do a simple command to test this session
-        u = obj.users.get(self.user)
-        log.verbose("Testing iRODS session retrieving user %s" % u.name)
+        if check_connection:
+            u = obj.users.get(self.user)
+            log.verbose("Tested session retrieving '%s'" % u.name)
 
         client = IrodsPythonClient(rpc=obj, variables=self.variables)
         return client
