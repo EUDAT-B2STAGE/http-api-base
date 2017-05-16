@@ -114,13 +114,9 @@ class Login(EndpointResource):
         # ##################################################
         # Authentication control
         security.verify_blocked_username(username)
-
         token, jti = self.auth.make_login(username, password)
-
         security.verify_token(username, token)
-
         user = self.auth.get_user()
-
         security.verify_blocked_user(user)
 
         if totp_authentication and totp_code is not None:
