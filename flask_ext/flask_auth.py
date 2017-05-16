@@ -3,7 +3,7 @@
 import re
 import pytz
 from datetime import datetime, timedelta
-from rapydo.services.detect import detector
+# from rapydo.services.detect import detector
 
 # from rapydo.confs import PRODUCTION
 from flask_ext import BaseExtension, get_logger
@@ -14,18 +14,18 @@ from rapydo.utils.globals import mem
 
 log = get_logger(__name__)
 
-if detector.get_global_var("AUTH_SECOND_FACTOR_AUTHENTICATION", False):
-    try:
-        import pyotp
-        import pyqrcode
-        # import base64
-        from io import BytesIO
-    # TO FIX: cannot use the proper exception (available in python 3.6+)
-    # because we are stuck on python 3.5 con IMC
-    # except ModuleNotFoundError:
-    except BaseException:
-        log.critical_exit("You enabled TOTP 2FA authentication" +
-                          ", but related libraries are not installed")
+# if detector.get_global_var("AUTH_SECOND_FACTOR_AUTHENTICATION", False):
+#     try:
+#         import pyotp
+#         import pyqrcode
+#         # import base64
+#         from io import BytesIO
+#     # TO FIX: cannot use the proper exception (available in python 3.6+)
+#     # because we are stuck on python 3.5 con IMC
+#     # except ModuleNotFoundError:
+#     except BaseException:
+#         log.critical_exit("You enabled TOTP 2FA authentication" +
+#                           ", but related libraries are not installed")
 
 
 class Authenticator(BaseExtension):
