@@ -43,7 +43,7 @@ services:
 
   worker:
     build: ../builds/celery
-    hostname: celworker
+    # hostname: celworker
     user: root
     working_dir: /code
     environment:
