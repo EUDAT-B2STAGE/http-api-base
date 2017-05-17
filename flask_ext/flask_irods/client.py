@@ -63,16 +63,6 @@ class IrodsPythonClient():
         ):
             raise IrodsException("%s not found or no permissions" % path)
 
-    def dataobject_exists(self, path):
-        # TODO: review the last 3 functions which looks VERY similar
-        try:
-            self.rpc.data_objects.get(path)
-        except (
-            iexceptions.CollectionDoesNotExist,
-            iexceptions.DataObjectDoesNotExist
-        ):
-            raise IrodsException("%s not found or no permissions" % path)
-
     def list(self, path=None, recursive=False, detailed=False, acl=False):
         """ List the files inside an iRODS path/collection """
 
