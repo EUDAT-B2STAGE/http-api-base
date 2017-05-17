@@ -57,10 +57,14 @@ class IrodsPythonClient():
         try:
             obj = self.rpc.data_objects.get(path)
             return obj
-        except (iexceptions.CollectionDoesNotExist, iexceptions.DataObjectDoesNotExist):
+        except (
+            iexceptions.CollectionDoesNotExist,
+            iexceptions.DataObjectDoesNotExist
+        ):
             raise IrodsException("%s not found or no permissions" % path)
 
     def dataobject_exists(self, path):
+        # TODO: review the last 3 functions which looks VERY similar
         try:
             self.rpc.data_objects.get(path)
         except (
