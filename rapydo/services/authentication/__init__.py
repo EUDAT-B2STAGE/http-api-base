@@ -369,7 +369,6 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
 
         payload = {
             'user_id': userobj.uuid,
-            'hpwd': userobj.password,
             'iat': now,
             'nbf': nbf,
             'exp': exp,
