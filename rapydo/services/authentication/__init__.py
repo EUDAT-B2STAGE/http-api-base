@@ -380,12 +380,14 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
             'jti': getUUID()
         }
 
-        if Detector.get_global_var('AUTH_FULL_JWT_PAYLOAD', True):
+        short_jwt = \
+            Detector.get_global_var('AUTH_FULL_JWT_PAYLOAD', '') \
+            .lower() == 'false'
 
+        if not short_jwt:
             now = datetime.now(pytz.utc)
             nbf = now   # you can add a timedelta
             exp = now + expiration
-
             payload['iat'] = now
             payload['nbf'] = nbf
             payload['exp'] = exp
