@@ -9,7 +9,7 @@ Testend against GitHub, then worked off B2ACCESS (EUDAT oauth service)
 import os
 from base64 import b64encode
 from rapydo.protocols.oauth import oauth
-from rapydo.confs import PRODUCTION
+from rapydo.confs import PRODUCTION, CUSTOM_PACKAGE
 from rapydo.utils.globals import mem
 from rapydo.utils.meta import Meta
 from rapydo.utils.logs import get_logger
@@ -23,6 +23,18 @@ B2ACCESS_DEV_CA_URL = B2ACCESS_DEV_BASEURL + ":8445"
 B2ACCESS_PROD_BASEURL = "https://b2access.eudat.eu"
 B2ACCESS_PROD_URL = B2ACCESS_PROD_BASEURL + ":8443"
 B2ACCESS_PROD_CA_URL = B2ACCESS_PROD_BASEURL + ":8445"
+
+meta = Meta()
+module = meta.get_module_from_string(
+    "%s.%s.%s" % (CUSTOM_PACKAGE, 'apis', 'common')
+)
+
+# TO BE FIXED
+if module is None:
+    B2ACCESS_ENV = PRODUCTION
+else:
+    B2ACCESS_ENV = getattr(module, 'CURRENT_B2ACCESS_ENVIRONMENT', 'unknown')
+B2ACCESS_ENV_PRODUCTION = B2ACCESS_ENV == 'production'
 
 
 class ExternalLogins(object):
@@ -63,7 +75,7 @@ class ExternalLogins(object):
         services = {}
 
         # For each defined internal service
-        for key, func in Meta().get_methods_inside_instance(self).items():
+        for key, func in meta.get_methods_inside_instance(self).items():
 
             # log.info("META %s-%s" % (key, func))
 
@@ -121,7 +133,7 @@ class ExternalLogins(object):
         token_url = B2ACCESS_DEV_URL + '/oauth2/token'
         authorize_url = B2ACCESS_DEV_URL + '/oauth2-as/oauth2-authz'
 
-        if PRODUCTION:
+        if B2ACCESS_ENV_PRODUCTION:
             token_url = B2ACCESS_PROD_URL + '/oauth2/token'
             authorize_url = B2ACCESS_PROD_URL + '/oauth2-as/oauth2-authz'
 
@@ -140,7 +152,7 @@ class ExternalLogins(object):
         #####################
         # B2ACCESS
         arguments['base_url'] = B2ACCESS_DEV_URL + '/oauth2/'
-        if PRODUCTION:
+        if B2ACCESS_ENV_PRODUCTION:
             arguments['base_url'] = B2ACCESS_PROD_URL + '/oauth2/'
 
         b2access_oauth = oauth.remote_app('b2access', **arguments)
@@ -148,7 +160,7 @@ class ExternalLogins(object):
         #####################
         # B2ACCESS CERTIFICATION AUTHORITY
         arguments['base_url'] = B2ACCESS_DEV_CA_URL
-        if PRODUCTION:
+        if B2ACCESS_ENV_PRODUCTION:
             arguments['base_url'] = B2ACCESS_PROD_CA_URL
 
         b2accessCA = oauth.remote_app('b2accessCA', **arguments)
@@ -161,7 +173,11 @@ class ExternalLogins(object):
             from flask import session
             return session.get('b2access_token')
 
-        return {'b2access': b2access_oauth, 'b2accessCA': b2accessCA}
+        return {
+            'b2access': b2access_oauth,
+            'b2accessCA': b2accessCA,
+            'prod': B2ACCESS_ENV_PRODUCTION
+        }
 
 
 def decorate_http_request(remote):

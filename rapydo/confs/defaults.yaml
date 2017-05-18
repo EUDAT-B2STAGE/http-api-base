@@ -1,4 +1,8 @@
 
+# TODO: figure out if this is still the right way to give defaults
+# since there will be rapydo base compose configurations
+# and .env custom files for environment variables
+
 variables:
   python:
     backend:

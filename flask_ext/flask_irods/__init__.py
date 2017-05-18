@@ -2,10 +2,13 @@
 
 """ iRODS file-system flask connector """
 
+# TODO: b2access
+
 import os
 import logging
 from irods.session import iRODSSession
 from rapydo.utils.certificates import Certificates
+from rapydo.confs import PRODUCTION
 from flask_ext import BaseExtension, get_logger
 from flask_ext.flask_irods.client import IrodsPythonClient
 
@@ -50,12 +53,13 @@ class IrodsPythonExt(BaseExtension):
             log.verbose("Irods user: %s" % self.user)
             self.schema = self.variables.get('authscheme')
 
+        ######################
+        # Normal credentials
         if not proxy and self.password is not None:
-            # Normal credentials
             self.schema = 'credentials'
+        ######################
+        # Identity with GSI
         else:
-            # Identity with GSI
-            # TO FIX: The only (and main) alternative for now is only GSI
 
             # TO FIX: move this into certificates.py?
             cdir = Certificates._dir
@@ -69,10 +73,13 @@ class IrodsPythonExt(BaseExtension):
 
             if os.path.isdir(cpath):
                 if proxy:
-                    # B2ACCESS?
-                    raise NotImplementedError("to check!")
-                    os.environ['X509_USER_PROXY'] = \
-                        os.path.join('userproxy.crt')
+                    # this is used by b2access in eudat
+                    proxy_file = os.path.join(cpath, 'userproxy.crt')
+                    # temporary fix
+                    os.environ['X509_USER_KEY'] = proxy_file
+                    os.environ['X509_USER_CERT'] = proxy_file
+                    # to fix: the old good way that does not work anymore
+                    # os.environ['X509_USER_PROXY'] = proxy_file
                 else:
                     os.environ['X509_USER_KEY'] = \
                         os.path.join(cpath, 'userkey.pem')
@@ -131,6 +138,8 @@ class IrodsPythonExt(BaseExtension):
 
     def custom_connection(self, **kwargs):
 
+        check_connection = True
+
         if self.schema == 'credentials':
 
             obj = iRODSSession(
@@ -141,12 +150,20 @@ class IrodsPythonExt(BaseExtension):
                 port=self.variables.get('port'),
                 zone=self.variables.get('zone'),
             )
+
         else:
-            # In case not set, recover from certificates we have
-            if self.variables.get('dn') is None:
-                # server host certificate
-                self.variables['dn'] = Certificates.get_dn_from_cert(
+
+            # Server host certificate
+            # In case not set, recover from the shared dockerized certificates
+            host_dn = self.variables.get('dn', None)
+            if isinstance(host_dn, str) and host_dn.strip() == '':
+                host_dn = None
+            if host_dn is None:
+                host_dn = Certificates.get_dn_from_cert(
                     certdir='host', certfilename='hostcert')
+            else:
+                host_dn = host_dn.strip('"')
+                log.verbose("Existing DN '%s'" % host_dn)
 
             obj = iRODSSession(
                 user=self.user,
@@ -154,12 +171,18 @@ class IrodsPythonExt(BaseExtension):
                 authentication_scheme=self.variables.get('authscheme'),
                 host=self.variables.get('host'),
                 port=self.variables.get('port'),
-                server_dn=self.variables.get('dn')
+                server_dn=host_dn
             )
 
+            # Do not check for user if its a proxy certificate:
+            # we want to verify if they expired later
+            if kwargs.get('only_check_proxy', False):
+                check_connection = False
+
         # Do a simple command to test this session
-        u = obj.users.get(self.user)
-        log.verbose("Testing iRODS session retrieving user %s" % u.name)
+        if check_connection:
+            u = obj.users.get(self.user)
+            log.verbose("Tested session retrieving '%s'" % u.name)
 
         client = IrodsPythonClient(rpc=obj, variables=self.variables)
         return client
