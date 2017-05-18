@@ -2,8 +2,8 @@
 
 import re
 import pytz
-import os
 from datetime import datetime, timedelta
+from rapydo.services.detect import Detector
 
 # from rapydo.confs import PRODUCTION
 from flask_ext import BaseExtension, get_logger
@@ -14,7 +14,7 @@ from rapydo.utils.globals import mem
 
 log = get_logger(__name__)
 
-if os.environ.get("AUTH_SECOND_FACTOR_AUTHENTICATION", False):
+if Detector.get_global_var("AUTH_SECOND_FACTOR_AUTHENTICATION", False):
     try:
         import pyotp
         import pyqrcode
