@@ -3,13 +3,7 @@
 import re
 import pytz
 from datetime import datetime, timedelta
-try:
-    import pyotp
-    import pyqrcode
-    import base64
-    from io import BytesIO
-except BaseException:
-    pass
+from rapydo.services.detect import Detector
 
 # from rapydo.confs import PRODUCTION
 from flask_ext import BaseExtension, get_logger
@@ -18,8 +12,20 @@ from rapydo.utils import htmlcodes as hcodes
 from rapydo.exceptions import RestApiException
 from rapydo.utils.globals import mem
 
-
 log = get_logger(__name__)
+
+if Detector.get_global_var("AUTH_SECOND_FACTOR_AUTHENTICATION", False):
+    try:
+        import pyotp
+        import pyqrcode
+        # import base64
+        from io import BytesIO
+    # TO FIX: cannot use the proper exception (available in python 3.6+)
+    # because we are stuck on python 3.5 con IMC
+    # except ModuleNotFoundError:
+    except BaseException:
+        log.critical_exit("You enabled TOTP 2FA authentication" +
+                          ", but related libraries are not installed")
 
 
 class Authenticator(BaseExtension):
@@ -113,28 +119,6 @@ class HandleSecurity(object):
 
     def __init__(self, auth):
         self.auth = auth
-        try:
-            import pyotp
-            import pyqrcode
-
-            del(pyotp)
-            del(pyqrcode)
-
-            log.debug("TOTP is available")
-        # TO FIX: cannot use the proper exception (available in python 3.6+)
-        # because we are stuck on python 3.5 con IMC
-        # except ModuleNotFoundError:
-        except BaseException:
-
-            if self.auth.SECOND_FACTOR_AUTHENTICATION is None:
-                log.debug("TOTP is not available")
-            elif self.auth.SECOND_FACTOR_AUTHENTICATION == self.auth.TOTP:
-                log.critical_exit(
-                    "TOTP is not available." +
-                    " Please pip-install both pyotp and pyqrcode"
-                )
-            else:
-                log.warning("TOTP is not available")
 
     def get_secret(self, user):
 

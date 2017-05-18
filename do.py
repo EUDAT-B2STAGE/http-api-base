@@ -147,9 +147,6 @@ extra_arguments = args['extra_arguments']
 if extra_arguments is not None:
     extra_arguments = ' '.join(extra_arguments)
 
-# Set prefix for docker volumes
-os.environ['VOLUMES_PREFIX'] = project + '_'
-
 # Implemented actions are automatically parsed by the ImplementedActions class
 # all do_something methods are interpreted as 'something' actions
 actions = []
