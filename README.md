@@ -1,5 +1,5 @@
 
-# Base for modern HTTP REST API written in Python
+# A code base/framework for your modern RESTful HTTP API 
 
 A Python **3** Flask HTTP server mapping custom classes into REST API endpoints;
 written with **the base** in mind for middleware APIs in our projects.
@@ -17,7 +17,7 @@ It comes bundled with:
 
 ---
 
-## Documentation
+## Documentation
 
 **WARNING:
 the documentation is outdated, i will try to fix it anytime soon**
@@ -40,16 +40,16 @@ Here is the index for browsing it internally on GitHub:
 
 ---
 
-## Creator
+## Creator
 
-* [Paolo D'Onorio De Meo](https://twitter.com/paolodonorio/) - (Please [Say Thanks!](https://saythanks.io/to/pdonorio) if I helped you)
+* [Paolo D'Onorio De Meo](https://twitter.com/paolodonorio/) - (Please [Say Thanks!](https://saythanks.io/to/pdonorio) if this helped you in anyway `^_^`)
 
-## Other contributors
+## Other contributors
 
 * Mattia D'Antonio (@mdantonio)
 * Roberto Mucci (@muccix)
 
-## Copyright and license
+## Copyright and license
 
 Code and documentation copyright: `Paolo D'Onorio De Meo @2015`.
 

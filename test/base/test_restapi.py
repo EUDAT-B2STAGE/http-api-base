@@ -142,11 +142,11 @@ class BaseTests(RestTestsBase, TestUtilities):
 
         # TEST AN ALREADY DELETED TOKEN
         r = self.app.delete(endpoint_single, headers=self.get("tokens_header"))
-        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_NOTFOUND)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_UNAUTHORIZED)
 
         # TEST INVALID DELETE OF A SINGLE TOKEN
         r = self.app.delete(endpoint + "/0", headers=self.get("tokens_header"))
-        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_NOTFOUND)
+        self.assertEqual(r.status_code, self._hcodes.HTTP_BAD_UNAUTHORIZED)
 
         # TEST DELETE OF ALL TOKENS
         r = self.app.delete(endpoint, headers=self.get("tokens_header"))

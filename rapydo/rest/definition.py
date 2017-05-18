@@ -280,8 +280,10 @@ class EndpointResource(Resource):
             defined_content=defined_content, errors=errors, code=code)
 
     def send_errors(self,
-                    label=None, message=None, errors=None,
-                    code=None, headers=None):
+                    message=None, errors=None,
+                    code=None, headers=None,
+                    label=None,  # TO BE DEPRECATED
+                    ):
         """
         Setup an error message and
         """
@@ -295,18 +297,15 @@ class EndpointResource(Resource):
             errors = []
 
         # See if we have the main message
-        # error = {}
         if message is not None:
-            # error = {label: message}
             errors.append(message)
-
-        # Extend existing errors
-        # if isinstance(errors, dict) and len(error) > 0:
-            # errors.update(error)
 
         if code is None or code < hcodes.HTTP_BAD_REQUEST:
             # default error
             code = hcodes.HTTP_SERVER_ERROR
+
+        if errors is not None:
+            log.error(errors)
 
         return self.force_response(errors=errors, code=code, headers=headers)
 

@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 from flask import current_app, request
 from rapydo.confs import PRODUCTION
 from rapydo.utils.globals import mem
+from rapydo.utils import htmlcodes as hcodes
 from rapydo.utils.logs import get_logger
 
 log = get_logger(__name__)
@@ -91,7 +92,17 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
     def make_login(self, username, password):
         """ The method which will check if credentials are good to go """
 
-        user = self.get_user_object(username=username)
+        try:
+            user = self.get_user_object(username=username)
+        except BaseException as e:
+            log.error("Broken auth backend:\n[%s] %s" % (type(e), e))
+            log.critical("Please reinitialize backend tables")
+            from rapydo.exceptions import RestApiException
+            raise RestApiException(
+                "Server authentication misconfiguration",
+                status_code=hcodes.HTTP_SERVER_ERROR
+            )
+
         if user is None:
             return None, None
 

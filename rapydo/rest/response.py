@@ -70,6 +70,7 @@ class InternalResponse(Response):
             try:
                 rv = jsonify(rv)
             except BaseException:
+                print("DEBUG", rv)
                 log.error("Cannot jsonify rv")
 
         return super(InternalResponse, cls).force_type(rv, environ)

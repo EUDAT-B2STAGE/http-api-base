@@ -264,7 +264,6 @@ def catch_error(
 
             # Catch any other exception
             except Exception as e:
-
                 if catch_generic:
                     return send_error(self, e)
                 else:
