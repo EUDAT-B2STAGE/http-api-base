@@ -88,8 +88,8 @@ class HTTPTokenAuth(object):
 
             if auth_type is None or auth_type.lower() != self._scheme.lower():
                 # Wrong authentication string
-                msg = "Please provide valid credentials " + \
-                      "inside HEADERS in the form of '%s': '%s %s'" % \
+                msg = "Valid credentials have to be provided " + \
+                      "inside Headers, e.g. %s: '%s %s'" % \
                       (HTTPAUTH_AUTH_FIELD, HTTPAUTH_DEFAULT_SCHEME, 'TOKEN')
                 #
                 return decorated_self.send_errors(

@@ -114,13 +114,9 @@ class Login(EndpointResource):
         # ##################################################
         # Authentication control
         security.verify_blocked_username(username)
-
         token, jti = self.auth.make_login(username, password)
-
         security.verify_token(username, token)
-
         user = self.auth.get_user()
-
         security.verify_blocked_user(user)
 
         if totp_authentication and totp_code is not None:
@@ -291,7 +287,7 @@ class Tokens(EndpointResource):
                 message = "Token not found: " + \
                     "not emitted for your account or does not exist"
                 return self.send_errors(
-                    message=message, code=hcodes.HTTP_BAD_NOTFOUND)
+                    message=message, code=hcodes.HTTP_BAD_UNAUTHORIZED)
 
         return self.empty_response()
 
