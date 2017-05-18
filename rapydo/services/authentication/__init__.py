@@ -16,6 +16,7 @@ import socket
 from rapydo.utils.uuid import getUUID
 from datetime import datetime, timedelta
 from flask import current_app, request
+from rapydo.services.detect import Detector
 from rapydo.confs import PRODUCTION
 from rapydo.utils.globals import mem
 from rapydo.utils import htmlcodes as hcodes
@@ -374,17 +375,20 @@ class BaseAuthentication(metaclass=abc.ABCMeta):
         if expiration is None:
             expiration = timedelta(seconds=self.longTTL)
 
-        now = datetime.now(pytz.utc)
-        nbf = now   # you can add a timedelta
-        exp = now + expiration
-
         payload = {
             'user_id': userobj.uuid,
-            'iat': now,
-            'nbf': nbf,
-            'exp': exp,
             'jti': getUUID()
         }
+
+        if Detector.get_global_var('AUTH_FULL_JWT_PAYLOAD', True):
+
+            now = datetime.now(pytz.utc)
+            nbf = now   # you can add a timedelta
+            exp = now + expiration
+
+            payload['iat'] = now
+            payload['nbf'] = nbf
+            payload['exp'] = exp
 
         return self.fill_custom_payload(userobj, payload)
 
