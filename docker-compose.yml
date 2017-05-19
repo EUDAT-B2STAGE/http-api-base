@@ -21,7 +21,7 @@ services:
       # Base code
       - ../backend:/code
       # JWT tokens secret
-      - jwt_tokens:/jwt_tokens
+      - jwt_tokens:${JWT_APP_SECRETS}
       # Tests
       # - ../tests/backend:/code/test/custom
 
