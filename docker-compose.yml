@@ -2,17 +2,12 @@ version: '3'
 ###############################
 services:
   backend:
-    # command: httpapi 
-    # command: python run.py 
-    # command: sleep 9999999999999 
-    # image: eudatb2stage/apiserver:neo4j3
+    # command: sleep infinity
     build: ../builds/apiserver
+    # image: apiserver:rapydo
     hostname: restapi
-    # user may be overriden from project config
-    # note: if you change the user, you should also
-    # fix permissions (e.g. sqllite directory)
-    user: root
-    working_dir: /code
+    # user: root
+    # working_dir: /code
     environment:
       FLASK_APP: run.py
       VANILLA_PACKAGE: custom
