@@ -14,7 +14,7 @@ from rapydo.utils.globals import mem
 
 log = get_logger(__name__)
 
-if Detector.get_global_var("AUTH_SECOND_FACTOR_AUTHENTICATION", False):
+if Detector.get_global_var("AUTH_SECOND_FACTOR_AUTHENTICATION", '') == 'TOTP':
     try:
         import pyotp
         import pyqrcode
