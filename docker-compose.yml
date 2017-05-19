@@ -16,7 +16,7 @@ services:
       # Base code
       - ../backend:/code
       # JWT tokens secret
-      - jwt_tokens:/jwt_tokens
+      - jwt_tokens:${JWT_APP_SECRETS}
       # Tests
       # - ../tests/backend:/code/test/custom
 
@@ -50,7 +50,7 @@ services:
       # JWT tokens secret
       - jwt_tokens:/jwt_tokens
       # Tests
-      - ../tests/backend:/code/test/custom
+      # - ../tests/backend:/code/test/custom
     # command: celery worker -c 1 -A flask_ext.flask_celery.worker.celery_app
 
   #################################
