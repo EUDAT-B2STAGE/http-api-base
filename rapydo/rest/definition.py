@@ -184,8 +184,26 @@ class EndpointResource(Resource):
         self.endtype = idtype + ':' + name
 
     def get_paging(self):
+        # NOTE: you have to call self.get_input prior to use this method
         limit = self._args.get(PERPAGE_KEY, DEFAULT_PERPAGE)
         current_page = self._args.get(CURRENTPAGE_KEY, DEFAULT_CURRENTPAGE)
+
+        try:
+            limit = int(limit)
+        except ValueError:
+            log.warning(
+                "%s is expected to be an int, not %s" %
+                (PERPAGE_KEY, limit))
+            limit = DEFAULT_PERPAGE
+
+        try:
+            current_page = int(current_page)
+        except ValueError:
+            log.warning(
+                "%s is expected to be an int, not %s" %
+                (CURRENTPAGE_KEY, current_page))
+            current_page = DEFAULT_CURRENTPAGE
+
         return (current_page, limit)
 
     def explode_response(self,
