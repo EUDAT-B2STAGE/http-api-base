@@ -36,7 +36,7 @@ def critical_exit(self, message, *args, **kws):
     if self.isEnabledFor(CRITICAL_EXIT):
         self._log(CRITICAL_EXIT, message, args, **kws)
 
-    # TO FIX: check if raise is better
+    # TOFIX: check if raise is better
     import sys
     sys.exit(1)
 

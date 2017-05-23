@@ -260,7 +260,7 @@ class IdentifiedNode(StructuredNode):
 
     __abstract_node__ = True
 
-    # TO FIX: now we should use:
+    # TOFIX: now we should use:
     # uuid = UniqueIdProperty
     uuid = StringProperty(default=getUUID, unique_index=True)
 

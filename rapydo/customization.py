@@ -13,7 +13,7 @@ from rapydo.confs import (
     API_URL, BASE_URLS
 )
 
-# TO FIX: should be imported after reading logger level from conf
+# TOFIX: should be imported after reading logger level from conf
 from rapydo.utils.meta import Meta
 from rapydo.utils.formats.yaml import YAML_EXT, load_yaml_file
 from rapydo.attributes import EndpointElements, ExtraAttributes
@@ -71,6 +71,8 @@ class Customizer(object):
         custom_config = load_yaml_file(
             PROJECT_CONF_FILE, path=CUSTOM_CONFIG_PATH)
         # custom_config[BLUEPRINT_KEY] = blueprint
+
+        # TODO: move this part into rapydo.utils
 
         # Read default configuration
         defaults = load_yaml_file('defaults', path=CORE_CONFIG_PATH)
@@ -227,7 +229,7 @@ class Customizer(object):
         #####################
         # Check for dependecies and skip if missing
         for dependency in conf.pop('depends_on', []):
-            # TO FIX: uhm? Should verify the env variable {SERVICE}_ENABLE?
+            # TOFIX: uhm? Should verify the env variable {SERVICE}_ENABLE?
             if not getattr(module, dependency, False):
                 log.debug("Skip '%s': unmet %s" % (default_uri, dependency))
                 return endpoint

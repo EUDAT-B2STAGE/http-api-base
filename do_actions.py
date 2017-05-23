@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# TO FIX: import logger?
+# TOFIX: import logger?
 
 
 class InvalidArgument(BaseException):
@@ -52,7 +52,7 @@ class ImplementedActions(object):
         print("TEST", self._compose_project)
 
         # TODO: git pull
-        # TO FIX: plumbum?
+        # TOFIX: plumbum?
         # TODO: also in init!
 
         # images pull

@@ -221,7 +221,7 @@ def send_error(self, e, code=None):
 def catch_error(
         exception=None, catch_generic=True,
         exception_label=None,
-        # TO FIX: where have this gone??
+        # TOFIX: where have this gone??
         # error_code=None,
         **kwargs):
     """

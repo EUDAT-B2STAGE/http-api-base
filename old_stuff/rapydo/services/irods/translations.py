@@ -4,7 +4,7 @@
 
 import os
 
-# TO FIX: should we move this import?
+# TOFIX: should we move this import?
 from py2neo.error import GraphError
 from py2neo.cypher.error.schema import ConstraintViolation
 from neomodel.exception import RequiredProperty

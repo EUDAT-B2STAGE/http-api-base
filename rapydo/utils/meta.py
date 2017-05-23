@@ -96,7 +96,7 @@ class Meta(object):
             else:
                 log.warning("Failed to load module: " + str(e))
 
-        # TO FIX: cannot use the proper exception (available in python 3.6+)
+        # TOFIX: cannot use the proper exception (available in python 3.6+)
         # because we are stuck on python 3.5 con IMC
         # except ModuleNotFoundError as e:
         except BaseException as e:

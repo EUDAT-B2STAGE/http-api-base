@@ -35,7 +35,7 @@ networks:
       driver: default
       config:
         # Note: use this configuration to match inside internal rules
-        # TO FIX: make this an env variable
+        # TOFIX: make this an env variable
         - subnet: ${DB_SUBNET}/16
 
 # #####################
@@ -232,7 +232,7 @@ services:
     environment:
       MAIN_ENDPOINT: ${API_MAIN_ENDPOINT}
     volumes:
-      # TO FIX
+      # TOFIX
       - ../backend:/code/core
       - ..:/code/custom
 

@@ -191,7 +191,7 @@ class Login(EndpointResource):
         # user.save()
         self.auth.save_token(self.auth._user, token, jti)
 
-        # TO FIX: split response as above in access_token and token_type?
+        # TOFIX: split response as above in access_token and token_type?
         # # The right response should be the following
         # {
         #   "scope": "https://b2stage.cineca.it/api/.*",
@@ -200,7 +200,7 @@ class Login(EndpointResource):
         #   "user": "pippo",
         #   "expires_in": 28800
         # }
-        # TO FIX: also set headers in a standard way if it exists
+        # TOFIX: also set headers in a standard way if it exists
 
         return {'token': token}
 

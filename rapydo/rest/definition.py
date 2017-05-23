@@ -99,7 +99,7 @@ class EndpointResource(Resource):
 
             for param, data in current_params.items():
 
-                # TO FIX: Add a method to convert types swagger <-> flask
+                # TOFIX: Add a method to convert types swagger <-> flask
                 tmptype = data.get('type', 'string')
                 if tmptype == 'boolean':
                     mytype = bool
@@ -226,7 +226,7 @@ class EndpointResource(Resource):
         return self.auth.get_user()
 
     def method_not_allowed(self, methods=['GET']):
-        # TO FIX: is it used?
+        # TOFIX: is it used?
 
         methods.append('HEAD')
         methods.append('OPTIONS')
@@ -394,7 +394,7 @@ class EndpointResource(Resource):
         for instance in instances:
             json_data["content"].append(self.getJsonResponse(instance))
 
-        # TO FIX: get pages FROM SELF ARGS?
+        # TOFIX: get pages FROM SELF ARGS?
         # json_data["links"]["next"] = \
         #     endpoint + '?currentpage=2&perpage=1',
         # json_data["links"]["last"] = \
@@ -438,7 +438,7 @@ class EndpointResource(Resource):
         if skip_missing_ids and id == '-':
             del data['id']
 
-# TO FIX: for now is difficult to compute links ID for relationships
+# TOFIX: for now is difficult to compute links ID for relationships
         if relationship_depth > 0:
             del data['links']
 
@@ -470,7 +470,7 @@ class EndpointResource(Resource):
                 attribute = get_attribute(instance, key)
                 # datetime is not json serializable,
                 # converting it to string
-                # TO FIX: use flask.jsonify
+                # TOFIX: use flask.jsonify
                 if attribute is None:
                     data["attributes"][key] = ""
                 elif isinstance(attribute, datetime):

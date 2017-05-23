@@ -255,7 +255,7 @@ class IrodsPythonClient():
         except iexceptions.CAT_NO_ROWS_FOUND:
             raise IrodsException("Irods delete error: path not found")
 
-        # TO FIX: remove resource
+        # TOFIX: remove resource
         # if resource is not None:
         #     com = 'itrim'
         #     args = ['-S', resource]
@@ -316,7 +316,7 @@ class IrodsPythonClient():
 
     def save(self, path, destination, force=False, resource=None):
 
-        # TO FIX: resource is not used!
+        # TOFIX: resource is not used!
         log.warning("Resource not used in saving irods data...")
 
         try:
@@ -374,7 +374,7 @@ class IrodsPythonClient():
                 acl.access_name
             ])
 
-        # TO FIX: how to retrieve inheritance?
+        # TOFIX: how to retrieve inheritance?
         data["inheritance"] = "N/A"
 
         return data
@@ -694,7 +694,7 @@ class IrodsPythonClient():
 #         """
 #         return self.admin('ls')
 
-# # // TO FIX:
+# # FIXME:
 #     def get_current_user_environment(self):
 #         com = 'ienv'
 #         output = self.basic_icom(com)
@@ -730,7 +730,7 @@ class IrodsPythonClient():
 #         return resources
 
 #     def get_default_resource_admin(self, skip=['bundleResc']):
-#         # TO FIX: find out the right way to get the default irods resource
+#         # TOFIX: find out the right way to get the default irods resource
 
 #         # note: we could use ienv
 #         resources = self.get_resources_admin()

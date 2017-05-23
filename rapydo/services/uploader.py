@@ -80,12 +80,12 @@ class Uploader(object):
         sec_filename = secure_filename(filename)
         abs_fname = os.path.join(destination, sec_filename)
 
-# TO FIX: what happens if chunk 2 arrives before chunk 1?
+# TOFIX: what happens if chunk 2 arrives before chunk 1?
         if overwrite and chunk_number == 1:
             if os.path.exists(abs_fname):
                 os.remove(abs_fname)
 
-# TO FIX: file is saved as data, not as ASCII/TEXT
+# TOFIX: file is saved as data, not as ASCII/TEXT
         # with open(abs_fname, "wb") as f:
         with open(abs_fname, "ab") as f:
             # log.critical("Copying chunk %d" % chunk_number)

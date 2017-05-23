@@ -83,7 +83,7 @@ def create_app(name=__name__,
     #############################
     # Initialize reading of all files
     mem.customizer = Customizer(testing_mode, PRODUCTION, init_mode)
-    # TO FIX: try to remove mem. from everywhere...
+    # TOFIX: try to remove mem. from everywhere...
 
     #################################################
     # Flask app instance
@@ -136,7 +136,7 @@ def create_app(name=__name__,
 
         log.info("Production server mode is ON")
 
-        # TO FIX: random secrety key in production
+        # TOFIX: random secrety key in production
         # # Check and use a random file a secret key.
         # install_secret_key(microservice)
 
@@ -208,7 +208,7 @@ def create_app(name=__name__,
 
         rule.methods = newmethods
 
-        # TO FIX: SOLVE CELERY INJECTION
+        # TOFIX: SOLVE CELERY INJECTION
         # # Set global objects for celery workers
         # if worker_mode:
         #     mem.services = internal_services

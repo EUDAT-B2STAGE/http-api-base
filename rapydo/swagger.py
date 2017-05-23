@@ -164,7 +164,7 @@ class BeSwagger(object):
                     paramtype = x[0]
                     paramname = x[1]
 
-                # TO FIX: complete for all types
+                # TOFIX: complete for all types
                 # http://swagger.io/specification/#data-types-12
                 if paramtype == 'int':
                     paramtype = 'number'

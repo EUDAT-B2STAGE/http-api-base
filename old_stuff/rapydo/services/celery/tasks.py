@@ -70,7 +70,7 @@ class CeleryFarm(ServiceFarm):
 
     def init_connection(self, app):
 
-        # TO FIX: should we check also the REDIS connection?
+        # TOFIX: should we check also the REDIS connection?
         # Or is celery going to give us error if that does not work?
 
         celery = self.get_instance(app)

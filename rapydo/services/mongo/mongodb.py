@@ -72,7 +72,7 @@ class MongoFarm(ServiceFarm):
         ################################
         # CHECK 1: test the environment
         from pymongo import MongoClient
-        # TO FIX: pymongo timeout?
+        # TOFIX: pymongo timeout?
         client = MongoClient(
             host=HOST, port=27017, connect=True, connectTimeoutMS=1000)
         db = client.test_database
@@ -103,7 +103,7 @@ class MongoFarm(ServiceFarm):
     @classmethod
     def get_instance(cls, models2skip=[], use_models=True, dbname=None):
 
-        # TO FIX: create a list of connections associated to db aliases
+        # TOFIX: create a list of connections associated to db aliases
         # if MongoFarm._mongo is None:
 
         MongoFarm._mongo = MyMongoDb(db=dbname)

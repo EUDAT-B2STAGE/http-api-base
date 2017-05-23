@@ -4,7 +4,7 @@
 iRODS connection via Official API.
 Python 3 is NOT supported at the moment.
 
-TO FIX: this will be the new default very soon
+TOFIX: this will be the new default very soon
 
 """
 

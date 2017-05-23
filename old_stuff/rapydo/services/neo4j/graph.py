@@ -20,7 +20,7 @@ PW = USER
 
 try:
 
-    # TO FIX: should we make a function for this docker variables splits?
+    # TOFIX: should we make a function for this docker variables splits?
     HOST = os.environ['GDB_NAME'].split('/').pop()
     PORT = os.environ['GDB_PORT_7474_TCP_PORT'].split(':').pop()
     USER, PW = os.environ['GDB_ENV_NEO4J_AUTH'].split('/')
