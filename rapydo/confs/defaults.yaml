@@ -6,6 +6,7 @@
 variables:
   python:
     backend:
+      branch: master
       credentials:
         username: user@nomail.org
         password: test
@@ -14,6 +15,9 @@ variables:
           internal: staff_user
           admin: admin_root
           default: normal_user
+    frontend:
+      enable: false
+      branch: master
 
 project:
   title: REST HTTP-API server with Python, Flask and Docker
