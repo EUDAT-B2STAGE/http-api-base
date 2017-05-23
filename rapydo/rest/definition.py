@@ -188,6 +188,11 @@ class EndpointResource(Resource):
         limit = self._args.get(PERPAGE_KEY, DEFAULT_PERPAGE)
         current_page = self._args.get(CURRENTPAGE_KEY, DEFAULT_CURRENTPAGE)
 
+        if limit is None:
+            limit = DEFAULT_PERPAGE
+        if current_page is None:
+            current_page = DEFAULT_CURRENTPAGE
+
         try:
             limit = int(limit)
         except ValueError:
