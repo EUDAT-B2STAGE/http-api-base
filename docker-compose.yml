@@ -47,8 +47,8 @@ services:
   # MAIN CONTAINER
   backend:
     # command: sleep infinity
-    build: ../builds/apiserver
-    # image: apiserver:rapydo
+    build: ../builds_base/backend
+    image: ${COMPOSE_PROJECT_NAME}/backend:template
     hostname: restapi
     # user: root
     # working_dir: /code
@@ -79,8 +79,9 @@ services:
     volumes:
       - rabbitdata:/var/lib/rabbitmq
 
-  worker:
-    build: ../builds/celery
+  celery:
+    build: ../builds_base/celery
+    image: ${COMPOSE_PROJECT_NAME}/celery:template
     # hostname: celworker
     # command: celery worker -c 1 -A flask_ext.flask_celery.worker.celery_app
     user: root
@@ -103,7 +104,8 @@ services:
 
   proxy:
     # image: nginx:1.11-alpine
-    build: ../builds/sslproxy
+    build: ../builds_base/proxy
+    image: ${COMPOSE_PROJECT_NAME}/proxy:template
     # image: nginx:rapydo
     hostname: reverseproxy
     networks:
@@ -115,22 +117,23 @@ services:
     #   # - ../containers/nginx_proxy:/etc/nginx/conf.d
     #   - ../confs/nginx/production.conf:/etc/nginx/sites-enabled/production
     depends_on:
-      # TODO: you have to rewrite all depends_on in a new yml file
+      # NOTE: you have to rewrite all depends_on in a new yml file
       # at the moment they do not cumulate
       - backend
 
   #############
   # Client interface if using swagger
-  swagclient:
-    build: ../builds/swaggerui
+  swaggerui:
+    build: ../builds_base/swaggerui
+    image: ${COMPOSE_PROJECT_NAME}/swaggerui:template
     # image: swagger-ui:rapydo
 
   ######################
-  sql:
+  postgres:
     image: postgres:9.6
     volumes:
       - sqldata:/var/lib/postgresql/data
-      - ../builds/postgresql/pgs_init.sh:/docker-entrypoint-initdb.d/setup-my-schema.sh:ro
+      - ../builds_base/postgres/pgs_init.sh:/docker-entrypoint-initdb.d/setup-my-schema.sh:ro
     environment:
       POSTGRES_USER: "${PLACEHOLDER}"
       POSTGRES_PASSWORD: "${PLACEHOLDER}"
@@ -141,8 +144,8 @@ services:
           - ${ALCHEMY_HOST}
 
   #################################
-  graphdb:
-    image: neo4j:3.1.3
+  neo4j:
+    image: neo4j:3.2.0
     volumes:
       - graphdata:/data
     networks:
@@ -172,7 +175,8 @@ services:
   # FTP
   ftp:
     # image: stilliard/pure-ftpd:latest
-    build: ../builds/ftp
+    build: ../builds_base/ftp
+    image: ${COMPOSE_PROJECT_NAME}/ftp:template
     volumes:
       - pureftpd:/etc/pure-ftpd/passwd
   # /etc/ssl/private/ A directory containing a single pure-ftpd.pem file
@@ -186,7 +190,8 @@ services:
   # iRODS iCAT server (usually for EUDAT B2safe)
   icat:
     # B2safe instance on irods
-    build: ../builds/b2safe
+    build: ../builds_base/icat
+    image: ${COMPOSE_PROJECT_NAME}/icat:template
     # image: b2safe:rapydo
     hostname: ${IRODS_HOST}
     # command: sleep infinity
@@ -206,7 +211,7 @@ services:
           - ${IRODS_HOST}
       db_net:
     depends_on:
-      - sql
+      - postgres
 
   # #################################
   # ADMINISTRATIONS
@@ -219,15 +224,17 @@ services:
   # with a phpmyadmin-like web page
   sqladmin:
     # image: sqladminer:rapydo
-    build: ../builds/sqladmin
+    build: ../builds_base/sqladmin
+    image: ${COMPOSE_PROJECT_NAME}/sqladmin:template
     # image: eudatb2stage/sqladminer:latest
     networks:
       db_net:
 
   #############
   # REST API client (wget, curl, httpie, http-prompt)
-  client:
-    build: ../builds/apiclient
+  restclient:
+    build: ../builds_base/restclient
+    image: ${COMPOSE_PROJECT_NAME}/restclient:template
     # image: apiclient:rapydo
     environment:
       MAIN_ENDPOINT: ${API_MAIN_ENDPOINT}
@@ -241,7 +248,7 @@ services:
   # #################################
 
   #######################
-  # searchindex:
+  # elasticsearch:
   #   image: elasticsearch
   #   hostname: elastic
   #   volumes:
@@ -262,7 +269,7 @@ services:
 
   #################################
   # REDIS key/value store
-  # redqueue:
+  # redisqueue:
   #   image: redis:alpine
   #   command: redis-server --appendonly yes
   #   hostname: myqueue

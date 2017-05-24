@@ -236,5 +236,5 @@ def create_app(name=__name__,
 
     ##############################
     # and the flask App is ready now:
-    log.info("Microservice ready")
+    log.info("Boot completed")
     return microservice
