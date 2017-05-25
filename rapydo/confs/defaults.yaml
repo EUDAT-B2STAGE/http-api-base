@@ -5,6 +5,22 @@
 
 variables:
   python:
+    repos:
+      backend:
+        branch: master
+        repo: http-api
+        path: backend
+        if: true
+      build-templates:
+        branch: master
+        repo: build-templates
+        path: builds_base
+        if: true
+      frontend:
+        branch: master
+        repo: node-ui
+        path: frontend
+        if: $$frontend
     backend:
       branch: master
       credentials:
