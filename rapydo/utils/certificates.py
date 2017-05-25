@@ -124,8 +124,12 @@ class Certificates(object):
             log.error("Oauthlib call with CA: %s" % e)
             return None
         except Exception as e:
+            # TODO: expand this case
+            # 1. CA is unreachable (internet)
+            # 2. CA says the token is invalid
             log.error("CA is probably down... [%s]" % e)
             return None
+
         if response.status != hcodes.HTTP_OK_BASIC:
             # print("\nCertificate:"); log.pp(response)
             log.error("Could not get proxy from CA: %s" % response.data)

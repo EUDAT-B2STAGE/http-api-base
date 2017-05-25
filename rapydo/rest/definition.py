@@ -184,8 +184,31 @@ class EndpointResource(Resource):
         self.endtype = idtype + ':' + name
 
     def get_paging(self):
+        # NOTE: you have to call self.get_input prior to use this method
         limit = self._args.get(PERPAGE_KEY, DEFAULT_PERPAGE)
         current_page = self._args.get(CURRENTPAGE_KEY, DEFAULT_CURRENTPAGE)
+
+        if limit is None:
+            limit = DEFAULT_PERPAGE
+        if current_page is None:
+            current_page = DEFAULT_CURRENTPAGE
+
+        try:
+            limit = int(limit)
+        except ValueError:
+            log.warning(
+                "%s is expected to be an int, not %s" %
+                (PERPAGE_KEY, limit))
+            limit = DEFAULT_PERPAGE
+
+        try:
+            current_page = int(current_page)
+        except ValueError:
+            log.warning(
+                "%s is expected to be an int, not %s" %
+                (CURRENTPAGE_KEY, current_page))
+            current_page = DEFAULT_CURRENTPAGE
+
         return (current_page, limit)
 
     def explode_response(self,
@@ -431,16 +454,19 @@ class EndpointResource(Resource):
         data = {
             "id": id,
             "type": resource_type,
-            "attributes": {},
-            "links": {"self": request.url + '/' + id},
+            "attributes": {}
+            # "links": {"self": request.url + '/' + id},
         }
 
         if skip_missing_ids and id == '-':
             del data['id']
 
-# TOFIX: for now is difficult to compute links ID for relationships
-        if relationship_depth > 0:
-            del data['links']
+        # TO FIX: for now is difficult to compute self links for relationships
+        if relationship_depth == 0:
+            self_uri = request.url
+            if not self_uri.endswith(id):
+                self_uri += '/' + id
+            data["links"] = {"self": self_uri}
 
         # Attributes
         if len(fields) < 1:
