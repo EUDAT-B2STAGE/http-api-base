@@ -1,4 +1,9 @@
 
+Deprecated!
+
+Check out [the new RAPyDo framework](https://github.com/rapydo/) instead.
+
+<!--
 # A code base/framework for your modern RESTful HTTP API 
 
 A Python **3** Flask HTTP server mapping custom classes into REST API endpoints;
@@ -24,9 +29,6 @@ the documentation is outdated, i will try to fix it anytime soon**
 
 You can find a compiled version on
 [readthedocs website](http://http-api-base.readthedocs.io/en/latest/).
-<!--
-[readthedocs website](http://rest-mock.readthedocs.org/en/latest/)
--->
 
 Here is the index for browsing it internally on GitHub:
 
@@ -54,3 +56,5 @@ Here is the index for browsing it internally on GitHub:
 Code and documentation copyright: `Paolo D'Onorio De Meo @2015`.
 
 Code released under the [MIT license](LICENSE).
+-->
+
