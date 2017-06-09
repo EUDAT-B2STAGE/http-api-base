@@ -22,14 +22,14 @@ cov_options="-C --coverage restapi $cov_reports"
 $com $option/base --log-capture
 if [ "$?" == "0" ]; then
     # Custom tests from the developer, if available
-    $com $option/custom --log-capture
-    if [ "$?" == "0" ]; then
-        # Print coverage if everything went well so far
-        $com --output-buffer $cov_options 2> /tmp/logfile.txt
-        grep "platform linux" -A 1000 /tmp/logfile.txt
-    else
-        exit $?
-    fi
+    $com test.custom.test_airods --log-capture
+    # if [ "$?" == "0" ]; then
+    #     # Print coverage if everything went well so far
+    #     $com --output-buffer $cov_options 2> /tmp/logfile.txt
+    #     grep "platform linux" -A 1000 /tmp/logfile.txt
+    # else
+    #     exit $?
+    # fi
 else
     exit $?
 fi
