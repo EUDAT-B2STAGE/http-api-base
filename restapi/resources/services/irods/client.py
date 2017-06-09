@@ -282,9 +282,10 @@ class ICommands(BashCommands):
 
         not_before = dateutil.parser.parse(validity[0])
         not_after = dateutil.parser.parse(validity[1])
-        now = datetime.now(pytz.utc) - timedelta(hours=validity_interval)
-
-        valid = (not_after > now) and (not_before < now)
+        now = datetime.now(pytz.utc)
+        valid = \
+            (not_before < now) and \
+            (not_after > now - timedelta(hours=validity_interval))
 
         return valid, not_before, not_after
 
